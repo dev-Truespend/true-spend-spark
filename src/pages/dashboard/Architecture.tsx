@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useArchitectureComponents } from "@/hooks/useProjectData";
 import { Layers, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { InteractiveArchitectureMap } from "@/components/architecture/InteractiveArchitectureMap";
 
 export default function Architecture() {
   const { data: components, isLoading } = useArchitectureComponents();
@@ -74,6 +75,9 @@ export default function Architecture() {
           19-layer production-grade architecture with security-first design
         </p>
       </div>
+
+      {/* Interactive Architecture Map */}
+      <InteractiveArchitectureMap />
 
       {/* Architecture Statistics */}
       <div className="grid gap-4 md:grid-cols-4">
