@@ -1,6 +1,6 @@
 # TrueSpend Implementation Timeline v2.0
 
-**19-Week Gantt Timeline - Production Architecture for 100k Users**
+**20-Week Gantt Timeline - Production Architecture for 100k Users**
 
 Last Updated: 2025-11-07  
 Related Document: [TrueSpend Blueprint v2.0](./blueprint-v2.0.md)
@@ -9,24 +9,25 @@ Related Document: [TrueSpend Blueprint v2.0](./blueprint-v2.0.md)
 
 ## Executive Summary
 
-This document provides a comprehensive 19-week implementation timeline for TrueSpend, a financial intelligence platform built on the Lovable native stack. The timeline is structured into 8 sequential phases, each with clearly defined deliverables, success criteria, and production readiness gates. **This timeline achieves 100% alignment with Blueprint v2.0.**
+This document provides a comprehensive 20-week implementation timeline for TrueSpend, a financial intelligence platform built on the Lovable native stack. The timeline is structured into 8 sequential phases, each with clearly defined deliverables, success criteria, and production readiness gates. **This timeline achieves 100% alignment with Blueprint v2.0, including circuit breakers, read replication, and budget guards.**
 
 **Key Metrics:**
-- **Total Duration:** 19 weeks (100% Blueprint v2.0 coverage)
+- **Total Duration:** 20 weeks (100% Blueprint v2.0 coverage with production-ready features)
 - **Phases:** 8 distinct phases from Foundation to Production Launch
 - **Team Size:** 4-6 engineers (2 fullstack, 1 AI/ML, 1 DevOps, 1-2 frontend)
 - **Target Capacity:** 100,000 concurrent users
 - **Tech Stack:** 100% Lovable native (React, TypeScript, Tailwind, Supabase)
+- **New Features:** Circuit breakers, read replication, budget guards
 
 **Critical Path Milestones:**
 1. Week 1-2: Infrastructure & Security Foundation
 2. Week 3-4: Authentication & Data Planes
-3. Week 5-7: External Integrations (Plaid, Stripe)
-4. Week 8-11: Core Backend Services
-5. Week 12-14: AI Agent Development
-6. Week 15-16: Affiliate & Commerce
-7. Week 17-18: Frontend Development & Browser Extensions
-8. Week 19: Production Hardening & Launch
+3. Week 5-7: External Integrations with Circuit Breakers (Plaid, Stripe)
+4. Week 8-12: Core Backend Services with Read Replication & Budget Guards
+5. Week 13-15: AI Agent Development
+6. Week 16-17: Affiliate & Commerce with Circuit Breakers
+7. Week 18-19: Frontend Development & Browser Extensions
+8. Week 20: Production Hardening & Launch
 
 ---
 
@@ -34,7 +35,7 @@ This document provides a comprehensive 19-week implementation timeline for TrueS
 
 ```mermaid
 gantt
-    title TrueSpend Implementation Timeline (19 Weeks)
+    title TrueSpend Implementation Timeline (20 Weeks)
     dateFormat YYYY-MM-DD
     
     section Phase 0: Foundation
@@ -58,19 +59,27 @@ gantt
     Bank Account Linking Flow         :p2_2, after p2_1, 3d
     Transaction Sync Service          :p2_3, after p2_2, 4d
     Webhook Ingest Queue              :p2_4, after p2_2, 3d
-    Stripe Integration                :p2_5, after p2_3, 2d
-    Payment Processing Flow           :p2_6, after p2_5, 2d
+    Circuit Breaker for Plaid         :p2_5, after p2_3, 1d
+    Circuit Breaker for Stripe        :p2_6, after p2_5, 0.5d
+    Circuit Breaker Monitoring        :p2_7, after p2_6, 0.5d
+    Stripe Integration                :p2_8, after p2_7, 2d
+    Payment Processing Flow           :p2_9, after p2_8, 2d
     
     section Phase 3: Core Backend Services
-    BFF Edge Function                 :p3_1, after p2_6, 3d
+    BFF Edge Function                 :p3_1, after p2_9, 3d
     Smart Orchestrator Service        :p3_2, after p3_1, 4d
     Event Bus Implementation          :p3_3, after p3_1, 3d
     Real-time Sync Engine             :p3_4, after p3_3, 3d
     Rate Limiting & Throttling        :p3_5, after p3_2, 2d
-    Configure PgBouncer Pooling       :p3_6, after p3_4, 2d
+    Setup Read Replica                :p3_6, after p3_4, 1d
+    Implement Read/Write Splitting    :p3_7, after p3_6, 1d
+    Configure Replication Monitoring  :p3_8, after p3_7, 0.5d
+    Create Budget Guard Service       :p3_9, after p3_8, 2d
+    Implement Budget Alert System     :p3_10, after p3_9, 1d
+    Configure PgBouncer Pooling       :p3_11, after p3_10, 2d
     
     section Phase 4: AI Agent Development
-    Transaction Categorizer Agent     :p4_1, after p3_6, 4d
+    Transaction Categorizer Agent     :p4_1, after p3_11, 4d
     Anomaly Detection Agent           :p4_2, after p4_1, 4d
     Budget Advisor Agent              :p4_3, after p4_1, 3d
     Savings Optimizer Agent           :p4_4, after p4_3, 3d
@@ -84,11 +93,12 @@ gantt
     Capital One Shopping API          :p5_4, after p5_3, 1d
     Honey API Integration             :p5_5, after p5_4, 1d
     CJ Affiliate API Integration      :p5_6, after p5_5, 1d
-    Commission Tracking System        :p5_7, after p5_6, 3d
-    Offer Matching Algorithm          :p5_8, after p5_7, 3d
+    Circuit Breakers for Affiliates   :p5_7, after p5_6, 2d
+    Commission Tracking System        :p5_8, after p5_7, 3d
+    Offer Matching Algorithm          :p5_9, after p5_8, 3d
     
     section Phase 6: Frontend Development
-    Design System & Components        :p6_1, after p5_8, 3d
+    Design System & Components        :p6_1, after p5_9, 3d
     Dashboard UI Implementation       :p6_2, after p6_1, 4d
     Transaction Views & Filters       :p6_3, after p6_2, 3d
     Budget & Savings UI               :p6_4, after p6_3, 3d
@@ -103,12 +113,16 @@ gantt
     Performance Optimization          :p7_3, after p7_2, 2d
     Implement Caching Strategy        :p7_4, after p7_3, 2d
     Create Materialized Views         :p7_5, after p7_4, 1d
-    Monitoring & Alerting Setup       :p7_6, after p7_5, 2d
-    Disaster Recovery Drill           :p7_7, after p7_6, 1d
-    Documentation & Runbooks          :p7_8, after p7_7, 2d
+    Test Circuit Breakers Under Load  :p7_6, after p7_5, 1d
+    Test Read Replica Failover        :p7_7, after p7_6, 1d
+    Test Budget Guard Enforcement     :p7_8, after p7_7, 0.5d
+    Monitor Replication Lag           :p7_9, after p7_8, 0.5d
+    Monitoring & Alerting Setup       :p7_10, after p7_9, 2d
+    Disaster Recovery Drill           :p7_11, after p7_10, 1d
+    Documentation & Runbooks          :p7_12, after p7_11, 2d
     
     section Phase 8: Production Launch
-    Final QA & User Acceptance        :p8_1, after p7_8, 2d
+    Final QA & User Acceptance        :p8_1, after p7_12, 2d
     Production Deployment             :p8_2, after p8_1, 1d
     Post-Launch Monitoring            :p8_3, after p8_2, 2d
 ```
@@ -199,11 +213,11 @@ gantt
 
 ---
 
-### Phase 2: External Integrations (Week 4-5, 14 days)
+### Phase 2: External Integrations (Week 4-5, 17 days)
 
-**Objective:** Integrate Plaid for banking data and Stripe for payments.
+**Objective:** Integrate Plaid for banking data, Stripe for payments, and implement circuit breakers for fault tolerance.
 
-**Duration:** 14 days  
+**Duration:** 17 days  
 **Dependencies:** Phase 1 complete (Auth system ready)  
 **Team:** 2 backend engineers, 1 integration specialist
 
@@ -215,13 +229,17 @@ gantt
 | Bank Account Linking Flow | 3 days | Backend Engineer | Plaid setup | Users can link accounts via Plaid Link, access tokens stored securely in Vault |
 | Transaction Sync Service | 4 days | Backend Lead | Account linking | Edge function syncs transactions every 6 hours, handles pagination, stores in `transactions_vault` |
 | Webhook Ingest Queue | 3 days | Backend Engineer | Sync service | Webhook endpoint validates signatures, queues events, processes transactions in real-time |
-| Stripe Integration | 2 days | Integration Lead | Sync complete | Stripe API keys configured, subscription plans created, test payments working |
+| Circuit Breaker for Plaid | 1 day | Backend Lead | Sync complete | Circuit opens after 5 failures, automatic recovery, state persisted in database |
+| Circuit Breaker for Stripe | 0.5 days | Backend Engineer | Plaid circuit breaker | Circuit opens after 5 failures, fallback behavior implemented |
+| Circuit Breaker Monitoring | 0.5 days | DevOps Lead | Circuit breakers | Circuit state visible in dashboard, alerts configured |
+| Stripe Integration | 2 days | Integration Lead | Circuit breakers ready | Stripe API keys configured, subscription plans created, test payments working |
 | Payment Processing Flow | 2 days | Backend Engineer | Stripe setup | Users can subscribe to plans, payment webhooks update subscription status |
 
 #### Testing Requirements
 - [ ] Plaid Link integration tests (success/failure scenarios)
 - [ ] Transaction sync tests with mock Plaid data
 - [ ] Webhook signature validation tests
+- [ ] Circuit breaker tests (failure injection, recovery)
 - [ ] Stripe payment flow end-to-end tests
 - [ ] Error handling for API rate limits
 - [ ] Idempotency tests for duplicate webhooks
@@ -230,6 +248,7 @@ gantt
 - Plaid integration guide
 - Stripe payment flow documentation
 - Webhook event handling diagrams
+- Circuit breaker configuration guide
 - API error codes and responses
 - Rate limiting and retry strategies
 
@@ -237,16 +256,17 @@ gantt
 - ✅ Plaid integration works with all major banks
 - ✅ Transaction sync handles 10k+ transactions/hour
 - ✅ Webhooks process 99.9% successfully
+- ✅ Circuit breakers prevent cascading failures
 - ✅ Stripe payments process without errors
 - ✅ All API keys secured in Vault
 
 ---
 
-### Phase 3: Core Backend Services (Week 6-8, 17 days)
+### Phase 3: Core Backend Services (Week 6-9, 23 days)
 
-**Objective:** Build scalable backend services for orchestration, real-time sync, and rate limiting.
+**Objective:** Build scalable backend services for orchestration, real-time sync, read replication, budget guards, and rate limiting.
 
-**Duration:** 17 days  
+**Duration:** 23 days  
 **Dependencies:** Phase 2 complete (Integrations ready)  
 **Team:** 2-3 backend engineers
 
@@ -259,7 +279,12 @@ gantt
 | Event Bus Implementation | 3 days | Backend Lead | Orchestrator setup | PostgreSQL-based event bus, pub/sub pattern, guaranteed delivery |
 | Real-time Sync Engine | 3 days | Backend Engineer | Event bus ready | Supabase Realtime delivers updates to clients in < 500ms, WebSocket connections stable |
 | Rate Limiting & Throttling | 2 days | DevOps Lead | Sync engine complete | Rate limits enforced (100 req/min/user), throttling prevents abuse |
-| Configure PgBouncer Pooling | 2 days | DevOps Lead | Rate limiting done | Supabase PgBouncer configured with pool size and connection limits, tested with 10k concurrent connections |
+| Setup Read Replica | 1 day | DevOps Lead | Real-time sync ready | Supabase read replica provisioned, replication configured |
+| Implement Read/Write Splitting in BFF | 1 day | Backend Lead | Read replica setup | Read queries route to replica, write queries to primary, automatic failover |
+| Configure Replication Monitoring | 0.5 days | DevOps Lead | Read/write splitting | Replication lag monitored (<100ms), health checks configured |
+| Create Budget Guard Service | 2 days | Backend Lead | Replication monitored | Real-time budget checks work, hard limits enforced, alerts triggered |
+| Implement Budget Alert System | 1 day | Backend Engineer | Budget guards created | Budget alerts trigger on threshold exceeded, real-time notifications sent |
+| Configure PgBouncer Pooling | 2 days | DevOps Lead | Budget alerts ready | Supabase PgBouncer configured with pool size and connection limits, tested with 10k concurrent connections |
 
 #### Testing Requirements
 - [ ] BFF load tests (1000 req/sec)
@@ -267,6 +292,10 @@ gantt
 - [ ] Event bus message delivery guarantees
 - [ ] Real-time sync latency tests
 - [ ] Rate limiting enforcement tests
+- [ ] Read replica failover tests
+- [ ] Replication lag monitoring tests
+- [ ] Budget guard enforcement tests (hard limits)
+- [ ] Budget alert delivery tests
 - [ ] Connection pool stress tests (10k connections)
 
 #### Documentation Needs
@@ -275,6 +304,8 @@ gantt
 - Event bus message schemas
 - Real-time sync architecture guide
 - Rate limiting policies
+- Read replica configuration guide
+- Budget guard implementation guide
 - Database connection pooling guide
 
 #### Production Readiness Checkpoint
@@ -282,6 +313,9 @@ gantt
 - ✅ Orchestrator processes 1000+ workflows/hour
 - ✅ Event bus delivers 99.99% messages
 - ✅ Real-time sync latency < 500ms
+- ✅ Read replica handles 80% of read queries
+- ✅ Replication lag stays <100ms under load
+- ✅ Budget guards block transactions when limits exceeded
 - ✅ System stable under 10k concurrent users
 
 ---
@@ -330,11 +364,11 @@ gantt
 
 ---
 
-### Phase 5: Affiliate Integrations (Week 12-13, 15 days)
+### Phase 5: Affiliate Integrations (Week 12-14, 17 days)
 
-**Objective:** Integrate all 5 affiliate networks and build discovery/matching services.
+**Objective:** Integrate all 5 affiliate networks, implement circuit breakers, and build discovery/matching services.
 
-**Duration:** 15 days  
+**Duration:** 17 days  
 **Dependencies:** Phase 4 complete (AI agents ready)  
 **Team:** 1 backend engineer, 1 integration specialist
 
@@ -348,11 +382,13 @@ gantt
 | Capital One Shopping API | 1 day | Integration Engineer | Rakuten complete | Capital One Shopping API integrated, coupon codes fetched, offer matching working |
 | Honey API Integration | 1 day | Integration Engineer | Capital One complete | Honey API integrated, coupon aggregation working, savings calculations accurate |
 | CJ Affiliate API Integration | 1 day | Integration Engineer | Honey complete | CJ Affiliate network integrated, deep links created, commission tracking functional |
-| Commission Tracking System | 3 days | Backend Engineer | All APIs integrated | Tracks clicks, conversions, commissions across all 5 networks; stores in `affiliate_offers` table |
+| Circuit Breakers for Affiliates | 2 days | Backend Engineer | All APIs integrated | Circuit breakers for all 5 affiliate APIs, automatic fallback, graceful degradation |
+| Commission Tracking System | 3 days | Backend Engineer | Circuit breakers ready | Tracks clicks, conversions, commissions across all 5 networks; stores in `affiliate_offers` table |
 | Offer Matching Algorithm | 3 days | AI Lead | Commission tracking ready | Matches user transactions to offers using Merchant Matcher agent, scores relevance across all networks |
 
 #### Testing Requirements
 - [ ] Affiliate API integration tests (success/failure)
+- [ ] Circuit breaker tests for each affiliate network
 - [ ] Discovery service performance tests (1000 offers/sec)
 - [ ] Commission tracking accuracy tests
 - [ ] Offer matching precision tests (85%+ precision)
@@ -368,6 +404,7 @@ gantt
 
 #### Production Readiness Checkpoint
 - ✅ All 5 affiliate networks integrated (Amazon, Rakuten, Capital One Shopping, Honey, CJ Affiliate)
+- ✅ Circuit breakers protect all affiliate API calls
 - ✅ Discovery service finds 100+ relevant offers/user
 - ✅ Commission tracking 99%+ accurate across all networks
 - ✅ Offer matching 85%+ precision
@@ -422,11 +459,11 @@ gantt
 
 ---
 
-### Phase 7: Production Hardening (Week 18, 15 days)
+### Phase 7: Production Hardening (Week 19, 18 days)
 
-**Objective:** Optimize performance, implement caching and materialized views, conduct security audits, and prepare for production launch.
+**Objective:** Optimize performance, implement caching and materialized views, test circuit breakers and read replicas, conduct security audits, and prepare for production launch.
 
-**Duration:** 15 days  
+**Duration:** 18 days  
 **Dependencies:** Phase 6 complete (Full application ready)  
 **Team:** Full team (4-6 engineers)
 
@@ -439,7 +476,11 @@ gantt
 | Performance Optimization | 2 days | Backend Lead | Security audit done | Database queries optimized, N+1 queries eliminated, edge functions < 200ms |
 | Implement Caching Strategy | 2 days | Backend Lead | Performance optimized | Supabase query caching configured, edge function response caching, affiliate offer cache (1-hour TTL), user session cache |
 | Create Materialized Views | 1 day | Backend Engineer | Caching implemented | User spending summaries view, budget progress view, affiliate performance view, auto-refresh strategy (hourly/daily) |
-| Monitoring & Alerting Setup | 2 days | DevOps Lead | Views created | Grafana dashboards, PagerDuty alerts, log aggregation (LogFlare), SLOs defined |
+| Test Circuit Breakers Under Load | 1 day | DevOps Lead | Views created | All circuit breakers function correctly under failure scenarios, automatic recovery validated |
+| Test Read Replica Failover | 1 day | DevOps Lead | Circuit breakers tested | Automatic failover to primary works, replication lag stays <100ms, read/write splitting robust |
+| Test Budget Guard Enforcement | 0.5 days | Backend Lead | Replica tested | Hard limits block transactions, soft limits trigger alerts, real-time updates work |
+| Monitor Replication Lag | 0.5 days | DevOps Engineer | Budget guards tested | Replication lag stays <100ms under peak load, monitoring dashboard operational |
+| Monitoring & Alerting Setup | 2 days | DevOps Lead | Lag monitored | Grafana dashboards, PagerDuty alerts, log aggregation (LogFlare), SLOs defined |
 | Disaster Recovery Drill | 1 day | DevOps Lead | Monitoring ready | Database backup restoration tested, failover procedures validated, RTO documented, rollback procedures tested |
 | Documentation & Runbooks | 2 days | All Engineers | DR drill complete | Complete documentation, incident runbooks, deployment guides, disaster recovery plan |
 
@@ -449,6 +490,10 @@ gantt
 - [ ] Security penetration tests (OWASP Top 10)
 - [ ] Cache invalidation and performance tests
 - [ ] Materialized view refresh tests
+- [ ] Circuit breaker failure injection tests
+- [ ] Read replica failover tests
+- [ ] Budget guard enforcement tests
+- [ ] Replication lag monitoring tests
 - [ ] Disaster recovery drill (backup restoration)
 - [ ] Performance regression tests
 - [ ] Monitoring alert validation
@@ -457,6 +502,9 @@ gantt
 - Load testing results and analysis
 - Security audit report
 - Performance optimization guide
+- Circuit breaker configuration guide
+- Read replica setup and monitoring guide
+- Budget guard implementation guide
 - Monitoring and alerting runbook
 - Incident response procedures
 - Deployment checklist
@@ -466,6 +514,9 @@ gantt
 - ✅ Zero critical security vulnerabilities
 - ✅ Caching reduces query load by 60%+
 - ✅ Materialized views improve dashboard performance by 80%+
+- ✅ Circuit breakers prevent cascading failures (99.9% uptime)
+- ✅ Read replica handles 80%+ of read queries
+- ✅ Budget guards enforce spending limits in real-time
 - ✅ Disaster recovery tested and validated (RTO < 4 hours)
 - ✅ All KPIs meet targets (see Phase 8)
 - ✅ Monitoring and alerting operational
@@ -473,7 +524,7 @@ gantt
 
 ---
 
-### Phase 8: Production Launch (Week 19, 5 days)
+### Phase 8: Production Launch (Week 20, 5 days)
 
 **Objective:** Deploy to production, monitor closely, and ensure stability.
 
@@ -526,12 +577,12 @@ gantt
 |-------|---------|----------|-------|--------|----------|
 | Phase 0: Foundation | 2 | - | - | 1 | 6 days |
 | Phase 1: Secure Data & Auth | 2 | - | - | 1 | 15 days |
-| Phase 2: External Integrations | 2 | - | - | 1 | 14 days |
-| Phase 3: Core Backend Services | 3 | - | - | 1 | 17 days |
+| Phase 2: External Integrations | 2 | - | - | 1 | 17 days |
+| Phase 3: Core Backend Services | 3 | - | - | 1 | 23 days |
 | Phase 4: AI Agent Development | 1 | - | 1 | - | 19 days |
-| Phase 5: Affiliate Integrations | 2 | - | 1 | - | 15 days |
+| Phase 5: Affiliate Integrations | 2 | - | 1 | - | 17 days |
 | Phase 6: Frontend Development | - | 2 | - | - | 22 days |
-| Phase 7: Production Hardening | 2 | 1 | 1 | 2 | 15 days |
+| Phase 7: Production Hardening | 2 | 1 | 1 | 2 | 18 days |
 | Phase 8: Production Launch | 2 | 2 | 1 | 1 | 5 days |
 
 **Recommended Team Composition:**
@@ -553,10 +604,11 @@ gantt
 
 | Dependency | Impact | Mitigation |
 |------------|--------|------------|
-| Plaid API availability | Blocks transaction sync | Implement retry logic, queue failed requests, monitor Plaid status |
-| Supabase performance | Affects all backend services | Upgrade instance size proactively, use PgBouncer, optimize queries |
+| Plaid API availability | Blocks transaction sync | Implement circuit breakers with automatic fallback, queue failed requests, monitor Plaid status |
+| Supabase performance | Affects all backend services | Read replicas for scaling, upgrade instance size proactively, use PgBouncer, optimize queries |
 | AI agent accuracy | Poor user experience | Hybrid rules + LLM approach, continuous training, human-in-the-loop fallback |
 | Team availability | Delays schedule | Cross-train team members, document thoroughly, buffer time in schedule |
+| External API failures | Service degradation | Circuit breakers on all external APIs, graceful fallback mechanisms |
 
 ### Potential Bottlenecks
 
@@ -571,11 +623,12 @@ gantt
 ### Buffer Time Allocations
 
 - **Phase 0-1:** +2 days buffer (infrastructure setup unpredictability)
-- **Phase 2:** +3 days buffer (external API integration risks)
+- **Phase 2:** +3 days buffer (external API integration risks, circuit breaker implementation)
+- **Phase 3:** +4 days buffer (read replica setup, budget guard implementation)
 - **Phase 4:** +4 days buffer (AI agent tuning and accuracy improvements)
-- **Phase 7:** +3 days buffer (unforeseen production issues)
+- **Phase 7:** +3 days buffer (unforeseen production issues, failover testing)
 
-**Total Project Buffer:** 12 days (built into 19-week timeline)
+**Total Project Buffer:** 16 days (built into 20-week timeline)
 
 ---
 

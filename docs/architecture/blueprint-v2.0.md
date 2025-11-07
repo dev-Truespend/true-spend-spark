@@ -168,6 +168,9 @@ graph TB
 - **Database Optimization**: Materialized views for read-heavy operations
 - **Caching Strategy**: Strategic use of Supabase query caching
 - **Connection Pooling**: PgBouncer for efficient database connections
+- **Circuit Breaker Pattern**: Fault tolerance for external API calls with automatic fallback
+- **Read Replication**: PostgreSQL read replicas for scaling read-heavy operations
+- **Budget Enforcement**: Real-time transaction guards to prevent overspending
 
 ---
 
@@ -185,6 +188,9 @@ graph TB
 | **Vault Encryption** | Supabase Vault | PII encryption at rest | Unlimited |
 | **Storage Buckets** | Supabase Storage | Document/receipt storage | 100GB storage |
 | **Rate Limiting** | Edge Functions | API protection | 1000 req/min per user |
+| **Circuit Breakers** | Edge Functions | API fault tolerance | 99.9% uptime despite external failures |
+| **Read Replicas** | Supabase PostgreSQL | Read scaling | 80% read queries to replicas |
+| **Budget Guards** | Edge Function + Realtime | Spending enforcement | <100ms transaction validation |
 
 ---
 
@@ -293,6 +299,51 @@ CREATE TABLE event_log (
   ip_address INET,
   user_agent TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Budget guards for spending enforcement
+CREATE TABLE budget_guards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users_vault(id) ON DELETE CASCADE,
+  budget_id UUID REFERENCES budgets(id) ON DELETE CASCADE,
+  threshold_amount DECIMAL(12,2) NOT NULL,
+  threshold_percentage INTEGER DEFAULT 90, -- Alert at 90% of budget
+  is_hard_limit BOOLEAN DEFAULT FALSE, -- Block transactions if true
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Budget alerts triggered by guards
+CREATE TABLE budget_alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users_vault(id) ON DELETE CASCADE,
+  guard_id UUID REFERENCES budget_guards(id) ON DELETE CASCADE,
+  alert_type TEXT NOT NULL, -- threshold_exceeded, hard_limit_reached
+  transaction_amount DECIMAL(12,2),
+  current_spend DECIMAL(12,2),
+  threshold DECIMAL(12,2),
+  acknowledged_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Circuit breaker state tracking
+CREATE TABLE circuit_breaker_state (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  service_name TEXT NOT NULL UNIQUE, -- plaid, stripe, amazon, rakuten, etc.
+  state TEXT NOT NULL, -- CLOSED, OPEN, HALF_OPEN
+  failure_count INTEGER DEFAULT 0,
+  last_failure_at TIMESTAMPTZ,
+  last_success_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Read replica health monitoring
+CREATE TABLE replica_health (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  replica_name TEXT NOT NULL,
+  replication_lag_ms INTEGER,
+  is_healthy BOOLEAN DEFAULT TRUE,
+  last_check_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
 
@@ -519,6 +570,129 @@ serve(async (req) => {
   
   return new Response('Accepted', { status: 202 })
 })
+```
+
+### 6. Budget Guard Service
+**Purpose**: Real-time budget enforcement and overspending prevention
+
+```typescript
+// File: supabase/functions/budget-guard/index.ts
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+
+serve(async (req) => {
+  const { userId, transactionAmount, categoryId } = await req.json()
+  
+  // Fetch user budgets with guards
+  const budgets = await supabase
+    .from('budget_guards')
+    .select('*, budgets(*)')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+  
+  // Check if transaction violates any guards
+  for (const guard of budgets.data) {
+    const currentSpend = await getCurrentSpend(userId, categoryId, guard.period)
+    const projectedSpend = currentSpend + transactionAmount
+    
+    if (projectedSpend > guard.threshold_amount) {
+      // Trigger real-time alert
+      await supabase.from('budget_alerts').insert({
+        user_id: userId,
+        guard_id: guard.id,
+        alert_type: 'threshold_exceeded',
+        transaction_amount: transactionAmount,
+        current_spend: currentSpend,
+        threshold: guard.threshold_amount
+      })
+      
+      // Optional: Block transaction if hard limit enabled
+      if (guard.is_hard_limit) {
+        return new Response(JSON.stringify({
+          allowed: false,
+          reason: `Budget limit exceeded for ${guard.category_name}`,
+          current: currentSpend,
+          limit: guard.threshold_amount
+        }), { status: 403 })
+      }
+    }
+  }
+  
+  return new Response(JSON.stringify({ allowed: true }))
+})
+```
+
+### 7. Circuit Breaker Utility
+**Purpose**: Fault-tolerant external API calls
+
+```typescript
+// File: supabase/functions/_shared/circuit-breaker.ts
+export class CircuitBreaker {
+  private failureCount = 0
+  private lastFailureTime: number = 0
+  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED'
+  
+  constructor(
+    private threshold: number = 5,
+    private timeout: number = 60000,
+    private halfOpenAttempts: number = 3
+  ) {}
+  
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === 'OPEN') {
+      if (Date.now() - this.lastFailureTime > this.timeout) {
+        this.state = 'HALF_OPEN'
+      } else {
+        throw new Error('Circuit breaker is OPEN')
+      }
+    }
+    
+    try {
+      const result = await fn()
+      this.onSuccess()
+      return result
+    } catch (error) {
+      this.onFailure()
+      throw error
+    }
+  }
+  
+  private onSuccess() {
+    this.failureCount = 0
+    this.state = 'CLOSED'
+  }
+  
+  private onFailure() {
+    this.failureCount++
+    this.lastFailureTime = Date.now()
+    
+    if (this.failureCount >= this.threshold) {
+      this.state = 'OPEN'
+      console.error(`Circuit breaker opened after ${this.failureCount} failures`)
+    }
+  }
+  
+  // Track state in database
+  async persistState(serviceName: string) {
+    await supabase.from('circuit_breaker_state').upsert({
+      service_name: serviceName,
+      state: this.state,
+      failure_count: this.failureCount,
+      last_failure_at: this.lastFailureTime > 0 ? new Date(this.lastFailureTime) : null,
+      updated_at: new Date()
+    })
+  }
+}
+
+// Usage in Plaid integration
+const plaidCircuitBreaker = new CircuitBreaker(5, 60000, 3)
+
+async function fetchPlaidTransactions(accessToken: string) {
+  return await plaidCircuitBreaker.execute(async () => {
+    const result = await plaidClient.transactionsGet({ access_token: accessToken })
+    await plaidCircuitBreaker.persistState('plaid')
+    return result
+  })
+}
 ```
 
 ---
