@@ -1,6 +1,6 @@
 # TrueSpend Implementation Timeline v2.0
 
-**18-Week Gantt Timeline - Production Architecture for 100k Users**
+**19-Week Gantt Timeline - Production Architecture for 100k Users**
 
 Last Updated: 2025-11-07  
 Related Document: [TrueSpend Blueprint v2.0](./blueprint-v2.0.md)
@@ -9,10 +9,10 @@ Related Document: [TrueSpend Blueprint v2.0](./blueprint-v2.0.md)
 
 ## Executive Summary
 
-This document provides a comprehensive 18-week implementation timeline for TrueSpend, a financial intelligence platform built on the Lovable native stack. The timeline is structured into 8 sequential phases, each with clearly defined deliverables, success criteria, and production readiness gates.
+This document provides a comprehensive 19-week implementation timeline for TrueSpend, a financial intelligence platform built on the Lovable native stack. The timeline is structured into 8 sequential phases, each with clearly defined deliverables, success criteria, and production readiness gates. **This timeline achieves 100% alignment with Blueprint v2.0.**
 
 **Key Metrics:**
-- **Total Duration:** 17-18 weeks (depending on team velocity)
+- **Total Duration:** 19 weeks (100% Blueprint v2.0 coverage)
 - **Phases:** 8 distinct phases from Foundation to Production Launch
 - **Team Size:** 4-6 engineers (2 fullstack, 1 AI/ML, 1 DevOps, 1-2 frontend)
 - **Target Capacity:** 100,000 concurrent users
@@ -22,11 +22,11 @@ This document provides a comprehensive 18-week implementation timeline for TrueS
 1. Week 1-2: Infrastructure & Security Foundation
 2. Week 3-4: Authentication & Data Planes
 3. Week 5-7: External Integrations (Plaid, Stripe)
-4. Week 8-10: Core Backend Services
-5. Week 11-13: AI Agent Development
-6. Week 14-15: Affiliate & Commerce
-7. Week 16-17: Frontend Development
-8. Week 18: Production Hardening & Launch
+4. Week 8-11: Core Backend Services
+5. Week 12-14: AI Agent Development
+6. Week 15-16: Affiliate & Commerce
+7. Week 17-18: Frontend Development & Browser Extensions
+8. Week 19: Production Hardening & Launch
 
 ---
 
@@ -34,7 +34,7 @@ This document provides a comprehensive 18-week implementation timeline for TrueS
 
 ```mermaid
 gantt
-    title TrueSpend Implementation Timeline (18 Weeks)
+    title TrueSpend Implementation Timeline (19 Weeks)
     dateFormat YYYY-MM-DD
     
     section Phase 0: Foundation
@@ -48,12 +48,13 @@ gantt
     Vault Encryption Setup            :p1_2, after p1_1, 2d
     Data Plane A (PII) Implementation :p1_3, after p1_2, 3d
     Data Plane B (App Data)           :p1_4, after p1_2, 2d
-    RLS Policies Implementation       :p1_5, after p1_3, 2d
-    OAuth 2.0 Authentication          :p1_6, after p1_5, 2d
-    Session Management & JWT          :p1_7, after p1_6, 2d
+    Configure Storage Buckets         :p1_5, after p1_3, 1d
+    RLS Policies Implementation       :p1_6, after p1_5, 2d
+    OAuth 2.0 Authentication          :p1_7, after p1_6, 2d
+    Session Management & JWT          :p1_8, after p1_7, 2d
     
     section Phase 2: External Integrations
-    Plaid Integration Setup           :p2_1, after p1_7, 3d
+    Plaid Integration Setup           :p2_1, after p1_8, 3d
     Bank Account Linking Flow         :p2_2, after p2_1, 3d
     Transaction Sync Service          :p2_3, after p2_2, 4d
     Webhook Ingest Queue              :p2_4, after p2_2, 3d
@@ -66,7 +67,7 @@ gantt
     Event Bus Implementation          :p3_3, after p3_1, 3d
     Real-time Sync Engine             :p3_4, after p3_3, 3d
     Rate Limiting & Throttling        :p3_5, after p3_2, 2d
-    Connection Pooling (PgBouncer)    :p3_6, after p3_4, 2d
+    Configure PgBouncer Pooling       :p3_6, after p3_4, 2d
     
     section Phase 4: AI Agent Development
     Transaction Categorizer Agent     :p4_1, after p3_6, 4d
@@ -78,27 +79,36 @@ gantt
     
     section Phase 5: Affiliate & Commerce
     Affiliate Discovery Service       :p5_1, after p4_6, 3d
-    Partner API Integrations          :p5_2, after p5_1, 4d
-    Commission Tracking System        :p5_3, after p5_2, 3d
-    Offer Matching Algorithm          :p5_4, after p5_3, 3d
+    Amazon Associates Integration     :p5_2, after p5_1, 1d
+    Rakuten API Integration           :p5_3, after p5_2, 1d
+    Capital One Shopping API          :p5_4, after p5_3, 1d
+    Honey API Integration             :p5_5, after p5_4, 1d
+    CJ Affiliate API Integration      :p5_6, after p5_5, 1d
+    Commission Tracking System        :p5_7, after p5_6, 3d
+    Offer Matching Algorithm          :p5_8, after p5_7, 3d
     
     section Phase 6: Frontend Development
-    Design System & Components        :p6_1, after p5_4, 3d
+    Design System & Components        :p6_1, after p5_8, 3d
     Dashboard UI Implementation       :p6_2, after p6_1, 4d
     Transaction Views & Filters       :p6_3, after p6_2, 3d
     Budget & Savings UI               :p6_4, after p6_3, 3d
     Affiliate Offers UI               :p6_5, after p6_4, 2d
-    PWA Setup & Optimization          :p6_6, after p6_5, 2d
+    Chrome Extension Development      :p6_6, after p6_5, 3d
+    Safari Extension Development      :p6_7, after p6_6, 2d
+    PWA Setup & Optimization          :p6_8, after p6_7, 2d
     
     section Phase 7: Production Hardening
-    Load Testing (10k → 100k users)   :p7_1, after p6_6, 3d
+    Load Testing (10k → 100k users)   :p7_1, after p6_8, 3d
     Security Audit & Penetration Test :p7_2, after p7_1, 2d
     Performance Optimization          :p7_3, after p7_2, 2d
-    Monitoring & Alerting Setup       :p7_4, after p7_3, 2d
-    Documentation & Runbooks          :p7_5, after p7_4, 2d
+    Implement Caching Strategy        :p7_4, after p7_3, 2d
+    Create Materialized Views         :p7_5, after p7_4, 1d
+    Monitoring & Alerting Setup       :p7_6, after p7_5, 2d
+    Disaster Recovery Drill           :p7_7, after p7_6, 1d
+    Documentation & Runbooks          :p7_8, after p7_7, 2d
     
     section Phase 8: Production Launch
-    Final QA & User Acceptance        :p8_1, after p7_5, 2d
+    Final QA & User Acceptance        :p8_1, after p7_8, 2d
     Production Deployment             :p8_2, after p8_1, 1d
     Post-Launch Monitoring            :p8_3, after p8_2, 2d
 ```
@@ -144,11 +154,11 @@ gantt
 
 ---
 
-### Phase 1: Secure Data & Auth (Week 2-3, 14 days)
+### Phase 1: Secure Data & Auth (Week 2-3, 15 days)
 
-**Objective:** Implement Zero Trust security, encrypted data planes, and authentication system.
+**Objective:** Implement Zero Trust security, encrypted data planes, authentication system, and storage infrastructure.
 
-**Duration:** 14 days  
+**Duration:** 15 days  
 **Dependencies:** Phase 0 complete  
 **Team:** 2 fullstack engineers, 1 security specialist
 
@@ -160,7 +170,8 @@ gantt
 | Vault Encryption Setup | 2 days | Backend Lead | Supabase ready | Supabase Vault configured, AES-256 encryption active, key rotation policy set |
 | Data Plane A (PII) Implementation | 3 days | Backend Lead | Vault setup | `users_vault`, `linked_accounts_vault`, `transactions_vault` tables created with encryption |
 | Data Plane B (App Data) | 2 days | Backend Engineer | Data Plane A | `categories`, `budgets`, `savings_goals`, `affiliate_offers`, `event_log` tables created |
-| RLS Policies Implementation | 2 days | Security Lead | Both data planes | RLS enabled on all tables, user isolation verified, audit logs configured |
+| Configure Storage Buckets | 1 day | Backend Engineer | Data planes ready | Receipts bucket created, RLS policies configured, 10MB upload limit set, image compression enabled |
+| RLS Policies Implementation | 2 days | Security Lead | Storage configured | RLS enabled on all tables and storage, user isolation verified, audit logs configured |
 | OAuth 2.0 Authentication | 2 days | Backend Lead | RLS complete | Email/password auth working, Google OAuth integrated, session management functional |
 | Session Management & JWT | 2 days | Backend Engineer | OAuth setup | JWT tokens issued, refresh logic working, secure httpOnly cookies implemented |
 
@@ -248,7 +259,7 @@ gantt
 | Event Bus Implementation | 3 days | Backend Lead | Orchestrator setup | PostgreSQL-based event bus, pub/sub pattern, guaranteed delivery |
 | Real-time Sync Engine | 3 days | Backend Engineer | Event bus ready | Supabase Realtime delivers updates to clients in < 500ms, WebSocket connections stable |
 | Rate Limiting & Throttling | 2 days | DevOps Lead | Sync engine complete | Rate limits enforced (100 req/min/user), throttling prevents abuse |
-| Connection Pooling (PgBouncer) | 2 days | DevOps Lead | Rate limiting done | PgBouncer handles 10k+ concurrent connections, < 5ms latency |
+| Configure PgBouncer Pooling | 2 days | DevOps Lead | Rate limiting done | Supabase PgBouncer configured with pool size and connection limits, tested with 10k concurrent connections |
 
 #### Testing Requirements
 - [ ] BFF load tests (1000 req/sec)
@@ -319,11 +330,11 @@ gantt
 
 ---
 
-### Phase 5: Affiliate Integrations (Week 12-13, 13 days)
+### Phase 5: Affiliate Integrations (Week 12-13, 15 days)
 
-**Objective:** Integrate affiliate networks and build discovery/matching services.
+**Objective:** Integrate all 5 affiliate networks and build discovery/matching services.
 
-**Duration:** 13 days  
+**Duration:** 15 days  
 **Dependencies:** Phase 4 complete (AI agents ready)  
 **Team:** 1 backend engineer, 1 integration specialist
 
@@ -332,9 +343,13 @@ gantt
 | Task | Duration | Owner | Prerequisites | Success Criteria |
 |------|----------|-------|---------------|------------------|
 | Affiliate Discovery Service | 3 days | Integration Lead | AI agents ready | Edge function discovers relevant offers, caches results, updates daily |
-| Partner API Integrations | 4 days | Integration Engineer | Discovery service ready | Integrated with 3-5 affiliate networks (e.g., CJ, Rakuten, Impact), API calls < 1s |
-| Commission Tracking System | 3 days | Backend Engineer | Partner APIs ready | Tracks clicks, conversions, commissions; stores in `affiliate_offers` table |
-| Offer Matching Algorithm | 3 days | AI Lead | Commission tracking ready | Matches user transactions to offers using Merchant Matcher agent, scores relevance |
+| Amazon Associates Integration | 1 day | Integration Engineer | Discovery service ready | Amazon Associates API integrated, product links generated, API calls < 1s |
+| Rakuten API Integration | 1 day | Integration Engineer | Amazon complete | Rakuten API integrated, cashback offers retrieved, commission tracking active |
+| Capital One Shopping API | 1 day | Integration Engineer | Rakuten complete | Capital One Shopping API integrated, coupon codes fetched, offer matching working |
+| Honey API Integration | 1 day | Integration Engineer | Capital One complete | Honey API integrated, coupon aggregation working, savings calculations accurate |
+| CJ Affiliate API Integration | 1 day | Integration Engineer | Honey complete | CJ Affiliate network integrated, deep links created, commission tracking functional |
+| Commission Tracking System | 3 days | Backend Engineer | All APIs integrated | Tracks clicks, conversions, commissions across all 5 networks; stores in `affiliate_offers` table |
+| Offer Matching Algorithm | 3 days | AI Lead | Commission tracking ready | Matches user transactions to offers using Merchant Matcher agent, scores relevance across all networks |
 
 #### Testing Requirements
 - [ ] Affiliate API integration tests (success/failure)
@@ -352,19 +367,19 @@ gantt
 - Revenue optimization strategies
 
 #### Production Readiness Checkpoint
-- ✅ Integrated with 3-5 affiliate networks
+- ✅ All 5 affiliate networks integrated (Amazon, Rakuten, Capital One Shopping, Honey, CJ Affiliate)
 - ✅ Discovery service finds 100+ relevant offers/user
-- ✅ Commission tracking 99%+ accurate
+- ✅ Commission tracking 99%+ accurate across all networks
 - ✅ Offer matching 85%+ precision
 - ✅ Revenue attribution working correctly
 
 ---
 
-### Phase 6: Frontend Development (Week 14-16, 17 days)
+### Phase 6: Frontend Development (Week 14-17, 22 days)
 
-**Objective:** Build responsive, accessible UI with PWA capabilities.
+**Objective:** Build responsive, accessible UI with PWA capabilities and browser extensions.
 
-**Duration:** 17 days  
+**Duration:** 22 days  
 **Dependencies:** Phase 5 complete (Backend fully functional)  
 **Team:** 2 frontend engineers, 1 UI/UX designer
 
@@ -377,7 +392,9 @@ gantt
 | Transaction Views & Filters | 3 days | Frontend Engineer | Dashboard complete | Paginated transaction list, search, filters (date, category, merchant), exports |
 | Budget & Savings UI | 3 days | Frontend Lead | Transaction views ready | Budget creation/editing, progress tracking, savings goal management |
 | Affiliate Offers UI | 2 days | Frontend Engineer | Budget UI complete | Personalized offer cards, click tracking, conversion attribution |
-| PWA Setup & Optimization | 2 days | Frontend Lead | All UI complete | Service worker configured, offline mode works, installable, Lighthouse score > 90 |
+| Chrome Extension Development | 3 days | Frontend Lead | Affiliate UI complete | WebExtension API setup, content scripts for merchant detection, Merchant Matcher integration, shopping context AI overlay |
+| Safari Extension Development | 2 days | Frontend Engineer | Chrome extension done | Safari App Extension setup, cross-browser compatibility, shared codebase with Chrome |
+| PWA Setup & Optimization | 2 days | Frontend Lead | Extensions complete | Service worker configured, offline mode works, installable, Lighthouse score > 90 |
 
 #### Testing Requirements
 - [ ] Component unit tests (React Testing Library)
@@ -396,6 +413,8 @@ gantt
 
 #### Production Readiness Checkpoint
 - ✅ All UI components functional and tested
+- ✅ Chrome and Safari extensions working with merchant detection
+- ✅ Shopping context AI overlay provides real-time savings suggestions
 - ✅ Lighthouse score > 90 (performance, accessibility, SEO)
 - ✅ PWA installable on iOS and Android
 - ✅ Real-time updates working (< 500ms latency)
@@ -403,11 +422,11 @@ gantt
 
 ---
 
-### Phase 7: Production Hardening (Week 17, 11 days)
+### Phase 7: Production Hardening (Week 18, 15 days)
 
-**Objective:** Optimize performance, conduct security audits, and prepare for production launch.
+**Objective:** Optimize performance, implement caching and materialized views, conduct security audits, and prepare for production launch.
 
-**Duration:** 11 days  
+**Duration:** 15 days  
 **Dependencies:** Phase 6 complete (Full application ready)  
 **Team:** Full team (4-6 engineers)
 
@@ -417,15 +436,20 @@ gantt
 |------|----------|-------|---------------|------------------|
 | Load Testing (10k → 100k users) | 3 days | DevOps Lead | Application complete | System handles 100k concurrent users, < 2s response times, 99.9% uptime |
 | Security Audit & Penetration Test | 2 days | Security Lead | Load testing done | No critical vulnerabilities, RLS policies validated, encryption verified |
-| Performance Optimization | 2 days | Backend Lead | Security audit done | Database queries optimized, caching implemented, edge functions < 200ms |
-| Monitoring & Alerting Setup | 2 days | DevOps Lead | Performance optimized | Grafana dashboards, PagerDuty alerts, log aggregation (LogFlare), SLOs defined |
-| Documentation & Runbooks | 2 days | All Engineers | Monitoring ready | Complete documentation, incident runbooks, deployment guides, disaster recovery plan |
+| Performance Optimization | 2 days | Backend Lead | Security audit done | Database queries optimized, N+1 queries eliminated, edge functions < 200ms |
+| Implement Caching Strategy | 2 days | Backend Lead | Performance optimized | Supabase query caching configured, edge function response caching, affiliate offer cache (1-hour TTL), user session cache |
+| Create Materialized Views | 1 day | Backend Engineer | Caching implemented | User spending summaries view, budget progress view, affiliate performance view, auto-refresh strategy (hourly/daily) |
+| Monitoring & Alerting Setup | 2 days | DevOps Lead | Views created | Grafana dashboards, PagerDuty alerts, log aggregation (LogFlare), SLOs defined |
+| Disaster Recovery Drill | 1 day | DevOps Lead | Monitoring ready | Database backup restoration tested, failover procedures validated, RTO documented, rollback procedures tested |
+| Documentation & Runbooks | 2 days | All Engineers | DR drill complete | Complete documentation, incident runbooks, deployment guides, disaster recovery plan |
 
 #### Testing Requirements
 - [ ] Load tests: 10k, 50k, 100k concurrent users
 - [ ] Stress tests: Find breaking points
 - [ ] Security penetration tests (OWASP Top 10)
-- [ ] Disaster recovery drill
+- [ ] Cache invalidation and performance tests
+- [ ] Materialized view refresh tests
+- [ ] Disaster recovery drill (backup restoration)
 - [ ] Performance regression tests
 - [ ] Monitoring alert validation
 
@@ -440,13 +464,16 @@ gantt
 #### Production Readiness Checkpoint
 - ✅ System handles 100k concurrent users
 - ✅ Zero critical security vulnerabilities
+- ✅ Caching reduces query load by 60%+
+- ✅ Materialized views improve dashboard performance by 80%+
+- ✅ Disaster recovery tested and validated (RTO < 4 hours)
 - ✅ All KPIs meet targets (see Phase 8)
 - ✅ Monitoring and alerting operational
 - ✅ Team trained on incident response
 
 ---
 
-### Phase 8: Production Launch (Week 18, 5 days)
+### Phase 8: Production Launch (Week 19, 5 days)
 
 **Objective:** Deploy to production, monitor closely, and ensure stability.
 
@@ -498,13 +525,13 @@ gantt
 | Phase | Backend | Frontend | AI/ML | DevOps | Duration |
 |-------|---------|----------|-------|--------|----------|
 | Phase 0: Foundation | 2 | - | - | 1 | 6 days |
-| Phase 1: Secure Data & Auth | 2 | - | - | 1 | 14 days |
+| Phase 1: Secure Data & Auth | 2 | - | - | 1 | 15 days |
 | Phase 2: External Integrations | 2 | - | - | 1 | 14 days |
 | Phase 3: Core Backend Services | 3 | - | - | 1 | 17 days |
 | Phase 4: AI Agent Development | 1 | - | 1 | - | 19 days |
-| Phase 5: Affiliate Integrations | 2 | - | 1 | - | 13 days |
-| Phase 6: Frontend Development | - | 2 | - | - | 17 days |
-| Phase 7: Production Hardening | 2 | 1 | 1 | 2 | 11 days |
+| Phase 5: Affiliate Integrations | 2 | - | 1 | - | 15 days |
+| Phase 6: Frontend Development | - | 2 | - | - | 22 days |
+| Phase 7: Production Hardening | 2 | 1 | 1 | 2 | 15 days |
 | Phase 8: Production Launch | 2 | 2 | 1 | 1 | 5 days |
 
 **Recommended Team Composition:**
@@ -548,7 +575,7 @@ gantt
 - **Phase 4:** +4 days buffer (AI agent tuning and accuracy improvements)
 - **Phase 7:** +3 days buffer (unforeseen production issues)
 
-**Total Project Buffer:** 12 days (built into 18-week timeline)
+**Total Project Buffer:** 12 days (built into 19-week timeline)
 
 ---
 
@@ -778,7 +805,7 @@ graph TD
 
 ## Conclusion
 
-This 18-week implementation timeline provides a comprehensive roadmap for building TrueSpend, a production-ready financial intelligence platform capable of serving 100,000 concurrent users. The phased approach ensures systematic progress, with clear success criteria and production readiness gates at each stage.
+This 19-week implementation timeline provides a comprehensive roadmap for building TrueSpend, a production-ready financial intelligence platform capable of serving 100,000 concurrent users. **This timeline achieves 100% alignment with Blueprint v2.0**, including all components: browser extensions, storage buckets, materialized views, explicit caching strategy, disaster recovery drills, and all 5 affiliate networks. The phased approach ensures systematic progress, with clear success criteria and production readiness gates at each stage.
 
 **Critical Success Factors:**
 1. **Team Commitment:** All engineers must be available and committed for the duration
