@@ -35,43 +35,99 @@
 
 ## Architecture Overview
 
+This diagram represents the complete 15-layer architecture with exact color coding and component relationships.
+
 ```mermaid
 graph TB
     subgraph CLIENT["🖥️ CLIENT LAYER"]
-        BrowserExt["Browser Extension<br/>For Capture"]
+        style CLIENT fill:#1e3a8a,stroke:#1e40af,color:#fff
+        BrowserExt["Browser Extension<br/>Prog Capture"]
         MobileApp["Mobile Web/App<br/>PWA Capable"]
         ReactApp["React Web App<br/>Vite/Tailwind + Shadcn"]
     end
 
-    subgraph RELEASE_SAFETY["🚀 RELEASE SAFETY - CI/CD"]
+    subgraph RELEASE_SAFETY["🚀 RELEASE SAFETY"]
+        style RELEASE_SAFETY fill:#10b981,stroke:#059669,color:#fff
         GitHubActions["GitHub Actions<br/>CI/CD-based Deploys"]
         StagingEnv["Staging Env<br/>Critical Path"]
         SmokeTests["Smoke Tests<br/>Critical Path"]
         CanaryRollback["% Canary Rollback<br/>Kill Switch"]
     end
 
-    subgraph MODERN_SAFETY["🔒 MODERN SAFETY - Browser Security"]
+    subgraph MODERN_SAFETY["🔒 MODERN SAFETY"]
+        style MODERN_SAFETY fill:#dc2626,stroke:#b91c1c,color:#fff
         CSP["Content Security Policy<br/>CSP Protections"]
         SRI["Subresource Integrity<br/>File Guarantees"]
     end
 
-    subgraph BEST_CASES["⚡ BEST CASES - Edge Performance"]
+    subgraph CACHED_SECURITY["🛡️ CACHED DATA SECURITY"]
+        style CACHED_SECURITY fill:#9333ea,stroke:#7e22ce,color:#fff
+        ItemEncryption["Item-level<br/>Encryption"]
+        BackupIntegrity["Backup Integrity<br/>Signature+Rules"]
+        SecretsManagement["Secrets Management<br/>Vault"]
+    end
+
+    subgraph CONFIG_RESILIENCE["🔄 CONFIG RESILIENCE"]
+        style CONFIG_RESILIENCE fill:#f97316,stroke:#ea580c,color:#fff
+        DBProtection["DB Protection<br/>Auth/Authorize"]
+        SignatureVerify["Signature Verify<br/>HMAC SHA-256"]
+        RetryBackoff["Retry/Backoff<br/>Exponential Backoff"]
+    end
+
+    subgraph BEST_CASES["⚡ BEST CASES - Edge"]
+        style BEST_CASES fill:#0ea5e9,stroke:#0284c7,color:#fff
         BFFGateway["BFF API Gateway<br/>Request Aggregation"]
         EdgeCache["Edge Cache<br/>In-Memory Hit Rate"]
         RateLimiter["Rate Limiter<br/>Per-User Quotas"]
     end
 
-    subgraph EDGE_INGRESS["🌐 EDGE & INGRESS - Express Gateway"]
+    subgraph EDGE_INGRESS["🌐 EDGE & INGRESS - Express"]
+        style EDGE_INGRESS fill:#8b5cf6,stroke:#7c3aed,color:#fff
         SchemaValidator["Schema Validator<br/>Zod Contract Checks"]
         RequestRateLimit["Request Rate Limit<br/>E2E Protection"]
-        PreventNonCheck["Prevent Non-Check<br/>WARM Max"]
         GeoEdge["Geographic Edge<br/>Country Routing"]
         APIProxy["API Proxy<br/>External Req"]
-        EndpointAliasing["Endpoint Aliasing<br/>Secured APIs Only"]
         CircuitBreakerGW["Circuit Breaker<br/>Failure Parameters"]
     end
 
-    subgraph AI_AGENTS["🤖 AI AGENTS - Edge Functions"]
+    subgraph EVENT_BUS["📡 EVENT BUS - Realtime"]
+        style EVENT_BUS fill:#06b6d4,stroke:#0891b2,color:#fff
+        SupabaseRealtime["Supabase Realtime<br/>Publish-Dispatch"]
+        DBTriggers["Database Triggers<br/>NOTIFY Cascade"]
+        EventLogTable["Event Log Table<br/>Audit Trail"]
+    end
+
+    subgraph INFRA_POINTS["🔌 INFRASTRUCTURE POINTS"]
+        style INFRA_POINTS fill:#f97316,stroke:#ea580c,color:#fff
+        EmailProvider["Email Provider<br/>Sendgrid Email"]
+        PushNotifications["Push Notifications<br/>Web Push API"]
+        SMSProvider["SMS Provider<br/>Twilio Integration"]
+    end
+
+    subgraph CONTROL_PLANE["🎛️ CONTROL PLANE - Smart"]
+        style CONTROL_PLANE fill:#8b5cf6,stroke:#7c3aed,color:#fff
+        CircuitBreaker["Circuit Breaker<br/>Rate → ER Features"]
+        PriorityQueue["Priority Queue<br/>Task Scheduling"]
+        FeatureFlags["Feature Flags<br/>LaunchDarkly-style"]
+    end
+
+    subgraph IDENTITY_ACCESS["🔑 IDENTITY & ACCESS"]
+        style IDENTITY_ACCESS fill:#10b981,stroke:#059669,color:#fff
+        SupabaseAuth["Supabase Auth<br/>Google OAuth + Email"]
+        UserRolesTable["User Roles Table<br/>Admin/User+RBAC"]
+        RowLevelSecurity["Row Level Security<br/>Per-User Data Isolation"]
+        SessionManagement["Session Management<br/>JWT + Refresh"]
+    end
+
+    subgraph SCHEMA_GOVERNANCE["📋 SCHEMA GOVERNANCE"]
+        style SCHEMA_GOVERNANCE fill:#0ea5e9,stroke:#0284c7,color:#fff
+        TypeScriptCoverage["TypeScript Coverage<br/>Shared Types"]
+        ZodValidation["Zod Validation<br/>Runtime Checks"]
+        APIVersioning["API Versioning<br/>v1, v2 Routes"]
+    end
+
+    subgraph AI_AGENTS["🤖 AI AGENTS - Edge"]
+        style AI_AGENTS fill:#ec4899,stroke:#db2777,color:#fff
         InsightAgent["Insight Agent<br/>Spending Analysis"]
         CategoryAgent["Category Agent<br/>ML Categorization"]
         SavingsAgent["Savings Agent<br/>Goal Discovery"]
@@ -79,7 +135,8 @@ graph TB
         MatchAgent["Match Agent<br/>Attribution Matching"]
     end
 
-    subgraph CORE_SERVICES["🔧 CORE MICROSERVICES - In Functions"]
+    subgraph CORE_SERVICES["🔧 CORE MICROSERVICES"]
+        style CORE_SERVICES fill:#10b981,stroke:#059669,color:#fff
         RecoAPI["Recommendation API<br/>Personalized Offers"]
         PriceIQService["Price IQ Service<br/>Historical Pricing"]
         AttributionService["Attribution Service<br/>Click → Purchase"]
@@ -90,98 +147,104 @@ graph TB
         StripeService["Stripe Service<br/>Subscription Mgmt"]
     end
 
-    subgraph CONTROL_PLANE["🎛️ CONTROL PLANE - Smart Orchestrator"]
-        CircuitBreaker["Circuit Breaker<br/>Rate → 5 ER Features"]
-        PriorityQueue["Priority Queue<br/>Task Scheduling"]
-        FeatureFlags["Feature Flags<br/>LaunchDarkly-style"]
-    end
-
     subgraph DATA_PUBLIC["💾 DATA PLANE A - Public"]
+        style DATA_PUBLIC fill:#0ea5e9,stroke:#0284c7,color:#fff
         SupabasePublic["Supabase DB<br/>Read Replicas"]
         PrebuiltStatic["Prebuilt, Static<br/>Pricing, RLS"]
         MaterializedViews["Materialized Views<br/>Pre-Aggregated Stats"]
     end
 
     subgraph DATA_PRIVATE["🔐 DATA PLANE A - Private"]
+        style DATA_PRIVATE fill:#dc2626,stroke:#b91c1c,color:#fff
         SupabaseVault["Supabase DB + Vault<br/>Encrypted Encryption"]
         UsersTransactions["Users, Transactions<br/>RLS, Accounts"]
         RLSPolicies["RLS Policies<br/>user.id == user_id"]
     end
 
     subgraph OBSERVABILITY["📊 OBSERVABILITY"]
+        style OBSERVABILITY fill:#64748b,stroke:#475569,color:#fff
         StructuredLogs["Structured Logs<br/>JSON Format"]
         CustomMetrics["Custom Metrics<br/>Performance Tracking"]
-        ErrorTracking["Error Tracking<br/>Sentry-like Dashboard"]
+        ErrorTracking["Error Tracking<br/>Sentry Dashboard"]
         AlertRules["Alert Rules<br/>Slack Webhooks"]
     end
 
-    subgraph CACHED_SECURITY["🛡️ CACHED DATA SECURITY"]
-        ItemEncryption["Item-level Encryption<br/>Sensitive Data"]
-        BackupIntegrity["Backup Integrity<br/>Signature+Rules"]
-        SecretsManagement["Secrets Management<br/>Edge Config Vault"]
-    end
-
-    subgraph CONFIG_RESILIENCE["🔄 CONFIGURATION RESILIENCE"]
-        DBProtection["Database Protection<br/>Authentication/Authorization"]
-        SignatureVerify["Signature Verify<br/>HMAC SHA-256"]
-        FrontOutbyDate["Front Outby-Date<br/>At-Least-Once Delivery"]
-        RetryBackoff["Retry/Backoff<br/>Exponential Backoff"]
-    end
-
-    subgraph EVENT_BUS["📡 EVENT BUS - Realtime"]
-        SupabaseRealtime["Supabase Realtime<br/>Publish-Dispatch"]
-        DBTriggers["Database Triggers<br/>NOTIFY Cascade"]
-        EventLogTable["Event Log Table<br/>Audit Trail"]
-    end
-
-    subgraph IDENTITY_ACCESS["🔑 IDENTITY & ACCESS"]
-        SupabaseAuth["Supabase Auth<br/>Google OAuth + Email"]
-        UserRolesTable["User Roles Table<br/>Admin/User+RBAC"]
-        RowLevelSecurity["Row Level Security<br/>Per-User Data Isolation"]
-        SessionManagement["Session Management<br/>JWT + Refresh"]
-    end
-
-    subgraph SCHEMA_GOVERNANCE["📋 SCHEMA GOVERNANCE"]
-        TypeScriptCoverage["TypeScript Coverage<br/>Shared Types"]
-        ZodValidation["Zod Validation<br/>Runtime Checks"]
-        APIVersioning["API Versioning<br/>v1, v2 Routes"]
-    end
-
-    subgraph INFRA_POINTS["🔌 INFRASTRUCTURE POINTS"]
-        EmailProvider["Email Provider<br/>Sendgrid Email"]
-        PushNotifications["Push Notifications<br/>Web Push API"]
-        SMSProvider["SMS Provider<br/>Twilio Integration"]
-    end
-
-    ReactApp --> MODERN_SAFETY
-    BrowserExt --> MODERN_SAFETY
-    MobileApp --> MODERN_SAFETY
-    
+    %% Primary Data Flow (Solid Arrows)
+    CLIENT --> MODERN_SAFETY
     MODERN_SAFETY --> BEST_CASES
     BEST_CASES --> EDGE_INGRESS
-    
     EDGE_INGRESS --> AI_AGENTS
     EDGE_INGRESS --> CORE_SERVICES
-    
     AI_AGENTS --> CONTROL_PLANE
     CORE_SERVICES --> CONTROL_PLANE
-    
     CONTROL_PLANE --> DATA_PUBLIC
     CONTROL_PLANE --> DATA_PRIVATE
-    
     DATA_PUBLIC --> EVENT_BUS
     DATA_PRIVATE --> EVENT_BUS
-    
     EVENT_BUS --> OBSERVABILITY
-    
     CORE_SERVICES --> INFRA_POINTS
-    
-    RELEASE_SAFETY -.-> ReactApp
+
+    %% Secondary Dependencies (Dotted Arrows)
+    RELEASE_SAFETY -.-> CLIENT
     CACHED_SECURITY -.-> DATA_PRIVATE
     CONFIG_RESILIENCE -.-> CORE_SERVICES
     IDENTITY_ACCESS -.-> DATA_PRIVATE
     SCHEMA_GOVERNANCE -.-> EDGE_INGRESS
+
+    classDef clientLayer fill:#1e3a8a,stroke:#1e40af,color:#fff;
+    classDef releaseSafety fill:#10b981,stroke:#059669,color:#fff;
+    classDef modernSafety fill:#dc2626,stroke:#b91c1c,color:#fff;
+    classDef cachedSecurity fill:#9333ea,stroke:#7e22ce,color:#fff;
+    classDef configResilience fill:#f97316,stroke:#ea580c,color:#fff;
+    classDef bestCases fill:#0ea5e9,stroke:#0284c7,color:#fff;
+    classDef edgeIngress fill:#8b5cf6,stroke:#7c3aed,color:#fff;
+    classDef eventBus fill:#06b6d4,stroke:#0891b2,color:#fff;
+    classDef infraPoints fill:#f97316,stroke:#ea580c,color:#fff;
+    classDef controlPlane fill:#8b5cf6,stroke:#7c3aed,color:#fff;
+    classDef identityAccess fill:#10b981,stroke:#059669,color:#fff;
+    classDef schemaGovernance fill:#0ea5e9,stroke:#0284c7,color:#fff;
+    classDef aiAgents fill:#ec4899,stroke:#db2777,color:#fff;
+    classDef coreServices fill:#10b981,stroke:#059669,color:#fff;
+    classDef dataPublic fill:#0ea5e9,stroke:#0284c7,color:#fff;
+    classDef dataPrivate fill:#dc2626,stroke:#b91c1c,color:#fff;
+    classDef observability fill:#64748b,stroke:#475569,color:#fff;
 ```
+
+### Architecture Diagram Legend
+
+**Arrow Types:**
+- **Solid Arrows (→)**: Primary data flow and request routing
+- **Dotted Arrows (-.->)**: Secondary dependencies and security layers
+
+**Color Coding:**
+- 🟦 **Navy Blue (#1e3a8a)**: Client Layer (Frontend Applications)
+- 🟩 **Green (#10b981)**: Release Safety, Identity & Access, Core Microservices
+- 🟥 **Red (#dc2626)**: Modern Safety, Data Plane Private (Security-Critical)
+- 🟪 **Purple (#9333ea)**: Cached Security, Control Plane, Edge & Ingress
+- 🟧 **Orange (#f97316)**: Config Resilience, Infrastructure Points
+- 🟦 **Blue (#0ea5e9)**: Best Cases, Data Plane Public, Schema Governance
+- 🟦 **Cyan (#06b6d4)**: Event Bus / Realtime
+- 🩷 **Pink (#ec4899)**: AI Agents
+- ⬜ **Gray (#64748b)**: Observability & Monitoring
+
+**15 Architectural Layers:**
+1. Client Layer (Web, Mobile, Extension)
+2. Release Safety (CI/CD, Staging, Canary)
+3. Modern Safety (CSP, SRI)
+4. Cached Data Security (Encryption, Backup, Secrets)
+5. Configuration Resilience (DB Protection, Retry Logic)
+6. Best Cases - Edge Performance (BFF, Cache, Rate Limiting)
+7. Edge & Ingress (Schema Validation, Circuit Breakers)
+8. AI Agents (5 specialized agents)
+9. Core Microservices (8 business services)
+10. Control Plane (Orchestration, Feature Flags)
+11. Data Plane - Public (Read Replicas, Materialized Views)
+12. Data Plane - Private (Encrypted PII, RLS)
+13. Event Bus (Realtime, Database Triggers)
+14. Observability (Logs, Metrics, Alerts)
+15. Identity & Access (Auth, RBAC, Session Management)
+16. Schema Governance (TypeScript, Zod, API Versioning)
+17. Infrastructure Points (Email, SMS, Push)
 
 ---
 
