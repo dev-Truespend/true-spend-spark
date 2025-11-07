@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "./pages/dashboard/DashboardLayout";
 import Overview from "./pages/dashboard/Overview";
 import Phases from "./pages/dashboard/Phases";
+import Architecture from "./pages/dashboard/Architecture";
+import Timeline from "./pages/dashboard/Timeline";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,14 +23,14 @@ const App = () => (
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Overview />} />
             <Route path="phases" element={<Phases />} />
-            <Route path="timeline" element={<div className="p-8">Timeline view coming soon...</div>} />
+            <Route path="timeline" element={<Timeline />} />
+            <Route path="architecture" element={<Architecture />} />
             <Route path="tasks" element={<div className="p-8">Tasks view coming soon...</div>} />
             <Route path="team" element={<div className="p-8">Team view coming soon...</div>} />
             <Route path="milestones" element={<div className="p-8">Milestones view coming soon...</div>} />
             <Route path="metrics" element={<div className="p-8">Metrics view coming soon...</div>} />
             <Route path="risks" element={<div className="p-8">Risks view coming soon...</div>} />
             <Route path="testing" element={<div className="p-8">Testing view coming soon...</div>} />
-            <Route path="architecture" element={<div className="p-8">Architecture view coming soon...</div>} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
