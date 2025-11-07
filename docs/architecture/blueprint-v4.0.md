@@ -335,6 +335,361 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 
 ---
 
+## Visual Architecture Diagrams
+
+### Complete 19-Layer Flow Diagram
+
+```mermaid
+graph TD
+    %% Client & Ingress Group
+    L1[Layer 1: Client Layer<br/>React SPA, PWA]
+    L2[Layer 2: Edge & Ingress<br/>CDN, WAF, DDoS]
+    L3[Layer 3: API Gateway<br/>Rate Limit, Routing]
+    
+    %% Security & Auth Group
+    L4[Layer 4: Modern Safety<br/>CSP, SRI, CORS]
+    L5[Layer 5: Auth & Session<br/>JWT, MFA]
+    L6[Layer 6: Supply Chain<br/>Dependency Scanning]
+    
+    %% Services Group
+    L7[Layer 7: BFF Layer<br/>Request Aggregation]
+    L8[Layer 8: Business Logic<br/>Transaction Processing]
+    L9[Layer 9: AI Agents<br/>Pattern Analysis]
+    
+    %% External Communication Group
+    L10[Layer 10: Egress Gateway<br/>API Key Management]
+    L11[Layer 11: Retry Scheduler<br/>Exponential Backoff]
+    L12[Layer 12: Control Plane<br/>Feature Flags]
+    
+    %% Messaging Group
+    L13[Layer 13: Notification Amplifier<br/>Email, SMS, Push]
+    L14[Layer 14: Event Bus<br/>Message Broker]
+    
+    %% Data & Storage Group
+    L15[Layer 15: Database<br/>PostgreSQL]
+    L16[Layer 16: Storage<br/>Object Storage]
+    L17[Layer 17: Public Data Plane<br/>Read Replicas]
+    L18[Layer 18: Private Data Plane<br/>Encrypted Storage]
+    L19[Layer 19: Backup & DR<br/>Automated Backups]
+    
+    %% Cross-Cutting
+    OBS[Observability<br/>Logs, Metrics, Traces]
+    
+    %% Main Synchronous Flow
+    L1 -->|HTTP Request| L2
+    L2 -->|Filtered| L3
+    L3 -->|Routed| L4
+    L4 -->|Security Check| L5
+    L5 -->|Authenticated| L6
+    L6 -->|Verified| L7
+    L7 -->|Aggregated| L8
+    L8 <-->|AI Processing| L9
+    
+    %% External Communication
+    L8 -->|External Call| L10
+    L10 -->|Failed Request| L11
+    L11 -->|Retry Policy| L12
+    L12 -->|Health Check| L10
+    
+    %% Data Persistence
+    L8 -->|Write| L15
+    L8 -->|Upload| L16
+    L15 -->|Replicate| L17
+    L15 -->|Secure| L18
+    L16 -->|Backup| L19
+    L18 -->|Backup| L19
+    
+    %% Asynchronous Events
+    L8 -.->|Publish Event| L14
+    L14 -.->|Route| L13
+    L13 -.->|Notify| L1
+    
+    %% Observability (monitors all)
+    L1 -.->|Logs| OBS
+    L2 -.->|Metrics| OBS
+    L3 -.->|Traces| OBS
+    L8 -.->|Traces| OBS
+    L15 -.->|Metrics| OBS
+    
+    %% Styling
+    classDef client fill:#2563EB,stroke:#1e40af,color:#fff
+    classDef ingress fill:#f97316,stroke:#ea580c,color:#fff
+    classDef gateway fill:#7c3aed,stroke:#6d28d9,color:#fff
+    classDef security fill:#16a34a,stroke:#15803d,color:#fff
+    classDef auth fill:#0284c7,stroke:#0369a1,color:#fff
+    classDef supply fill:#d97706,stroke:#b45309,color:#fff
+    classDef services fill:#22c55e,stroke:#16a34a,color:#fff
+    classDef business fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef ai fill:#9333ea,stroke:#7e22ce,color:#fff
+    classDef egress fill:#7c3aed,stroke:#6d28d9,color:#fff
+    classDef reliability fill:#f97316,stroke:#ea580c,color:#fff
+    classDef messaging fill:#06b6d4,stroke:#0891b2,color:#fff
+    classDef data fill:#0284c7,stroke:#0369a1,color:#fff
+    classDef storage fill:#0891b2,stroke:#0e7490,color:#fff
+    classDef public fill:#38bdf8,stroke:#0ea5e9,color:#fff
+    classDef private fill:#b91c1c,stroke:#991b1b,color:#fff
+    classDef backup fill:#475569,stroke:#334155,color:#fff
+    classDef obs fill:#64748b,stroke:#475569,color:#fff
+    
+    class L1 client
+    class L2 ingress
+    class L3 gateway
+    class L4 security
+    class L5 auth
+    class L6 supply
+    class L7 services
+    class L8 business
+    class L9 ai
+    class L10 egress
+    class L11 reliability
+    class L12 ai
+    class L13 reliability
+    class L14 messaging
+    class L15 data
+    class L16 storage
+    class L17 public
+    class L18 private
+    class L19 backup
+    class OBS obs
+```
+
+### Layer Groupings Visualization
+
+```mermaid
+graph LR
+    subgraph CI["Client & Ingress"]
+        L1["1. Client Layer"]
+        L2["2. Edge & Ingress"]
+        L3["3. API Gateway"]
+    end
+    
+    subgraph SA["Security & Auth"]
+        L4["4. Modern Safety"]
+        L5["5. Auth & Session"]
+        L6["6. Supply Chain"]
+    end
+    
+    subgraph SV["Services"]
+        L7["7. BFF Layer"]
+        L8["8. Business Logic"]
+        L9["9. AI Agents"]
+    end
+    
+    subgraph EC["External Communication"]
+        L10["10. Egress Gateway"]
+        L11["11. Retry Scheduler"]
+        L12["12. Control Plane"]
+    end
+    
+    subgraph MN["Messaging & Notifications"]
+        L13["13. Notification Amplifier"]
+        L14["14. Event Bus"]
+    end
+    
+    subgraph DS["Data & Storage"]
+        L15["15. Database"]
+        L16["16. Storage"]
+        L17["17. Public Data Plane"]
+        L18["18. Private Data Plane"]
+        L19["19. Backup & DR"]
+    end
+    
+    CI --> SA --> SV --> EC
+    SV --> MN
+    SV --> DS
+    EC --> SV
+    MN --> CI
+    
+    classDef group1 fill:#2563EB,stroke:#1e40af,color:#fff
+    classDef group2 fill:#16a34a,stroke:#15803d,color:#fff
+    classDef group3 fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef group4 fill:#f97316,stroke:#ea580c,color:#fff
+    classDef group5 fill:#06b6d4,stroke:#0891b2,color:#fff
+    classDef group6 fill:#0284c7,stroke:#0369a1,color:#fff
+    
+    class CI,L1,L2,L3 group1
+    class SA,L4,L5,L6 group2
+    class SV,L7,L8,L9 group3
+    class EC,L10,L11,L12 group4
+    class MN,L13,L14 group5
+    class DS,L15,L16,L17,L18,L19 group6
+```
+
+### Request Flow Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant Client as 1. Client Layer
+    participant CDN as 2. Edge/Ingress
+    participant API as 3. API Gateway
+    participant Auth as 5. Auth & Session
+    participant BFF as 7. BFF Layer
+    participant Logic as 8. Business Logic
+    participant AI as 9. AI Agents
+    participant DB as 15. Database
+    participant Events as 14. Event Bus
+    participant Notify as 13. Notifications
+    
+    Client->>CDN: HTTPS Request
+    CDN->>CDN: DDoS Protection
+    CDN->>API: Forward Request
+    API->>API: Rate Limiting
+    API->>Auth: Validate Token
+    Auth->>Auth: Verify JWT
+    Auth->>BFF: Authenticated
+    BFF->>Logic: Aggregate Request
+    
+    Logic->>AI: Analyze Pattern
+    AI-->>Logic: AI Insights
+    
+    Logic->>DB: Write Transaction
+    DB-->>Logic: Confirmation
+    
+    Logic->>Events: Publish Event
+    Events->>Notify: Route Notification
+    Notify-->>Client: Push Notification
+    
+    Logic-->>BFF: Response
+    BFF-->>API: Formatted Response
+    API-->>CDN: Cached Response
+    CDN-->>Client: HTTPS Response
+```
+
+### Data Persistence Flow
+
+```mermaid
+graph TD
+    BL[Business Logic Layer 8]
+    DB[(Database Layer 15)]
+    ST[Storage Layer 16]
+    PUB[Public Data Plane Layer 17]
+    PRI[Private Data Plane Layer 18]
+    BCK[Backup & DR Layer 19]
+    
+    BL -->|Write Transaction| DB
+    BL -->|Upload File| ST
+    
+    DB -->|Read Replica| PUB
+    DB -->|Encrypted PII| PRI
+    
+    PUB -->|Public Queries| Users[Public Users]
+    PRI -->|Secure Access| Auth[Authenticated Users]
+    
+    DB -->|Automated Backup| BCK
+    ST -->|File Backup| BCK
+    PRI -->|Encrypted Backup| BCK
+    
+    BCK -->|PITR Recovery| DB
+    BCK -->|Cross-Region| DR[DR Site]
+    
+    classDef logic fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef data fill:#0284c7,stroke:#0369a1,color:#fff
+    classDef storage fill:#0891b2,stroke:#0e7490,color:#fff
+    classDef public fill:#38bdf8,stroke:#0ea5e9,color:#000
+    classDef private fill:#b91c1c,stroke:#991b1b,color:#fff
+    classDef backup fill:#475569,stroke:#334155,color:#fff
+    
+    class BL logic
+    class DB data
+    class ST storage
+    class PUB public
+    class PRI private
+    class BCK backup
+```
+
+### Resilience & Retry Pattern
+
+```mermaid
+graph TD
+    Logic[Business Logic Layer 8]
+    Egress[Egress Gateway Layer 10]
+    Retry[Retry Scheduler Layer 11]
+    Control[Control Plane Layer 12]
+    External[External APIs]
+    DLQ[Dead Letter Queue]
+    
+    Logic -->|API Call| Egress
+    Egress -->|Circuit Open?| Control
+    Control -->|Check Health| Egress
+    
+    Egress -->|Request| External
+    External -.->|Success| Egress
+    External -.->|Failure| Egress
+    
+    Egress -->|Failed| Retry
+    Retry -->|Exponential Backoff| Retry
+    Retry -->|Retry Attempt| Egress
+    Retry -->|Max Retries| DLQ
+    
+    Control -->|Monitor| Retry
+    Control -->|Circuit Breaker| Egress
+    
+    Egress -->|Success| Logic
+    
+    classDef business fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef egress fill:#7c3aed,stroke:#6d28d9,color:#fff
+    classDef reliability fill:#f97316,stroke:#ea580c,color:#fff
+    classDef control fill:#9333ea,stroke:#7e22ce,color:#fff
+    classDef external fill:#64748b,stroke:#475569,color:#fff
+    
+    class Logic business
+    class Egress egress
+    class Retry reliability
+    class Control control
+    class External,DLQ external
+```
+
+### Event-Driven Architecture
+
+```mermaid
+graph LR
+    subgraph Publishers
+        BL[Business Logic]
+        AI[AI Agents]
+        Auth[Auth Service]
+    end
+    
+    subgraph EventBus["Event Bus (Layer 14)"]
+        Topics[Message Topics]
+    end
+    
+    subgraph Subscribers
+        Notify[Notification Amplifier]
+        Analytics[Analytics Service]
+        Audit[Audit Logger]
+    end
+    
+    subgraph Channels["Notification Channels (Layer 13)"]
+        Email[Email - Resend]
+        SMS[SMS - Twilio]
+        Push[Push Notifications]
+    end
+    
+    BL -->|Transaction Event| Topics
+    AI -->|Anomaly Detected| Topics
+    Auth -->|User Event| Topics
+    
+    Topics -->|Subscribe| Notify
+    Topics -->|Subscribe| Analytics
+    Topics -->|Subscribe| Audit
+    
+    Notify -->|Send| Email
+    Notify -->|Send| SMS
+    Notify -->|Send| Push
+    
+    classDef publisher fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef bus fill:#06b6d4,stroke:#0891b2,color:#fff
+    classDef subscriber fill:#22c55e,stroke:#16a34a,color:#fff
+    classDef channel fill:#ea580c,stroke:#c2410c,color:#fff
+    
+    class BL,AI,Auth publisher
+    class Topics bus
+    class Notify,Analytics,Audit subscriber
+    class Email,SMS,Push channel
+```
+
+---
+
 ## Data Flow Patterns
 
 ### Main Flow (Synchronous)
