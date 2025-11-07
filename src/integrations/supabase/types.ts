@@ -14,7 +14,426 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      architecture_components: {
+        Row: {
+          color_code: string | null
+          component_name: string
+          created_at: string | null
+          description: string | null
+          id: string
+          implementation_progress: number | null
+          layer_name: string
+          related_tasks: string[] | null
+          status: string | null
+          technology: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          color_code?: string | null
+          component_name: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          implementation_progress?: number | null
+          layer_name: string
+          related_tasks?: string[] | null
+          status?: string | null
+          technology?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          color_code?: string | null
+          component_name?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          implementation_progress?: number | null
+          layer_name?: string
+          related_tasks?: string[] | null
+          status?: string | null
+          technology?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      metrics: {
+        Row: {
+          id: string
+          metric_name: string
+          metric_type: string
+          target: number | null
+          timestamp: string | null
+          unit: string | null
+          value: number | null
+        }
+        Insert: {
+          id?: string
+          metric_name: string
+          metric_type: string
+          target?: number | null
+          timestamp?: string | null
+          unit?: string | null
+          value?: number | null
+        }
+        Update: {
+          id?: string
+          metric_name?: string
+          metric_type?: string
+          target?: number | null
+          timestamp?: string | null
+          unit?: string | null
+          value?: number | null
+        }
+        Relationships: []
+      }
+      milestones: {
+        Row: {
+          created_at: string | null
+          date_completed: string | null
+          gate_requirements: Json | null
+          id: string
+          name: string
+          phase_id: string | null
+          status: string | null
+          updated_at: string | null
+          week: number
+        }
+        Insert: {
+          created_at?: string | null
+          date_completed?: string | null
+          gate_requirements?: Json | null
+          id?: string
+          name: string
+          phase_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          week: number
+        }
+        Update: {
+          created_at?: string | null
+          date_completed?: string | null
+          gate_requirements?: Json | null
+          id?: string
+          name?: string
+          phase_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          week?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestones_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "phases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      phases: {
+        Row: {
+          created_at: string | null
+          dependencies: Json | null
+          duration_weeks: number
+          end_week: number
+          id: string
+          name: string
+          objective: string | null
+          phase_number: number
+          progress: number | null
+          risk_level: string | null
+          start_week: number
+          status: string | null
+          team_size: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dependencies?: Json | null
+          duration_weeks: number
+          end_week: number
+          id?: string
+          name: string
+          objective?: string | null
+          phase_number: number
+          progress?: number | null
+          risk_level?: string | null
+          start_week: number
+          status?: string | null
+          team_size?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dependencies?: Json | null
+          duration_weeks?: number
+          end_week?: number
+          id?: string
+          name?: string
+          objective?: string | null
+          phase_number?: number
+          progress?: number | null
+          risk_level?: string | null
+          start_week?: number
+          status?: string | null
+          team_size?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      project_metadata: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string | null
+          value: Json | null
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string | null
+          value?: Json | null
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: Json | null
+        }
+        Relationships: []
+      }
+      readiness_gates: {
+        Row: {
+          created_at: string | null
+          date_passed: string | null
+          id: string
+          notes: string | null
+          phase_id: string | null
+          requirements: Json
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_passed?: string | null
+          id?: string
+          notes?: string | null
+          phase_id?: string | null
+          requirements: Json
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_passed?: string | null
+          id?: string
+          notes?: string | null
+          phase_id?: string | null
+          requirements?: Json
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "readiness_gates_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "phases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      risks: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          impact: string | null
+          mitigation: string | null
+          owner_id: string | null
+          probability: string | null
+          risk_score: number | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          impact?: string | null
+          mitigation?: string | null
+          owner_id?: string | null
+          probability?: string | null
+          risk_score?: number | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          impact?: string | null
+          mitigation?: string | null
+          owner_id?: string | null
+          probability?: string | null
+          risk_score?: number | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risks_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          architecture_components: Json | null
+          created_at: string | null
+          dependencies: Json | null
+          description: string | null
+          duration_weeks: number | null
+          id: string
+          name: string
+          owner_id: string | null
+          phase_id: string | null
+          priority: string | null
+          progress: number | null
+          start_week: number | null
+          status: string | null
+          success_criteria: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          architecture_components?: Json | null
+          created_at?: string | null
+          dependencies?: Json | null
+          description?: string | null
+          duration_weeks?: number | null
+          id?: string
+          name: string
+          owner_id?: string | null
+          phase_id?: string | null
+          priority?: string | null
+          progress?: number | null
+          start_week?: number | null
+          status?: string | null
+          success_criteria?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          architecture_components?: Json | null
+          created_at?: string | null
+          dependencies?: Json | null
+          description?: string | null
+          duration_weeks?: number | null
+          id?: string
+          name?: string
+          owner_id?: string | null
+          phase_id?: string | null
+          priority?: string | null
+          progress?: number | null
+          start_week?: number | null
+          status?: string | null
+          success_criteria?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "phases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          avatar_url: string | null
+          capacity_hours: number | null
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          role: string
+          skills: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          capacity_hours?: number | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          role: string
+          skills?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          capacity_hours?: number | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          role?: string
+          skills?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      test_results: {
+        Row: {
+          coverage_percent: number | null
+          duration_seconds: number | null
+          fail_count: number | null
+          id: string
+          pass_count: number | null
+          test_suite: string | null
+          test_type: string
+          timestamp: string | null
+        }
+        Insert: {
+          coverage_percent?: number | null
+          duration_seconds?: number | null
+          fail_count?: number | null
+          id?: string
+          pass_count?: number | null
+          test_suite?: string | null
+          test_type: string
+          timestamp?: string | null
+        }
+        Update: {
+          coverage_percent?: number | null
+          duration_seconds?: number | null
+          fail_count?: number | null
+          id?: string
+          pass_count?: number | null
+          test_suite?: string | null
+          test_type?: string
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
