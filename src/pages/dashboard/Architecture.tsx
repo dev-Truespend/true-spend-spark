@@ -5,6 +5,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useArchitectureComponents } from "@/hooks/useProjectData";
 import { Layers, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { InteractiveArchitectureMap } from "@/components/architecture/InteractiveArchitectureMap";
+import { FlowDiagram } from "@/components/architecture/FlowDiagram";
+import { IsometricArchitecture } from "@/components/architecture/IsometricArchitecture";
 
 export default function Architecture() {
   const { data: components, isLoading } = useArchitectureComponents();
@@ -75,6 +77,12 @@ export default function Architecture() {
           19-layer production-grade architecture with security-first design
         </p>
       </div>
+
+      {/* Request Lifecycle Flow Diagram */}
+      <FlowDiagram />
+
+      {/* 3D Isometric Architecture */}
+      <IsometricArchitecture />
 
       {/* Interactive Architecture Map */}
       <InteractiveArchitectureMap />
