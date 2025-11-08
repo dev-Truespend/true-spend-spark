@@ -7,9 +7,19 @@
 
 ---
 
+## Related Documents
+
+- **[Implementation Timeline v4.0](./implementation-timeline-v4.0.md)** - 34-week phased implementation plan with Gantt chart
+- **[Geofencing Implementation](./implementation-timeline-v4.0.md#phase-25-geofencing-foundation-weeks-8-10)** - Phase 2.5 & 5.5 details
+- **[Dashboard Overview](/dashboard/overview)** - Interactive architecture visualization
+
+---
+
 ## Architecture Overview
 
 TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **Client → Ingress → Services → Egress → Data → Observability** pattern. This design prioritizes security, scalability, reliability, and observability across all system components.
+
+**New in v4.0:** Native mobile geofencing with location intelligence spanning 8 layers (L1, L8, L9, L10, L13, L14, L15, L18). See [Geofencing Subsystem Architecture](#dedicated-geofencing-subsystem-architecture) for details.
 
 ---
 
@@ -404,7 +414,7 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 ```mermaid
 graph TD
     %% Client & Ingress Group
-    L1[Layer 1: Client Layer<br/>React SPA, PWA]
+    L1[Layer 1: Client Layer<br/>React SPA, PWA, Native GPS 📍]
     L2[Layer 2: Edge & Ingress<br/>CDN, WAF, DDoS]
     L3[Layer 3: API Gateway<br/>Rate Limit, Routing]
     
@@ -415,27 +425,31 @@ graph TD
     
     %% Services Group
     L7[Layer 7: BFF Layer<br/>Request Aggregation]
-    L8[Layer 8: Business Logic<br/>Transaction Processing]
-    L9[Layer 9: AI Agents<br/>Pattern Analysis]
+    L8[Layer 8: Business Logic<br/>Transaction Processing, Geofence Rules 🗺️]
+    L9[Layer 9: AI Agents<br/>Pattern Analysis, Location Insights 🧠]
     
     %% External Communication Group
-    L10[Layer 10: Egress Gateway<br/>API Key Management]
+    L10[Layer 10: Egress Gateway<br/>API Key Management, Places API 📍]
     L11[Layer 11: Retry Scheduler<br/>Exponential Backoff]
     L12[Layer 12: Control Plane<br/>Feature Flags]
     
     %% Messaging Group
-    L13[Layer 13: Notification Amplifier<br/>Email, SMS, Push]
-    L14[Layer 14: Event Bus<br/>Message Broker]
+    L13[Layer 13: Notification Amplifier<br/>Email, SMS, Push, Geofence Alerts 🔔]
+    L14[Layer 14: Event Bus<br/>Message Broker, Location Events 📡]
     
     %% Data & Storage Group
-    L15[Layer 15: Database<br/>PostgreSQL]
+    L15[Layer 15: Database<br/>PostgreSQL, Geofences, Merchants 📊]
     L16[Layer 16: Storage<br/>Object Storage]
     L17[Layer 17: Public Data Plane<br/>Read Replicas]
-    L18[Layer 18: Private Data Plane<br/>Encrypted Storage]
+    L18[Layer 18: Private Data Plane<br/>Encrypted Storage, Location Data 🔒]
     L19[Layer 19: Backup & DR<br/>Automated Backups]
     
     %% Cross-Cutting
     OBS[Observability<br/>Logs, Metrics, Traces]
+    
+    %% External Services
+    PlacesAPI[Google Places API 🗺️]
+    FSQAPI[Foursquare API]
     
     %% Main Synchronous Flow
     L1 -->|HTTP Request| L2
@@ -447,6 +461,26 @@ graph TD
     L7 -->|Aggregated| L8
     L8 <-->|AI Processing| L9
     
+    %% Geofencing Flows (highlighted in green dashed lines)
+    L1 -.->|GPS Location 📍| L2
+    L2 -.->|track-location| L8
+    L8 -.->|Validate Geofence| L15
+    L8 -.->|Geofence Event| L14
+    L14 -.->|Location Alert| L13
+    L13 -.->|Push Notification 🔔| L1
+    
+    %% Merchant Discovery Flow
+    L8 -->|Discover Merchants| L10
+    L10 -->|Places API Call| PlacesAPI
+    L10 -->|Fallback| FSQAPI
+    PlacesAPI -.->|Merchant Data| L10
+    FSQAPI -.->|Merchant Data| L10
+    L10 -->|Cache Merchants| L15
+    
+    %% Location Intelligence Flow
+    L9 -.->|Location Insights 🧠| L8
+    L9 -.->|Query Location History| L15
+    
     %% External Communication
     L8 -->|External Call| L10
     L10 -->|Failed Request| L11
@@ -457,7 +491,7 @@ graph TD
     L8 -->|Write| L15
     L8 -->|Upload| L16
     L15 -->|Replicate| L17
-    L15 -->|Secure| L18
+    L15 -->|Secure Location Data 🔒| L18
     L16 -->|Backup| L19
     L18 -->|Backup| L19
     
@@ -492,6 +526,7 @@ graph TD
     classDef private fill:#b91c1c,stroke:#991b1b,color:#fff
     classDef backup fill:#475569,stroke:#334155,color:#fff
     classDef obs fill:#64748b,stroke:#475569,color:#fff
+    classDef external fill:#d97706,stroke:#b45309,color:#000
     
     class L1 client
     class L2 ingress
@@ -513,6 +548,7 @@ graph TD
     class L18 private
     class L19 backup
     class OBS obs
+    class PlacesAPI,FSQAPI external
 ```
 
 ### Layer Groupings Visualization
@@ -810,6 +846,290 @@ sequenceDiagram
 
 ---
 
+## Dedicated Geofencing Subsystem Architecture
+
+### Component Overview
+
+The geofencing subsystem is a cross-layer feature that integrates native mobile location tracking with backend intelligence and AI-powered insights. It spans 8 layers of the 19-layer architecture.
+
+**Layer Distribution:**
+- **Layer 1 (Client):** Native GPS tracking, permission management, map visualization
+- **Layer 8 (Business Logic):** Geofence rule engine, boundary validation, spending zone enforcement
+- **Layer 9 (AI Agents):** Location pattern analysis, predictive spending, merchant recommendations
+- **Layer 10 (Egress):** Google Places API, Foursquare API integration, reverse geocoding
+- **Layer 13 (Notifications):** Geofence entry/exit alerts, merchant discovery notifications
+- **Layer 14 (Event Bus):** Location event routing (`geofence.entered`, `geofence.exited`, `merchant.discovered`)
+- **Layer 15 (Database):** Geofence boundaries, event history, merchant cache, location-tagged transactions
+- **Layer 18 (Private Data):** Encrypted location storage, 30-day retention policy, GDPR compliance
+
+### Simplified Geofencing Data Flow
+
+```mermaid
+graph LR
+    subgraph Client["📱 Native Mobile App"]
+        GPS[GPS Sensor]
+        Map[Interactive Map]
+        Notif[Push Notifications]
+    end
+    
+    subgraph Backend["☁️ Backend Services"]
+        Track[track-location<br/>Edge Function]
+        Rules[Geofence<br/>Rule Engine]
+        Discover[discover-merchants<br/>Edge Function]
+        AI[AI Location<br/>Insights]
+    end
+    
+    subgraph Data["🗄️ Data Layer"]
+        GeoDB[(geofences table)]
+        EventDB[(geofence_events)]
+        MerchantDB[(merchants cache)]
+        TxDB[(transactions)]
+    end
+    
+    subgraph External["🌐 External APIs"]
+        Places[Google Places API]
+        FSQ[Foursquare API]
+    end
+    
+    GPS -->|lat, lng, accuracy| Track
+    Track -->|validate boundary| Rules
+    Rules -->|query zones| GeoDB
+    Rules -->|log event| EventDB
+    Rules -->|trigger discovery| Discover
+    
+    Discover -->|nearby search| Places
+    Discover -->|fallback| FSQ
+    Places -.->|merchant data| Discover
+    Discover -->|cache| MerchantDB
+    
+    EventDB -->|analyze patterns| AI
+    TxDB -->|location history| AI
+    AI -.->|insights| Map
+    
+    Rules -.->|geofence alert| Notif
+    Discover -.->|merchant deals| Notif
+    
+    Map -.->|create zone| GeoDB
+    
+    classDef client fill:#2563EB,stroke:#1e40af,color:#fff
+    classDef backend fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef data fill:#0284c7,stroke:#0369a1,color:#fff
+    classDef external fill:#f97316,stroke:#ea580c,color:#fff
+    
+    class GPS,Map,Notif client
+    class Track,Rules,Discover,AI backend
+    class GeoDB,EventDB,MerchantDB,TxDB data
+    class Places,FSQ external
+```
+
+### Database Schema: Geofencing Tables
+
+```mermaid
+erDiagram
+    geofences ||--o{ geofence_events : triggers
+    geofences {
+        uuid id PK
+        uuid user_id FK
+        text name
+        text type "budget_zone | alert_zone | merchant_zone"
+        numeric center_lat "Latitude (decimal degrees)"
+        numeric center_lng "Longitude (decimal degrees)"
+        integer radius_meters "Geofence radius (50-5000m)"
+        jsonb metadata "Additional zone config"
+        boolean is_active "Zone enabled?"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    
+    geofence_events {
+        uuid id PK
+        uuid geofence_id FK
+        uuid user_id FK
+        text event_type "entered | exited | dwelling"
+        numeric location_lat "Event trigger latitude"
+        numeric location_lng "Event trigger longitude"
+        integer accuracy_meters "GPS accuracy"
+        timestamptz timestamp
+        jsonb metadata "Additional event data"
+    }
+    
+    merchants {
+        uuid id PK
+        text place_id UK "Google Places ID"
+        text name "Merchant name"
+        text category "Restaurant, Retail, etc."
+        numeric lat "Merchant latitude"
+        numeric lng "Merchant longitude"
+        text address
+        text phone
+        text website
+        jsonb opening_hours
+        numeric rating
+        integer price_level
+        text photo_url
+        timestamptz cached_at "Cache timestamp"
+        timestamptz expires_at "24hr TTL"
+    }
+    
+    transactions ||--o| geofences : within
+    transactions {
+        uuid id PK
+        uuid user_id FK
+        uuid geofence_id FK "Zone where tx occurred"
+        numeric amount
+        text merchant_name
+        numeric location_lat "Transaction location"
+        numeric location_lng
+        boolean location_verified "GPS matched merchant"
+        timestamptz transaction_date
+    }
+    
+    geofences ||--o{ transactions : contains
+    merchants ||--o{ transactions : performed_at
+```
+
+### Security & Privacy Considerations
+
+**Privacy-First Design:**
+1. **Opt-In Tracking:** Location tracking is **default OFF**. Users must explicitly enable.
+2. **Granular Permissions:** Users can enable/disable specific geofences.
+3. **Data Minimization:** Only store location data when inside geofences (not continuous tracking).
+4. **30-Day Retention:** Location data automatically deleted after 30 days.
+5. **Encryption at Rest:** All location data encrypted using AES-256 in Layer 18 (Private Data Plane).
+6. **Right to be Forgotten:** Users can delete all location history instantly.
+
+**GDPR Compliance:**
+```sql
+-- Example: Export user location data (GDPR Article 20)
+SELECT 
+  ge.event_type,
+  ge.timestamp,
+  gf.name as zone_name,
+  ge.location_lat,
+  ge.location_lng
+FROM geofence_events ge
+JOIN geofences gf ON ge.geofence_id = gf.id
+WHERE ge.user_id = ?
+ORDER BY ge.timestamp DESC;
+
+-- Example: Right to be forgotten (GDPR Article 17)
+DELETE FROM geofence_events WHERE user_id = ?;
+DELETE FROM geofences WHERE user_id = ?;
+UPDATE transactions SET location_lat = NULL, location_lng = NULL WHERE user_id = ?;
+```
+
+**Security Measures:**
+- Row Level Security (RLS) on all geofence tables
+- Location data never exposed to client without authentication
+- Rate limiting on Places API to prevent abuse
+- Circuit breakers prevent cascading failures
+- Geohashing for approximate locations in analytics
+
+### Performance Optimizations
+
+**1. Geospatial Indexing:**
+```sql
+-- PostGIS extension for spatial queries
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+-- Spatial index on geofence centers
+CREATE INDEX idx_geofences_location 
+ON geofences USING GIST (
+  ST_MakePoint(center_lng, center_lat)::geography
+);
+
+-- Spatial index on merchant locations
+CREATE INDEX idx_merchants_location 
+ON merchants USING GIST (
+  ST_MakePoint(lng, lat)::geography
+);
+```
+
+**2. Battery Optimization (Mobile):**
+- **Significant Location Change:** Only track when user moves >100m
+- **Background Throttling:** Reduce frequency when app in background (every 5 minutes)
+- **Geofence Monitoring:** Use native OS geofencing (iOS: CLLocationManager, Android: Geofencing API)
+- **Batch Location Updates:** Queue multiple location events and send in batches
+
+**3. Merchant Data Caching:**
+- 24-hour TTL (Time To Live) for merchant data
+- Local caching in Capacitor Storage API
+- Stale-while-revalidate pattern
+- Reduce Places API calls by 80%
+
+**4. Location Event Batching:**
+```typescript
+// Example: Batch location events to reduce database writes
+const locationQueue: LocationEvent[] = [];
+
+function queueLocationEvent(event: LocationEvent) {
+  locationQueue.push(event);
+  
+  if (locationQueue.length >= 10) {
+    flushLocationQueue();
+  }
+}
+
+async function flushLocationQueue() {
+  await supabase.from('geofence_events').insert(locationQueue);
+  locationQueue.length = 0;
+}
+```
+
+### API Endpoints
+
+**Geofence Management:**
+```
+POST   /geofences                 - Create budget zone
+GET    /geofences                 - List user's geofences
+GET    /geofences/:id             - Get geofence details
+PATCH  /geofences/:id             - Update geofence (radius, name)
+DELETE /geofences/:id             - Delete geofence
+GET    /geofences/:id/events      - Fetch geofence event history
+GET    /geofences/:id/stats       - Get spending stats for zone
+```
+
+**Location Tracking:**
+```
+POST   /track-location            - Submit GPS coordinates
+POST   /location/validate         - Check if location inside geofence
+GET    /location/history          - Get user's location history (30 days)
+DELETE /location/history          - Delete all location data (GDPR)
+```
+
+**Merchant Discovery:**
+```
+GET    /merchants/nearby          - Discover merchants (radius search)
+GET    /merchants/:place_id       - Get cached merchant details
+POST   /merchants/:place_id/save  - Save favorite merchant
+GET    /merchants/categories      - List merchant categories
+```
+
+**AI Location Insights:**
+```
+GET    /insights/location-patterns     - Spending patterns by location
+GET    /insights/location-heatmap      - Heatmap data (lat, lng, amount)
+GET    /insights/merchant-recommendations - Personalized merchant suggestions
+POST   /insights/analyze-location      - Trigger AI analysis for specific location
+```
+
+### Implementation Reference
+
+**Related Documentation:**
+- [Implementation Timeline v4.0](./implementation-timeline-v4.0.md) - Phases 2.5 & 5.5 implementation details
+- [Phase 2.5: Geofencing Foundation](./implementation-timeline-v4.0.md#phase-25-geofencing-foundation-weeks-8-10) - Weeks 8-10
+- [Phase 5.5: Location Intelligence](./implementation-timeline-v4.0.md#phase-55-location-intelligence-weeks-23-25) - Weeks 23-25
+
+**Edge Functions:**
+- `supabase/functions/track-location/index.ts` - GPS tracking and geofence validation
+- `supabase/functions/discover-merchants/index.ts` - Google Places API integration
+- `supabase/functions/ai-location-insights/index.ts` - AI-powered location analysis
+
+**Database Migrations:**
+- Migration: `20251108032448_geofencing_foundation.sql` - Creates geofence tables with RLS policies
+
+---
+
 ## Data Flow Patterns
 
 ### Main Flow (Synchronous)
@@ -880,6 +1200,11 @@ Client Layer
 - **Curved lines (⤿):** Asynchronous/event-driven
 - **Dashed lines (⇢):** Monitoring/observability
 - **Double arrows (⇄):** Bidirectional data flow
+- **Green dashed lines (📍):** Geofencing location flows
+- **📍 Icon:** GPS/location tracking components
+- **🗺️ Icon:** Location intelligence features
+- **🔔 Icon:** Location-based notifications
+- **🔒 Icon:** Encrypted location data
 
 ---
 
@@ -1126,7 +1451,8 @@ Blueprint v4.0 represents a production-ready, enterprise-grade architecture that
 
 ---
 
-**Document Version:** 4.0  
-**Last Updated:** 2025-11-07  
+**Document Version:** 4.0 (with Geofencing)  
+**Last Updated:** 2025-11-08  
 **Maintained By:** TrueSpend Architecture Team  
-**Review Cycle:** Quarterly
+**Review Cycle:** Quarterly  
+**Related Documents:** [Implementation Timeline v4.0](./implementation-timeline-v4.0.md)

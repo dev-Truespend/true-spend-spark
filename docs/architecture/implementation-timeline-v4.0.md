@@ -8,38 +8,118 @@
 
 ---
 
+## Related Documents
+
+- **[Blueprint v4.0](./blueprint-v4.0.md)** - Complete 19-layer architectural design with geofencing
+- **[Geofencing Architecture](./blueprint-v4.0.md#dedicated-geofencing-subsystem-architecture)** - Detailed geofencing subsystem documentation
+- **[Dashboard Timeline](/dashboard/timeline)** - Interactive timeline visualization with Gantt chart
+
+---
+
 ## Visual Timeline Overview
 
 ![TrueSpend Implementation Timeline Gantt Chart](/images/timeline-blueprint-v4.png)
 
-*Comprehensive Gantt chart visualization showing the complete 28-week implementation timeline with all 8 phases, hierarchical task breakdown, and critical milestones. The diagram illustrates the phased approach from foundation setup through production launch, covering all 19 layers of the TrueSpend architecture.*
+*Comprehensive Gantt chart visualization showing the complete 34-week implementation timeline (30 active development weeks) with all 10 phases, hierarchical task breakdown, and critical milestones. The diagram illustrates the phased approach from foundation setup through production launch, covering all 19 layers of the TrueSpend architecture with native mobile geofencing capabilities.*
 
 ---
 
 ## Executive Summary
 
-This document outlines the phased implementation approach for TrueSpend v4.0's comprehensive 19-layer architecture with native mobile geofencing capabilities. The implementation is structured across 10 phases spanning 30 weeks, with each phase building upon previous layers while maintaining system stability and security.
+This document outlines the phased implementation approach for TrueSpend v4.0's comprehensive 19-layer architecture with native mobile geofencing capabilities. The implementation is structured across **10 phases spanning 34 calendar weeks (30 active development weeks + 4 weeks buffer)**, with each phase building upon previous layers while maintaining system stability and security.
 
-**Total Duration:** 30 weeks (7.5 months)  
-**Team Size:** 6-8 engineers  
-**Total Story Points:** ~385 SP
+**Total Duration:** 34 weeks (8.5 months) - 30 active development weeks + 4 weeks buffer  
+**Team Size:** 6-8 engineers (Frontend: 3, Backend: 4, DevOps: 1, Security: 1, ML: 1)  
+**Total Story Points:** 385 SP  
+**New in v4.0:** Native mobile geofencing (Phases 2.5 & 5.5) with GPS tracking, location intelligence, and AI-powered insights
+
+---
+
+## Mermaid Gantt Chart
+
+```mermaid
+gantt
+    title TrueSpend v4.0 Implementation Timeline (34 Weeks)
+    dateFormat YYYY-MM-DD
+    
+    section Phase 1
+    Foundation & Client Layer           :p1, 2025-01-01, 28d
+    
+    section Phase 2
+    Security & Ingress                  :p2, after p1, 21d
+    
+    section Phase 2.5 📍
+    Geofencing Foundation               :crit, p2_5, after p2, 21d
+    
+    section Phase 3
+    Auth & Supply Chain                 :p3, after p2_5, 28d
+    
+    section Phase 4
+    Core Services (BFF, Logic, AI)      :crit, p4, after p3, 35d
+    
+    section Phase 5
+    External Communication              :p5, after p4, 21d
+    
+    section Phase 5.5 🗺️
+    Location Intelligence               :crit, p5_5, after p5, 21d
+    
+    section Phase 6
+    Messaging & Events                  :p6, after p5_5, 21d
+    
+    section Phase 7
+    Data Planes & DR                    :p7, after p1, 28d
+    
+    section Phase 8
+    Observability & Polish              :p8, after p6, 14d
+    
+    section Milestones
+    Phase 1 Complete                    :milestone, m1, after p1, 0d
+    Phase 2 Complete                    :milestone, m2, after p2, 0d
+    Geofencing Operational 📍           :milestone, m2_5, after p2_5, 0d
+    Auth Complete                       :milestone, m3, after p3, 0d
+    Core Business Logic + AI            :milestone, m4, after p4, 0d
+    External APIs Ready                 :milestone, m5, after p5, 0d
+    Location Intelligence 🗺️            :milestone, m5_5, after p5_5, 0d
+    Event-Driven Architecture           :milestone, m6, after p6, 0d
+    Data Protection Ready               :milestone, m7, after p7, 0d
+    Production Launch 🚀                :milestone, m8, after p8, 0d
+```
+
+---
+
+## Visual Dependency Matrix
+
+```
+Phase Dependencies & Critical Path:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  P1 ──→ P2 ──→ P2.5📍──→ P3 ──→ P4 ──→ P5 ──→ P5.5🗺️ ──→ P6 ──→ P8        │
+│  │                                                             ↑              │
+│  └─────────────────────────────────────────────────────→ P7 ──┘              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺️ Location Intelligence
+```
 
 ---
 
 ## Phase Overview
 
-| Phase | Duration | Layers Implemented | Risk Level | Dependencies |
-|-------|----------|-------------------|------------|--------------|
-| Phase 1 | 4 weeks | Foundation & Client (L1, L15, L16) | Medium | None |
-| Phase 2 | 3 weeks | Security & Ingress (L2, L3, L4) | High | Phase 1 |
-| **Phase 2.5** | **3 weeks** | **Geofencing Foundation (L1, L10, L15)** | **Medium** | **Phase 2** |
-| Phase 3 | 4 weeks | Auth & Safety (L5, L6) | High | Phase 2.5 |
-| Phase 4 | 5 weeks | Core Services (L7, L8, L9) | Critical | Phase 3 |
-| Phase 5 | 3 weeks | External Communication (L10, L11, L12) | Medium | Phase 4 |
-| **Phase 5.5** | **3 weeks** | **Location Intelligence (L8, L9, L13, L14)** | **Medium** | **Phase 5** |
-| Phase 6 | 3 weeks | Messaging & Events (L13, L14) | Medium | Phase 5.5 |
-| Phase 7 | 4 weeks | Data Planes (L17, L18, L19) | High | Phase 1 |
-| Phase 8 | 2 weeks | Observability & Polish | Low | All Phases |
+| Phase | Weeks | Duration | Layers Implemented | Story Points | Team Size | Risk | Dependencies |
+|-------|-------|----------|-------------------|--------------|-----------|------|--------------|
+| **Phase 1** | 1-4 | 4 weeks | Foundation & Client (L1, L15, L16) | 34 SP | 6 FTE | 🟡 Medium | None |
+| **Phase 2** | 5-7 | 3 weeks | Security & Ingress (L2, L3, L4) | 40 SP | 6 FTE | 🔴 High | Phase 1 |
+| **Phase 2.5 📍** | **8-10** | **3 weeks** | **Geofencing Foundation (L1, L10, L15)** | **38 SP** | **5 FTE** | **🟡 Medium** | **Phase 2** |
+| **Phase 3** | 11-14 | 4 weeks | Auth & Safety (L5, L6) | 48 SP | 6 FTE | 🔴 High | Phase 2.5 |
+| **Phase 4** | 15-19 | 5 weeks | Core Services (L7, L8, L9) | 65 SP | 8 FTE | 🔴 Critical | Phase 3 |
+| **Phase 5** | 20-22 | 3 weeks | External Communication (L10, L11, L12) | 42 SP | 5 FTE | 🟡 Medium | Phase 4 |
+| **Phase 5.5 🗺️** | **23-25** | **3 weeks** | **Location Intelligence (L8, L9, L13, L14)** | **42 SP** | **7 FTE** | **🟡 Medium** | **Phase 5** |
+| **Phase 6** | 26-28 | 3 weeks | Messaging & Events (L13, L14) | 38 SP | 5 FTE | 🟡 Medium | Phase 5.5 |
+| **Phase 7** | 29-32 | 4 weeks | Data Planes (L17, L18, L19) | 45 SP | 6 FTE | 🔴 High | Phase 1 |
+| **Phase 8** | 33-34 | 2 weeks | Observability & Polish | 28 SP | 8 FTE | 🟢 Low | All Phases |
+| **Total** | **1-34** | **34 weeks** | **All 19 Layers** | **385 SP** | **6-8 FTE** | | |
+
+**Progress Legend:**  
+█████████░ 90% Complete | ████████░░ 80% | ███████░░░ 70% | ██████░░░░ 60% | █████░░░░░ 50%
 
 ---
 
@@ -868,5 +948,26 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 **Last Updated:** 2025-11-08  
 **Maintained By:** TrueSpend Project Management Team  
 **Review Cycle:** Weekly during implementation  
+**Related Documents:** [Blueprint v4.0](./blueprint-v4.0.md) | [Geofencing Architecture](./blueprint-v4.0.md#dedicated-geofencing-subsystem-architecture)
 
-**Note:** This timeline includes native mobile geofencing capabilities integrated across the 19-layer architecture, extending the original 28-week plan to 30 weeks with 2 additional phases (Phase 2.5: Geofencing Foundation and Phase 5.5: Location Intelligence).
+**Note:** This timeline includes native mobile geofencing capabilities integrated across the 19-layer architecture, extending the original plan to 34 weeks (30 active development + 4 weeks buffer) with 2 additional phases (Phase 2.5: Geofencing Foundation 📍 and Phase 5.5: Location Intelligence 🗺️).
+
+---
+
+## Interactive Timeline Visualization
+
+For an interactive view of the implementation timeline:
+
+1. **Generate Gantt Chart Image:**
+   - Navigate to `/dashboard/timeline`
+   - Click "Generate & Download Timeline Image" to create a visual 34-week Gantt chart
+   - The generated image will show all 10 phases with geofencing phases highlighted
+
+2. **View Live Timeline:**
+   - Visit `/dashboard/timeline` for real-time progress tracking
+   - Interactive Gantt chart with phase filtering
+   - Hierarchical task breakdown with dependencies
+
+3. **Architecture Map:**
+   - Visit `/dashboard/architecture` for 3D architecture visualization
+   - Interactive layer diagrams showing geofencing integration
