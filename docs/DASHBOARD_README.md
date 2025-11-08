@@ -1,8 +1,8 @@
-# TrueSpend v3.0 Project Dashboard
+# TrueSpend v4.1 Project Dashboard
 
 ## Overview
 
-A comprehensive project tracking dashboard for the TrueSpend v4.0 implementation, tracking all 37 weeks, 11 phases, 250+ tasks, 8 team members, and the complete architecture across 19 layers plus browser extension companion with production-ready refinements.
+A comprehensive project tracking dashboard for the TrueSpend v4.1 implementation, tracking all 37 weeks, 11 phases, 250+ tasks, 8 team members, and the complete architecture across 19 layers plus browser extension companion with production-ready refinements.
 
 **Total Story Points:** 429 SP (includes 12 SP for extension production refinements)  
 **Extension Refinements:** Ephemeral SW architecture, CORS/Bearer auth, Realtime filtering, telemetry, privacy modal, feature flags
@@ -17,7 +17,7 @@ A comprehensive project tracking dashboard for the TrueSpend v4.0 implementation
 - Upcoming milestones (next 3)
 
 ### 📅 **Timeline & Gantt View** (Coming Soon)
-- Interactive Gantt chart for all 28 weeks
+- Interactive Gantt chart for all 37 weeks
 - Phase swimlanes with nested tasks
 - Dependency arrows and critical path
 - Zoom controls (month/week/day views)
@@ -42,7 +42,7 @@ A comprehensive project tracking dashboard for the TrueSpend v4.0 implementation
 - Skills and expertise tracking
 
 ### 🎯 **Milestones & Gates** (Coming Soon)
-- 8 critical path milestones
+- 6 critical path milestones
 - Production readiness gate tracking
 - Requirement checklists
 - Pass/fail status indicators
@@ -68,7 +68,7 @@ A comprehensive project tracking dashboard for the TrueSpend v4.0 implementation
 
 ### 🏗️ **Architecture View** (Coming Soon)
 - Interactive architecture diagram
-- 15 layers with 56+ components
+- 19 layers with 60+ components
 - Component status overlay
 - Color-coded by layer type
 - Link to related tasks
@@ -157,36 +157,28 @@ Plus **Observability** cross-cutting layer and **Geofencing Subsystem** spanning
 
 ## Implementation Timeline
 
-- **Week 0-2**: Foundation Setup (Completed 100%)
-- **Week 2-5**: Secure Data & Auth (In Progress 65%)
-- **Week 5-9**: External Integrations (Not Started)
-- **Week 9-14**: Core Backend Services (Not Started)
-- **Week 14-18**: AI Agent Development (Not Started)
-- **Week 18-21**: Affiliate Integrations (Not Started)
-- **Week 21-26**: Frontend Development (Not Started)
-- **Week 26-28**: Production Hardening (Not Started)
-- **Week 29-34**: Observability & Polish (Not Started)
-- **Week 35-37**: Browser Extension MVP with Production Refinements (44 SP) (Not Started)
+- **Phase 1** (Weeks 1-4): Foundation & Client Layer - 34 SP
+- **Phase 2** (Weeks 5-7): Security & Ingress - 40 SP
+- **Phase 2.5 📍** (Weeks 8-10): Geofencing Foundation - 38 SP
+- **Phase 3** (Weeks 11-14): Auth & Supply Chain - 48 SP
+- **Phase 4** (Weeks 15-19): Core Services (BFF, Logic, AI) - 65 SP
+- **Phase 5** (Weeks 20-22): External Communication - 42 SP
+- **Phase 5.5 🗺️** (Weeks 23-25): Location Intelligence - 42 SP
+- **Phase 6** (Weeks 26-28): Messaging & Events - 38 SP
+- **Phase 7** (Weeks 29-32): Data Planes & DR - 45 SP
+- **Phase 8** (Weeks 33-34): Observability & Polish - 28 SP
+- **Phase 9 🔌** (Weeks 35-37): Browser Extension - 44 SP
 
-**Parallel Phases:**
-- Week 8-10: Geofencing Foundation
-- Week 23-25: Location Intelligence
-- Week 29-32: Data Plane Optimization
-- Week 33-34: Testing & QA
-- Week 35-37: Extension Development (ephemeral SW, telemetry, feature flags, CORS, privacy)
+**Total:** 11 phases, 37 weeks, 429 story points
 
 ## Key Milestones
 
-1. ✅ **Week 2** - Infrastructure Foundation Complete
-2. 🔄 **Week 5** - Security Architecture Implemented (In Progress)
-3. ⏳ **Week 9** - External Integrations Live
-4. ⏳ **Week 10** - Geofencing Operational
-5. ⏳ **Week 14** - Core Services Operational
-6. ⏳ **Week 18** - AI Agents Deployed
-7. ⏳ **Week 25** - Location Intelligence Live
-8. ⏳ **Week 28** - Frontend Feature Complete
-9. ⏳ **Week 34** - Production Readiness Achieved
-10. ⏳ **Week 37** - Browser Extension Launch
+1. ⏳ **Week 4** - Foundation Complete
+2. ⏳ **Week 10** - Geofencing Operational 📍
+3. ⏳ **Week 19** - Core Services Ready
+4. ⏳ **Week 25** - Location Intelligence 🗺️
+5. ⏳ **Week 34** - System Polish Complete
+6. ⏳ **Week 37** - Browser Extension Launch 🔌
 
 ## Critical Risks (7)
 
@@ -264,16 +256,18 @@ src/
 
 ## Documentation
 
-- **Blueprint v4.0**: `docs/architecture/blueprint-v4.0.md` - Complete 19-layer architecture with geofencing and browser extension
-- **Timeline v4.0**: `docs/architecture/implementation-timeline-v4.0.md` - 37-week detailed timeline with 11 phases
+- **Blueprint v4.1**: `docs/architecture/blueprint-v4.1.md` - Complete 19-layer architecture with geofencing and browser extension
+- **Implementation Guide v4.1**: `docs/architecture/blueprint-v4.1-implementation.md` - Comprehensive implementation guide with code examples
+- **Timeline v4.1**: `docs/architecture/implementation-timeline-v4.1.md` - 37-week detailed timeline with 11 phases
 - **Dashboard README**: This file - Dashboard documentation
 
 ## Links
 
 - [View Backend](Cloud Tab) - Access Lovable Cloud database
 - [Read Cloud Docs](https://docs.lovable.dev/features/cloud)
-- [Blueprint v4.0](../architecture/blueprint-v4.0.md)
-- [Timeline v4.0](../architecture/implementation-timeline-v4.0.md)
+- [Blueprint v4.1](../architecture/blueprint-v4.1.md)
+- [Implementation Guide v4.1](../architecture/blueprint-v4.1-implementation.md)
+- [Timeline v4.1](../architecture/implementation-timeline-v4.1.md)
 
 ---
 

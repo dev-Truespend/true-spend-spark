@@ -57,7 +57,7 @@ export default function Timeline() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Implementation Timeline</h1>
         <p className="text-muted-foreground mt-2">
-          v4.0: 34-week implementation with 10 phases covering 19 architecture layers + native geofencing 📍🗺️
+          v4.1: 37-week implementation with 11 phases covering 19 architecture layers + native geofencing 📍🗺️ + browser extension 🔌
         </p>
       </div>
 
@@ -140,7 +140,7 @@ export default function Timeline() {
       <div>
         <h2 className="text-2xl font-bold mb-4">Project Task Hierarchy</h2>
         <p className="text-muted-foreground mb-4">
-          Complete breakdown of all phases, sections, and tasks based on Blueprint v4.0
+          Complete breakdown of all phases, sections, and tasks based on Blueprint v4.1
         </p>
         <HierarchicalProjectDiagram />
       </div>
@@ -150,7 +150,7 @@ export default function Timeline() {
         <CardHeader>
           <CardTitle>Timeline Overview</CardTitle>
           <CardDescription>
-            34-week phase progress bars with geofencing milestones (Week 10 📍, Week 25 🗺️)
+            37-week phase progress bars with geofencing milestones (Week 10 📍, Week 25 🗺️) and extension launch (Week 37 🔌)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -161,7 +161,7 @@ export default function Timeline() {
               <span>Week 10</span>
               <span>Week 20</span>
               <span>Week 30</span>
-              <span>Week 34</span>
+              <span>Week 37</span>
             </div>
             
             {/* Timeline bars */}

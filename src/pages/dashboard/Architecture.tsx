@@ -74,7 +74,7 @@ export default function Architecture() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Architecture Overview</h1>
         <p className="text-muted-foreground mt-2">
-          19-layer production-grade architecture with security-first design
+          19-layer production-grade architecture with native geofencing & browser extension companion (v4.1)
         </p>
       </div>
 
@@ -97,7 +97,7 @@ export default function Architecture() {
           <CardContent>
             <div className="text-2xl font-bold">{totalLayers}</div>
             <p className="text-xs text-muted-foreground">
-              Enterprise architecture
+              19 layers + extension
             </p>
           </CardContent>
         </Card>
@@ -149,7 +149,7 @@ export default function Architecture() {
         <CardHeader>
           <CardTitle>Architecture Diagram</CardTitle>
           <CardDescription>
-            Complete 19-layer architecture with data flow visualization
+            Complete 19-layer architecture with browser extension and data flow visualization (v4.1)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -212,7 +212,7 @@ export default function Architecture() {
         <CardHeader>
           <CardTitle>Layer Details</CardTitle>
           <CardDescription>
-            Detailed breakdown of all 19 architectural layers and their components
+            Detailed breakdown of all 19 architectural layers + browser extension and their components (v4.1)
           </CardDescription>
         </CardHeader>
         <CardContent>
