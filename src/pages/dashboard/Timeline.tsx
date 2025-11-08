@@ -3,14 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useTimelineData } from "@/hooks/useTimelineData";
-import { Calendar, Clock, AlertTriangle, CheckCircle2, Users, ChevronDown } from "lucide-react";
+import { Calendar, Clock, AlertTriangle, CheckCircle2, Users } from "lucide-react";
 import { EnhancedGanttChart } from "@/components/timeline/EnhancedGanttChart";
 import { HierarchicalProjectDiagram } from "@/components/timeline/HierarchicalProjectDiagram";
 import { TimelineImageGenerator } from "@/components/admin/TimelineImageGenerator";
-import { MermaidDiagram } from "@/components/architecture/MermaidDiagram";
-import { flow19 } from "@/components/architecture/diagrams/flow19";
-import { Link } from "react-router-dom";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 export default function Timeline() {
   const { phases, milestones, currentWeek, totalWeeks, isLoading } = useTimelineData();
 
@@ -147,33 +144,6 @@ export default function Timeline() {
         </p>
         <HierarchicalProjectDiagram />
       </div>
-
-      {/* Architecture Flow Preview */}
-      <Collapsible defaultOpen={false}>
-        <Card>
-          <CardHeader className="flex items-center justify-between">
-            <div>
-              <CardTitle>Architecture Flow Preview</CardTitle>
-              <CardDescription>Compact view of the 19-layer flow. Open full diagram for details.</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link to="/dashboard/architecture" className="text-sm text-primary underline-offset-4 hover:underline">Open full diagram</Link>
-              <CollapsibleTrigger asChild>
-                <button aria-label="Toggle preview" className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-background transition-transform data-[state=open]:rotate-180">
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-              </CollapsibleTrigger>
-            </div>
-          </CardHeader>
-          <CollapsibleContent>
-            <CardContent>
-              <div className="max-h-[420px] overflow-auto rounded-lg border bg-muted/30">
-                <MermaidDiagram chart={flow19} />
-              </div>
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
 
       {/* Visual Timeline */}
       <Card>

@@ -2,10 +2,7 @@
 
 ## Overview
 
-A comprehensive project tracking dashboard for the TrueSpend v4.0 implementation, tracking all 37 weeks, 11 phases, 250+ tasks, 8 team members, and the complete architecture across 19 layers plus browser extension companion with production-ready refinements.
-
-**Total Story Points:** 429 SP (includes 12 SP for extension production refinements)  
-**Extension Refinements:** Ephemeral SW architecture, CORS/Bearer auth, Realtime filtering, telemetry, privacy modal, feature flags
+A comprehensive project tracking dashboard for the TrueSpend v4.0 implementation, tracking all 37 weeks, 11 phases, 250+ tasks, 8 team members, and the complete architecture across 19 layers plus browser extension companion.
 
 ## Features
 
@@ -13,7 +10,7 @@ A comprehensive project tracking dashboard for the TrueSpend v4.0 implementation
 - Real-time project progress (overall % complete)
 - Current week and phase tracking
 - Key metrics: tasks completed, active risks, timeline remaining
-- Phase status grid showing all 11 phases
+- Phase status grid showing all 12 phases
 - Upcoming milestones (next 3)
 
 ### 📅 **Timeline & Gantt View** (Coming Soon)
@@ -23,7 +20,7 @@ A comprehensive project tracking dashboard for the TrueSpend v4.0 implementation
 - Zoom controls (month/week/day views)
 
 ### 📋 **Phase Management**
-- Detailed view of all 11 implementation phases
+- Detailed view of all 12 implementation phases
 - Expandable accordions for each phase
 - Phase objectives and success criteria
 - Tasks list per phase with progress tracking
@@ -86,16 +83,16 @@ A comprehensive project tracking dashboard for the TrueSpend v4.0 implementation
 
 ### Tables
 
-1. **phases** - 11 implementation phases
-2. **tasks** - 250+ tasks with dependencies (including 5 new extension refinement tasks)
+1. **phases** - 12 implementation phases
+2. **tasks** - 200+ tasks with dependencies
 3. **team_members** - 8 team members with skills
-4. **milestones** - 10 critical milestones
+4. **milestones** - 8 critical milestones
 5. **readiness_gates** - Production readiness checkpoints
 6. **risks** - Risk tracking with mitigation
 7. **metrics** - Time-series performance data
 8. **test_results** - Testing metrics over time
 9. **project_metadata** - Project configuration
-10. **architecture_components** - 60+ architecture components across 20 layers
+10. **architecture_components** - 56+ architecture components across 15 layers
 
 ## Getting Started
 
@@ -166,14 +163,14 @@ Plus **Observability** cross-cutting layer and **Geofencing Subsystem** spanning
 - **Week 21-26**: Frontend Development (Not Started)
 - **Week 26-28**: Production Hardening (Not Started)
 - **Week 29-34**: Observability & Polish (Not Started)
-- **Week 35-37**: Browser Extension MVP with Production Refinements (44 SP) (Not Started)
+- **Week 35-37**: Browser Extension MVP (Not Started)
 
 **Parallel Phases:**
 - Week 8-10: Geofencing Foundation
 - Week 23-25: Location Intelligence
 - Week 29-32: Data Plane Optimization
 - Week 33-34: Testing & QA
-- Week 35-37: Extension Development (ephemeral SW, telemetry, feature flags, CORS, privacy)
+- Week 35-37: Extension Development
 
 ## Key Milestones
 
@@ -212,14 +209,13 @@ Plus **Observability** cross-cutting layer and **Geofencing Subsystem** spanning
 ## Success Criteria
 
 - ✅ 11 phases tracked with real-time progress
-- ✅ 250+ tasks managed across all phases (including 5 new extension refinement tasks)
+- ✅ 250+ tasks managed across all phases
 - ✅ 10 critical milestones monitored
 - ✅ 7 risks tracked with mitigation plans
-- ✅ 60+ architecture components mapped (19 layers + extension with 7 production refinements)
+- ✅ 60+ architecture components mapped (19 layers + extension)
 - ✅ Team workload and capacity visible
 - ✅ Real-time dashboard updates
 - ✅ Responsive design (mobile/tablet/desktop)
-- ✅ **Extension Production Refinements:** Ephemeral SW, CORS, telemetry, privacy modal, feature flags, Realtime filtering, Edge feedback loop
 
 ## Future Enhancements
 

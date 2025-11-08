@@ -20,9 +20,9 @@
 TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **Client → Ingress → Services → Egress → Data → Observability** pattern. This design prioritizes security, scalability, reliability, and observability across all system components.
 
 **New in v4.0:** 
-- Native mobile geofencing with location intelligence spanning 8 layers (L1, L8, L9, L10, L13, L14, L15, L18)
-- Browser extension companion for lightweight budget tracking (see [Browser Extension Architecture](#browser-extension-companion-architecture))
-- See [Geofencing Subsystem Architecture](#dedicated-geofencing-subsystem-architecture) for implementation details
+- Native mobile geofencing with location intelligence spanning 8 layers (L1A, L8, L9, L10, L13, L14, L15, L18)
+- Browser extension companion (L1B) for lightweight budget tracking and merchant insights
+- See [Geofencing Subsystem Architecture](#dedicated-geofencing-subsystem-architecture) and [Browser Extension Architecture](#browser-extension-companion-architecture) for details.
 
 ---
 
@@ -31,6 +31,7 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 ### 🟦 Layer 1: Client Layer (#2563EB)
 **Purpose:** User-facing interface across multiple platforms  
 
+#### Layer 1A: Web & Mobile Client
 **Components:**
 - React SPA with TypeScript
 - Capacitor Native App (iOS + Android)
@@ -51,7 +52,29 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Real-time location updates
 - Location permission management
 
-*Note: Browser extension capabilities are detailed in the [Browser Extension Companion Architecture](#browser-extension-companion-architecture) section.*
+#### Layer 1B: Browser Extension Client 🔌
+**Components:**
+- Chrome/Firefox/Safari extension
+- Popup UI (React + Tailwind)
+- Background service worker
+- Content scripts (merchant detection)
+- Options page for preferences
+
+**Responsibilities:**
+- Quick budget checks
+- Real-time spending alerts
+- Merchant price tracking
+- Quick expense logging
+- Transaction hints overlay
+- Session sync with main app
+
+**Limitations:**
+- ❌ No native geofencing (no GPS/background location)
+- ❌ No offline-first capabilities
+- ❌ No Capacitor native APIs
+- ✅ Supabase Auth, Realtime, Database
+- ✅ AI insights and notifications
+- ✅ Merchant detection via content scripts
 
 ---
 
@@ -62,12 +85,14 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - WAF (Web Application Firewall)
 - Edge Functions
 - DDoS protection
+- **Extension CORS Whitelisting** ✅ (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`)
 
 **Responsibilities:**
 - Global content distribution
 - Attack prevention
 - SSL/TLS termination
 - Geographic routing
+- **Browser extension origin validation** ✅
 
 ---
 
@@ -78,12 +103,14 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Rate limiting
 - API versioning
 - Request transformation
+- **Bearer Token Authentication** ✅ (CSRF-safe for extensions)
 
 **Responsibilities:**
 - Route validation
 - Traffic shaping
 - Protocol translation
 - Load balancing
+- **Extension Bearer token validation** ✅
 
 ---
 
@@ -110,12 +137,14 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - JWT token management
 - Session handling
 - Multi-factor authentication
+- **Extension OAuth Flow** ✅ (`chrome.identity.launchWebAuthFlow()`)
 
 **Responsibilities:**
 - User authentication
 - Token generation/validation
 - Session lifecycle management
 - Permission verification
+- **Extension token refresh & storage** ✅
 
 ---
 
@@ -142,12 +171,14 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Response transformation
 - Client-specific APIs
 - Data composition
+- **Realtime Feedback Emitter** ✅ (Edge → Realtime event after DB write)
 
 **Responsibilities:**
 - Multi-service orchestration
 - Response optimization
 - Client-specific logic
 - Data filtering/shaping
+- **Emit realtime events post-mutation** ✅ (`budget.updated`, `transaction.created`)
 
 ---
 
@@ -255,6 +286,7 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - **`geofence_rules` table for real-time zone updates**
 - Dynamic rule evaluation engine (no redeployment needed)
 - A/B testing framework for geofencing algorithms
+- **Extension Feature Flags** ✅ (`/control/flags` endpoint, 15min refresh)
 
 **Responsibilities:**
 - Dynamic configuration
@@ -263,6 +295,7 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Feature toggling
 - **Real-time geofence rule updates** (add merchant zones without code deploy)
 - Control plane for dynamic zone configuration
+- **Extension kill switches & A/B testing** ✅ (gradual rollout, per-user targeting)
 
 ---
 
@@ -298,6 +331,7 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Geofence event types (`geofence.entered`, `geofence.exited`, `geofence.dwelling`)
 - Location update events (`location.updated`)
 - Merchant discovery events (`merchant.discovered`)
+- **User-Scoped Realtime Filtering** ✅ (server-side `filter=user_id=eq.{id}`)
 
 **Responsibilities:**
 - Event publishing with persistence
@@ -307,6 +341,7 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Location-based event routing
 - Geofence event distribution
 - **Fault tolerance:** Prevents event loss during AI module downtime/scaling
+- **Realtime feedback loop** ✅ (Edge functions emit events post-DB write)
 
 ---
 
@@ -418,6 +453,7 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Alerting (Slack/email)
 - **`geofence_metrics` table for telemetry**
 - **Geofencing-specific metrics dashboard**
+- **Extension Telemetry** ✅ (15min batch flush to `geofence_metrics`)
 
 **Responsibilities:**
 - Log aggregation across all layers
@@ -431,6 +467,10 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
   - Battery drain metrics (mobile)
   - False positive rate tracking
 - **AI Model Training Feedback:** Metrics feed back to Layer 9 for noise reduction
+- **Extension-specific metrics** ✅:
+  - `popup_opened`, `merchant_detected`, `expense_logged`, `budget_alert_shown`
+  - Extension error tracking
+  - Usage analytics for A/B testing
 
 ---
 
@@ -450,8 +490,6 @@ The TrueSpend browser extension provides lightweight budget tracking and merchan
 - ❌ No offline-first (requires network)
 
 ### Extension Architecture Diagram
-<details>
-  <summary>Open diagram</summary>
 
 ```mermaid
 graph LR
@@ -507,7 +545,6 @@ graph LR
     class Auth,Realtime,DB,EdgeFn backend
     class Merchant,Form web
 ```
-</details>
 
 ### Component Breakdown
 
@@ -1735,8 +1772,8 @@ Security is implemented across multiple layers with enhanced geofencing and exte
 
 1. **Client Layer (L1)**: CSP headers, SRI, JWT token signing
 2. **Edge Layer (L2)**: TLS 1.3, DDoS protection
-3. **Gateway (L3/L7)**: Rate limiting, HMAC signatures, JWT validation
-4. **Auth (L5)**: JWT + Refresh tokens, MFA support
+3. **Gateway (L7)**: Rate limiting, HMAC signatures, JWT validation
+4. **Auth (L3)**: JWT + Refresh tokens, MFA support
 5. **Data (L15/L18)**: RLS policies, Encryption at rest (AES-256)
 6. **Geofencing Security (Enterprise)**:
    - **Location Spoofing Prevention**: Client-side signed JWT tokens with 5min expiry
@@ -1745,58 +1782,56 @@ Security is implemented across multiple layers with enhanced geofencing and exte
    - **Rate Limiting**: Max 100 location submissions per user per hour
    - **Audit Trail**: All geo events logged in `geofence_events` with timestamps
    - **GDPR Compliance**: 30-day location retention, right to be forgotten
-7. **Browser Extension Security (Production-Ready)**: Detailed in [Browser Extension Companion Architecture](#browser-extension-companion-architecture) section. Key features: Ephemeral Service Worker (MV3), CORS Whitelisting, Bearer Token Auth, User-Scoped Realtime Filtering
 
 ---
 
 ## Visual Architecture Diagrams
 
 ### Complete 19-Layer Flow Diagram
-<details>
-  <summary>Open diagram</summary>
 
 ```mermaid
-flowchart TD
+graph TD
     %% Client & Ingress Group
-    L1[Layer 1: Client Layer - React SPA, PWA, Native GPS]
-    L2[Layer 2: Edge & Ingress - CDN, WAF, DDoS]
-    L3[Layer 3: API Gateway - Rate Limit, Routing]
+    L1A[Layer 1A: Web & Mobile<br/>React SPA, PWA, Native GPS 📍]
+    L1B[Layer 1B: Browser Extension 🔌<br/>Popup UI, Content Scripts]
+    L2[Layer 2: Edge & Ingress<br/>CDN, WAF, DDoS]
+    L3[Layer 3: API Gateway<br/>Rate Limit, Routing]
     
     %% Security & Auth Group
-    L4[Layer 4: Modern Safety - CSP, SRI, CORS]
-    L5[Layer 5: Auth & Session - JWT, MFA]
-    L6[Layer 6: Supply Chain - Dependency Scanning]
+    L4[Layer 4: Modern Safety<br/>CSP, SRI, CORS]
+    L5[Layer 5: Auth & Session<br/>JWT, MFA]
+    L6[Layer 6: Supply Chain<br/>Dependency Scanning]
     
     %% Services Group
-    L7[Layer 7: BFF Layer - Request Aggregation]
-    L8[Layer 8: Business Logic - Transaction Processing, Geofence Rules]
-    L9[Layer 9: AI Agents - Pattern Analysis, Location Insights]
+    L7[Layer 7: BFF Layer<br/>Request Aggregation]
+    L8[Layer 8: Business Logic<br/>Transaction Processing, Geofence Rules 🗺️]
+    L9[Layer 9: AI Agents<br/>Pattern Analysis, Location Insights 🧠]
     
     %% External Communication Group
-    L10[Layer 10: Egress Gateway - API Key Management, Places API]
-    L11[Layer 11: Retry Scheduler - Exponential Backoff]
-    L12[Layer 12: Control Plane - Feature Flags]
+    L10[Layer 10: Egress Gateway<br/>API Key Management, Places API 📍]
+    L11[Layer 11: Retry Scheduler<br/>Exponential Backoff]
+    L12[Layer 12: Control Plane<br/>Feature Flags]
     
     %% Messaging Group
-    L13[Layer 13: Notification Amplifier - Email, SMS, Push]
-    L14[Layer 14: Event Bus - Message Broker, Location Events]
+    L13[Layer 13: Notification Amplifier<br/>Email, SMS, Push, Geofence Alerts 🔔]
+    L14[Layer 14: Event Bus<br/>Message Broker, Location Events 📡]
     
     %% Data & Storage Group
-    L15[Layer 15: Database - PostgreSQL, Geofences, Merchants]
-    L16[Layer 16: Storage - Object Storage]
-    L17[Layer 17: Public Data Plane - Read Replicas]
-    L18[Layer 18: Private Data Plane - Encrypted Storage, Location Data]
-    L19[Layer 19: Backup & DR - Automated Backups]
+    L15[Layer 15: Database<br/>PostgreSQL, Geofences, Merchants 📊]
+    L16[Layer 16: Storage<br/>Object Storage]
+    L17[Layer 17: Public Data Plane<br/>Read Replicas]
+    L18[Layer 18: Private Data Plane<br/>Encrypted Storage, Location Data 🔒]
+    L19[Layer 19: Backup & DR<br/>Automated Backups]
     
     %% Cross-Cutting
-    OBS[Observability - Logs, Metrics, Traces]
+    OBS[Observability<br/>Logs, Metrics, Traces]
     
     %% External Services
-    PlacesAPI[Google Places API]
+    PlacesAPI[Google Places API 🗺️]
     FSQAPI[Foursquare API]
     
-    %% Main Synchronous Flow
-    L1 -->|HTTP Request| L2
+    %% Main Synchronous Flow - Web & Mobile
+    L1A -->|HTTP Request| L2
     L2 -->|Filtered| L3
     L3 -->|Routed| L4
     L4 -->|Security Check| L5
@@ -1805,8 +1840,16 @@ flowchart TD
     L7 -->|Aggregated| L8
     L8 <-->|AI Processing| L9
     
-    %% Geofencing Flows
-    L1 -.->|GPS + JWT Token| L2
+    %% Browser Extension Flow (✅ with refinements)
+    L1B -->|Extension API + Bearer Auth ✅| L2
+    L1B -.->|Content Script| L8
+    L1B -.->|Ephemeral SW (MV3) ✅| L14
+    L1B <-.->|Realtime Sync (Filtered) ✅| L14
+    L1B -.->|Feature Flags (15min poll) ✅| L12
+    L1B -.->|Telemetry ✅| L18
+    
+    %% Geofencing Flows (enterprise-grade with security & queuing) - Mobile Only
+    L1A -.->|GPS + JWT Token 🔒| L2
     L2 -.->|track-location| L8
     L8 -.->|Token Validation| L5
     L5 -.->|Decrypt Location| L18
@@ -1816,8 +1859,8 @@ flowchart TD
     L14 -.->|At-least-once| L9
     L9 -.->|AI Insights| L8
     L14 -.->|Location Alert| L13
-    L13 -.->|Push Notification| L1
-    L7 -.->|Emit Event (budget.updated)| L14
+    L13 -.->|Push Notification 🔔| L1A
+    L13 -.->|Browser Notification| L1B
     OBS -.->|Telemetry| L14
     
     %% Merchant Discovery Flow
@@ -1829,7 +1872,7 @@ flowchart TD
     L10 -->|Cache Merchants| L15
     
     %% Location Intelligence Flow
-    L9 -.->|Location Insights| L8
+    L9 -.->|Location Insights 🧠| L8
     L9 -.->|Query Location History| L15
     
     %% External Communication
@@ -1842,16 +1885,18 @@ flowchart TD
     L8 -->|Write| L15
     L8 -->|Upload| L16
     L15 -->|Replicate| L17
-    L15 -->|Secure Location Data| L18
+    L15 -->|Secure Location Data 🔒| L18
     L16 -->|Backup| L19
     L18 -->|Backup| L19
     
     %% Asynchronous Events
     L8 -.->|Publish Event| L14
     L14 -.->|Route| L13
+    L13 -.->|Notify| L1
     
     %% Observability (monitors all)
-    L1 -.->|Logs| OBS
+    L1A -.->|Logs| OBS
+    L1B -.->|Logs| OBS
     L2 -.->|Metrics| OBS
     L3 -.->|Traces| OBS
     L8 -.->|Traces| OBS
@@ -1859,6 +1904,7 @@ flowchart TD
     
     %% Styling
     classDef client fill:#2563EB,stroke:#1e40af,color:#fff
+    classDef extension fill:#6366f1,stroke:#4f46e5,color:#fff
     classDef ingress fill:#f97316,stroke:#ea580c,color:#fff
     classDef gateway fill:#7c3aed,stroke:#6d28d9,color:#fff
     classDef security fill:#16a34a,stroke:#15803d,color:#fff
@@ -1878,7 +1924,8 @@ flowchart TD
     classDef obs fill:#64748b,stroke:#475569,color:#fff
     classDef external fill:#d97706,stroke:#b45309,color:#000
     
-    class L1 client
+    class L1A client
+    class L1B extension
     class L2 ingress
     class L3 gateway
     class L4 security
@@ -1900,12 +1947,8 @@ flowchart TD
     class OBS obs
     class PlacesAPI,FSQAPI external
 ```
-</details>
-
 
 ### Layer Groupings Visualization
-<details>
-  <summary>Open diagram</summary>
 
 ```mermaid
 graph LR
@@ -1966,11 +2009,8 @@ graph LR
     class MN,L13,L14 group5
     class DS,L15,L16,L17,L18,L19 group6
 ```
-</details>
 
 ### Request Flow Sequence Diagram
-<details>
-  <summary>Open diagram</summary>
 
 ```mermaid
 sequenceDiagram
@@ -2009,11 +2049,8 @@ sequenceDiagram
     API-->>CDN: Cached Response
     CDN-->>Client: HTTPS Response
 ```
-</details>
 
 ### Data Persistence Flow
-<details>
-  <summary>Open diagram</summary>
 
 ```mermaid
 graph TD
@@ -2054,11 +2091,8 @@ graph TD
     class PRI private
     class BCK backup
 ```
-</details>
 
 ### Resilience & Retry Pattern
-<details>
-  <summary>Open diagram</summary>
 
 ```mermaid
 graph TD
@@ -2099,11 +2133,8 @@ graph TD
     class Control control
     class External,DLQ external
 ```
-</details>
 
 ### Event-Driven Architecture
-<details>
-  <summary>Open diagram</summary>
 
 ```mermaid
 graph LR
@@ -2151,11 +2182,8 @@ graph LR
     class Notify,Analytics,Audit subscriber
     class Email,SMS,Push channel
 ```
-</details>
 
 ### Geofencing Location Tracking Flow
-<details>
-  <summary>Open diagram</summary>
 
 ```mermaid
 sequenceDiagram
@@ -2212,7 +2240,6 @@ sequenceDiagram
     
     EdgeFn-->>Client: 200 OK {status: "tracked"}
 ```
-</details>
 
 ---
 
@@ -2233,8 +2260,6 @@ The geofencing subsystem is a cross-layer feature that integrates native mobile 
 - **Layer 18 (Private Data):** Encrypted location storage, 30-day retention policy, GDPR compliance
 
 ### Simplified Geofencing Data Flow
-<details>
-  <summary>Open diagram</summary>
 
 ```mermaid
 graph LR
@@ -2293,11 +2318,8 @@ graph LR
     class GeoDB,EventDB,MerchantDB,TxDB data
     class Places,FSQ external
 ```
-</details>
 
 ### Database Schema: Geofencing Tables
-<details>
-  <summary>Open diagram</summary>
 
 ```mermaid
 erDiagram
@@ -2362,7 +2384,6 @@ erDiagram
     geofences ||--o{ transactions : contains
     merchants ||--o{ transactions : performed_at
 ```
-</details>
 
 ### Security & Privacy Considerations
 
@@ -3076,9 +3097,6 @@ export function TelemetryDashboard() {
 
 **Complete Request Flow with All 5 Refinements:**
 
-<details>
-  <summary>Open diagram</summary>
-
 ```mermaid
 sequenceDiagram
     participant Client
@@ -3106,7 +3124,6 @@ sequenceDiagram
     Telemetry->>AI: 13. Feed metrics for analysis
     AI-->>Client: 14. Personalized insights
 ```
-</details>
 
 **Key Integration Points:**
 1. JWT tokens protect location data from tampering
