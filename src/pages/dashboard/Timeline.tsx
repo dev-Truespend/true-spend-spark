@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useTimelineData } from "@/hooks/useTimelineData";
 import { Calendar, Clock, AlertTriangle, CheckCircle2, Users } from "lucide-react";
 import { EnhancedGanttChart } from "@/components/timeline/EnhancedGanttChart";
+import { HierarchicalProjectDiagram } from "@/components/timeline/HierarchicalProjectDiagram";
 
 export default function Timeline() {
   const { phases, milestones, currentWeek, totalWeeks, isLoading } = useTimelineData();
@@ -129,6 +130,15 @@ export default function Timeline() {
           totalWeeks={totalWeeks}
           phases={phases || []}
         />
+      </div>
+
+      {/* Hierarchical Project Diagram */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Project Task Hierarchy</h2>
+        <p className="text-muted-foreground mb-4">
+          Complete breakdown of all phases, sections, and tasks based on Blueprint v4.0
+        </p>
+        <HierarchicalProjectDiagram />
       </div>
 
       {/* Visual Timeline */}
