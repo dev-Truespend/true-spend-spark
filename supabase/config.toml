@@ -1,1 +1,4 @@
 project_id = "uolpwcngftpmgkopltwz"
+
+[functions.generate-timeline-image]
+verify_jwt = false

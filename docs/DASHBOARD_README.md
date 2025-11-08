@@ -2,7 +2,10 @@
 
 ## Overview
 
-A comprehensive project tracking dashboard for the TrueSpend v3.0 implementation, tracking all 28 weeks, 12 phases, 200+ tasks, 8 team members, and the complete architecture across 15 layers.
+A comprehensive project tracking dashboard for the TrueSpend v4.0 implementation, tracking all 37 weeks, 11 phases, 250+ tasks, 8 team members, and the complete architecture across 19 layers plus browser extension companion with production-ready refinements.
+
+**Total Story Points:** 429 SP (includes 12 SP for extension production refinements)  
+**Extension Refinements:** Ephemeral SW architecture, CORS/Bearer auth, Realtime filtering, telemetry, privacy modal, feature flags
 
 ## Features
 
@@ -10,7 +13,7 @@ A comprehensive project tracking dashboard for the TrueSpend v3.0 implementation
 - Real-time project progress (overall % complete)
 - Current week and phase tracking
 - Key metrics: tasks completed, active risks, timeline remaining
-- Phase status grid showing all 12 phases
+- Phase status grid showing all 11 phases
 - Upcoming milestones (next 3)
 
 ### 📅 **Timeline & Gantt View** (Coming Soon)
@@ -20,7 +23,7 @@ A comprehensive project tracking dashboard for the TrueSpend v3.0 implementation
 - Zoom controls (month/week/day views)
 
 ### 📋 **Phase Management**
-- Detailed view of all 12 implementation phases
+- Detailed view of all 11 implementation phases
 - Expandable accordions for each phase
 - Phase objectives and success criteria
 - Tasks list per phase with progress tracking
@@ -83,16 +86,16 @@ A comprehensive project tracking dashboard for the TrueSpend v3.0 implementation
 
 ### Tables
 
-1. **phases** - 12 implementation phases
-2. **tasks** - 200+ tasks with dependencies
+1. **phases** - 11 implementation phases
+2. **tasks** - 250+ tasks with dependencies (including 5 new extension refinement tasks)
 3. **team_members** - 8 team members with skills
-4. **milestones** - 8 critical milestones
+4. **milestones** - 10 critical milestones
 5. **readiness_gates** - Production readiness checkpoints
 6. **risks** - Risk tracking with mitigation
 7. **metrics** - Time-series performance data
 8. **test_results** - Testing metrics over time
 9. **project_metadata** - Project configuration
-10. **architecture_components** - 56+ architecture components across 15 layers
+10. **architecture_components** - 60+ architecture components across 20 layers
 
 ## Getting Started
 
@@ -127,25 +130,30 @@ Navigate to `/dashboard` to view the project tracking dashboard.
 
 ## Architecture Diagram
 
-The dashboard tracks implementation across **15 architectural layers**:
+The dashboard tracks implementation across **19 architectural layers + browser extension companion**:
 
-1. **Client Layer** (Navy Blue) - Web app, mobile, browser extension
-2. **Release Safety** (Green) - CI/CD, staging, canary deployments
-3. **Modern Safety** (Red) - CSP, SRI
-4. **Cached Security** (Purple) - Encryption, backup, secrets
-5. **Config Resilience** (Orange) - DB protection, retry logic
-6. **Best Cases** (Blue) - BFF gateway, edge cache, rate limiting
-7. **Edge & Ingress** (Purple) - Schema validation, circuit breakers
-8. **AI Agents** (Pink) - 5 specialized AI agents
-9. **Core Microservices** (Green) - 8 business services
-10. **Control Plane** (Purple) - Orchestration, feature flags
-11. **Data Plane Public** (Blue) - Read replicas, materialized views
-12. **Data Plane Private** (Red) - Encrypted PII, RLS
-13. **Event Bus** (Cyan) - Realtime, database triggers
-14. **Observability** (Gray) - Logs, metrics, alerts
-15. **Identity & Access** (Green) - Auth, RBAC, session management
+1. **Layer 1A: Web & Mobile Client** (Navy Blue) - React SPA, PWA, native mobile with GPS
+2. **Layer 1B: Browser Extension** (Indigo) - Popup UI, background worker, content scripts
+3. **Layer 2: Edge & Ingress** (Orange) - CDN, WAF, DDoS protection
+4. **Layer 3: API Gateway** (Purple) - Rate limiting, routing
+5. **Layer 4: Modern Safety** (Green) - CSP, SRI
+6. **Layer 5: Auth & Session** (Blue) - JWT, MFA
+7. **Layer 6: Supply Chain Security** (Orange) - Dependency scanning
+8. **Layer 7: BFF Layer** (Green) - Request aggregation
+9. **Layer 8: Business Logic** (Purple) - Transaction processing, geofence rules
+10. **Layer 9: AI Agents** (Purple) - Pattern analysis, location insights
+11. **Layer 10: Egress Gateway** (Purple) - API key management, Places API
+12. **Layer 11: Retry Scheduler** (Orange) - Exponential backoff
+13. **Layer 12: Control Plane** (Purple) - Feature flags, dynamic rules
+14. **Layer 13: Notification Amplifier** (Orange) - Email, SMS, Push, geofence alerts
+15. **Layer 14: Event Bus** (Cyan) - Message broker, location events
+16. **Layer 15: Database** (Blue) - PostgreSQL, geofences, merchants
+17. **Layer 16: Storage** (Teal) - Object storage, merchant photos
+18. **Layer 17: Public Data Plane** (Light Blue) - Read replicas
+19. **Layer 18: Private Data Plane** (Red) - Encrypted storage, location data
+20. **Layer 19: Backup & DR** (Gray) - Automated backups
 
-Plus **Schema Governance** and **Infrastructure Points** (email, SMS, push).
+Plus **Observability** cross-cutting layer and **Geofencing Subsystem** spanning 8 layers.
 
 ## Implementation Timeline
 
@@ -157,23 +165,28 @@ Plus **Schema Governance** and **Infrastructure Points** (email, SMS, push).
 - **Week 18-21**: Affiliate Integrations (Not Started)
 - **Week 21-26**: Frontend Development (Not Started)
 - **Week 26-28**: Production Hardening (Not Started)
+- **Week 29-34**: Observability & Polish (Not Started)
+- **Week 35-37**: Browser Extension MVP with Production Refinements (44 SP) (Not Started)
 
 **Parallel Phases:**
-- Week 10-13: Control Plane & Observability
-- Week 13-15: Data Plane Optimization
-- Week 23-26: Testing & QA
-- Week 27-28: Production Launch
+- Week 8-10: Geofencing Foundation
+- Week 23-25: Location Intelligence
+- Week 29-32: Data Plane Optimization
+- Week 33-34: Testing & QA
+- Week 35-37: Extension Development (ephemeral SW, telemetry, feature flags, CORS, privacy)
 
 ## Key Milestones
 
 1. ✅ **Week 2** - Infrastructure Foundation Complete
 2. 🔄 **Week 5** - Security Architecture Implemented (In Progress)
 3. ⏳ **Week 9** - External Integrations Live
-4. ⏳ **Week 14** - Core Services Operational
-5. ⏳ **Week 18** - AI Agents Deployed
-6. ⏳ **Week 26** - Frontend Feature Complete
-7. ⏳ **Week 28** - Production Readiness Achieved
-8. ⏳ **Week 28** - Production Launch
+4. ⏳ **Week 10** - Geofencing Operational
+5. ⏳ **Week 14** - Core Services Operational
+6. ⏳ **Week 18** - AI Agents Deployed
+7. ⏳ **Week 25** - Location Intelligence Live
+8. ⏳ **Week 28** - Frontend Feature Complete
+9. ⏳ **Week 34** - Production Readiness Achieved
+10. ⏳ **Week 37** - Browser Extension Launch
 
 ## Critical Risks (7)
 
@@ -198,14 +211,15 @@ Plus **Schema Governance** and **Infrastructure Points** (email, SMS, push).
 
 ## Success Criteria
 
-- ✅ 12 phases tracked with real-time progress
-- ✅ 200+ tasks managed across all phases
-- ✅ 8 critical milestones monitored
+- ✅ 11 phases tracked with real-time progress
+- ✅ 250+ tasks managed across all phases (including 5 new extension refinement tasks)
+- ✅ 10 critical milestones monitored
 - ✅ 7 risks tracked with mitigation plans
-- ✅ 56+ architecture components mapped
+- ✅ 60+ architecture components mapped (19 layers + extension with 7 production refinements)
 - ✅ Team workload and capacity visible
 - ✅ Real-time dashboard updates
 - ✅ Responsive design (mobile/tablet/desktop)
+- ✅ **Extension Production Refinements:** Ephemeral SW, CORS, telemetry, privacy modal, feature flags, Realtime filtering, Edge feedback loop
 
 ## Future Enhancements
 
@@ -250,16 +264,16 @@ src/
 
 ## Documentation
 
-- **Blueprint v3.0**: `docs/architecture/blueprint-v3.0.md` - Complete architecture with exact diagram
-- **Timeline v3.0**: `docs/architecture/implementation-timeline-v3.0.md` - 28-week detailed timeline
+- **Blueprint v4.0**: `docs/architecture/blueprint-v4.0.md` - Complete 19-layer architecture with geofencing and browser extension
+- **Timeline v4.0**: `docs/architecture/implementation-timeline-v4.0.md` - 37-week detailed timeline with 11 phases
 - **Dashboard README**: This file - Dashboard documentation
 
 ## Links
 
 - [View Backend](Cloud Tab) - Access Lovable Cloud database
 - [Read Cloud Docs](https://docs.lovable.dev/features/cloud)
-- [Blueprint v3.0](../architecture/blueprint-v3.0.md)
-- [Timeline v3.0](../architecture/implementation-timeline-v3.0.md)
+- [Blueprint v4.0](../architecture/blueprint-v4.0.md)
+- [Timeline v4.0](../architecture/implementation-timeline-v4.0.md)
 
 ---
 

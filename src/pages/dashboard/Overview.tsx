@@ -34,8 +34,8 @@ export default function Overview() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">TrueSpend v3.0 Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Enterprise Financial Intelligence Platform</p>
+          <h1 className="text-4xl font-bold tracking-tight">TrueSpend v4.0 Dashboard</h1>
+          <p className="text-muted-foreground mt-2">Enterprise Financial Intelligence Platform with Native Geofencing</p>
         </div>
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="text-lg px-4 py-2">
@@ -125,7 +125,7 @@ export default function Overview() {
             Phase Status Overview
           </CardTitle>
           <CardDescription>
-            Track progress across all 12 implementation phases
+            Track progress across all 10 implementation phases (including geofencing 📍🗺️)
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -4,6 +4,9 @@ import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useTimelineData } from "@/hooks/useTimelineData";
 import { Calendar, Clock, AlertTriangle, CheckCircle2, Users } from "lucide-react";
+import { EnhancedGanttChart } from "@/components/timeline/EnhancedGanttChart";
+import { HierarchicalProjectDiagram } from "@/components/timeline/HierarchicalProjectDiagram";
+import { TimelineImageGenerator } from "@/components/admin/TimelineImageGenerator";
 
 export default function Timeline() {
   const { phases, milestones, currentWeek, totalWeeks, isLoading } = useTimelineData();
@@ -54,9 +57,12 @@ export default function Timeline() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Implementation Timeline</h1>
         <p className="text-muted-foreground mt-2">
-          28-week implementation plan with 16 phases and critical milestones
+          v4.0: 34-week implementation with 10 phases covering 19 architecture layers + native geofencing 📍🗺️
         </p>
       </div>
+
+      {/* Timeline Image Generator */}
+      <TimelineImageGenerator />
 
       {/* Timeline Statistics */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -117,12 +123,34 @@ export default function Timeline() {
         </Card>
       </div>
 
+      {/* Enhanced Gantt Chart with Filters and Progress */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Interactive Gantt Chart</h2>
+        <p className="text-muted-foreground mb-4">
+          Filter phases, view progress indicators, and explore detailed task information
+        </p>
+        <EnhancedGanttChart 
+          currentWeek={currentWeek}
+          totalWeeks={totalWeeks}
+          phases={phases || []}
+        />
+      </div>
+
+      {/* Hierarchical Project Diagram */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Project Task Hierarchy</h2>
+        <p className="text-muted-foreground mb-4">
+          Complete breakdown of all phases, sections, and tasks based on Blueprint v4.0
+        </p>
+        <HierarchicalProjectDiagram />
+      </div>
+
       {/* Visual Timeline */}
       <Card>
         <CardHeader>
           <CardTitle>Timeline Overview</CardTitle>
           <CardDescription>
-            28-week Gantt chart showing all phases and dependencies
+            34-week phase progress bars with geofencing milestones (Week 10 📍, Week 25 🗺️)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -130,10 +158,10 @@ export default function Timeline() {
             {/* Week markers */}
             <div className="flex justify-between text-xs text-muted-foreground mb-2">
               <span>Week 0</span>
-              <span>Week 7</span>
-              <span>Week 14</span>
-              <span>Week 21</span>
-              <span>Week 28</span>
+              <span>Week 10</span>
+              <span>Week 20</span>
+              <span>Week 30</span>
+              <span>Week 34</span>
             </div>
             
             {/* Timeline bars */}
