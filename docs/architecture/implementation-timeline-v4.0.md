@@ -30,10 +30,10 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 
 **Total Duration:** 37 weeks (9.25 months) - 33 active development weeks + 4 weeks buffer  
 **Team Size:** 6-8 engineers (Frontend: 3, Backend: 4, DevOps: 1, Security: 1, ML: 1)  
-**Total Story Points:** 417 SP  
+**Total Story Points:** 429 SP  
 **New in v4.0:** 
 - Native mobile geofencing (Phases 2.5 & 5.5) with GPS tracking, location intelligence, and AI-powered insights
-- Browser extension companion (Phase 9) for lightweight budget tracking and merchant insights
+- Browser extension companion (Phase 9) with production-ready refinements (ephemeral SW, telemetry, feature flags, CORS, privacy modal)
 
 ---
 
@@ -122,8 +122,8 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing  |  🗺️ Location
 | **Phase 6** | 26-28 | 3 weeks | Messaging & Events (L13, L14) | 38 SP | 5 FTE | 🟡 Medium | Phase 5.5 |
 | **Phase 7** | 29-32 | 4 weeks | Data Planes (L17, L18, L19) | 45 SP | 6 FTE | 🔴 High | Phase 1 |
 | **Phase 8** | 33-34 | 2 weeks | Observability & Polish | 28 SP | 8 FTE | 🟢 Low | All Phases |
-| **Phase 9 🔌** | **35-37** | **3 weeks** | **Browser Extension (L1B)** | **32 SP** | **2 FTE** | **🟢 Low** | **Phase 8** |
-| **Total** | **1-37** | **37 weeks** | **All 19 Layers + Extension** | **417 SP** | **6-8 FTE** | | |
+| **Phase 9 🔌** | **35-37** | **3 weeks** | **Browser Extension (L1B)** | **44 SP** | **2 FTE** | **🟢 Low** | **Phase 8** |
+| **Total** | **1-37** | **37 weeks** | **All 19 Layers + Extension** | **429 SP** | **6-8 FTE** | | |
 
 **Progress Legend:**  
 █████████░ 90% Complete | ████████░░ 80% | ███████░░░ 70% | ██████░░░░ 60% | █████░░░░░ 50%
@@ -820,60 +820,86 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing  |  🗺️ Location
 
 ## Phase 9: Browser Extension MVP 🔌 (Weeks 35-37)
 
-**Objective:** Build lightweight browser extension companion for budget tracking and merchant insights  
+**Objective:** Build production-ready browser extension with ephemeral SW, telemetry, feature flags, CORS, and privacy compliance  
 **Duration:** 3 weeks  
 **Team:** 2 engineers (1 Frontend, 1 Backend)  
-**Story Points:** 32 SP  
+**Story Points:** 44 SP (+12 SP for production refinements)  
 **Risk Level:** Low (reuses existing components and infrastructure)
 
 ### Layers Implemented
-- **Layer 1B:** Browser Extension Client (Popup UI, Background Worker, Content Scripts)
+- **Layer 1B:** Browser Extension Client (Popup UI, Ephemeral Background Worker, Content Scripts)
+- **Layer 2/3:** CORS configuration and Bearer auth for extensions
+- **Layer 12:** Feature flag polling for kill switches
+- **Layer 18:** Extension telemetry collection
 
 ### Week 35: Extension Foundation & Manifest
-**Story Points:** 10 SP
+**Story Points:** 14 SP (+4 SP for ephemeral SW architecture)
 
 **Tasks:**
 - [ ] Create Chrome Manifest V3 configuration
 - [ ] Set up multi-entry Vite build for extension
 - [ ] Implement Popup UI with React + Tailwind (reuse `src/components/shared/`)
-- [ ] Create Background Service Worker skeleton
+- [ ] **✅ Implement ephemeral SW architecture with message routing** (3 SP)
+  - Move heavy logic to popup/content scripts
+  - SW handles only message routing and alarms
+  - Test SW survives 30s+ inactivity without crashes
 - [ ] Implement chrome.storage.local caching layer
 - [ ] Set up extension routing and navigation
 - [ ] Configure CSP for extension pages
 - [ ] Create extension icons (16px, 48px, 128px)
 
 **Deliverables:**
-- Working extension skeleton
+- Working extension skeleton with ephemeral SW
 - Popup displays budget summary
 - Chrome Manifest V3 configured
 - Build system multi-entry setup
+- SW message routing tested (survives restarts)
 
 ### Week 36: Authentication & Realtime Sync
-**Story Points:** 12 SP
+**Story Points:** 18 SP (+6 SP for CORS + telemetry)
 
 **Tasks:**
 - [ ] Implement OAuth authentication flow (`chrome.identity.launchWebAuthFlow`)
+- [ ] **✅ Configure CORS for extension origins + Bearer auth** (2 SP)
+  - Whitelist `chrome-extension://`, `moz-extension://`, `safari-web-extension://` in Layer 2
+  - Use Bearer tokens (not cookies) for CSRF-safe auth
+  - Test extension origin validation
 - [ ] Set up Supabase client for extension context
-- [ ] Create background worker Realtime subscription to `budgets` table
+- [ ] Create background worker Realtime subscription to `budgets` table (with user_id filtering)
 - [ ] Implement badge updates for budget alerts
 - [ ] Build browser notification system
 - [ ] Create session persistence in chrome.storage
+- [ ] **✅ Implement extension telemetry with 15min background job** (3 SP)
+  - Track `popup_opened`, `merchant_detected`, `expense_logged`, `budget_alert_shown`
+  - Batch flush to `geofence_metrics` table every 15 minutes
+  - Test telemetry survives SW restarts
 - [ ] Implement quick expense logging form
 - [ ] Add transaction sync logic
 
 **Deliverables:**
-- OAuth authentication working
-- Realtime budget sync operational
+- OAuth authentication working with Bearer tokens
+- Realtime budget sync operational (user-scoped filtering)
 - Browser notifications for budget alerts
 - Quick expense logging functional
+- CORS passes Chrome Web Store review
+- Extension telemetry flowing to dashboard
 
 ### Week 37: Merchant Detection & Cross-Browser
-**Story Points:** 10 SP
+**Story Points:** 12 SP (+2 SP for privacy modal + feature flags)
 
 **Tasks:**
 - [ ] Build content scripts for merchant detection
 - [ ] Implement e-commerce site form detection
 - [ ] Create inline quick-log prompts on merchant sites
+- [ ] **✅ Create Privacy Modal + /privacy page** (2 SP)
+  - Add "Privacy & Permissions" link in popup footer
+  - Create GDPR-compliant data disclosure modal
+  - Write privacy policy page at /privacy
+  - Test passes Chrome Web Store privacy review
+- [ ] **✅ Implement feature flag polling in background worker** (2 SP)
+  - Poll `/control/flags` on SW startup + 15min refresh
+  - Implement kill switch for merchant detection
+  - Test A/B rollout (50% gradual rollout)
 - [ ] Build Options page for preferences
 - [ ] Convert Manifest V3 → V2 for Firefox compatibility
 - [ ] Package extension for Chrome Web Store
@@ -883,13 +909,15 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing  |  🗺️ Location
 - [ ] Submit to Chrome Web Store
 
 **Deliverables:**
-- Merchant detection working on e-commerce sites
+- Merchant detection working on e-commerce sites (with kill switch)
+- Privacy modal functional and GDPR-compliant
+- Feature flags polling operational (15min refresh)
 - Options page functional
 - Chrome extension published
 - Firefox extension packaged
 - Safari extension ready for App Store
 
-**Phase 9 Milestone:** ✅ Browser extension live on Chrome Web Store
+**Phase 9 Milestone:** ✅ Production-ready browser extension live on Chrome Web Store
 
 ---
 

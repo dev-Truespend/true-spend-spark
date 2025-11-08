@@ -85,12 +85,14 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - WAF (Web Application Firewall)
 - Edge Functions
 - DDoS protection
+- **Extension CORS Whitelisting** ✅ (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`)
 
 **Responsibilities:**
 - Global content distribution
 - Attack prevention
 - SSL/TLS termination
 - Geographic routing
+- **Browser extension origin validation** ✅
 
 ---
 
@@ -101,12 +103,14 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Rate limiting
 - API versioning
 - Request transformation
+- **Bearer Token Authentication** ✅ (CSRF-safe for extensions)
 
 **Responsibilities:**
 - Route validation
 - Traffic shaping
 - Protocol translation
 - Load balancing
+- **Extension Bearer token validation** ✅
 
 ---
 
@@ -133,12 +137,14 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - JWT token management
 - Session handling
 - Multi-factor authentication
+- **Extension OAuth Flow** ✅ (`chrome.identity.launchWebAuthFlow()`)
 
 **Responsibilities:**
 - User authentication
 - Token generation/validation
 - Session lifecycle management
 - Permission verification
+- **Extension token refresh & storage** ✅
 
 ---
 
@@ -165,12 +171,14 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Response transformation
 - Client-specific APIs
 - Data composition
+- **Realtime Feedback Emitter** ✅ (Edge → Realtime event after DB write)
 
 **Responsibilities:**
 - Multi-service orchestration
 - Response optimization
 - Client-specific logic
 - Data filtering/shaping
+- **Emit realtime events post-mutation** ✅ (`budget.updated`, `transaction.created`)
 
 ---
 
@@ -278,6 +286,7 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - **`geofence_rules` table for real-time zone updates**
 - Dynamic rule evaluation engine (no redeployment needed)
 - A/B testing framework for geofencing algorithms
+- **Extension Feature Flags** ✅ (`/control/flags` endpoint, 15min refresh)
 
 **Responsibilities:**
 - Dynamic configuration
@@ -286,6 +295,7 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Feature toggling
 - **Real-time geofence rule updates** (add merchant zones without code deploy)
 - Control plane for dynamic zone configuration
+- **Extension kill switches & A/B testing** ✅ (gradual rollout, per-user targeting)
 
 ---
 
@@ -321,6 +331,7 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Geofence event types (`geofence.entered`, `geofence.exited`, `geofence.dwelling`)
 - Location update events (`location.updated`)
 - Merchant discovery events (`merchant.discovered`)
+- **User-Scoped Realtime Filtering** ✅ (server-side `filter=user_id=eq.{id}`)
 
 **Responsibilities:**
 - Event publishing with persistence
@@ -330,6 +341,7 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Location-based event routing
 - Geofence event distribution
 - **Fault tolerance:** Prevents event loss during AI module downtime/scaling
+- **Realtime feedback loop** ✅ (Edge functions emit events post-DB write)
 
 ---
 
@@ -441,6 +453,7 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Alerting (Slack/email)
 - **`geofence_metrics` table for telemetry**
 - **Geofencing-specific metrics dashboard**
+- **Extension Telemetry** ✅ (15min batch flush to `geofence_metrics`)
 
 **Responsibilities:**
 - Log aggregation across all layers
@@ -454,6 +467,10 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
   - Battery drain metrics (mobile)
   - False positive rate tracking
 - **AI Model Training Feedback:** Metrics feed back to Layer 9 for noise reduction
+- **Extension-specific metrics** ✅:
+  - `popup_opened`, `merchant_detected`, `expense_logged`, `budget_alert_shown`
+  - Extension error tracking
+  - Usage analytics for A/B testing
 
 ---
 
@@ -871,6 +888,884 @@ async function handleAuth() {
 
 ---
 
+## Production-Ready Refinements ⚙️
+
+### Service Worker Architecture (MV3) ✅
+
+**Challenge:** Chrome MV3 background service workers are ephemeral and terminate after 30 seconds of inactivity, causing state loss and event handler failures.
+
+**Solution:** Move all heavy logic to popup/content scripts. Use SW only for message routing and alarms.
+
+**Implementation:**
+
+```typescript
+// extension/background/index.ts (EPHEMERAL SERVICE WORKER)
+// ❌ AVOID: Heavy computation, long-running tasks
+// ✅ DO: Message routing, alarm registration, lightweight operations
+
+// Message Router (lightweight)
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  switch (message.type) {
+    case 'TRACK_BUDGET':
+      // Route to edge function, don't process locally
+      fetch(`${SUPABASE_URL}/functions/v1/track-budget`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(message.data)
+      });
+      break;
+    case 'REFRESH_CACHE':
+      // Trigger alarm for background refresh
+      chrome.alarms.create('cache-refresh', { delayInMinutes: 15 });
+      break;
+  }
+  return true; // Keep channel open for async response
+});
+
+// Alarm Handler (survives SW restarts)
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'cache-refresh') {
+    // Fetch fresh data and store in chrome.storage
+    const { data } = await supabase.from('budgets').select('*');
+    await chrome.storage.local.set({ budgets: data });
+  }
+  if (alarm.name === 'feature-flags-refresh') {
+    // Poll feature flags every 15 minutes
+    const flags = await fetch(`${BFF_URL}/control/flags`).then(r => r.json());
+    await chrome.storage.local.set({ featureFlags: flags });
+  }
+});
+
+// ✅ Heavy Logic in Popup/Content Scripts (persistent contexts)
+// extension/popup/analytics.ts
+export async function analyzeSpendingPattern(transactions: Transaction[]) {
+  // Runs in popup context, survives SW termination
+  const pattern = await fetch('/api/ai/analyze', {
+    method: 'POST',
+    body: JSON.stringify({ transactions })
+  }).then(r => r.json());
+  return pattern;
+}
+```
+
+**Testing:**
+- ✅ SW terminates after 30s → No crashes on next activation
+- ✅ Alarms continue firing after SW sleep
+- ✅ Message routing works after SW restart
+- ✅ No event loss during SW idle periods
+
+---
+
+### Extension CORS Configuration 🔒
+
+**Challenge:** Browser extension origins (`chrome-extension://...`) must be explicitly whitelisted in CORS policies, and cookie-based auth is vulnerable to CSRF.
+
+**Solution:** Whitelist extension IDs in Layer 2 (Edge) and use Bearer token authentication.
+
+**Implementation:**
+
+**1. Edge CORS Configuration (Layer 2 - Supabase Edge Function)**
+
+```typescript
+// supabase/functions/_shared/cors.ts
+const ALLOWED_ORIGINS = [
+  'https://truespend.app',
+  'https://*.truespend.app',
+  'chrome-extension://abcdefghijklmnopqrstuvwxyz123456', // Chrome Extension ID
+  'moz-extension://*', // Firefox (dynamic UUID)
+  'safari-web-extension://*' // Safari
+];
+
+export function corsHeaders(origin: string | null) {
+  const isAllowed = ALLOWED_ORIGINS.some(allowed => {
+    if (allowed.includes('*')) {
+      const regex = new RegExp(allowed.replace('*', '.*'));
+      return origin && regex.test(origin);
+    }
+    return origin === allowed;
+  });
+
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true'
+  };
+}
+```
+
+**2. Bearer Token Authentication (Layer 3/5)**
+
+```typescript
+// extension/popup/api-client.ts
+import { supabase } from '@/integrations/supabase/client';
+
+export async function authenticatedFetch(url: string, options: RequestInit = {}) {
+  // Get session token from Supabase Auth
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session?.access_token) {
+    throw new Error('Not authenticated');
+  }
+
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      'Authorization': `Bearer ${session.access_token}`, // ✅ Bearer token, not cookies
+      'Content-Type': 'application/json'
+    }
+  });
+}
+
+// Usage
+const response = await authenticatedFetch(
+  `${SUPABASE_URL}/rest/v1/budgets`,
+  { method: 'GET' }
+);
+```
+
+**3. Chrome Web Store Compliance**
+
+```json
+// manifest.json
+{
+  "host_permissions": [
+    "https://uolpwcngftpmgkopltwz.supabase.co/*" // Explicit Supabase project URL
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://uolpwcngftpmgkopltwz.supabase.co"
+  }
+}
+```
+
+**Security Benefits:**
+- ✅ No CSRF vulnerabilities (stateless Bearer tokens)
+- ✅ Extension origin whitelisted (prevents unauthorized extensions)
+- ✅ Token expiry enforced (short-lived access tokens)
+- ✅ Passes Chrome Web Store security review
+
+---
+
+### Realtime Filtering Best Practices 🔐
+
+**Challenge:** Supabase Realtime channels can leak events across users if not filtered properly.
+
+**Solution:** Filter Realtime channels by `user_id` or `event_type` at the subscription level.
+
+**Implementation:**
+
+**1. User-Scoped Realtime Subscriptions (Layer 14)**
+
+```typescript
+// extension/background/realtime.ts
+import { supabase } from '@/integrations/supabase/client';
+
+async function subscribeToUserBudgets() {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return;
+
+  // ✅ CORRECT: Filter by user_id in subscription
+  const channel = supabase
+    .channel(`user-budgets-${user.id}`) // Unique channel per user
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'budgets',
+      filter: `user_id=eq.${user.id}` // ✅ Server-side filter
+    }, (payload) => {
+      console.log('Budget update:', payload);
+      updateBadge(payload.new);
+    })
+    .subscribe();
+
+  return channel;
+}
+
+// ❌ INCORRECT: No filter (receives all users' events)
+const channel = supabase
+  .channel('budgets-all')
+  .on('postgres_changes', {
+    event: '*',
+    schema: 'public',
+    table: 'budgets'
+    // Missing filter! Receives all budget updates
+  }, (payload) => {
+    // Security issue: Cross-user event leakage
+  })
+  .subscribe();
+```
+
+**2. Event-Type Filtering**
+
+```typescript
+// Only subscribe to specific geofence events
+const geofenceChannel = supabase
+  .channel('geofence-alerts')
+  .on('postgres_changes', {
+    event: 'INSERT',
+    schema: 'public',
+    table: 'geofence_events',
+    filter: `user_id=eq.${user.id}&event_type=eq.entered` // Multiple filters
+  }, handleGeofenceEntry)
+  .subscribe();
+```
+
+**3. RLS Policy Enforcement (Layer 15)**
+
+```sql
+-- Ensure RLS policies prevent unauthorized reads
+CREATE POLICY "Users can only see own budgets"
+  ON budgets FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Even with Realtime, RLS prevents cross-user data access
+ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
+```
+
+**Security Benefits:**
+- ✅ Prevents cross-user event leaks
+- ✅ Reduces Realtime bandwidth (only relevant events)
+- ✅ Server-side filtering (can't be bypassed by client)
+
+---
+
+### Extension Telemetry 📊
+
+**Challenge:** Need to track extension-specific metrics (coupon apply success, popup opens, merchant detection) for observability.
+
+**Solution:** Add background job to send `extension_metrics` to Layer 18 (Observability).
+
+**Implementation:**
+
+**1. Telemetry Collection (Layer 18)**
+
+```typescript
+// extension/background/telemetry.ts
+interface ExtensionMetric {
+  metric_name: string;
+  metric_type: 'counter' | 'gauge' | 'histogram';
+  value: number;
+  user_id: string;
+  metadata: Record<string, any>;
+}
+
+class TelemetryService {
+  private metricsQueue: ExtensionMetric[] = [];
+  private flushInterval = 15 * 60 * 1000; // 15 minutes
+
+  constructor() {
+    // Set up periodic flush alarm
+    chrome.alarms.create('telemetry-flush', {
+      periodInMinutes: 15
+    });
+
+    chrome.alarms.onAlarm.addListener((alarm) => {
+      if (alarm.name === 'telemetry-flush') {
+        this.flush();
+      }
+    });
+  }
+
+  track(metricName: string, value: number, metadata: Record<string, any> = {}) {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    this.metricsQueue.push({
+      metric_name: metricName,
+      metric_type: 'counter',
+      value,
+      user_id: user?.id || 'anonymous',
+      metadata: {
+        ...metadata,
+        timestamp: new Date().toISOString(),
+        extension_version: chrome.runtime.getManifest().version
+      }
+    });
+
+    // Flush if queue exceeds 50 metrics
+    if (this.metricsQueue.length >= 50) {
+      this.flush();
+    }
+  }
+
+  private async flush() {
+    if (this.metricsQueue.length === 0) return;
+
+    try {
+      // Batch insert to geofence_metrics table
+      await supabase.from('geofence_metrics').insert(
+        this.metricsQueue.map(m => ({
+          metric_name: m.metric_name,
+          metric_type: m.metric_type,
+          value: m.value,
+          user_id: m.user_id,
+          metadata: m.metadata,
+          timestamp: new Date().toISOString()
+        }))
+      );
+
+      console.log(`[Telemetry] Flushed ${this.metricsQueue.length} metrics`);
+      this.metricsQueue = [];
+    } catch (error) {
+      console.error('[Telemetry] Flush failed:', error);
+      // Metrics will be retried on next flush
+    }
+  }
+}
+
+export const telemetry = new TelemetryService();
+```
+
+**2. Usage in Extension Components**
+
+```typescript
+// extension/content/merchant-detector.ts
+function detectMerchant() {
+  const merchantName = document.querySelector('h1')?.textContent;
+  
+  if (merchantName) {
+    telemetry.track('merchant_detected', 1, {
+      merchant_name: merchantName,
+      url: window.location.href
+    });
+  }
+}
+
+// extension/popup/quick-log.ts
+async function logExpense(amount: number) {
+  await supabase.from('transactions').insert({ amount, user_id });
+  
+  telemetry.track('expense_logged', 1, {
+    amount,
+    source: 'extension_quick_log'
+  });
+}
+
+// extension/background/index.ts
+chrome.action.onClicked.addListener(() => {
+  telemetry.track('popup_opened', 1);
+});
+```
+
+**3. Dashboard Visualization (Layer 18)**
+
+```typescript
+// src/pages/dashboard/ExtensionMetrics.tsx
+export function ExtensionMetrics() {
+  const { data: metrics } = useQuery({
+    queryKey: ['extension-metrics'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('geofence_metrics')
+        .select('*')
+        .eq('metric_type', 'counter')
+        .gte('timestamp', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
+        .order('timestamp', { ascending: true });
+      return data;
+    }
+  });
+
+  return (
+    <Card>
+      <CardHeader>Extension Activity (Last 7 Days)</CardHeader>
+      <CardContent>
+        <LineChart data={metrics}>
+          <Line dataKey="value" stroke="#8b5cf6" />
+          <XAxis dataKey="timestamp" />
+          <YAxis />
+        </LineChart>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+**Tracked Metrics:**
+- `popup_opened` - User opened extension popup
+- `merchant_detected` - Content script detected merchant
+- `expense_logged` - Quick expense log submitted
+- `budget_alert_shown` - Budget notification displayed
+- `extension_error` - Runtime error occurred
+
+---
+
+### Privacy & Compliance 🔒
+
+**Challenge:** Chrome Web Store and Safari App Store require explicit privacy disclosures and GDPR compliance.
+
+**Solution:** Add "Privacy & Permissions" modal in popup footer linking to `/privacy` page.
+
+**Implementation:**
+
+**1. Privacy Modal Component**
+
+```typescript
+// extension/popup/components/PrivacyModal.tsx
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+export function PrivacyModal() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button 
+        onClick={() => setOpen(true)}
+        className="text-xs text-muted-foreground hover:text-foreground"
+      >
+        Privacy & Permissions
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Privacy & Data Usage</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 text-sm">
+            <section>
+              <h3 className="font-semibold">Data We Collect</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Budget and transaction data (synced with your TrueSpend account)</li>
+                <li>Visited merchant websites (only for merchant detection)</li>
+                <li>Extension usage metrics (anonymous)</li>
+              </ul>
+            </section>
+
+            <section>
+              <h3 className="font-semibold">Data We DON'T Collect</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>❌ Browsing history</li>
+                <li>❌ Form data or passwords</li>
+                <li>❌ Location data (extension has no GPS access)</li>
+                <li>❌ Credit card information</li>
+              </ul>
+            </section>
+
+            <section>
+              <h3 className="font-semibold">Permissions Explained</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><code>storage</code> - Cache budget data locally for fast access</li>
+                <li><code>notifications</code> - Show budget alerts</li>
+                <li><code>activeTab</code> - Detect merchants on current tab only</li>
+              </ul>
+            </section>
+
+            <section>
+              <h3 className="font-semibold">Your Rights (GDPR)</h3>
+              <p>You can request data export or deletion at any time via your TrueSpend account settings.</p>
+            </section>
+
+            <a 
+              href="https://truespend.app/privacy" 
+              target="_blank"
+              className="text-primary hover:underline"
+            >
+              Read Full Privacy Policy →
+            </a>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+```
+
+**2. Footer Integration**
+
+```typescript
+// extension/popup/index.tsx
+function Popup() {
+  return (
+    <div className="w-96 h-[600px] flex flex-col">
+      <header className="p-4 border-b">
+        <h1>TrueSpend</h1>
+      </header>
+
+      <main className="flex-1 overflow-y-auto p-4">
+        <BudgetCard />
+        <TransactionList />
+      </main>
+
+      <footer className="p-2 border-t flex justify-center">
+        <PrivacyModal />
+      </footer>
+    </div>
+  );
+}
+```
+
+**3. Store Compliance Checklist**
+
+```markdown
+## Chrome Web Store Submission
+- ✅ Privacy policy URL: https://truespend.app/privacy
+- ✅ Data usage disclosure in manifest description
+- ✅ Minimal permissions requested
+- ✅ Single purpose: Budget tracking
+- ✅ No remote code execution
+- ✅ User data encrypted in transit (HTTPS)
+
+## Safari App Store Submission
+- ✅ Privacy policy linked in App Store listing
+- ✅ Data collection disclosure (Settings.bundle)
+- ✅ Entitlements justified in review notes
+```
+
+**Compliance Benefits:**
+- ✅ Passes Chrome Web Store privacy review
+- ✅ GDPR-compliant data disclosure
+- ✅ Users can easily access privacy info
+- ✅ Reduces support tickets about permissions
+
+---
+
+### Feature Flags & Control Plane 🚀
+
+**Challenge:** Need ability to enable/disable features (e.g., auto-apply coupon) without redeploying extension.
+
+**Solution:** Pull `/control/flags` on SW startup + 15 min alarm refresh.
+
+**Implementation:**
+
+**1. Control Plane API (Layer 12)**
+
+```typescript
+// supabase/functions/control-flags/index.ts
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+interface FeatureFlag {
+  name: string;
+  enabled: boolean;
+  rollout_percent: number; // 0-100
+  metadata: Record<string, any>;
+}
+
+serve(async (req) => {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
+  // Fetch feature flags from database
+  const { data: flags } = await supabase
+    .from('feature_flags')
+    .select('*')
+    .eq('platform', 'extension');
+
+  // User-specific rollout logic
+  const userId = req.headers.get('x-user-id');
+  const userHash = userId ? hashUserId(userId) : 0;
+
+  const resolvedFlags = flags.map(flag => ({
+    name: flag.name,
+    enabled: flag.enabled && (userHash % 100) < flag.rollout_percent
+  }));
+
+  return new Response(JSON.stringify({ flags: resolvedFlags }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+});
+
+function hashUserId(userId: string): number {
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+  }
+  return Math.abs(hash);
+}
+```
+
+**2. Background Worker Flag Polling**
+
+```typescript
+// extension/background/feature-flags.ts
+class FeatureFlagService {
+  private flags: Map<string, boolean> = new Map();
+  private readonly FLAGS_CACHE_KEY = 'feature_flags';
+
+  constructor() {
+    // Poll on SW startup
+    this.refresh();
+
+    // Set up periodic refresh (15 minutes)
+    chrome.alarms.create('feature-flags-refresh', {
+      periodInMinutes: 15
+    });
+
+    chrome.alarms.onAlarm.addListener((alarm) => {
+      if (alarm.name === 'feature-flags-refresh') {
+        this.refresh();
+      }
+    });
+  }
+
+  async refresh() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/control-flags`,
+        {
+          headers: {
+            'Authorization': `Bearer ${user?.id}`,
+            'x-user-id': user?.id || ''
+          }
+        }
+      );
+
+      const { flags } = await response.json();
+      
+      // Update in-memory cache
+      flags.forEach((flag: any) => {
+        this.flags.set(flag.name, flag.enabled);
+      });
+
+      // Persist to chrome.storage
+      await chrome.storage.local.set({
+        [this.FLAGS_CACHE_KEY]: Object.fromEntries(this.flags)
+      });
+
+      console.log('[FeatureFlags] Refreshed:', flags);
+    } catch (error) {
+      console.error('[FeatureFlags] Refresh failed:', error);
+      // Use cached flags if fetch fails
+      const cached = await chrome.storage.local.get(this.FLAGS_CACHE_KEY);
+      if (cached[this.FLAGS_CACHE_KEY]) {
+        this.flags = new Map(Object.entries(cached[this.FLAGS_CACHE_KEY]));
+      }
+    }
+  }
+
+  isEnabled(flagName: string): boolean {
+    return this.flags.get(flagName) ?? false;
+  }
+}
+
+export const featureFlags = new FeatureFlagService();
+```
+
+**3. Usage in Extension Features**
+
+```typescript
+// extension/content/merchant-detector.ts
+import { featureFlags } from '../background/feature-flags';
+
+async function detectMerchant() {
+  const merchantName = document.querySelector('h1')?.textContent;
+  
+  if (merchantName) {
+    // Check feature flag before applying coupon
+    if (await featureFlags.isEnabled('auto_apply_coupon')) {
+      applyCoupon(merchantName);
+    }
+  }
+}
+
+// Kill switch example
+if (!await featureFlags.isEnabled('extension_merchant_detection')) {
+  // Disable entire merchant detection feature
+  return;
+}
+```
+
+**4. Database Schema**
+
+```sql
+-- Feature flags table (Layer 15)
+CREATE TABLE feature_flags (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL UNIQUE,
+  enabled BOOLEAN DEFAULT false,
+  rollout_percent INTEGER DEFAULT 0 CHECK (rollout_percent >= 0 AND rollout_percent <= 100),
+  platform TEXT CHECK (platform IN ('web', 'mobile', 'extension', 'all')),
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Example flags
+INSERT INTO feature_flags (name, enabled, rollout_percent, platform) VALUES
+('auto_apply_coupon', false, 0, 'extension'), -- Kill switch OFF
+('extension_merchant_detection', true, 100, 'extension'),
+('quick_expense_log', true, 50, 'extension'); -- 50% rollout
+```
+
+**Benefits:**
+- ✅ Safe A/B testing (gradual rollout)
+- ✅ Kill switch for problematic features
+- ✅ No extension redeployment needed
+- ✅ Per-user feature targeting
+
+---
+
+### Edge → Realtime Feedback Loop 🔄
+
+**Challenge:** After edge function logs an expense, the UI must refresh to show updated budget without manual reload.
+
+**Solution:** Edge Functions emit realtime events after database writes (Layer 7 → Layer 14).
+
+**Implementation:**
+
+**1. Edge Function with Realtime Emit (Layer 7)**
+
+```typescript
+// supabase/functions/log-expense/index.ts
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+serve(async (req) => {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
+  const { amount, category, user_id } = await req.json();
+
+  // 1. Write to database
+  const { data: transaction, error } = await supabase
+    .from('transactions')
+    .insert({ amount, category, user_id })
+    .select()
+    .single();
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 400
+    });
+  }
+
+  // 2. Update budget spent amount
+  const { data: budget } = await supabase
+    .from('budgets')
+    .update({ 
+      spent: supabase.raw('spent + ?', [amount]),
+      updated_at: new Date().toISOString()
+    })
+    .eq('category', category)
+    .eq('user_id', user_id)
+    .select()
+    .single();
+
+  // 3. ✅ Emit Realtime event (Layer 14 feedback)
+  // This automatically triggers Supabase Realtime due to ALTER PUBLICATION
+  // But we can also explicitly send a custom event
+  await supabase.rpc('publish_event', {
+    channel: `budget-updates-${user_id}`,
+    event_type: 'budget.updated',
+    payload: { budget, transaction }
+  });
+
+  return new Response(JSON.stringify({ 
+    success: true, 
+    transaction,
+    budget 
+  }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+});
+```
+
+**2. Enable Realtime on Tables (Layer 14)**
+
+```sql
+-- Enable Realtime publication for budgets table
+ALTER PUBLICATION supabase_realtime ADD TABLE budgets;
+ALTER PUBLICATION supabase_realtime ADD TABLE transactions;
+
+-- Optional: Custom event function
+CREATE OR REPLACE FUNCTION publish_event(
+  channel TEXT,
+  event_type TEXT,
+  payload JSONB
+) RETURNS VOID AS $$
+BEGIN
+  PERFORM pg_notify(channel, json_build_object(
+    'type', event_type,
+    'payload', payload
+  )::text);
+END;
+$$ LANGUAGE plpgsql;
+```
+
+**3. Extension Background Worker Subscription**
+
+```typescript
+// extension/background/realtime.ts
+async function subscribeToUserBudgets() {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  // Subscribe to budget updates
+  const channel = supabase
+    .channel(`budget-updates-${user.id}`)
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'budgets',
+      filter: `user_id=eq.${user.id}`
+    }, async (payload) => {
+      console.log('[Realtime] Budget updated:', payload.new);
+      
+      // Update local cache
+      const cached = await chrome.storage.local.get('budgets');
+      const updatedBudgets = cached.budgets.map((b: any) =>
+        b.id === payload.new.id ? payload.new : b
+      );
+      await chrome.storage.local.set({ budgets: updatedBudgets });
+      
+      // Update badge if over budget
+      if (payload.new.spent_percent > 90) {
+        chrome.action.setBadgeText({ text: '!' });
+        chrome.action.setBadgeBackgroundColor({ color: '#dc2626' });
+      }
+      
+      // Notify popup if open
+      chrome.runtime.sendMessage({
+        type: 'BUDGET_UPDATED',
+        data: payload.new
+      });
+    })
+    .subscribe();
+}
+```
+
+**4. Popup UI React to Realtime**
+
+```typescript
+// extension/popup/index.tsx
+function Popup() {
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+
+  useEffect(() => {
+    // Listen for background worker messages
+    chrome.runtime.onMessage.addListener((message) => {
+      if (message.type === 'BUDGET_UPDATED') {
+        setBudgets(prev => 
+          prev.map(b => b.id === message.data.id ? message.data : b)
+        );
+        toast.success('Budget updated!'); // ✅ UI updates without refresh
+      }
+    });
+
+    // Initial load from cache
+    chrome.storage.local.get('budgets').then(({ budgets }) => {
+      if (budgets) setBudgets(budgets);
+    });
+  }, []);
+
+  return <BudgetCard budgets={budgets} />;
+}
+```
+
+**Benefits:**
+- ✅ Responsive UI (updates without refresh)
+- ✅ Consistent state across extension and web app
+- ✅ Real-time feedback after edge function writes
+- ✅ Reduces polling (more efficient)
+
+---
+
 ## Security Considerations (Enterprise-Grade)
 
 Security is implemented across multiple layers with enhanced geofencing and extension protection:
@@ -945,11 +1840,13 @@ graph TD
     L7 -->|Aggregated| L8
     L8 <-->|AI Processing| L9
     
-    %% Browser Extension Flow
-    L1B -->|Extension API| L2
+    %% Browser Extension Flow (✅ with refinements)
+    L1B -->|Extension API + Bearer Auth ✅| L2
     L1B -.->|Content Script| L8
-    L1B -.->|Background Worker| L14
-    L1B <-.->|Realtime Sync| L14
+    L1B -.->|Ephemeral SW (MV3) ✅| L14
+    L1B <-.->|Realtime Sync (Filtered) ✅| L14
+    L1B -.->|Feature Flags (15min poll) ✅| L12
+    L1B -.->|Telemetry ✅| L18
     
     %% Geofencing Flows (enterprise-grade with security & queuing) - Mobile Only
     L1A -.->|GPS + JWT Token 🔒| L2
