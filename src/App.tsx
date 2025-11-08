@@ -9,6 +9,7 @@ import Phases from "./pages/dashboard/Phases";
 import Architecture from "./pages/dashboard/Architecture";
 import Timeline from "./pages/dashboard/Timeline";
 import Tasks from "./pages/dashboard/Tasks";
+import Metrics from "./pages/dashboard/Metrics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,7 +30,7 @@ const App = () => (
             <Route path="tasks" element={<Tasks />} />
             <Route path="team" element={<div className="p-8">Team view coming soon...</div>} />
             <Route path="milestones" element={<div className="p-8">Milestones view coming soon...</div>} />
-            <Route path="metrics" element={<div className="p-8">Metrics view coming soon...</div>} />
+            <Route path="metrics" element={<Metrics />} />
             <Route path="risks" element={<div className="p-8">Risks view coming soon...</div>} />
             <Route path="testing" element={<div className="p-8">Testing view coming soon...</div>} />
           </Route>

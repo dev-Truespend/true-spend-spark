@@ -97,6 +97,53 @@ export type Database = {
           },
         ]
       }
+      geofence_metrics: {
+        Row: {
+          created_at: string | null
+          geofence_id: string | null
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_type: string
+          timestamp: string
+          unit: string | null
+          user_id: string | null
+          value: number
+        }
+        Insert: {
+          created_at?: string | null
+          geofence_id?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_type: string
+          timestamp?: string
+          unit?: string | null
+          user_id?: string | null
+          value: number
+        }
+        Update: {
+          created_at?: string | null
+          geofence_id?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_type?: string
+          timestamp?: string
+          unit?: string | null
+          user_id?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "geofence_metrics_geofence_id_fkey"
+            columns: ["geofence_id"]
+            isOneToOne: false
+            referencedRelation: "geofences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       geofences: {
         Row: {
           active: boolean | null
