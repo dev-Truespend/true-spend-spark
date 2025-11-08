@@ -274,7 +274,9 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 
 ## Phase 2.5: Geofencing Foundation 📍 (Enterprise-Grade)
 
-**Objective:** Implement enterprise-grade geofencing with JWT-based security, event queuing, telemetry, and fault-tolerant architecture  
+> **Implementation Guide:** See [Blueprint v4.0 - Enterprise Implementation Guide](./blueprint-v4.0.md#enterprise-implementation-guide) for detailed code examples, security patterns, and testing strategies for all 5 enterprise refinements.
+
+**Objective:** Implement enterprise-grade geofencing with JWT-based security, event queuing, telemetry, and fault-tolerant architecture
 **Duration:** 3 weeks (Weeks 8-10)  
 **Team:** 5 engineers (2 Backend, 1 Frontend, 1 Mobile, 1 DevOps)  
 **Story Points:** 42 SP (updated for enterprise refinements)  
@@ -557,7 +559,9 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 
 ## Phase 5.5: Location Intelligence 🗺️ (AI + Cache Optimization v2)
 
-**Objective:** Enhance geofencing with AI-powered location insights, spending predictions, intelligent merchant recommendations, and optimized caching layer v2  
+> **Implementation Guide:** See [Blueprint v4.0 - Enterprise Implementation Guide](./blueprint-v4.0.md#enterprise-implementation-guide) for AI integration patterns, Cache v2 optimization strategies, and telemetry feedback loops.
+
+**Objective:** Enhance geofencing with AI-powered location insights, spending predictions, intelligent merchant recommendations, and optimized caching layer v2
 **Duration:** 3 weeks (Weeks 23-25)  
 **Team:** 4 engineers (1 Backend, 1 AI/ML, 1 Frontend, 1 Mobile)  
 **Story Points:** 34 SP (updated for cache v2 optimization)  

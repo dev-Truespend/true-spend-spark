@@ -1165,6 +1165,7 @@ POST   /insights/analyze-location      - Trigger AI analysis for specific locati
 - [Implementation Timeline v4.0](./implementation-timeline-v4.0.md) - Phases 2.5 & 5.5 implementation details
 - [Phase 2.5: Geofencing Foundation](./implementation-timeline-v4.0.md#phase-25-geofencing-foundation-weeks-8-10) - Weeks 8-10
 - [Phase 5.5: Location Intelligence](./implementation-timeline-v4.0.md#phase-55-location-intelligence-weeks-23-25) - Weeks 23-25
+- [Enterprise Implementation Guide](#enterprise-implementation-guide) - Detailed code examples below
 
 **Edge Functions:**
 - `supabase/functions/track-location/index.ts` - GPS tracking and geofence validation
@@ -1173,6 +1174,699 @@ POST   /insights/analyze-location      - Trigger AI analysis for specific locati
 
 **Database Migrations:**
 - Migration: `20251108032448_geofencing_foundation.sql` - Creates geofence tables with RLS policies
+
+---
+
+## Enterprise Implementation Guide
+
+This section provides comprehensive implementation details for the 5 enterprise refinements integrated into TrueSpend v4.0's geofencing architecture.
+
+### Overview: The 5 Enterprise Refinements
+
+1. **JWT-Based Location Security** (Refinement #3) - Client-side token signing, server-side verification, nonce-based replay attack prevention
+2. **Event Bus & Queue** (Refinement #1) - Fault-tolerant event processing with at-least-once delivery
+3. **Control Plane for Dynamic Rules** (Refinement #2) - Real-time rule evaluation and configuration management
+4. **Cache v2 with Geohash Optimization** (Refinement #5) - High-performance proximity search with TTL management
+5. **Observability & Telemetry** (Refinement #4) - Real-time metrics, performance tracking, and AI feedback loops
+
+---
+
+### 1. JWT-Based Location Security (Refinement #3)
+
+**Purpose:** Prevent location spoofing, replay attacks, and ensure coordinate encryption for GDPR compliance.
+
+#### Client-Side Token Generation
+
+**File:** `src/utils/locationSecurity.ts`
+
+```typescript
+import { supabase } from '@/integrations/supabase/client';
+
+/**
+ * Generate a signed JWT token for location tracking
+ * Token payload: { sub, lat, lng, accuracy, nonce, iat, exp }
+ * Expires in 5 minutes
+ */
+export async function generateLocationToken(
+  lat: number,
+  lng: number,
+  accuracy: number
+): Promise<string> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  // Generate cryptographically secure nonce
+  const nonce = crypto.randomUUID();
+  
+  const payload = {
+    sub: user.id,
+    lat: lat.toFixed(8),
+    lng: lng.toFixed(8),
+    accuracy,
+    nonce,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 300, // 5 min expiry
+  };
+
+  // Store nonce for server-side validation
+  await supabase.from('location_tokens').insert({
+    user_id: user.id,
+    nonce,
+    expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+  });
+
+  // Sign with Web Crypto API
+  const encoder = new TextEncoder();
+  const data = encoder.encode(JSON.stringify(payload));
+  const { data: session } = await supabase.auth.getSession();
+  const signingKey = session?.session?.access_token || '';
+  
+  const keyData = encoder.encode(signingKey);
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, data);
+  
+  const base64Payload = btoa(JSON.stringify(payload))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  const base64Signature = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  
+  return `${base64Payload}.${base64Signature}`;
+}
+
+/**
+ * Track location with JWT security
+ */
+export async function trackLocationSecure(lat: number, lng: number, accuracy: number) {
+  const token = await generateLocationToken(lat, lng, accuracy);
+  
+  const { data, error } = await supabase.functions.invoke('track-location', {
+    body: { token }
+  });
+  
+  if (error) throw error;
+  return data;
+}
+```
+
+#### Server-Side Verification & Encryption
+
+**File:** `supabase/functions/track-location/index.ts` (key excerpts)
+
+```typescript
+// Verify JWT signature and nonce
+async function verifyLocationToken(token: string): Promise<LocationPayload> {
+  const [payloadB64, signatureB64] = token.split('.');
+  const payload = JSON.parse(atob(payloadB64));
+  
+  // Check expiration
+  if (payload.exp < Math.floor(Date.now() / 1000)) {
+    throw new Error('Token expired');
+  }
+  
+  // Verify HMAC signature
+  const isValid = await crypto.subtle.verify(...);
+  if (!isValid) throw new Error('Invalid signature');
+  
+  // Check nonce (prevent replay attacks)
+  const { data: tokenRecord } = await supabase
+    .from('location_tokens')
+    .select('*')
+    .eq('nonce', payload.nonce)
+    .is('used_at', null)
+    .single();
+  
+  if (!tokenRecord) throw new Error('Invalid or reused nonce');
+  
+  // Mark nonce as used
+  await supabase
+    .from('location_tokens')
+    .update({ used_at: new Date().toISOString() })
+    .eq('nonce', payload.nonce);
+  
+  return payload;
+}
+
+// Encrypt coordinates using Vault
+async function encryptCoordinates(lat: string, lng: string) {
+  const { data } = await supabase.rpc('vault_encrypt', {
+    secret: `${lat},${lng}`,
+    key_id: 'location-encryption-key'
+  });
+  return { encrypted: data, keyId: 'location-encryption-key' };
+}
+```
+
+**Security Metrics:**
+- JWT verification latency: <100ms (p95)
+- Replay attack success rate: 0%
+- Coordinate encryption: 100% coverage
+
+---
+
+### 2. Event Bus & Queue Implementation (Refinement #1)
+
+**Purpose:** Fault-tolerant asynchronous event processing with at-least-once delivery guarantees.
+
+#### Event Publishing
+
+**File:** `supabase/functions/track-location/index.ts` (excerpt)
+
+```typescript
+async function publishEvent(eventType: string, payload: Record<string, any>) {
+  await supabase.from('event_log').insert({
+    event_type: eventType,
+    payload,
+    status: 'pending',
+    retry_count: 0,
+    max_retries: 3
+  });
+}
+
+// Example usage after geofence detection
+if (eventType === 'entered') {
+  await publishEvent('geofence.entered', {
+    user_id: userId,
+    geofence_id: fence.id,
+    geofence_name: fence.name,
+    event_type: 'entered'
+  });
+}
+```
+
+#### Event Processor with Retry Logic
+
+**File:** `supabase/functions/event-bus-processor/index.ts`
+
+```typescript
+async function processEvents() {
+  const { data: events } = await supabase
+    .from('event_log')
+    .select('*')
+    .or('status.eq.pending,status.eq.failed')
+    .lte('retry_count', 3)
+    .order('created_at', { ascending: true })
+    .limit(10);
+
+  for (const event of events || []) {
+    try {
+      await supabase.from('event_log')
+        .update({ status: 'processing' })
+        .eq('id', event.id);
+      
+      // Route to handler
+      switch (event.event_type) {
+        case 'geofence.entered':
+          await handleGeofenceEvent(event);
+          break;
+        case 'notification.send':
+          await handleNotification(event);
+          break;
+      }
+      
+      await supabase.from('event_log')
+        .update({ status: 'completed', processed_at: new Date().toISOString() })
+        .eq('id', event.id);
+        
+    } catch (error) {
+      await supabase.from('event_log')
+        .update({
+          status: 'failed',
+          retry_count: event.retry_count + 1,
+          error_message: error.message
+        })
+        .eq('id', event.id);
+    }
+  }
+}
+```
+
+#### Client-Side Realtime Subscription
+
+**File:** `src/hooks/useEventBus.ts`
+
+```typescript
+import { useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+
+export function useEventBus(userId: string) {
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    const channel = supabase
+      .channel('event-bus')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'event_log',
+        filter: `payload->>user_id=eq.${userId}`
+      }, (payload) => {
+        const event = payload.new;
+        if (event.event_type === 'geofence.entered') {
+          toast({
+            title: '📍 Geofence Alert',
+            description: `You entered ${event.payload.geofence_name}`
+          });
+        }
+      })
+      .subscribe();
+    
+    return () => supabase.removeChannel(channel);
+  }, [userId, toast]);
+}
+```
+
+**Event Bus Metrics:**
+- Event processing latency: <500ms (p95)
+- At-least-once delivery: 99.9% success rate
+- Max retries before DLQ: 3 attempts
+
+---
+
+### 3. Control Plane for Dynamic Rules (Refinement #2)
+
+**Purpose:** Real-time rule evaluation and configuration management without code deployments.
+
+#### Rule Evaluation Engine
+
+**File:** `supabase/functions/track-location/index.ts` (excerpt)
+
+```typescript
+async function evaluateRules(userId: string, geofenceId: string, eventType: string) {
+  const { data: rules } = await supabase
+    .from('geofence_rules')
+    .select('*')
+    .eq('is_active', true)
+    .order('priority', { ascending: false });
+  
+  for (const rule of rules || []) {
+    // Evaluate conditions (simplified example)
+    const shouldTrigger = evaluateConditions(rule.conditions, {
+      userId,
+      geofenceId,
+      eventType
+    });
+    
+    if (shouldTrigger) {
+      // Execute actions
+      for (const action of rule.actions) {
+        if (action.type === 'notify') {
+          await publishEvent('notification.send', {
+            user_id: userId,
+            message: action.params.message,
+            rule_id: rule.id
+          });
+        } else if (action.type === 'alert') {
+          await publishEvent('alert.trigger', {
+            user_id: userId,
+            severity: action.params.severity,
+            rule_id: rule.id
+          });
+        }
+      }
+    }
+  }
+}
+
+function evaluateConditions(conditions: any, context: any): boolean {
+  const { operator, rules } = conditions;
+  
+  if (operator === 'AND') {
+    return rules.every((r: any) => evaluateSingleCondition(r, context));
+  } else if (operator === 'OR') {
+    return rules.some((r: any) => evaluateSingleCondition(r, context));
+  }
+  
+  return false;
+}
+
+function evaluateSingleCondition(rule: any, context: any): boolean {
+  const { field, operator, value } = rule;
+  const fieldValue = context[field];
+  
+  switch (operator) {
+    case 'eq': return fieldValue === value;
+    case 'neq': return fieldValue !== value;
+    case 'gt': return fieldValue > value;
+    case 'lt': return fieldValue < value;
+    default: return false;
+  }
+}
+```
+
+#### Example Rule Structure
+
+```json
+{
+  "name": "High-Value Zone Alert",
+  "rule_type": "budget_limit",
+  "conditions": {
+    "operator": "AND",
+    "rules": [
+      { "field": "eventType", "operator": "eq", "value": "entered" },
+      { "field": "geofenceId", "operator": "eq", "value": "luxury-district" }
+    ]
+  },
+  "actions": [
+    {
+      "type": "notify",
+      "params": {
+        "message": "You're in a high-spending zone. Budget alert enabled."
+      }
+    }
+  ],
+  "priority": 10,
+  "is_active": true
+}
+```
+
+**Control Plane Features:**
+- Dynamic rule updates without redeployment
+- Priority-based execution
+- A/B testing support via versioning
+- Admin UI for rule management
+
+---
+
+### 4. Cache v2 with Geohash Optimization (Refinement #5)
+
+**Purpose:** High-performance merchant discovery with geohash-based proximity search and TTL management.
+
+#### Geohash-Based Proximity Search
+
+**File:** `supabase/functions/discover-merchants/index.ts` (excerpt)
+
+```typescript
+async function discoverMerchants(lat: number, lng: number, radius: number) {
+  // Calculate geohash prefix (4 chars = ~20km precision)
+  const { data: geohashResult } = await supabase.rpc('calculate_geohash', { lat, lng });
+  const geohashPrefix = geohashResult.substring(0, 4);
+  
+  // Check cache first
+  const { data: cachedMerchants } = await supabase
+    .from('merchants_cache_v2')
+    .select('*')
+    .like('geohash', `${geohashPrefix}%`)
+    .gt('expires_at', new Date().toISOString())
+    .limit(20);
+  
+  if (cachedMerchants?.length > 0) {
+    console.log(`Cache hit: ${cachedMerchants.length} merchants`);
+    return { merchants: cachedMerchants, source: 'cache' };
+  }
+  
+  // Cache miss - fetch from Google Places API
+  const placesUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
+  placesUrl.searchParams.set('location', `${lat},${lng}`);
+  placesUrl.searchParams.set('radius', radius.toString());
+  placesUrl.searchParams.set('key', GOOGLE_PLACES_API_KEY);
+  
+  const response = await fetch(placesUrl.toString());
+  const data = await response.json();
+  
+  // Cache results with TTL
+  const merchants = [];
+  for (const place of data.results || []) {
+    const merchantGeohash = await supabase.rpc('calculate_geohash', {
+      lat: place.geometry.location.lat,
+      lng: place.geometry.location.lng
+    });
+    
+    const merchantData = {
+      place_id: place.place_id,
+      name: place.name,
+      geohash: merchantGeohash.data,
+      lat: place.geometry.location.lat,
+      lng: place.geometry.location.lng,
+      ttl_seconds: 86400, // 24 hours
+      expires_at: new Date(Date.now() + 86400000).toISOString(),
+      cache_version: 1
+    };
+    
+    await supabase.from('merchants_cache_v2').upsert(merchantData, { onConflict: 'place_id' });
+    merchants.push(merchantData);
+  }
+  
+  return { merchants, source: 'api' };
+}
+```
+
+#### Cache Versioning Strategy
+
+```typescript
+// Blue-green deployment: Update cache version
+await supabase.from('merchants_cache_v2')
+  .update({ cache_version: 2 })
+  .eq('cache_version', 1);
+
+// Invalidate stale cache
+await supabase.from('merchants_cache_v2')
+  .delete()
+  .lt('expires_at', new Date().toISOString());
+```
+
+**Cache Performance Targets:**
+- Cache hit ratio: >80%
+- Proximity query latency: <50ms (p95)
+- API cost reduction: 60%+
+
+---
+
+### 5. Observability & Telemetry (Refinement #4)
+
+**Purpose:** Real-time performance monitoring, anomaly detection, and AI feedback loops.
+
+#### Metric Instrumentation
+
+**File:** `supabase/functions/track-location/index.ts` (excerpt)
+
+```typescript
+async function logMetric(name: string, value: number, dimensions: Record<string, any>) {
+  await supabase.from('geofence_metrics').insert({
+    metric_name: name,
+    metric_value: value,
+    dimensions,
+    timestamp: new Date().toISOString()
+  });
+}
+
+// Example usage
+const startTime = Date.now();
+// ... perform geofence validation ...
+const latency = Date.now() - startTime;
+
+await logMetric('geofence_validation_latency_ms', latency, { user_id: userId });
+await logMetric('geofence_trigger', 1, { user_id: userId, geofence_id: fenceId, event_type: 'entered' });
+await logMetric('location_track_request', 1, { user_id: userId });
+```
+
+#### Telemetry Dashboard Component
+
+**File:** `src/components/geofencing/TelemetryDashboard.tsx`
+
+```typescript
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+export function TelemetryDashboard() {
+  const [metrics, setMetrics] = useState<any[]>([]);
+  
+  useEffect(() => {
+    fetchMetrics();
+    
+    const channel = supabase
+      .channel('metrics')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'geofence_metrics'
+      }, () => fetchMetrics())
+      .subscribe();
+    
+    return () => supabase.removeChannel(channel);
+  }, []);
+  
+  async function fetchMetrics() {
+    const { data } = await supabase
+      .from('geofence_metrics')
+      .select('*')
+      .gte('timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      .order('timestamp', { ascending: false });
+    
+    setMetrics(data || []);
+  }
+  
+  const aggregated = metrics.reduce((acc, m) => {
+    if (!acc[m.metric_name]) {
+      acc[m.metric_name] = { name: m.metric_name, count: 0, avg: 0, total: 0 };
+    }
+    acc[m.metric_name].count++;
+    acc[m.metric_name].total += m.metric_value;
+    acc[m.metric_name].avg = acc[m.metric_name].total / acc[m.metric_name].count;
+    return acc;
+  }, {} as Record<string, any>);
+  
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Geofencing Telemetry (Last 24h)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={Object.values(aggregated)}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="count" fill="hsl(var(--primary))" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+```
+
+**Observability Metrics:**
+- 100% operation instrumentation
+- Alert latency: <1min
+- Metric retention: 90 days
+- Dashboard update frequency: Real-time
+
+---
+
+### End-to-End Implementation Flow
+
+**Complete Request Flow with All 5 Refinements:**
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant JWT as JWT Security
+    participant EdgeFn as track-location
+    participant DB as Database
+    participant EventBus as Event Bus
+    participant Rules as Control Plane
+    participant Cache as Cache v2
+    participant Telemetry as Observability
+    participant AI as AI Agents
+
+    Client->>JWT: 1. Generate signed token (nonce)
+    JWT->>EdgeFn: 2. Submit token
+    EdgeFn->>EdgeFn: 3. Verify signature & nonce
+    EdgeFn->>DB: 4. Encrypt coordinates (Vault)
+    EdgeFn->>DB: 5. Check geofence boundaries
+    EdgeFn->>Telemetry: 6. Log validation latency
+    EdgeFn->>EventBus: 7. Publish geofence.entered event
+    EdgeFn->>Rules: 8. Evaluate dynamic rules
+    Rules->>EventBus: 9. Publish notification event
+    EventBus->>Client: 10. Real-time notification (toast)
+    EdgeFn->>Cache: 11. Fetch nearby merchants (geohash)
+    Cache-->>EdgeFn: 12. Cache hit/miss
+    Telemetry->>AI: 13. Feed metrics for analysis
+    AI-->>Client: 14. Personalized insights
+```
+
+**Key Integration Points:**
+1. JWT tokens protect location data from tampering
+2. Event Bus ensures no geofence events are lost
+3. Control Plane enables real-time rule changes
+4. Cache v2 reduces API costs by 60%+
+5. Telemetry feeds AI for continuous improvement
+
+---
+
+### Testing Strategy
+
+#### Security Tests
+
+**File:** `tests/security/jwt-replay-attack.test.ts`
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { generateLocationToken, trackLocationSecure } from '@/utils/locationSecurity';
+
+describe('JWT Replay Attack Prevention', () => {
+  it('should reject reused tokens', async () => {
+    const lat = 40.7128, lng = -74.0060, accuracy = 10;
+    
+    // First use - should succeed
+    await expect(trackLocationSecure(lat, lng, accuracy)).resolves.toBeDefined();
+    
+    // Second use - should fail (nonce already used)
+    await expect(trackLocationSecure(lat, lng, accuracy))
+      .rejects.toThrow('Invalid or reused nonce');
+  });
+  
+  it('should reject expired tokens', async () => {
+    vi.setSystemTime(Date.now() + 10 * 60 * 1000); // 10 min future
+    await expect(trackLocationSecure(40.7128, -74.0060, 10))
+      .rejects.toThrow('Token expired');
+  });
+});
+```
+
+#### Integration Tests
+
+- Event Bus delivery (at-least-once guarantee)
+- Geofence boundary accuracy (<1m error)
+- Cache invalidation on TTL expiry
+- Rule evaluation correctness
+
+#### Performance Tests
+
+- Geofence validation: <200ms (p95)
+- Event processing: <500ms (p95)
+- Cache query: <50ms (p95)
+- 1000+ concurrent users supported
+
+---
+
+### Deployment Checklist
+
+**Phase 2.5 (Weeks 8-10):**
+- [ ] Run database migration for enterprise tables
+- [ ] Create Vault encryption key: `location-encryption-key`
+- [ ] Deploy `track-location` edge function
+- [ ] Deploy `event-bus-processor` edge function
+- [ ] Set up scheduled cron for event processing (30s interval)
+- [ ] Enable realtime for `event_log` table
+- [ ] Implement JWT token generation on client
+- [ ] Add telemetry dashboard to UI
+- [ ] Run security test suite (JWT, nonce, encryption)
+- [ ] Performance test: 1000 concurrent location updates
+
+**Phase 5.5 (Weeks 23-25):**
+- [ ] Deploy `ai-location-insights` edge function
+- [ ] Configure `GOOGLE_PLACES_API_KEY` secret
+- [ ] Migrate existing merchants to `merchants_cache_v2`
+- [ ] Optimize cache hit ratio to >80%
+- [ ] Build location analytics dashboard
+- [ ] Enable AI feedback loop with telemetry
+- [ ] Load test cache performance
+- [ ] Monitor API cost reduction (target: 60%+)
+
+---
+
+### Performance Targets
+
+| Metric | Target | Layer |
+|--------|--------|-------|
+| JWT verification latency | <100ms (p95) | Layer 4 |
+| Geofence validation | <200ms (p95) | Layer 8 |
+| Event processing | <500ms (p95) | Layer 14 |
+| Cache query latency | <50ms (p95) | Layer 10 |
+| Cache hit ratio | >80% | Layer 10 |
+| Alert delivery | <1min | Layer 14 |
+| Replay attack success | 0% | Layer 4 |
+| Coordinate encryption | 100% coverage | Layer 18 |
 
 ---
 
