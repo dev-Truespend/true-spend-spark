@@ -1,7 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -12,8 +10,7 @@ import {
   BarChart3, 
   AlertTriangle,
   TestTube,
-  Layers,
-  LogOut
+  Layers
 } from "lucide-react";
 
 const navigation = [
@@ -31,18 +28,17 @@ const navigation = [
 
 export default function DashboardLayout() {
   const location = useLocation();
-  const { signOut, user } = useAuth();
 
   return (
     <div className="min-h-screen bg-background">
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-64 border-r bg-card min-h-screen sticky top-0 flex flex-col">
+        <div className="w-64 border-r bg-card min-h-screen sticky top-0">
           <div className="p-6 border-b">
             <h2 className="text-xl font-bold">TrueSpend v3.0</h2>
             <p className="text-xs text-muted-foreground mt-1">Project Dashboard</p>
           </div>
-          <nav className="p-4 space-y-1 flex-1">
+          <nav className="p-4 space-y-1">
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href || 
@@ -65,19 +61,6 @@ export default function DashboardLayout() {
               );
             })}
           </nav>
-          <div className="p-4 border-t">
-            <div className="text-xs text-muted-foreground mb-2 px-3">
-              {user?.email}
-            </div>
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-muted-foreground hover:text-accent-foreground"
-              onClick={() => signOut()}
-            >
-              <LogOut className="w-4 h-4 mr-3" />
-              Logout
-            </Button>
-          </div>
         </div>
 
         {/* Main Content */}

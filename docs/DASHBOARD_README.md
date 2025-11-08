@@ -2,7 +2,7 @@
 
 ## Overview
 
-A comprehensive project tracking dashboard for the TrueSpend v4.0 implementation, tracking all 37 weeks, 11 phases, 250+ tasks, 8 team members, and the complete architecture across 19 layers plus browser extension companion.
+A comprehensive project tracking dashboard for the TrueSpend v3.0 implementation, tracking all 28 weeks, 12 phases, 200+ tasks, 8 team members, and the complete architecture across 15 layers.
 
 ## Features
 
@@ -127,30 +127,25 @@ Navigate to `/dashboard` to view the project tracking dashboard.
 
 ## Architecture Diagram
 
-The dashboard tracks implementation across **19 architectural layers + browser extension companion**:
+The dashboard tracks implementation across **15 architectural layers**:
 
-1. **Layer 1A: Web & Mobile Client** (Navy Blue) - React SPA, PWA, native mobile with GPS
-2. **Layer 1B: Browser Extension** (Indigo) - Popup UI, background worker, content scripts
-3. **Layer 2: Edge & Ingress** (Orange) - CDN, WAF, DDoS protection
-4. **Layer 3: API Gateway** (Purple) - Rate limiting, routing
-5. **Layer 4: Modern Safety** (Green) - CSP, SRI
-6. **Layer 5: Auth & Session** (Blue) - JWT, MFA
-7. **Layer 6: Supply Chain Security** (Orange) - Dependency scanning
-8. **Layer 7: BFF Layer** (Green) - Request aggregation
-9. **Layer 8: Business Logic** (Purple) - Transaction processing, geofence rules
-10. **Layer 9: AI Agents** (Purple) - Pattern analysis, location insights
-11. **Layer 10: Egress Gateway** (Purple) - API key management, Places API
-12. **Layer 11: Retry Scheduler** (Orange) - Exponential backoff
-13. **Layer 12: Control Plane** (Purple) - Feature flags, dynamic rules
-14. **Layer 13: Notification Amplifier** (Orange) - Email, SMS, Push, geofence alerts
-15. **Layer 14: Event Bus** (Cyan) - Message broker, location events
-16. **Layer 15: Database** (Blue) - PostgreSQL, geofences, merchants
-17. **Layer 16: Storage** (Teal) - Object storage, merchant photos
-18. **Layer 17: Public Data Plane** (Light Blue) - Read replicas
-19. **Layer 18: Private Data Plane** (Red) - Encrypted storage, location data
-20. **Layer 19: Backup & DR** (Gray) - Automated backups
+1. **Client Layer** (Navy Blue) - Web app, mobile, browser extension
+2. **Release Safety** (Green) - CI/CD, staging, canary deployments
+3. **Modern Safety** (Red) - CSP, SRI
+4. **Cached Security** (Purple) - Encryption, backup, secrets
+5. **Config Resilience** (Orange) - DB protection, retry logic
+6. **Best Cases** (Blue) - BFF gateway, edge cache, rate limiting
+7. **Edge & Ingress** (Purple) - Schema validation, circuit breakers
+8. **AI Agents** (Pink) - 5 specialized AI agents
+9. **Core Microservices** (Green) - 8 business services
+10. **Control Plane** (Purple) - Orchestration, feature flags
+11. **Data Plane Public** (Blue) - Read replicas, materialized views
+12. **Data Plane Private** (Red) - Encrypted PII, RLS
+13. **Event Bus** (Cyan) - Realtime, database triggers
+14. **Observability** (Gray) - Logs, metrics, alerts
+15. **Identity & Access** (Green) - Auth, RBAC, session management
 
-Plus **Observability** cross-cutting layer and **Geofencing Subsystem** spanning 8 layers.
+Plus **Schema Governance** and **Infrastructure Points** (email, SMS, push).
 
 ## Implementation Timeline
 
@@ -162,28 +157,23 @@ Plus **Observability** cross-cutting layer and **Geofencing Subsystem** spanning
 - **Week 18-21**: Affiliate Integrations (Not Started)
 - **Week 21-26**: Frontend Development (Not Started)
 - **Week 26-28**: Production Hardening (Not Started)
-- **Week 29-34**: Observability & Polish (Not Started)
-- **Week 35-37**: Browser Extension MVP (Not Started)
 
 **Parallel Phases:**
-- Week 8-10: Geofencing Foundation
-- Week 23-25: Location Intelligence
-- Week 29-32: Data Plane Optimization
-- Week 33-34: Testing & QA
-- Week 35-37: Extension Development
+- Week 10-13: Control Plane & Observability
+- Week 13-15: Data Plane Optimization
+- Week 23-26: Testing & QA
+- Week 27-28: Production Launch
 
 ## Key Milestones
 
 1. ✅ **Week 2** - Infrastructure Foundation Complete
 2. 🔄 **Week 5** - Security Architecture Implemented (In Progress)
 3. ⏳ **Week 9** - External Integrations Live
-4. ⏳ **Week 10** - Geofencing Operational
-5. ⏳ **Week 14** - Core Services Operational
-6. ⏳ **Week 18** - AI Agents Deployed
-7. ⏳ **Week 25** - Location Intelligence Live
-8. ⏳ **Week 28** - Frontend Feature Complete
-9. ⏳ **Week 34** - Production Readiness Achieved
-10. ⏳ **Week 37** - Browser Extension Launch
+4. ⏳ **Week 14** - Core Services Operational
+5. ⏳ **Week 18** - AI Agents Deployed
+6. ⏳ **Week 26** - Frontend Feature Complete
+7. ⏳ **Week 28** - Production Readiness Achieved
+8. ⏳ **Week 28** - Production Launch
 
 ## Critical Risks (7)
 
@@ -208,11 +198,11 @@ Plus **Observability** cross-cutting layer and **Geofencing Subsystem** spanning
 
 ## Success Criteria
 
-- ✅ 11 phases tracked with real-time progress
-- ✅ 250+ tasks managed across all phases
-- ✅ 10 critical milestones monitored
+- ✅ 12 phases tracked with real-time progress
+- ✅ 200+ tasks managed across all phases
+- ✅ 8 critical milestones monitored
 - ✅ 7 risks tracked with mitigation plans
-- ✅ 60+ architecture components mapped (19 layers + extension)
+- ✅ 56+ architecture components mapped
 - ✅ Team workload and capacity visible
 - ✅ Real-time dashboard updates
 - ✅ Responsive design (mobile/tablet/desktop)
@@ -260,16 +250,16 @@ src/
 
 ## Documentation
 
-- **Blueprint v4.0**: `docs/architecture/blueprint-v4.0.md` - Complete 19-layer architecture with geofencing and browser extension
-- **Timeline v4.0**: `docs/architecture/implementation-timeline-v4.0.md` - 37-week detailed timeline with 11 phases
+- **Blueprint v3.0**: `docs/architecture/blueprint-v3.0.md` - Complete architecture with exact diagram
+- **Timeline v3.0**: `docs/architecture/implementation-timeline-v3.0.md` - 28-week detailed timeline
 - **Dashboard README**: This file - Dashboard documentation
 
 ## Links
 
 - [View Backend](Cloud Tab) - Access Lovable Cloud database
 - [Read Cloud Docs](https://docs.lovable.dev/features/cloud)
-- [Blueprint v4.0](../architecture/blueprint-v4.0.md)
-- [Timeline v4.0](../architecture/implementation-timeline-v4.0.md)
+- [Blueprint v3.0](../architecture/blueprint-v3.0.md)
+- [Timeline v3.0](../architecture/implementation-timeline-v3.0.md)
 
 ---
 
