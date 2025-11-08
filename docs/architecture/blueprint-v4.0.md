@@ -1799,44 +1799,44 @@ Security is implemented across multiple layers with enhanced geofencing and exte
 ### Complete 19-Layer Flow Diagram
 
 ```mermaid
-graph TD
+flowchart TD
     %% Client & Ingress Group
-    L1A[Layer 1A: Web & Mobile<br/>React SPA, PWA, Native GPS 📍]
-    L1B[Layer 1B: Browser Extension 🔌<br/>Popup UI, Content Scripts]
-    L2[Layer 2: Edge & Ingress<br/>CDN, WAF, DDoS]
-    L3[Layer 3: API Gateway<br/>Rate Limit, Routing]
+    L1A[Layer 1A: Web & Mobile - React SPA, PWA, Native GPS]
+    L1B[Layer 1B: Browser Extension - Popup UI, Content Scripts]
+    L2[Layer 2: Edge & Ingress - CDN, WAF, DDoS]
+    L3[Layer 3: API Gateway - Rate Limit, Routing]
     
     %% Security & Auth Group
-    L4[Layer 4: Modern Safety<br/>CSP, SRI, CORS]
-    L5[Layer 5: Auth & Session<br/>JWT, MFA]
-    L6[Layer 6: Supply Chain<br/>Dependency Scanning]
+    L4[Layer 4: Modern Safety - CSP, SRI, CORS]
+    L5[Layer 5: Auth & Session - JWT, MFA]
+    L6[Layer 6: Supply Chain - Dependency Scanning]
     
     %% Services Group
-    L7[Layer 7: BFF Layer<br/>Request Aggregation]
-    L8[Layer 8: Business Logic<br/>Transaction Processing, Geofence Rules 🗺️]
-    L9[Layer 9: AI Agents<br/>Pattern Analysis, Location Insights 🧠]
+    L7[Layer 7: BFF Layer - Request Aggregation]
+    L8[Layer 8: Business Logic - Transaction Processing, Geofence Rules]
+    L9[Layer 9: AI Agents - Pattern Analysis, Location Insights]
     
     %% External Communication Group
-    L10[Layer 10: Egress Gateway<br/>API Key Management, Places API 📍]
-    L11[Layer 11: Retry Scheduler<br/>Exponential Backoff]
-    L12[Layer 12: Control Plane<br/>Feature Flags]
+    L10[Layer 10: Egress Gateway - API Key Management, Places API]
+    L11[Layer 11: Retry Scheduler - Exponential Backoff]
+    L12[Layer 12: Control Plane - Feature Flags]
     
     %% Messaging Group
-    L13[Layer 13: Notification Amplifier<br/>Email, SMS, Push, Geofence Alerts 🔔]
-    L14[Layer 14: Event Bus<br/>Message Broker, Location Events 📡]
+    L13[Layer 13: Notification Amplifier - Email, SMS, Push]
+    L14[Layer 14: Event Bus - Message Broker, Location Events]
     
     %% Data & Storage Group
-    L15[Layer 15: Database<br/>PostgreSQL, Geofences, Merchants 📊]
-    L16[Layer 16: Storage<br/>Object Storage]
-    L17[Layer 17: Public Data Plane<br/>Read Replicas]
-    L18[Layer 18: Private Data Plane<br/>Encrypted Storage, Location Data 🔒]
-    L19[Layer 19: Backup & DR<br/>Automated Backups]
+    L15[Layer 15: Database - PostgreSQL, Geofences, Merchants]
+    L16[Layer 16: Storage - Object Storage]
+    L17[Layer 17: Public Data Plane - Read Replicas]
+    L18[Layer 18: Private Data Plane - Encrypted Storage, Location Data]
+    L19[Layer 19: Backup & DR - Automated Backups]
     
     %% Cross-Cutting
-    OBS[Observability<br/>Logs, Metrics, Traces]
+    OBS[Observability - Logs, Metrics, Traces]
     
     %% External Services
-    PlacesAPI[Google Places API 🗺️]
+    PlacesAPI[Google Places API]
     FSQAPI[Foursquare API]
     
     %% Main Synchronous Flow - Web & Mobile
@@ -1849,16 +1849,17 @@ graph TD
     L7 -->|Aggregated| L8
     L8 <-->|AI Processing| L9
     
-    %% Browser Extension Flow (✅ with refinements)
-    L1B -->|Extension API + Bearer Auth ✅| L2
+    %% Browser Extension Flow (sanitized)
+    L1B -->|Extension API + Bearer Auth| L2
     L1B -.->|Content Script| L8
-    L1B -.->|Ephemeral SW (MV3) ✅| L14
-    L1B <.->|Realtime Sync (Filtered) ✅| L14
-    L1B -.->|Feature Flags (15min poll) ✅| L12
-    L1B -.->|Telemetry ✅| L18
+    L1B -.->|Ephemeral SW (MV3)| L14
+    L1B -.->|Realtime Sync (Filtered)| L14
+    L14 -.->|Realtime Sync (Filtered)| L1B
+    L1B -.->|Feature Flags (15min poll)| L12
+    L1B -.->|Telemetry| L18
     
-    %% Geofencing Flows (enterprise-grade with security & queuing) - Mobile Only
-    L1A -.->|GPS + JWT Token 🔒| L2
+    %% Geofencing Flows - Mobile Only
+    L1A -.->|GPS + JWT Token| L2
     L2 -.->|track-location| L8
     L8 -.->|Token Validation| L5
     L5 -.->|Decrypt Location| L18
@@ -1868,9 +1869,9 @@ graph TD
     L14 -.->|At-least-once| L9
     L9 -.->|AI Insights| L8
     L14 -.->|Location Alert| L13
-    L13 -.->|Push Notification 🔔| L1A
+    L13 -.->|Push Notification| L1A
     L13 -.->|Browser Notification| L1B
-    L7 -.->|Emit Event (budget.updated) ✅| L14
+    L7 -.->|Emit Event (budget.updated)| L14
     OBS -.->|Telemetry| L14
     
     %% Merchant Discovery Flow
@@ -1882,7 +1883,7 @@ graph TD
     L10 -->|Cache Merchants| L15
     
     %% Location Intelligence Flow
-    L9 -.->|Location Insights 🧠| L8
+    L9 -.->|Location Insights| L8
     L9 -.->|Query Location History| L15
     
     %% External Communication
@@ -1895,7 +1896,7 @@ graph TD
     L8 -->|Write| L15
     L8 -->|Upload| L16
     L15 -->|Replicate| L17
-    L15 -->|Secure Location Data 🔒| L18
+    L15 -->|Secure Location Data| L18
     L16 -->|Backup| L19
     L18 -->|Backup| L19
     
@@ -1956,6 +1957,7 @@ graph TD
     class OBS obs
     class PlacesAPI,FSQAPI external
 ```
+
 
 ### Layer Groupings Visualization
 

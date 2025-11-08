@@ -7,7 +7,9 @@ import { Calendar, Clock, AlertTriangle, CheckCircle2, Users } from "lucide-reac
 import { EnhancedGanttChart } from "@/components/timeline/EnhancedGanttChart";
 import { HierarchicalProjectDiagram } from "@/components/timeline/HierarchicalProjectDiagram";
 import { TimelineImageGenerator } from "@/components/admin/TimelineImageGenerator";
-
+import { MermaidDiagram } from "@/components/architecture/MermaidDiagram";
+import { flow19 } from "@/components/architecture/diagrams/flow19";
+import { Link } from "react-router-dom";
 export default function Timeline() {
   const { phases, milestones, currentWeek, totalWeeks, isLoading } = useTimelineData();
 
@@ -144,6 +146,22 @@ export default function Timeline() {
         </p>
         <HierarchicalProjectDiagram />
       </div>
+
+      {/* Architecture Flow Preview */}
+      <Card>
+        <CardHeader className="flex items-center justify-between">
+          <div>
+            <CardTitle>Architecture Flow Preview</CardTitle>
+            <CardDescription>Compact view of the 19-layer flow. Open full diagram for details.</CardDescription>
+          </div>
+          <Link to="/dashboard/architecture" className="text-sm text-primary underline-offset-4 hover:underline">Open full diagram</Link>
+        </CardHeader>
+        <CardContent>
+          <div className="max-h-[420px] overflow-auto rounded-lg border bg-muted/30">
+            <MermaidDiagram chart={flow19} />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Visual Timeline */}
       <Card>

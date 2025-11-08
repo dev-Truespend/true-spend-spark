@@ -3,11 +3,13 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useArchitectureComponents } from "@/hooks/useProjectData";
-import { Layers, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { Layers, CheckCircle2, Clock, AlertCircle, Copy } from "lucide-react";
 import { InteractiveArchitectureMap } from "@/components/architecture/InteractiveArchitectureMap";
 import { FlowDiagram } from "@/components/architecture/FlowDiagram";
 import { IsometricArchitecture } from "@/components/architecture/IsometricArchitecture";
-
+import { MermaidDiagram } from "@/components/architecture/MermaidDiagram";
+import { flow19 } from "@/components/architecture/diagrams/flow19";
+import { Button } from "@/components/ui/button";
 export default function Architecture() {
   const { data: components, isLoading } = useArchitectureComponents();
 
@@ -86,6 +88,25 @@ export default function Architecture() {
 
       {/* Interactive Architecture Map */}
       <InteractiveArchitectureMap />
+
+      {/* Complete 19-Layer Flow (Mermaid) */}
+      <Card>
+        <CardHeader className="flex items-start justify-between">
+          <div>
+            <CardTitle>Complete 19-Layer Flow (Mermaid)</CardTitle>
+            <CardDescription>Interactive flowchart of all layers and connections</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(flow19)}>
+            <Copy className="h-4 w-4" />
+            Copy source
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border bg-muted/30">
+            <MermaidDiagram chart={flow19} />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Architecture Statistics */}
       <div className="grid gap-4 md:grid-cols-4">
