@@ -1366,7 +1366,7 @@ graph TD
     L10 -->|Fallback| FSQAPI
     PlacesAPI -.->|Merchant Data| L10
     FSQAPI -.->|Merchant Data| L10
-    L10 -->|Cache v3 (L1/L2/L3)| L15
+    L10 -->|Cache v3 Multi-tier| L15
     
     %% NEW: Deals & Cashback Flow (Layer 10B)
     L8 -->|Query Offers| L10B
