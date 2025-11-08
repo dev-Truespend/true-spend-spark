@@ -54,7 +54,7 @@ export default function Timeline() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Implementation Timeline</h1>
         <p className="text-muted-foreground mt-2">
-          28-week implementation plan with 16 phases and critical milestones
+          v4.0: 28-week implementation plan with 8 phases covering 19 architecture layers
         </p>
       </div>
 
