@@ -52,7 +52,7 @@ export function TimelineImageGenerator() {
           Timeline Image Generator
         </CardTitle>
         <CardDescription>
-          Generate a visual timeline diagram for Blueprint v4.0 documentation
+          Generate a visual timeline diagram for Blueprint v4.2 documentation
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

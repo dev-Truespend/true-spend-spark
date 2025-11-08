@@ -141,7 +141,7 @@ export default function Timeline() {
       <div>
         <h2 className="text-2xl font-bold mb-4">Project Task Hierarchy</h2>
         <p className="text-muted-foreground mb-4">
-          Complete breakdown of all phases, sections, and tasks based on Blueprint v4.1
+          Complete breakdown of all phases, sections, and tasks based on Blueprint v4.2
         </p>
         <HierarchicalProjectDiagram />
       </div>

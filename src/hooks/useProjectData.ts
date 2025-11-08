@@ -109,7 +109,7 @@ export function useProjectOverview() {
   const milestones = useMilestones();
 
   const currentWeek = 5; // This should be calculated based on project start date
-  const totalWeeks = 34; // Blueprint v4.0: Extended to Week 34 with geofencing phases
+  const totalWeeks = 48; // Blueprint v4.2: 48 weeks with 15 phases (performance + ML + Layer 10B)
 
   const overallProgress = phases.data
     ? Math.round(
