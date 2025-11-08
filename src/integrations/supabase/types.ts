@@ -322,6 +322,7 @@ export type Database = {
           risk_level: string | null
           start_week: number
           status: string | null
+          story_points: number | null
           team_size: number | null
           updated_at: string | null
         }
@@ -338,6 +339,7 @@ export type Database = {
           risk_level?: string | null
           start_week: number
           status?: string | null
+          story_points?: number | null
           team_size?: number | null
           updated_at?: string | null
         }
@@ -354,6 +356,7 @@ export type Database = {
           risk_level?: string | null
           start_week?: number
           status?: string | null
+          story_points?: number | null
           team_size?: number | null
           updated_at?: string | null
         }
