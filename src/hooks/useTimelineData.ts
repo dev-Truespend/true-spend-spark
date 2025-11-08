@@ -6,7 +6,7 @@ export function useTimelineData() {
   const milestones = useMilestones();
 
   const currentWeek = 5; // Current week in the timeline
-  const totalWeeks = 28; // Total project duration
+  const totalWeeks = 34; // Blueprint v4.0: Total project duration with geofencing
 
   const timelineData = useMemo(() => {
     if (!phases.data) return null;

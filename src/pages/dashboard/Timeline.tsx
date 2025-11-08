@@ -57,7 +57,7 @@ export default function Timeline() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Implementation Timeline</h1>
         <p className="text-muted-foreground mt-2">
-          v4.0: 28-week implementation plan with 8 phases covering 19 architecture layers
+          v4.0: 34-week implementation with 10 phases covering 19 architecture layers + native geofencing 📍🗺️
         </p>
       </div>
 
@@ -150,7 +150,7 @@ export default function Timeline() {
         <CardHeader>
           <CardTitle>Timeline Overview</CardTitle>
           <CardDescription>
-            28-week phase progress bars with current status
+            34-week phase progress bars with geofencing milestones (Week 10 📍, Week 25 🗺️)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -158,10 +158,10 @@ export default function Timeline() {
             {/* Week markers */}
             <div className="flex justify-between text-xs text-muted-foreground mb-2">
               <span>Week 0</span>
-              <span>Week 7</span>
-              <span>Week 14</span>
-              <span>Week 21</span>
-              <span>Week 28</span>
+              <span>Week 10</span>
+              <span>Week 20</span>
+              <span>Week 30</span>
+              <span>Week 34</span>
             </div>
             
             {/* Timeline bars */}

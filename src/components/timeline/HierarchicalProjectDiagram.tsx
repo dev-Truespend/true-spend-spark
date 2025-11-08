@@ -21,85 +21,83 @@ interface Phase {
 
 const BLUEPRINT_PHASES: Phase[] = [
   {
-    id: 0,
-    name: "Phase 0: Foundation",
+    id: 1,
+    name: "Phase 1: Foundation & Client Layer",
     sections: [
       {
-        name: "Project Setup & Config",
+        name: "Project Setup",
         tasks: [
           { name: "Lovable Cloud Enable", status: "completed" },
           { name: "Environment Variables Setup", status: "completed" },
           { name: "Schema Governance Framework", status: "active" },
-          { name: "API Schema Types (Zod)", status: "active" },
-          { name: "Event Schema Types", status: "pending" },
-          { name: "Monitoring Foundation", status: "pending" },
-          { name: "Structured Logging Setup", status: "pending" },
-          { name: "Phase 0 Testing & Docs", status: "milestone" },
-        ]
-      },
-      {
-        name: "Data Plane-A Design",
-        tasks: [
-          { name: "Users Table + RLS", status: "pending" },
-          { name: "Profiles Table + Encryption", status: "pending" },
-          { name: "Transactions Table + RLS", status: "pending" },
-          { name: "Accounts Table + RLS", status: "pending" },
-        ]
-      }
-    ]
-  },
-  {
-    id: 1,
-    name: "Phase 1: Data & Auth",
-    sections: [
-      {
-        name: "Data Plane-B Design",
-        tasks: [
-          { name: "Categories Table", status: "pending" },
-          { name: "Merchants Table", status: "pending" },
-          { name: "Products Table", status: "pending" },
-        ]
-      },
-      {
-        name: "Auth System Setup",
-        tasks: [
-          { name: "Auth System Setup", status: "pending" },
-          { name: "Google OAuth Integration", status: "pending" },
-          { name: "User Roles Table + RBAC", status: "pending" },
-          { name: "RLS Policies (All Tables)", status: "pending" },
-          { name: "Auth Testing", status: "pending" },
-          { name: "Phase 1 Security Audit", status: "milestone" },
+          { name: "React Client Layer Setup", status: "pending" },
+          { name: "Foundation Complete", status: "milestone" },
         ]
       }
     ]
   },
   {
     id: 2,
-    name: "Phase 2: External Services",
+    name: "Phase 2: Security & Ingress",
     sections: [
       {
-        name: "Plaid Integration Design",
+        name: "Security Infrastructure",
         tasks: [
-          { name: "Plaid/Edge Functions", status: "pending" },
-          { name: "Bank Connection Flow", status: "pending" },
-          { name: "Transaction Sync", status: "pending" },
+          { name: "WAF & Rate Limiting", status: "pending" },
+          { name: "SSL/TLS Configuration", status: "pending" },
+          { name: "API Gateway Setup", status: "pending" },
+          { name: "Security Headers", status: "pending" },
+          { name: "Security Layer Complete", status: "milestone" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 2.5,
+    name: "Phase 2.5: Geofencing Foundation 📍",
+    sections: [
+      {
+        name: "Native Mobile Setup",
+        tasks: [
+          { name: "Install Capacitor dependencies", status: "pending" },
+          { name: "Configure iOS project", status: "pending" },
+          { name: "Configure Android project", status: "pending" },
+          { name: "Test basic geolocation", status: "pending" },
         ]
       },
       {
-        name: "Payment & Communication",
+        name: "Location Infrastructure",
         tasks: [
-          { name: "Stripe Integration", status: "pending" },
-          { name: "Subscription Management", status: "pending" },
-          { name: "SMS/Twilio Setup", status: "pending" },
-          { name: "Notification Templates", status: "pending" },
-          { name: "External Services Testing", status: "milestone" },
+          { name: "Create geofences table", status: "pending" },
+          { name: "Create geofence_events table", status: "pending" },
+          { name: "Create merchants table", status: "pending" },
+          { name: "Implement RLS policies", status: "pending" },
+          { name: "Google Places API setup", status: "pending" },
+          { name: "Foursquare API setup", status: "pending" },
+          { name: "Geofencing Foundation Complete", status: "milestone" },
         ]
       }
     ]
   },
   {
     id: 3,
-    name: "Phase 3: Core Services",
+    name: "Phase 3: Authentication & Supply Chain",
+    sections: [
+      {
+        name: "Auth System",
+        tasks: [
+          { name: "Auth System Setup", status: "pending" },
+          { name: "Google OAuth Integration", status: "pending" },
+          { name: "User Roles Table + RBAC", status: "pending" },
+          { name: "RLS Policies (All Tables)", status: "pending" },
+          { name: "Auth Security Audit", status: "milestone" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 4,
+    name: "Phase 4: Core Services",
     sections: [
       {
         name: "Transaction Engine",
@@ -115,7 +113,6 @@ const BLUEPRINT_PHASES: Phase[] = [
           { name: "Budget Management", status: "pending" },
           { name: "Budget Alerts", status: "pending" },
           { name: "Analytics Engine", status: "pending" },
-          { name: "Reports Generation", status: "pending" },
           { name: "Notification System", status: "pending" },
           { name: "Core Features Integration", status: "milestone" },
         ]
@@ -123,95 +120,86 @@ const BLUEPRINT_PHASES: Phase[] = [
     ]
   },
   {
-    id: 4,
-    name: "Phase 4: UI/UX",
+    id: 5,
+    name: "Phase 5: External Communication",
     sections: [
       {
-        name: "Dashboard & Views",
+        name: "External Services",
         tasks: [
-          { name: "Dashboard UI", status: "pending" },
-          { name: "Transaction Views", status: "pending" },
-          { name: "Budget Interface", status: "pending" },
-          { name: "Analytics Dashboard", status: "pending" },
-        ]
-      },
-      {
-        name: "Responsive Design",
-        tasks: [
-          { name: "Mobile Responsive Design", status: "pending" },
-          { name: "Tablet Optimization", status: "pending" },
-          { name: "Accessibility (WCAG)", status: "pending" },
-          { name: "UI/UX Review", status: "milestone" },
+          { name: "Plaid Integration", status: "pending" },
+          { name: "Stripe Integration", status: "pending" },
+          { name: "SMS/Twilio Setup", status: "pending" },
+          { name: "External Services Testing", status: "milestone" },
         ]
       }
     ]
   },
   {
-    id: 5,
-    name: "Phase 5: Security & Performance",
+    id: 5.5,
+    name: "Phase 5.5: Location Intelligence 🗺️",
     sections: [
       {
-        name: "Security Hardening",
+        name: "Background Tracking",
         tasks: [
-          { name: "RLS Policies (All Tables)", status: "pending" },
-          { name: "CSP Implementation", status: "pending" },
-          { name: "SRI Configuration", status: "pending" },
-          { name: "Security Headers", status: "pending" },
+          { name: "Implement background geolocation", status: "pending" },
+          { name: "Build geofence boundary detection", status: "pending" },
+          { name: "Create location event publishing", status: "pending" },
+          { name: "Test battery optimization", status: "pending" },
         ]
       },
       {
-        name: "Performance",
+        name: "AI Location Insights",
         tasks: [
-          { name: "Performance Optimization", status: "pending" },
-          { name: "Caching Strategy", status: "pending" },
-          { name: "Load Testing", status: "pending" },
-          { name: "Security Audit", status: "milestone" },
+          { name: "Budget zone enforcement logic", status: "pending" },
+          { name: "Location-based spending alerts", status: "pending" },
+          { name: "Integrate Lovable AI (Gemini 2.5 Flash)", status: "pending" },
+          { name: "Build spending pattern analysis", status: "pending" },
+          { name: "Merchant proximity validation", status: "pending" },
+          { name: "Location Intelligence Complete", status: "milestone" },
         ]
       }
     ]
   },
   {
     id: 6,
-    name: "Phase 6: Testing & QA",
+    name: "Phase 6: Messaging & Events",
     sections: [
       {
-        name: "Testing Suite",
+        name: "Messaging Infrastructure",
         tasks: [
-          { name: "Integration Testing", status: "pending" },
-          { name: "E2E Testing", status: "pending" },
-          { name: "User Acceptance Testing", status: "pending" },
-          { name: "Security Testing", status: "pending" },
-        ]
-      },
-      {
-        name: "Quality Assurance",
-        tasks: [
-          { name: "Bug Fixes & Refinement", status: "pending" },
-          { name: "Performance Testing", status: "pending" },
-          { name: "Cross-browser Testing", status: "pending" },
-          { name: "Final QA Review", status: "milestone" },
+          { name: "Event Bus Setup", status: "pending" },
+          { name: "WebSocket Implementation", status: "pending" },
+          { name: "Push Notifications", status: "pending" },
+          { name: "Messaging Integration", status: "milestone" },
         ]
       }
     ]
   },
   {
     id: 7,
-    name: "Phase 7: Launch Prep",
+    name: "Phase 7: Data Planes & DR",
     sections: [
       {
-        name: "Documentation & Deploy",
+        name: "Data Infrastructure",
         tasks: [
-          { name: "Documentation Complete", status: "pending" },
-          { name: "API Documentation", status: "pending" },
-          { name: "User Guides", status: "pending" },
+          { name: "Data Plane-A Implementation", status: "pending" },
+          { name: "Data Plane-B Implementation", status: "pending" },
+          { name: "Backup & Recovery", status: "pending" },
+          { name: "DR Testing Complete", status: "milestone" },
         ]
-      },
+      }
+    ]
+  },
+  {
+    id: 8,
+    name: "Phase 8: Observability & Polish",
+    sections: [
       {
         name: "Production Readiness",
         tasks: [
-          { name: "Deployment Pipeline", status: "pending" },
           { name: "Monitoring & Alerts", status: "pending" },
-          { name: "Backup & Recovery", status: "pending" },
+          { name: "Performance Optimization", status: "pending" },
+          { name: "Security Hardening", status: "pending" },
           { name: "Production Launch", status: "milestone" },
         ]
       }
@@ -236,9 +224,9 @@ export function HierarchicalProjectDiagram() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>TrueSpend: Production-Ready Build Timeline (0-100k Users)</CardTitle>
+        <CardTitle>TrueSpend v4.0: Blueprint Implementation with Geofencing</CardTitle>
         <CardDescription>
-          Hierarchical view of all phases, sections, and tasks in the implementation timeline
+          Hierarchical view of all 10 phases, sections, and tasks in the 34-week timeline
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -249,7 +237,7 @@ export function HierarchicalProjectDiagram() {
               <div className="flex items-center gap-3 -ml-9">
                 <Badge 
                   variant="default" 
-                  className="w-8 h-8 rounded-full flex items-center justify-center p-0 font-bold"
+                  className="min-w-12 h-8 rounded-full flex items-center justify-center p-2 font-bold"
                 >
                   {phase.id}
                 </Badge>

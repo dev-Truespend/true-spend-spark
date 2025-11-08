@@ -56,6 +56,137 @@ export type Database = {
         }
         Relationships: []
       }
+      geofence_events: {
+        Row: {
+          accuracy_meters: number | null
+          event_type: string
+          geofence_id: string | null
+          id: string
+          location_lat: number | null
+          location_lng: number | null
+          timestamp: string | null
+          user_id: string
+        }
+        Insert: {
+          accuracy_meters?: number | null
+          event_type: string
+          geofence_id?: string | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          timestamp?: string | null
+          user_id: string
+        }
+        Update: {
+          accuracy_meters?: number | null
+          event_type?: string
+          geofence_id?: string | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          timestamp?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "geofence_events_geofence_id_fkey"
+            columns: ["geofence_id"]
+            isOneToOne: false
+            referencedRelation: "geofences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      geofences: {
+        Row: {
+          active: boolean | null
+          alert_threshold: number | null
+          budget_limit: number | null
+          center_lat: number
+          center_lng: number
+          created_at: string | null
+          id: string
+          name: string
+          radius_meters: number
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          alert_threshold?: number | null
+          budget_limit?: number | null
+          center_lat: number
+          center_lng: number
+          created_at?: string | null
+          id?: string
+          name: string
+          radius_meters: number
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          alert_threshold?: number | null
+          budget_limit?: number | null
+          center_lat?: number
+          center_lng?: number
+          created_at?: string | null
+          id?: string
+          name?: string
+          radius_meters?: number
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      merchants: {
+        Row: {
+          address: string | null
+          category: string | null
+          id: string
+          last_updated: string | null
+          lat: number | null
+          lng: number | null
+          name: string
+          phone: string | null
+          photo_url: string | null
+          place_id: string
+          rating: number | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          category?: string | null
+          id?: string
+          last_updated?: string | null
+          lat?: number | null
+          lng?: number | null
+          name: string
+          phone?: string | null
+          photo_url?: string | null
+          place_id: string
+          rating?: number | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          category?: string | null
+          id?: string
+          last_updated?: string | null
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          phone?: string | null
+          photo_url?: string | null
+          place_id?: string
+          rating?: number | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       metrics: {
         Row: {
           id: string
