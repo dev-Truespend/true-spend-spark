@@ -490,6 +490,8 @@ The TrueSpend browser extension provides lightweight budget tracking and merchan
 - ❌ No offline-first (requires network)
 
 ### Extension Architecture Diagram
+<details>
+  <summary>Open diagram</summary>
 
 ```mermaid
 graph LR
@@ -545,6 +547,7 @@ graph LR
     class Auth,Realtime,DB,EdgeFn backend
     class Merchant,Form web
 ```
+</details>
 
 ### Component Breakdown
 
@@ -1797,6 +1800,8 @@ Security is implemented across multiple layers with enhanced geofencing and exte
 ## Visual Architecture Diagrams
 
 ### Complete 19-Layer Flow Diagram
+<details>
+  <summary>Open diagram</summary>
 
 ```mermaid
 flowchart TD
@@ -1852,7 +1857,7 @@ flowchart TD
     %% Browser Extension Flow (sanitized)
     L1B -->|Extension API + Bearer Auth| L2
     L1B -.->|Content Script| L8
-    L1B -.->|Ephemeral SW (MV3)| L14
+    
     L1B -.->|Realtime Sync (Filtered)| L14
     L14 -.->|Realtime Sync (Filtered)| L1B
     L1B -.->|Feature Flags (15min poll)| L12
@@ -1957,9 +1962,12 @@ flowchart TD
     class OBS obs
     class PlacesAPI,FSQAPI external
 ```
+</details>
 
 
 ### Layer Groupings Visualization
+<details>
+  <summary>Open diagram</summary>
 
 ```mermaid
 graph LR
@@ -2020,8 +2028,11 @@ graph LR
     class MN,L13,L14 group5
     class DS,L15,L16,L17,L18,L19 group6
 ```
+</details>
 
 ### Request Flow Sequence Diagram
+<details>
+  <summary>Open diagram</summary>
 
 ```mermaid
 sequenceDiagram
@@ -2060,8 +2071,11 @@ sequenceDiagram
     API-->>CDN: Cached Response
     CDN-->>Client: HTTPS Response
 ```
+</details>
 
 ### Data Persistence Flow
+<details>
+  <summary>Open diagram</summary>
 
 ```mermaid
 graph TD
@@ -2102,8 +2116,11 @@ graph TD
     class PRI private
     class BCK backup
 ```
+</details>
 
 ### Resilience & Retry Pattern
+<details>
+  <summary>Open diagram</summary>
 
 ```mermaid
 graph TD
@@ -2144,8 +2161,11 @@ graph TD
     class Control control
     class External,DLQ external
 ```
+</details>
 
 ### Event-Driven Architecture
+<details>
+  <summary>Open diagram</summary>
 
 ```mermaid
 graph LR
@@ -2193,8 +2213,11 @@ graph LR
     class Notify,Analytics,Audit subscriber
     class Email,SMS,Push channel
 ```
+</details>
 
 ### Geofencing Location Tracking Flow
+<details>
+  <summary>Open diagram</summary>
 
 ```mermaid
 sequenceDiagram
@@ -2251,6 +2274,7 @@ sequenceDiagram
     
     EdgeFn-->>Client: 200 OK {status: "tracked"}
 ```
+</details>
 
 ---
 
@@ -2271,6 +2295,8 @@ The geofencing subsystem is a cross-layer feature that integrates native mobile 
 - **Layer 18 (Private Data):** Encrypted location storage, 30-day retention policy, GDPR compliance
 
 ### Simplified Geofencing Data Flow
+<details>
+  <summary>Open diagram</summary>
 
 ```mermaid
 graph LR
@@ -2329,8 +2355,11 @@ graph LR
     class GeoDB,EventDB,MerchantDB,TxDB data
     class Places,FSQ external
 ```
+</details>
 
 ### Database Schema: Geofencing Tables
+<details>
+  <summary>Open diagram</summary>
 
 ```mermaid
 erDiagram
@@ -2395,6 +2424,7 @@ erDiagram
     geofences ||--o{ transactions : contains
     merchants ||--o{ transactions : performed_at
 ```
+</details>
 
 ### Security & Privacy Considerations
 
@@ -3108,6 +3138,9 @@ export function TelemetryDashboard() {
 
 **Complete Request Flow with All 5 Refinements:**
 
+<details>
+  <summary>Open diagram</summary>
+
 ```mermaid
 sequenceDiagram
     participant Client
@@ -3135,6 +3168,7 @@ sequenceDiagram
     Telemetry->>AI: 13. Feed metrics for analysis
     AI-->>Client: 14. Personalized insights
 ```
+</details>
 
 **Key Integration Points:**
 1. JWT tokens protect location data from tampering
