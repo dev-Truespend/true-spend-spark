@@ -8,6 +8,14 @@
 
 ---
 
+## Visual Timeline Overview
+
+![Timeline Gantt Chart](../../public/images/timeline-gantt-reference.png)
+
+*Interactive Gantt chart visualization showing the complete 28-week implementation timeline with all 8 phases, tasks, and milestones. The chart includes progress indicators, filtering capabilities, and detailed task information.*
+
+---
+
 ## Executive Summary
 
 This document outlines the phased implementation approach for TrueSpend v4.0's comprehensive 19-layer architecture. The implementation is structured across 8 phases spanning 28 weeks, with each phase building upon previous layers while maintaining system stability and security.
