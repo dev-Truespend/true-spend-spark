@@ -19,15 +19,23 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 **Purpose:** User-facing interface  
 **Components:**
 - React SPA with TypeScript
+- Capacitor Native App (iOS + Android)
 - Progressive Web App (PWA) capabilities
 - Client-side state management
 - Offline-first architecture
+- Native geolocation tracking
+- Background location monitoring
+- Interactive geofence map visualization
 
 **Responsibilities:**
 - User interaction handling
 - Client-side validation
 - Optimistic UI updates
 - Session token management
+- Native GPS tracking
+- Geofence boundary visualization
+- Real-time location updates
+- Location permission management
 
 ---
 
@@ -134,12 +142,20 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Budget management
 - Spending analysis
 - Rule engine
+- Location-tagged transaction validator
+- Merchant proximity verifier
+- Budget zone enforcement engine
+- Spending pattern analyzer (by location)
 
 **Responsibilities:**
 - Business rule execution
 - Data validation
 - Workflow orchestration
 - State management
+- Geofence rule execution
+- Location-based fraud detection
+- Spending zone validation
+- Merchant location matching
 
 ---
 
@@ -150,12 +166,20 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Anomaly detection
 - Predictive budgeting
 - Natural language processing
+- Location pattern analysis (Gemini 2.5 Flash)
+- Predictive location spending model
+- Merchant recommendation engine
+- Anomaly detection (location-based)
 
 **Responsibilities:**
 - ML model inference
 - Pattern recognition
 - Intelligent recommendations
 - Automated categorization
+- Analyze spending patterns by geographic area
+- Predict future spending locations
+- Recommend budget adjustments based on location history
+- Generate personalized location insights
 
 ---
 
@@ -166,12 +190,20 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - API key management
 - Circuit breakers
 - Request pooling
+- Google Places API integration
+- Foursquare Places API integration
+- Reverse geocoding service
+- Map tile provider (Mapbox)
 
 **Responsibilities:**
 - External API calls
 - Credential injection
 - Failure isolation
 - Traffic monitoring
+- Places API key injection
+- Rate limiting for location services
+- Circuit breakers for geolocation API failures
+- Merchant data enrichment
 
 ---
 
@@ -214,12 +246,18 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - SMS service (Twilio)
 - Push notifications
 - In-app notifications
+- Geofence entry/exit alerts
+- Budget zone warnings
+- Merchant discovery notifications
 
 **Responsibilities:**
 - Notification routing
 - Template management
 - Delivery tracking
 - Preference management
+- Real-time location-based alerts
+- Budget zone notification routing
+- Merchant deal notifications
 
 ---
 
@@ -230,12 +268,17 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Event streaming
 - Topic management
 - Subscription handling
+- Geofence event types (`geofence.entered`, `geofence.exited`, `geofence.dwelling`)
+- Location update events (`location.updated`)
+- Merchant discovery events (`merchant.discovered`)
 
 **Responsibilities:**
 - Event publishing
 - Message routing
 - Async communication
 - Event replay
+- Location-based event routing
+- Geofence event distribution
 
 ---
 
@@ -246,12 +289,20 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Connection pooling
 - Query optimization
 - Transaction management
+- Geofence definitions table
+- Geofence events table
+- Merchants cache table
+- Location-tagged transactions
 
 **Responsibilities:**
 - Data persistence
 - ACID transactions
 - Query execution
 - Index management
+- Geofence boundary storage
+- Location event history
+- Merchant data caching
+- Spatial queries for location matching
 
 ---
 
@@ -262,12 +313,16 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Receipt uploads
 - Document storage
 - Media handling
+- Merchant photos bucket
+- Geofence snapshots bucket
 
 **Responsibilities:**
 - File upload/download
 - Access control
 - Versioning
 - CDN integration
+- Cached merchant images
+- User-uploaded zone photos
 
 ---
 
@@ -294,12 +349,19 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Encrypted storage
 - Audit logging
 - Data masking
+- Location data encryption
+- Geohashing for approximate locations
+- GDPR-compliant location export
 
 **Responsibilities:**
 - Sensitive data handling
 - Encryption at rest
 - Access logging
 - PII protection
+- Opt-in location tracking (default OFF)
+- 30-day location retention policy
+- Anonymization of historical location data
+- Right to be forgotten for location data
 
 ---
 
@@ -688,6 +750,64 @@ graph LR
     class Email,SMS,Push channel
 ```
 
+### Geofencing Location Tracking Flow
+
+```mermaid
+sequenceDiagram
+    participant Client as Capacitor App (GPS)
+    participant EdgeFn as track-location Edge Function
+    participant DB as Database (geofences table)
+    participant EventBus as Event Bus (Layer 14)
+    participant AI as AI Agents (Layer 9)
+    participant Places as Google Places API
+    participant FSQ as Foursquare API
+    participant Discover as discover-merchants Edge Function
+    participant Notify as Notification Amplifier
+    participant User as User Device (Push)
+    
+    Client->>Client: Capture GPS coordinates
+    Client->>EdgeFn: POST /track-location {lat, lng, accuracy}
+    EdgeFn->>DB: SELECT geofences WHERE user_id = ?
+    DB-->>EdgeFn: User's geofence boundaries
+    
+    EdgeFn->>EdgeFn: Check if location inside geofence
+    
+    alt Entered Geofence
+        EdgeFn->>DB: INSERT geofence_events (entered)
+        EdgeFn->>EventBus: Publish geofence.entered event
+        EventBus->>Notify: Route to Notification Amplifier
+        Notify->>User: Push: "You entered [Zone Name]"
+    end
+    
+    alt Exited Geofence
+        EdgeFn->>DB: INSERT geofence_events (exited)
+        EdgeFn->>EventBus: Publish geofence.exited event
+        EventBus->>Notify: Route to Notification Amplifier
+        Notify->>User: Push: "You left [Zone Name]"
+    end
+    
+    EdgeFn->>Discover: Trigger merchant discovery
+    Discover->>Places: GET nearby places (1km radius)
+    Places-->>Discover: Merchant list
+    
+    alt Places API failed
+        Discover->>FSQ: GET Foursquare nearby places
+        FSQ-->>Discover: Alternative merchant list
+    end
+    
+    Discover->>DB: UPSERT merchants (cache)
+    Discover->>EventBus: Publish merchant.discovered
+    EventBus->>Notify: Route merchant deals
+    Notify->>User: Push: "15% off at [Store] nearby"
+    
+    EdgeFn->>AI: Analyze location patterns
+    AI->>DB: SELECT transaction history by location
+    AI->>AI: Gemini 2.5 Flash analysis
+    AI-->>Client: Location spending insights
+    
+    EdgeFn-->>Client: 200 OK {status: "tracked"}
+```
+
 ---
 
 ## Data Flow Patterns
@@ -828,6 +948,13 @@ Client Layer
 - React Query (TanStack)
 - React Router v6
 
+### Mobile Native
+- Capacitor 6.x (iOS + Android)
+- @capacitor/geolocation
+- @capacitor-community/background-geolocation
+- @capacitor/push-notifications
+- @capacitor/local-notifications
+
 ### Backend (Lovable Cloud)
 - Supabase (PostgreSQL + Auth + Storage)
 - Edge Functions (Deno runtime)
@@ -840,7 +967,14 @@ Client Layer
 - **AI:** Lovable AI Gateway (Google Gemini, OpenAI GPT)
 - **Email:** Resend
 - **SMS:** Twilio
+- **Location Services:** Google Places API, Foursquare Places API
+- **Mapping:** Mapbox
 - **Analytics:** Custom observability stack
+
+### Location Libraries
+- react-map-gl (Mapbox React wrapper)
+- @turf/turf (geospatial calculations)
+- geolib (distance/bearing calculations)
 
 ### Security
 - JWT-based authentication
@@ -972,9 +1106,10 @@ Client Layer
 2. **GraphQL Federation:** Unified API layer across services
 3. **Event Sourcing:** Complete audit trail and replay capability
 4. **ML Pipeline:** Dedicated layer for model training and serving
-5. **Mobile Native:** iOS/Android native applications
-6. **Blockchain Integration:** Immutable transaction ledger
-7. **Advanced Analytics:** Real-time OLAP queries
+5. ~~**Mobile Native:** iOS/Android native applications~~ (✅ Implemented in v4.0 with geofencing)
+6. **Advanced Geofencing:** Multi-zone budgets, time-based zones, AR merchant discovery
+7. **Blockchain Integration:** Immutable transaction ledger
+8. **Advanced Analytics:** Real-time OLAP queries
 
 ---
 

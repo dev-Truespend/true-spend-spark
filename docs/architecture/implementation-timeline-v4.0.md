@@ -18,11 +18,11 @@
 
 ## Executive Summary
 
-This document outlines the phased implementation approach for TrueSpend v4.0's comprehensive 19-layer architecture. The implementation is structured across 8 phases spanning 28 weeks, with each phase building upon previous layers while maintaining system stability and security.
+This document outlines the phased implementation approach for TrueSpend v4.0's comprehensive 19-layer architecture with native mobile geofencing capabilities. The implementation is structured across 10 phases spanning 30 weeks, with each phase building upon previous layers while maintaining system stability and security.
 
-**Total Duration:** 28 weeks (7 months)  
+**Total Duration:** 30 weeks (7.5 months)  
 **Team Size:** 6-8 engineers  
-**Total Story Points:** ~340 SP  
+**Total Story Points:** ~385 SP
 
 ---
 
@@ -32,10 +32,12 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 |-------|----------|-------------------|------------|--------------|
 | Phase 1 | 4 weeks | Foundation & Client (L1, L15, L16) | Medium | None |
 | Phase 2 | 3 weeks | Security & Ingress (L2, L3, L4) | High | Phase 1 |
-| Phase 3 | 4 weeks | Auth & Safety (L5, L6) | High | Phase 2 |
+| **Phase 2.5** | **3 weeks** | **Geofencing Foundation (L1, L10, L15)** | **Medium** | **Phase 2** |
+| Phase 3 | 4 weeks | Auth & Safety (L5, L6) | High | Phase 2.5 |
 | Phase 4 | 5 weeks | Core Services (L7, L8, L9) | Critical | Phase 3 |
 | Phase 5 | 3 weeks | External Communication (L10, L11, L12) | Medium | Phase 4 |
-| Phase 6 | 3 weeks | Messaging & Events (L13, L14) | Medium | Phase 4 |
+| **Phase 5.5** | **3 weeks** | **Location Intelligence (L8, L9, L13, L14)** | **Medium** | **Phase 5** |
+| Phase 6 | 3 weeks | Messaging & Events (L13, L14) | Medium | Phase 5.5 |
 | Phase 7 | 4 weeks | Data Planes (L17, L18, L19) | High | Phase 1 |
 | Phase 8 | 2 weeks | Observability & Polish | Low | All Phases |
 
@@ -190,7 +192,87 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 
 ---
 
-## Phase 3: Authentication & Supply Chain (Weeks 8-11)
+## Phase 2.5: Geofencing Foundation (Weeks 8-10)
+
+**Objective:** Establish native mobile geolocation and location services integration  
+**Duration:** 3 weeks  
+**Team:** 2 Frontend, 2 Backend, 1 DevOps  
+**Story Points:** 38 SP  
+**Risk Level:** Medium
+
+### Layers Implemented
+- **Layer 1:** Capacitor Native App (iOS + Android with geolocation)
+- **Layer 10:** External API Integration (Google Places, Foursquare)
+- **Layer 15:** Database (Geofence tables)
+
+### Week 8: Capacitor Setup & Permissions
+**Story Points:** 13 SP
+
+**Tasks:**
+- [ ] Install Capacitor core and CLI dependencies
+- [ ] Configure Capacitor for iOS and Android platforms
+- [ ] Install @capacitor/geolocation plugin
+- [ ] Install @capacitor-community/background-geolocation
+- [ ] Configure iOS Info.plist location permissions
+- [ ] Configure Android AndroidManifest.xml permissions
+- [ ] Implement location permission request UI
+- [ ] Test basic geolocation on physical devices
+- [ ] Set up background location tracking
+- [ ] Implement battery optimization strategies
+
+**Deliverables:**
+- Working Capacitor native apps (iOS + Android)
+- Location permissions configured
+- Basic GPS tracking operational
+- Background location monitoring functional
+
+### Week 9: Database Schema & Geofence Tables
+**Story Points:** 12 SP
+
+**Tasks:**
+- [ ] Create geofences table schema
+- [ ] Create geofence_events table schema
+- [ ] Create merchants cache table schema
+- [ ] Add location columns to transactions table
+- [ ] Implement RLS policies for geofence data
+- [ ] Set up location data encryption at rest
+- [ ] Create geospatial indexes for performance
+- [ ] Implement 30-day location retention policy
+- [ ] Build geofence CRUD operations
+- [ ] Create seed data for testing
+
+**Deliverables:**
+- Complete geofence database schema
+- RLS policies active
+- Location data encrypted
+- Geofence management APIs
+
+### Week 10: External API Integration (Places)
+**Story Points:** 13 SP
+
+**Tasks:**
+- [ ] Add Google Places API key (secret)
+- [ ] Add Foursquare API key (secret)
+- [ ] Create discover-merchants edge function
+- [ ] Implement Google Places API calls (Nearby Search)
+- [ ] Implement Foursquare Places API fallback
+- [ ] Build merchant data caching layer
+- [ ] Create reverse geocoding service
+- [ ] Implement rate limiting for Places APIs
+- [ ] Build circuit breakers for API failures
+- [ ] Test merchant discovery flow
+
+**Deliverables:**
+- Google Places API integration
+- Foursquare API fallback
+- Merchant cache operational
+- Location services resilient
+
+**Phase 2.5 Milestone:** ✅ Native geolocation and location services operational
+
+---
+
+## Phase 3: Authentication & Supply Chain (Weeks 11-14)
 
 **Objective:** Implement identity management and dependency security  
 **Duration:** 4 weeks  
@@ -201,7 +283,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - **Layer 5:** Auth & Session (JWT, MFA)
 - **Layer 6:** Supply Chain Security (Dependency scanning)
 
-### Week 8-9: Authentication Service
+### Week 11-12: Authentication Service
 **Story Points:** 24 SP
 
 **Tasks:**
@@ -220,7 +302,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - Secure session management
 - Password reset flows
 
-### Week 10-11: Supply Chain Security
+### Week 13-14: Supply Chain Security
 **Story Points:** 24 SP
 
 **Tasks:**
@@ -243,7 +325,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 
 ---
 
-## Phase 4: Core Services (Weeks 12-16)
+## Phase 4: Core Services (Weeks 15-19)
 
 **Objective:** Build core business logic and AI capabilities  
 **Duration:** 5 weeks  
@@ -256,7 +338,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - **Layer 8:** Business Logic (Transaction processing)
 - **Layer 9:** AI Agents (Pattern analysis)
 
-### Week 12: BFF Layer
+### Week 15: BFF Layer
 **Story Points:** 15 SP
 
 **Tasks:**
@@ -272,7 +354,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - Optimized API responses
 - Client-specific endpoints
 
-### Week 13-14: Business Logic
+### Week 16-17: Business Logic
 **Story Points:** 30 SP
 
 **Tasks:**
@@ -291,7 +373,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - Spending analytics
 - Rule engine
 
-### Week 15-16: AI Agents
+### Week 18-19: AI Agents
 **Story Points:** 20 SP
 
 **Tasks:**
@@ -314,7 +396,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 
 ---
 
-## Phase 5: External Communication (Weeks 17-19)
+## Phase 5: External Communication (Weeks 20-22)
 
 **Objective:** Implement resilient external API communication  
 **Duration:** 3 weeks  
@@ -326,7 +408,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - **Layer 11:** Retry Scheduler (Resilience)
 - **Layer 12:** Control Plane (Configuration)
 
-### Week 17: Egress Gateway
+### Week 20: Egress Gateway
 **Story Points:** 14 SP
 
 **Tasks:**
@@ -342,7 +424,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - Secure API key handling
 - Circuit breaker protection
 
-### Week 18: Retry Scheduler
+### Week 21: Retry Scheduler
 **Story Points:** 14 SP
 
 **Tasks:**
@@ -358,7 +440,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - DLQ handling
 - Priority-based retries
 
-### Week 19: Control Plane
+### Week 22: Control Plane
 **Story Points:** 14 SP
 
 **Tasks:**
@@ -378,7 +460,88 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 
 ---
 
-## Phase 6: Messaging & Events (Weeks 20-22)
+## Phase 5.5: Location Intelligence (Weeks 23-25)
+
+**Objective:** Build location-based business rules and AI insights  
+**Duration:** 3 weeks  
+**Team:** 2 Frontend, 3 Backend, 1 ML Engineer  
+**Story Points:** 42 SP  
+**Risk Level:** Medium
+
+### Layers Implemented
+- **Layer 8:** Business Logic (Location-based rules)
+- **Layer 9:** AI Agents (Location insights)
+- **Layer 13:** Notification Amplifier (Geofence alerts)
+- **Layer 14:** Event Bus (Location events)
+
+### Week 23: Background Location Tracking
+**Story Points:** 14 SP
+
+**Tasks:**
+- [ ] Create track-location edge function
+- [ ] Implement geofence boundary checking algorithm
+- [ ] Build location event publishing to event bus
+- [ ] Create geofence entry/exit detection
+- [ ] Implement dwelling detection (>X minutes in zone)
+- [ ] Build location update batching for efficiency
+- [ ] Test battery optimization strategies
+- [ ] Implement significant location change detection
+- [ ] Create location accuracy filtering
+- [ ] Build offline location queue
+
+**Deliverables:**
+- track-location edge function operational
+- Geofence detection working
+- Event bus publishing location events
+- Battery-optimized tracking
+
+### Week 24: Location-Based Business Rules
+**Story Points:** 14 SP
+
+**Tasks:**
+- [ ] Implement budget zone enforcement logic
+- [ ] Build spending alerts by location
+- [ ] Create merchant proximity validation
+- [ ] Implement fraud detection via location
+- [ ] Build location-tagged transaction validator
+- [ ] Create geocode-transaction edge function
+- [ ] Implement location-based spending limits
+- [ ] Build zone-specific budget rules
+- [ ] Create location anomaly detection
+- [ ] Test location-based rule engine
+
+**Deliverables:**
+- Budget zone enforcement active
+- Location-based alerts working
+- Merchant proximity validation
+- Fraud detection operational
+
+### Week 25: AI Location Insights
+**Story Points:** 14 SP
+
+**Tasks:**
+- [ ] Create ai-location-insights edge function
+- [ ] Integrate Lovable AI (Gemini 2.5 Flash)
+- [ ] Build spending pattern analysis by location
+- [ ] Implement predictive location spending
+- [ ] Create personalized merchant recommendations
+- [ ] Build location-based budget suggestions
+- [ ] Implement location heatmap visualization
+- [ ] Create weekly location spending reports
+- [ ] Build location spending anomaly alerts
+- [ ] Test AI insights accuracy
+
+**Deliverables:**
+- AI location insights functional
+- Spending pattern analysis by location
+- Personalized recommendations
+- Location heatmaps and reports
+
+**Phase 5.5 Milestone:** ✅ Location intelligence operational with AI insights
+
+---
+
+## Phase 6: Messaging & Events (Weeks 26-28)
 
 **Objective:** Build asynchronous communication and notifications  
 **Duration:** 3 weeks  
@@ -389,7 +552,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - **Layer 13:** Notification Amplifier (Multi-channel)
 - **Layer 14:** Event Bus (Message broker)
 
-### Week 20: Event Bus
+### Week 26: Event Bus
 **Story Points:** 18 SP
 
 **Tasks:**
@@ -406,7 +569,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - Message routing
 - Event subscriptions
 
-### Week 21-22: Notification Amplifier
+### Week 27-28: Notification Amplifier
 **Story Points:** 20 SP
 
 **Tasks:**
@@ -429,7 +592,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 
 ---
 
-## Phase 7: Data Planes & DR (Weeks 23-26)
+## Phase 7: Data Planes & DR (Weeks 29-32)
 
 **Objective:** Implement data security and disaster recovery  
 **Duration:** 4 weeks  
@@ -441,7 +604,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - **Layer 18:** Private Data Plane (Encrypted storage)
 - **Layer 19:** Backup & DR (Recovery)
 
-### Week 23: Public Data Plane
+### Week 29: Public Data Plane
 **Story Points:** 12 SP
 
 **Tasks:**
@@ -457,7 +620,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - Public API endpoints
 - Cache optimization
 
-### Week 24: Private Data Plane
+### Week 30: Private Data Plane
 **Story Points:** 15 SP
 
 **Tasks:**
@@ -474,7 +637,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - PII protection
 - Secure access
 
-### Week 25-26: Backup & DR
+### Week 31-32: Backup & DR
 **Story Points:** 18 SP
 
 **Tasks:**
@@ -497,7 +660,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 
 ---
 
-## Phase 8: Observability & Polish (Weeks 27-28)
+## Phase 8: Observability & Polish (Weeks 33-34)
 
 **Objective:** Complete observability and system optimization  
 **Duration:** 2 weeks  
@@ -507,7 +670,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 ### Cross-Cutting Layer
 - **Observability:** Logs, Metrics, Traces, Alerts
 
-### Week 27: Observability
+### Week 33: Observability
 **Story Points:** 15 SP
 
 **Tasks:**
@@ -526,7 +689,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 - Alert system
 - Distributed tracing
 
-### Week 28: System Polish & Launch Prep
+### Week 34: System Polish & Launch Prep
 **Story Points:** 13 SP
 
 **Tasks:**
@@ -552,15 +715,19 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 ## Critical Path Analysis
 
 ### High-Risk Dependencies
-1. **Phase 3 → Phase 4:** Auth must be complete before business logic
-2. **Phase 4 → Phase 5:** Business logic before external integrations
-3. **Phase 1 → Phase 7:** Database must be stable before data planes
-4. **All Phases → Phase 8:** Observability requires all layers
+1. **Phase 2 → Phase 2.5:** Security must be complete before geofencing
+2. **Phase 2.5 → Phase 3:** Geofencing foundation before auth
+3. **Phase 3 → Phase 4:** Auth must be complete before business logic
+4. **Phase 4 → Phase 5:** Business logic before external integrations
+5. **Phase 5 → Phase 5.5:** External communication before location intelligence
+6. **Phase 1 → Phase 7:** Database must be stable before data planes
+7. **All Phases → Phase 8:** Observability requires all layers
 
 ### Parallel Workstreams
-- **Weeks 12-22:** Phase 5 & 6 can run partially in parallel with Phase 4
-- **Weeks 23-26:** Phase 7 runs parallel to Phase 6 completion
-- **Week 27-28:** Full team convergence for launch
+- **Weeks 8-10:** Phase 2.5 (Geofencing) runs after Phase 2
+- **Weeks 15-25:** Phase 5 & 5.5 can run partially in parallel with Phase 4
+- **Weeks 26-32:** Phase 7 runs parallel to Phase 6 completion
+- **Weeks 33-34:** Full team convergence for launch
 
 ---
 
@@ -590,6 +757,9 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 | Auth delays block Phase 4 | High | Medium | Start Phase 3 early, allocate extra resources |
 | AI integration complexity | Medium | High | Use Lovable AI Gateway, no external dependencies |
 | External API reliability | High | Medium | Implement robust retry/circuit breaker |
+| Geofencing battery drain | Medium | Medium | Battery optimization, significant location changes only |
+| Google Places API rate limits | Medium | Medium | Implement Foursquare fallback, request batching |
+| Location privacy concerns | High | Low | Opt-in tracking, 30-day retention, encryption at rest |
 | Data migration issues | High | Low | Thorough testing, PITR backups |
 | Performance bottlenecks | Medium | Medium | Load testing throughout, optimization phase |
 
@@ -622,30 +792,34 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 |------|-----------|-------------|
 | 4 | Phase 1 Complete | Core infrastructure operational |
 | 7 | Phase 2 Complete | Secure ingress pipeline |
-| 11 | Phase 3 Complete | Auth & supply chain secure |
-| 16 | Phase 4 Complete | Core business logic + AI |
-| 19 | Phase 5 Complete | Resilient external communication |
-| 22 | Phase 6 Complete | Event-driven notifications |
-| 26 | Phase 7 Complete | Data protection & DR ready |
-| 28 | Phase 8 Complete | Production launch ready |
+| 10 | **Phase 2.5 Complete** | **Native geolocation operational** |
+| 14 | Phase 3 Complete | Auth & supply chain secure |
+| 19 | Phase 4 Complete | Core business logic + AI |
+| 22 | Phase 5 Complete | Resilient external communication |
+| 25 | **Phase 5.5 Complete** | **Location intelligence with AI** |
+| 28 | Phase 6 Complete | Event-driven notifications |
+| 32 | Phase 7 Complete | Data protection & DR ready |
+| 34 | Phase 8 Complete | Production launch ready |
 
 ---
 
 ## Post-Launch Plan
 
-### Week 29-32 (Month 1 Post-Launch)
+### Week 35-38 (Month 1 Post-Launch)
 - Monitor system stability
-- Collect user feedback
+- Collect user feedback on geofencing features
 - Address critical bugs
-- Optimize performance
+- Optimize location tracking battery usage
 - Scale infrastructure as needed
+- Monitor Places API usage and costs
 
-### Week 33-40 (Months 2-3 Post-Launch)
+### Week 39-46 (Months 2-3 Post-Launch)
 - Implement user-requested features
-- Enhance AI capabilities
-- Optimize costs
-- Expand integrations
-- Plan v5.0 features
+- Enhance AI location capabilities
+- Optimize costs (Places API, location tracking)
+- Expand merchant integrations
+- Add advanced geofencing features
+- Plan v5.0 features (AR merchant discovery, time-based zones)
 
 ---
 
@@ -653,34 +827,46 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 
 ### External Service Integration Schedule
 
+**Location Services (Google Places API):**
+- Week 9: Integration design
+- Week 10: Implementation
+- Week 10: Testing
+
+**Location Services (Foursquare Places API):**
+- Week 10: Integration design
+- Week 10: Implementation (Fallback)
+- Week 10: Testing
+
 **Banking (Plaid):**
-- Week 13: Integration design
-- Week 14: Implementation
-- Week 15: Testing
+- Week 16: Integration design
+- Week 17: Implementation
+- Week 18: Testing
 
 **Payments (Stripe):**
-- Week 14: Integration design
-- Week 15: Implementation
-- Week 16: Testing
+- Week 17: Integration design
+- Week 18: Implementation
+- Week 19: Testing
 
 **AI (Lovable AI Gateway):**
-- Week 15: Integration design
-- Week 16: Implementation
-- Week 17: Testing
+- Week 18: Integration design
+- Week 19: Implementation
+- Week 19: Testing
 
 **Email (Resend):**
-- Week 21: Integration design
-- Week 21: Implementation
-- Week 22: Testing
+- Week 27: Integration design
+- Week 27: Implementation
+- Week 28: Testing
 
 **SMS (Twilio):**
-- Week 21: Integration design
-- Week 22: Implementation
-- Week 22: Testing
+- Week 27: Integration design
+- Week 28: Implementation
+- Week 28: Testing
 
 ---
 
-**Document Version:** 4.0  
+**Document Version:** 4.0 (with Geofencing)  
 **Last Updated:** 2025-11-08  
 **Maintained By:** TrueSpend Project Management Team  
-**Review Cycle:** Weekly during implementation
+**Review Cycle:** Weekly during implementation  
+
+**Note:** This timeline includes native mobile geofencing capabilities integrated across the 19-layer architecture, extending the original 28-week plan to 30 weeks with 2 additional phases (Phase 2.5: Geofencing Foundation and Phase 5.5: Location Intelligence).
