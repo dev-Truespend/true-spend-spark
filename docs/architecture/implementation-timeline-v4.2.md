@@ -8,52 +8,142 @@
 
 ---
 
-## Overview
+## Executive Summary
 
-This timeline extends Blueprint v4.1 (37 weeks, 11 phases, 429 SP) with **4 additional phases** for performance optimization, ML infrastructure, advanced ML, and cost optimization (11 weeks, 158 SP).
+This document outlines the complete phased implementation approach for TrueSpend v4.2's comprehensive 19-layer architecture + Layer 10B with native mobile geofencing, browser extension, performance optimization, and ML intelligence. The implementation is structured across **15 phases spanning 48 calendar weeks**.
 
-**Total Effort:** 587 Story Points across 13 phases
+**Total Duration:** 48 weeks (12 months)
+- **Phases 1-9:** Core platform (37 weeks, 429 SP) - Blueprint v4.1
+- **Phases 12-15:** Optimization & ML (11 weeks, 158 SP) - v4.2 enhancements
+
+**Team Size:** 6-8 engineers (Frontend: 3, Backend: 4, DevOps: 1, Security: 1, ML: 2)  
+**Total Story Points:** 587 SP (429 SP v4.1 + 158 SP v4.2)  
+**Architecture:** 19 layers + Layer 10B (Deals & Cashback Gateway) + Browser extension (Layer 1B)
+
+---
+
+## Complete Gantt Chart (All Phases)
+
+```mermaid
+gantt
+    title TrueSpend v4.2 Complete Implementation Timeline (48 Weeks)
+    dateFormat YYYY-MM-DD
+    
+    section Phase 1
+    Foundation & Client Layer           :p1, 2025-01-01, 28d
+    
+    section Phase 2
+    Security & Ingress                  :p2, after p1, 21d
+    
+    section Phase 2.5 📍
+    Geofencing Foundation               :crit, p2_5, after p2, 21d
+    
+    section Phase 3
+    Auth & Supply Chain                 :p3, after p2_5, 28d
+    
+    section Phase 4
+    Core Services (BFF, Logic, AI)      :crit, p4, after p3, 35d
+    
+    section Phase 5
+    External Communication              :p5, after p4, 21d
+    
+    section Phase 5.5 🗺️
+    Location Intelligence               :crit, p5_5, after p5, 21d
+    
+    section Phase 6
+    Messaging & Events                  :p6, after p5_5, 21d
+    
+    section Phase 7
+    Data Planes & DR                    :p7, after p1, 28d
+    
+    section Phase 8
+    Observability & Polish              :p8, after p6, 14d
+    
+    section Phase 9 🔌
+    Browser Extension MVP               :p9, after p8, 21d
+    
+    section Phase 12 🚀
+    Performance Optimization            :p12, after p9, 21d
+    
+    section Phase 13 🤖
+    ML Infrastructure                   :p13, after p12, 21d
+    
+    section Phase 14 💰
+    Advanced ML & Layer 10B             :p14, after p13, 21d
+    
+    section Phase 15 ✨
+    Cost Optimization & Polish          :p15, after p14, 14d
+    
+    section Milestones
+    Phase 1 Complete                    :milestone, m1, after p1, 0d
+    Geofencing Operational 📍           :milestone, m2_5, after p2_5, 0d
+    Core Business Logic + AI            :milestone, m4, after p4, 0d
+    Location Intelligence 🗺️            :milestone, m5_5, after p5_5, 0d
+    Extension Launch 🔌                 :milestone, m9, after p9, 0d
+    Performance Foundation 🚀           :milestone, m12, after p12, 0d
+    ML Infrastructure 🤖                :milestone, m13, after p13, 0d
+    Revenue Integration 💰              :milestone, m14, after p14, 0d
+    v4.2 Launch ✨                      :milestone, m15, after p15, 0d
+```
 
 ---
 
 ## Phase Summary
 
-| Phase | Name | Duration | Story Points | Dependencies |
-|-------|------|----------|-------------|--------------|
-| 1 | Foundation & Core Infrastructure | 4 weeks | 55 SP | None |
-| 2 | Transaction Management | 3 weeks | 42 SP | Phase 1 |
-| 3 | Geofencing Core | 4 weeks | 52 SP | Phase 1, 2 |
-| 4 | Budget Management | 3 weeks | 38 SP | Phase 2 |
-| 5 | AI Integration | 3 weeks | 45 SP | Phase 2 |
-| 6 | Browser Extension Core | 3 weeks | 40 SP | Phase 3, 5 |
-| 7 | Advanced Features | 4 weeks | 48 SP | Phase 3, 4, 5 |
-| 8 | Mobile Optimization | 3 weeks | 35 SP | Phase 3, 4 |
-| 9 | Analytics & Insights | 3 weeks | 38 SP | Phase 2, 4, 7 |
-| 10 | Testing & Quality Assurance | 4 weeks | 34 SP | Phase 1-9 |
-| 11 | Documentation & Deployment | 3 weeks | 32 SP | Phase 10 |
-| **10** | **Performance Optimization** | **3 weeks** | **52 SP** | **Phase 11** |
-| **11** | **ML Infrastructure** | **3 weeks** | **48 SP** | **Phase 12** |
-| **12** | **Advanced ML & Layer 10B** | **3 weeks** | **42 SP** | **Phase 13** |
-| **13** | **Cost Optimization & Polish** | **2 weeks** | **26 SP** | **Phase 14** |
+| Phase | Name | Weeks | Duration | Story Points | Team Size | Risk | Dependencies |
+|-------|------|-------|----------|--------------|-----------|------|--------------|
+| **1** | Foundation & Client Layer | 1-4 | 4 weeks | 34 SP | 6 FTE | 🟡 Medium | None |
+| **2** | Security & Ingress | 5-7 | 3 weeks | 40 SP | 6 FTE | 🔴 High | Phase 1 |
+| **2.5 📍** | Geofencing Foundation | 8-10 | 3 weeks | 38 SP | 5 FTE | 🟡 Medium | Phase 2 |
+| **3** | Auth & Supply Chain | 11-14 | 4 weeks | 48 SP | 6 FTE | 🔴 High | Phase 2.5 |
+| **4** | Core Services (BFF, Logic, AI) | 15-19 | 5 weeks | 65 SP | 8 FTE | 🔴 Critical | Phase 3 |
+| **5** | External Communication | 20-22 | 3 weeks | 42 SP | 5 FTE | 🟡 Medium | Phase 4 |
+| **5.5 🗺️** | Location Intelligence | 23-25 | 3 weeks | 42 SP | 7 FTE | 🟡 Medium | Phase 5 |
+| **6** | Messaging & Events | 26-28 | 3 weeks | 38 SP | 5 FTE | 🟡 Medium | Phase 5.5 |
+| **7** | Data Planes & DR | 29-32 | 4 weeks | 45 SP | 6 FTE | 🔴 High | Phase 1 |
+| **8** | Observability & Polish | 33-34 | 2 weeks | 28 SP | 8 FTE | 🟢 Low | All Phases |
+| **9 🔌** | Browser Extension MVP | 35-37 | 3 weeks | 44 SP | 2 FTE | 🟢 Low | Phase 8 |
+| **12 🚀** | Performance Optimization | 38-40 | 3 weeks | 52 SP | 4 FTE | 🟡 Medium | Phase 9 |
+| **13 🤖** | ML Infrastructure | 41-43 | 3 weeks | 48 SP | 5 FTE | 🔴 High | Phase 12 |
+| **14 💰** | Advanced ML & Layer 10B | 44-46 | 3 weeks | 42 SP | 6 FTE | 🔴 High | Phase 13 |
+| **15 ✨** | Cost Optimization & Polish | 47-48 | 2 weeks | 26 SP | 4 FTE | 🟡 Medium | Phase 14 |
+| **Total** | **All Phases** | **1-48** | **48 weeks** | **587 SP** | **6-8 FTE** | | |
 
 ---
 
-## Phase 1-11: Blueprint v4.1 (Weeks 1-37)
+## Milestones Summary
 
-*Refer to [Implementation Timeline v4.1](./implementation-timeline-v4.1.md) for detailed breakdown of Phases 1-11.*
+| Week | Milestone | Deliverables |
+|------|-----------|--------------|
+| 4 | Foundation Complete | Client layer, database, storage operational |
+| 10 | Geofencing Operational 📍 | Native GPS tracking, JWT security, event queue |
+| 19 | Core Services Ready | Business logic, AI agents, transaction processing |
+| 25 | Location Intelligence 🗺️ | AI location insights, merchant discovery |
+| 34 | System Polish Complete | Full observability, performance optimization |
+| 37 | Browser Extension Launch 🔌 | Extension published to Chrome Web Store |
+| 40 | Performance Foundation Ready 🚀 | GraphQL BFF, read replicas, 90%+ cache hit rate |
+| 43 | ML Infrastructure Complete 🤖 | Model registry, RL cache, LSTM anomaly detection |
+| 46 | Revenue Integration Live 💰 | Layer 10B, affiliate tracking, $2K+/mo revenue |
+| 48 | v4.2 Launch Ready ✨ | All optimizations deployed, 52% cost reduction |
 
-**Summary:**
-- Foundation & Core Infrastructure (Weeks 1-4)
-- Transaction Management (Weeks 5-7)
-- Geofencing Core (Weeks 8-11)
-- Budget Management (Weeks 12-14)
-- AI Integration (Weeks 15-17)
-- Browser Extension Core (Weeks 18-20)
-- Advanced Features (Weeks 21-24)
-- Mobile Optimization (Weeks 25-27)
-- Analytics & Insights (Weeks 28-30)
-- Testing & Quality Assurance (Weeks 31-34)
-- Documentation & Deployment (Weeks 35-37)
+---
+
+## Phases 1-9: Core Platform (Weeks 1-37) - Blueprint v4.1
+
+*For detailed week-by-week task breakdowns, refer to [Implementation Timeline v4.1](./implementation-timeline-v4.1.md).*
+
+**Phase Overview:**
+- **Phase 1 (Weeks 1-4):** Foundation & Client Layer - React Native, Supabase, storage
+- **Phase 2 (Weeks 5-7):** Security & Ingress - WAF, rate limiting, DDoS protection
+- **Phase 2.5 📍 (Weeks 8-10):** Geofencing Foundation - GPS tracking, JWT, event queue
+- **Phase 3 (Weeks 11-14):** Auth & Supply Chain - Multi-factor auth, session management
+- **Phase 4 (Weeks 15-19):** Core Services - BFF, business logic, AI agents
+- **Phase 5 (Weeks 20-22):** External Communication - Email, SMS, push notifications
+- **Phase 5.5 🗺️ (Weeks 23-25):** Location Intelligence - AI location insights, merchant discovery
+- **Phase 6 (Weeks 26-28):** Messaging & Events - Event bus, webhooks, real-time updates
+- **Phase 7 (Weeks 29-32):** Data Planes - Backup, disaster recovery, replication
+- **Phase 8 (Weeks 33-34):** Observability & Polish - Monitoring, alerting, optimization
+- **Phase 9 🔌 (Weeks 35-37):** Browser Extension MVP - Chrome extension, transaction capture
 
 ---
 
