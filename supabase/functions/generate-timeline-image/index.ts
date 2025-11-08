@@ -136,8 +136,36 @@ VISUAL REQUIREMENTS:
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`AI Gateway error: ${error}`);
+      const errorText = await response.text();
+      console.error('AI Gateway error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Rate limit exceeded. Please try again later.' 
+          }),
+          { 
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Payment required. Please add credits to your Lovable AI workspace.' 
+          }),
+          { 
+            status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      throw new Error(`AI Gateway error: ${errorText}`);
     }
 
     const data = await response.json();
