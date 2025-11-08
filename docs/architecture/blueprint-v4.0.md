@@ -1771,10 +1771,10 @@ function Popup() {
 Security is implemented across multiple layers with enhanced geofencing and extension protection:
 
 1. **Client Layer (L1)**: CSP headers, SRI, JWT token signing
-2. **Edge Layer (L2)**: TLS 1.3, DDoS protection
-3. **Gateway (L7)**: Rate limiting, HMAC signatures, JWT validation
-4. **Auth (L3)**: JWT + Refresh tokens, MFA support
-5. **Data (L15/L18)**: RLS policies, Encryption at rest (AES-256)
+2. **Edge Layer (L2)**: TLS 1.3, DDoS protection, **Extension origin whitelisting** ✅
+3. **Gateway (L3/L7)**: Rate limiting, HMAC signatures, JWT validation, **Bearer token auth (CSRF-safe)** ✅
+4. **Auth (L5)**: JWT + Refresh tokens, MFA support, **Extension OAuth flow** ✅
+5. **Data (L15/L18)**: RLS policies, Encryption at rest (AES-256), **User-scoped Realtime filtering** ✅
 6. **Geofencing Security (Enterprise)**:
    - **Location Spoofing Prevention**: Client-side signed JWT tokens with 5min expiry
    - **Coordinate Encryption**: Lat/long encrypted before storage using `vault.encrypt`
@@ -1782,6 +1782,15 @@ Security is implemented across multiple layers with enhanced geofencing and exte
    - **Rate Limiting**: Max 100 location submissions per user per hour
    - **Audit Trail**: All geo events logged in `geofence_events` with timestamps
    - **GDPR Compliance**: 30-day location retention, right to be forgotten
+7. **Browser Extension Security (Production-Ready)** ✅:
+   - **Ephemeral Service Worker**: No persistent state in MV3 background worker (prevents state corruption)
+   - **CORS Whitelisting**: Extension origins explicitly allowed in Layer 2 (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`)
+   - **Bearer Token Auth**: Stateless authentication (no cookies = no CSRF vulnerability)
+   - **Realtime Channel Filtering**: Server-side `user_id` filters prevent cross-user event leaks
+   - **Content Security Policy**: `script-src 'self'; object-src 'self'` prevents XSS in extension pages
+   - **Minimal Permissions**: `storage`, `notifications`, `activeTab` only (no `<all_urls>`)
+   - **Privacy Compliance**: GDPR-compliant data disclosure modal, privacy policy linked in footer
+   - **Telemetry Security**: Extension metrics encrypted in transit, batch flushed every 15 minutes
 
 ---
 
@@ -1861,6 +1870,7 @@ graph TD
     L14 -.->|Location Alert| L13
     L13 -.->|Push Notification 🔔| L1A
     L13 -.->|Browser Notification| L1B
+    L7 -.->|Emit Event (budget.updated) ✅| L14
     OBS -.->|Telemetry| L14
     
     %% Merchant Discovery Flow

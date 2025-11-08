@@ -2,7 +2,10 @@
 
 ## Overview
 
-A comprehensive project tracking dashboard for the TrueSpend v4.0 implementation, tracking all 37 weeks, 11 phases, 250+ tasks, 8 team members, and the complete architecture across 19 layers plus browser extension companion.
+A comprehensive project tracking dashboard for the TrueSpend v4.0 implementation, tracking all 37 weeks, 11 phases, 250+ tasks, 8 team members, and the complete architecture across 19 layers plus browser extension companion with production-ready refinements.
+
+**Total Story Points:** 429 SP (includes 12 SP for extension production refinements)  
+**Extension Refinements:** Ephemeral SW architecture, CORS/Bearer auth, Realtime filtering, telemetry, privacy modal, feature flags
 
 ## Features
 
@@ -163,14 +166,14 @@ Plus **Observability** cross-cutting layer and **Geofencing Subsystem** spanning
 - **Week 21-26**: Frontend Development (Not Started)
 - **Week 26-28**: Production Hardening (Not Started)
 - **Week 29-34**: Observability & Polish (Not Started)
-- **Week 35-37**: Browser Extension MVP (Not Started)
+- **Week 35-37**: Browser Extension MVP with Production Refinements (44 SP) (Not Started)
 
 **Parallel Phases:**
 - Week 8-10: Geofencing Foundation
 - Week 23-25: Location Intelligence
 - Week 29-32: Data Plane Optimization
 - Week 33-34: Testing & QA
-- Week 35-37: Extension Development
+- Week 35-37: Extension Development (ephemeral SW, telemetry, feature flags, CORS, privacy)
 
 ## Key Milestones
 
@@ -209,13 +212,14 @@ Plus **Observability** cross-cutting layer and **Geofencing Subsystem** spanning
 ## Success Criteria
 
 - ✅ 11 phases tracked with real-time progress
-- ✅ 250+ tasks managed across all phases
+- ✅ 250+ tasks managed across all phases (including 5 new extension refinement tasks)
 - ✅ 10 critical milestones monitored
 - ✅ 7 risks tracked with mitigation plans
-- ✅ 60+ architecture components mapped (19 layers + extension)
+- ✅ 60+ architecture components mapped (19 layers + extension with 7 production refinements)
 - ✅ Team workload and capacity visible
 - ✅ Real-time dashboard updates
 - ✅ Responsive design (mobile/tablet/desktop)
+- ✅ **Extension Production Refinements:** Ephemeral SW, CORS, telemetry, privacy modal, feature flags, Realtime filtering, Edge feedback loop
 
 ## Future Enhancements
 
