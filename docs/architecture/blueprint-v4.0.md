@@ -1835,7 +1835,6 @@ graph TD
     L9 -.->|AI Insights| L8
     L14 -.->|Location Alert| L13
     L13 -.->|Push Notification 🔔| L1
-    L7 -.->|Emit Event (budget.updated) ✅| L14
     OBS -.->|Telemetry| L14
     
     %% Merchant Discovery Flow
