@@ -6,6 +6,7 @@ import { useTimelineData } from "@/hooks/useTimelineData";
 import { Calendar, Clock, AlertTriangle, CheckCircle2, Users } from "lucide-react";
 import { EnhancedGanttChart } from "@/components/timeline/EnhancedGanttChart";
 import { HierarchicalProjectDiagram } from "@/components/timeline/HierarchicalProjectDiagram";
+import { TimelineImageGenerator } from "@/components/admin/TimelineImageGenerator";
 
 export default function Timeline() {
   const { phases, milestones, currentWeek, totalWeeks, isLoading } = useTimelineData();
@@ -59,6 +60,9 @@ export default function Timeline() {
           v4.0: 28-week implementation plan with 8 phases covering 19 architecture layers
         </p>
       </div>
+
+      {/* Timeline Image Generator */}
+      <TimelineImageGenerator />
 
       {/* Timeline Statistics */}
       <div className="grid gap-4 md:grid-cols-4">

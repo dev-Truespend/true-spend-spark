@@ -10,9 +10,9 @@
 
 ## Visual Timeline Overview
 
-![TrueSpend Project Timeline Gantt Chart](../../public/images/timeline-gantt-reference.png)
+![TrueSpend Implementation Timeline Gantt Chart](../../public/images/timeline-blueprint-v4.png)
 
-*Interactive Gantt chart visualization showing the complete 28-week implementation timeline with all 8 phases, detailed tasks, and critical milestones. The hierarchical structure displays project setup, data architecture, authentication, external services, core features, UI/UX, security hardening, testing, and launch preparation phases.*
+*Comprehensive Gantt chart visualization showing the complete 28-week implementation timeline with all 8 phases, hierarchical task breakdown, and critical milestones. The diagram illustrates the phased approach from foundation setup through production launch, covering all 19 layers of the TrueSpend architecture.*
 
 ---
 
