@@ -20,9 +20,9 @@
 TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **Client → Ingress → Services → Egress → Data → Observability** pattern. This design prioritizes security, scalability, reliability, and observability across all system components.
 
 **New in v4.0:** 
-- Native mobile geofencing with location intelligence spanning 8 layers (L1A, L8, L9, L10, L13, L14, L15, L18)
-- Browser extension companion (L1B) for lightweight budget tracking and merchant insights
-- See [Geofencing Subsystem Architecture](#dedicated-geofencing-subsystem-architecture) and [Browser Extension Architecture](#browser-extension-companion-architecture) for details.
+- Native mobile geofencing with location intelligence spanning 8 layers (L1, L8, L9, L10, L13, L14, L15, L18)
+- Browser extension companion for lightweight budget tracking (see [Browser Extension Architecture](#browser-extension-companion-architecture))
+- See [Geofencing Subsystem Architecture](#dedicated-geofencing-subsystem-architecture) for detailed geofencing implementation.
 
 ---
 
@@ -31,7 +31,6 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 ### 🟦 Layer 1: Client Layer (#2563EB)
 **Purpose:** User-facing interface across multiple platforms  
 
-#### Layer 1A: Web & Mobile Client
 **Components:**
 - React SPA with TypeScript
 - Capacitor Native App (iOS + Android)
@@ -52,29 +51,7 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Real-time location updates
 - Location permission management
 
-#### Layer 1B: Browser Extension Client 🔌
-**Components:**
-- Chrome/Firefox/Safari extension
-- Popup UI (React + Tailwind)
-- Background service worker
-- Content scripts (merchant detection)
-- Options page for preferences
-
-**Responsibilities:**
-- Quick budget checks
-- Real-time spending alerts
-- Merchant price tracking
-- Quick expense logging
-- Transaction hints overlay
-- Session sync with main app
-
-**Limitations:**
-- ❌ No native geofencing (no GPS/background location)
-- ❌ No offline-first capabilities
-- ❌ No Capacitor native APIs
-- ✅ Supabase Auth, Realtime, Database
-- ✅ AI insights and notifications
-- ✅ Merchant detection via content scripts
+*Note: Browser extension companion architecture is detailed in the [Browser Extension Companion Architecture](#browser-extension-companion-architecture) section.*
 
 ---
 
@@ -85,14 +62,12 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - WAF (Web Application Firewall)
 - Edge Functions
 - DDoS protection
-- **Extension CORS Whitelisting** ✅ (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`)
 
 **Responsibilities:**
 - Global content distribution
 - Attack prevention
 - SSL/TLS termination
 - Geographic routing
-- **Browser extension origin validation** ✅
 
 ---
 
@@ -1801,8 +1776,7 @@ Security is implemented across multiple layers with enhanced geofencing and exte
 ```mermaid
 graph TD
     %% Client & Ingress Group
-    L1A[Layer 1A: Web & Mobile<br/>React SPA, PWA, Native GPS 📍]
-    L1B[Layer 1B: Browser Extension 🔌<br/>Popup UI, Content Scripts]
+    L1[Layer 1: Client Layer<br/>React SPA, PWA, Native GPS 📍]
     L2[Layer 2: Edge & Ingress<br/>CDN, WAF, DDoS]
     L3[Layer 3: API Gateway<br/>Rate Limit, Routing]
     
@@ -1839,8 +1813,8 @@ graph TD
     PlacesAPI[Google Places API 🗺️]
     FSQAPI[Foursquare API]
     
-    %% Main Synchronous Flow - Web & Mobile
-    L1A -->|HTTP Request| L2
+    %% Main Synchronous Flow
+    L1 -->|HTTP Request| L2
     L2 -->|Filtered| L3
     L3 -->|Routed| L4
     L4 -->|Security Check| L5
@@ -1849,16 +1823,8 @@ graph TD
     L7 -->|Aggregated| L8
     L8 <-->|AI Processing| L9
     
-    %% Browser Extension Flow (✅ with refinements)
-    L1B -->|Extension API + Bearer Auth ✅| L2
-    L1B -.->|Content Script| L8
-    L1B -.->|Ephemeral SW (MV3) ✅| L14
-    L1B <-.->|Realtime Sync (Filtered) ✅| L14
-    L1B -.->|Feature Flags (15min poll) ✅| L12
-    L1B -.->|Telemetry ✅| L18
-    
-    %% Geofencing Flows (enterprise-grade with security & queuing) - Mobile Only
-    L1A -.->|GPS + JWT Token 🔒| L2
+    %% Geofencing Flows (enterprise-grade with security & queuing)
+    L1 -.->|GPS + JWT Token 🔒| L2
     L2 -.->|track-location| L8
     L8 -.->|Token Validation| L5
     L5 -.->|Decrypt Location| L18
@@ -1868,8 +1834,7 @@ graph TD
     L14 -.->|At-least-once| L9
     L9 -.->|AI Insights| L8
     L14 -.->|Location Alert| L13
-    L13 -.->|Push Notification 🔔| L1A
-    L13 -.->|Browser Notification| L1B
+    L13 -.->|Push Notification 🔔| L1
     L7 -.->|Emit Event (budget.updated) ✅| L14
     OBS -.->|Telemetry| L14
     
@@ -1904,8 +1869,7 @@ graph TD
     L14 -.->|Route| L13
     
     %% Observability (monitors all)
-    L1A -.->|Logs| OBS
-    L1B -.->|Logs| OBS
+    L1 -.->|Logs| OBS
     L2 -.->|Metrics| OBS
     L3 -.->|Traces| OBS
     L8 -.->|Traces| OBS
@@ -1913,7 +1877,6 @@ graph TD
     
     %% Styling
     classDef client fill:#2563EB,stroke:#1e40af,color:#fff
-    classDef extension fill:#6366f1,stroke:#4f46e5,color:#fff
     classDef ingress fill:#f97316,stroke:#ea580c,color:#fff
     classDef gateway fill:#7c3aed,stroke:#6d28d9,color:#fff
     classDef security fill:#16a34a,stroke:#15803d,color:#fff
@@ -1933,8 +1896,7 @@ graph TD
     classDef obs fill:#64748b,stroke:#475569,color:#fff
     classDef external fill:#d97706,stroke:#b45309,color:#000
     
-    class L1A client
-    class L1B extension
+    class L1 client
     class L2 ingress
     class L3 gateway
     class L4 security
