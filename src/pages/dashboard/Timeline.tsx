@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useTimelineData } from "@/hooks/useTimelineData";
 import { Calendar, Clock, AlertTriangle, CheckCircle2, Users } from "lucide-react";
+import { MermaidGantt } from "@/components/timeline/MermaidGantt";
 
 export default function Timeline() {
   const { phases, milestones, currentWeek, totalWeeks, isLoading } = useTimelineData();
@@ -117,12 +118,86 @@ export default function Timeline() {
         </Card>
       </div>
 
+      {/* Mermaid Gantt Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Project Timeline Gantt Chart</CardTitle>
+          <CardDescription>
+            Visual representation of the v4.0 implementation timeline with all phases and key milestones
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <MermaidGantt chart={`gantt
+    title TrueSpend: Production-Ready Build Timeline (0-100k Users)
+    dateFormat YYYY-MM-DD
+    axisFormat Week %W
+    
+    section Phase 0: Foundation
+    Project Setup & Config           :done, p0_1, 2025-01-01, 7d
+    Lovable Cloud Enable            :done, p0_2, 2025-01-01, 2d
+    Environment Variables Setup     :done, p0_3, 2025-01-03, 2d
+    Schema Governance Framework     :active, p0_4, 2025-01-05, 3d
+    Phase 0 Testing & Docs         :milestone, p0_m, 2025-01-08, 0d
+    
+    section Phase 1: Data & Auth
+    Data Plane-A Design            :p1_1, after p0_m, 7d
+    Users Table + RLS              :p1_2, after p1_1, 3d
+    Profiles Table + Encryption    :p1_3, after p1_2, 3d
+    Transactions Table + RLS       :p1_4, after p1_3, 4d
+    Accounts Table + RLS           :p1_5, after p1_4, 3d
+    Data Plane-B Design            :p1_6, after p1_5, 4d
+    Auth System Setup              :p1_7, after p1_6, 5d
+    Google OAuth Integration       :p1_8, after p1_7, 3d
+    Phase 1 Security Audit         :milestone, p1_m, after p1_8, 0d
+    
+    section Phase 2: External Services
+    Plaid Integration Design       :p2_1, after p1_m, 5d
+    Plaid/Edge Functions           :p2_2, after p2_1, 7d
+    Stripe Integration             :p2_3, after p2_2, 5d
+    SMS/Twilio Setup              :p2_4, after p2_3, 4d
+    External Services Testing      :milestone, p2_m, after p2_4, 0d
+    
+    section Phase 3: Core Features
+    Transaction Processing         :p3_1, after p2_m, 7d
+    Budget Management             :p3_2, after p3_1, 5d
+    Analytics Engine              :p3_3, after p3_2, 6d
+    Notification System           :p3_4, after p3_3, 4d
+    Core Features Integration     :milestone, p3_m, after p3_4, 0d
+    
+    section Phase 4: UI/UX
+    Dashboard UI                  :p4_1, after p3_m, 7d
+    Transaction Views             :p4_2, after p4_1, 5d
+    Budget Interface              :p4_3, after p4_2, 5d
+    Mobile Responsive Design      :p4_4, after p4_3, 5d
+    UI/UX Review                  :milestone, p4_m, after p4_4, 0d
+    
+    section Phase 5: Security & Performance
+    RLS Policies (All Tables)     :p5_1, after p4_m, 7d
+    Performance Optimization      :p5_2, after p5_1, 5d
+    Security Hardening            :p5_3, after p5_2, 5d
+    Load Testing                  :p5_4, after p5_3, 4d
+    Security Audit                :milestone, p5_m, after p5_4, 0d
+    
+    section Phase 6: Testing & QA
+    Integration Testing           :p6_1, after p5_m, 7d
+    User Acceptance Testing       :p6_2, after p6_1, 5d
+    Bug Fixes & Refinement        :p6_3, after p6_2, 7d
+    Final QA Review               :milestone, p6_m, after p6_3, 0d
+    
+    section Phase 7: Launch Prep
+    Documentation Complete        :p7_1, after p6_m, 5d
+    Deployment Pipeline           :p7_2, after p7_1, 4d
+    Monitoring & Alerts           :p7_3, after p7_2, 4d
+    Production Launch             :milestone, p7_m, after p7_3, 0d`} />
+        </CardContent>
+      </Card>
+
       {/* Visual Timeline */}
       <Card>
         <CardHeader>
           <CardTitle>Timeline Overview</CardTitle>
           <CardDescription>
-            28-week Gantt chart showing all phases and dependencies
+            28-week phase progress bars with current status
           </CardDescription>
         </CardHeader>
         <CardContent>
