@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   TestTube,
   Layers,
+  Zap,
   LogOut
 } from "lucide-react";
 
@@ -24,6 +25,7 @@ const navigation = [
   { name: "Team", href: "/dashboard/team", icon: Users },
   { name: "Milestones", href: "/dashboard/milestones", icon: Target },
   { name: "Metrics", href: "/dashboard/metrics", icon: BarChart3 },
+  { name: "v4.2 Optimizations", href: "/dashboard/optimization", icon: Zap },
   { name: "Risks", href: "/dashboard/risks", icon: AlertTriangle },
   { name: "Testing", href: "/dashboard/testing", icon: TestTube },
   { name: "Architecture", href: "/dashboard/architecture", icon: Layers },
@@ -39,7 +41,7 @@ export default function DashboardLayout() {
         {/* Sidebar */}
         <div className="w-64 border-r bg-card min-h-screen sticky top-0 flex flex-col">
           <div className="p-6 border-b">
-            <h2 className="text-xl font-bold">TrueSpend v4.1</h2>
+            <h2 className="text-xl font-bold">TrueSpend v4.2</h2>
             <p className="text-xs text-muted-foreground mt-1">Project Dashboard</p>
           </div>
           <nav className="p-4 space-y-1 flex-1">

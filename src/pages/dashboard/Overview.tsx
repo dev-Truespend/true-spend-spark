@@ -34,8 +34,8 @@ export default function Overview() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">TrueSpend v4.1 Dashboard</h1>
-          <p className="text-muted-foreground mt-2">19-Layer Architecture with Native Geofencing & Browser Extension (37 weeks, 11 phases, 429 SP)</p>
+          <h1 className="text-4xl font-bold tracking-tight">TrueSpend v4.2 Dashboard</h1>
+          <p className="text-muted-foreground mt-2">19-Layer + Layer 10B with Performance & ML Optimization (48 weeks, 15 phases, 587 SP)</p>
         </div>
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="text-lg px-4 py-2">
@@ -125,7 +125,7 @@ export default function Overview() {
             Phase Status Overview
           </CardTitle>
           <CardDescription>
-            Track progress across all 11 implementation phases (37 weeks total, including geofencing 📍🗺️ & extension 🔌)
+            Track progress across all 15 implementation phases (48 weeks total, v4.2 performance + ML + Layer 10B 💰)
           </CardDescription>
         </CardHeader>
         <CardContent>

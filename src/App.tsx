@@ -12,6 +12,7 @@ import Architecture from "./pages/dashboard/Architecture";
 import Timeline from "./pages/dashboard/Timeline";
 import Tasks from "./pages/dashboard/Tasks";
 import Metrics from "./pages/dashboard/Metrics";
+import Optimization from "./pages/dashboard/Optimization";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="team" element={<div className="p-8">Team view coming soon...</div>} />
               <Route path="milestones" element={<div className="p-8">Milestones view coming soon...</div>} />
               <Route path="metrics" element={<Metrics />} />
+              <Route path="optimization" element={<Optimization />} />
               <Route path="risks" element={<div className="p-8">Risks view coming soon...</div>} />
               <Route path="testing" element={<div className="p-8">Testing view coming soon...</div>} />
             </Route>

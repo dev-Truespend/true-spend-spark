@@ -58,7 +58,7 @@ export default function Timeline() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Implementation Timeline</h1>
         <p className="text-muted-foreground mt-2">
-          v4.1: 37-week implementation with 11 phases covering 19 architecture layers + native geofencing 📍🗺️ + browser extension 🔌
+          v4.2: 48-week implementation with 15 phases covering 19 layers + Layer 10B with performance & ML optimization 💰🚀
         </p>
       </div>
 
@@ -151,7 +151,7 @@ export default function Timeline() {
         <CardHeader>
           <CardTitle>Timeline Overview with Key Milestones</CardTitle>
           <CardDescription>
-            37-week implementation with 6 major milestones: Foundation ✅ (Week 4), Geofencing 📍 (Week 10), Core Services ⚙️ (Week 19), Location Intelligence 🗺️ (Week 25), System Polish 🎨 (Week 34), Extension Launch 🔌 (Week 37)
+            48-week implementation with 10 major milestones including v4.2 Performance 🚀 (Week 40), ML Infrastructure 🤖 (Week 43), Layer 10B Revenue 💰 (Week 46), v4.2 Launch (Week 48)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -162,7 +162,8 @@ export default function Timeline() {
               <span>Week 10</span>
               <span>Week 20</span>
               <span>Week 30</span>
-              <span>Week 37</span>
+              <span>Week 40</span>
+              <span>Week 48</span>
             </div>
             
             {/* Timeline bars with milestone markers overlay */}
@@ -257,6 +258,34 @@ export default function Timeline() {
                   totalWeeks={totalWeeks}
                   currentWeek={currentWeek}
                 />
+                <MilestoneMarker
+                  week={40}
+                  name="Performance 🚀"
+                  icon="services"
+                  totalWeeks={totalWeeks}
+                  currentWeek={currentWeek}
+                />
+                <MilestoneMarker
+                  week={43}
+                  name="ML Infra 🤖"
+                  icon="services"
+                  totalWeeks={totalWeeks}
+                  currentWeek={currentWeek}
+                />
+                <MilestoneMarker
+                  week={46}
+                  name="Revenue 💰"
+                  icon="services"
+                  totalWeeks={totalWeeks}
+                  currentWeek={currentWeek}
+                />
+                <MilestoneMarker
+                  week={48}
+                  name="v4.2 Launch 🎉"
+                  icon="polish"
+                  totalWeeks={totalWeeks}
+                  currentWeek={currentWeek}
+                />
               </div>
             </div>
 
@@ -277,7 +306,7 @@ export default function Timeline() {
           <CardHeader>
             <CardTitle>Upcoming Milestones</CardTitle>
             <CardDescription>
-              Next major milestones in the v4.1 implementation timeline
+              Next major milestones in the v4.2 implementation timeline
             </CardDescription>
           </CardHeader>
           <CardContent>
