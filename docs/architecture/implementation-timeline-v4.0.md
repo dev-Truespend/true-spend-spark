@@ -272,81 +272,96 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 
 ---
 
-## Phase 2.5: Geofencing Foundation (Weeks 8-10)
+## Phase 2.5: Geofencing Foundation 📍 (Enterprise-Grade)
 
-**Objective:** Establish native mobile geolocation and location services integration  
-**Duration:** 3 weeks  
-**Team:** 2 Frontend, 2 Backend, 1 DevOps  
-**Story Points:** 38 SP  
-**Risk Level:** Medium
+**Objective:** Implement enterprise-grade geofencing with JWT-based security, event queuing, telemetry, and fault-tolerant architecture  
+**Duration:** 3 weeks (Weeks 8-10)  
+**Team:** 5 engineers (2 Backend, 1 Frontend, 1 Mobile, 1 DevOps)  
+**Story Points:** 42 SP (updated for enterprise refinements)  
+**Risk Level:** High (new geolocation architecture + security layer)
 
 ### Layers Implemented
-- **Layer 1:** Capacitor Native App (iOS + Android with geolocation)
-- **Layer 10:** External API Integration (Google Places, Foursquare)
-- **Layer 15:** Database (Geofence tables)
+- **Layer 1:** Native mobile geolocation APIs + JWT token signing
+- **Layer 7:** `track-location` edge function + Control Plane for dynamic rules
+- **Layer 8:** Geofence validation logic with encryption
+- **Layer 14:** Event Bus (`event_log` table) for fault-tolerant queuing
+- **Layer 15:** `geofences`, `geofence_events`, `merchants`, `geofence_rules`, `geofence_metrics` tables
+- **Layer 16:** Telemetry collection for geofencing metrics
+- **Layer 18:** Vault encryption for lat/long coordinates
 
-### Week 8: Capacitor Setup & Permissions
+### Enterprise Refinements Added
+1. ✅ **Event Bus/Queue**: Supabase Realtime + `event_log` table
+2. ✅ **Control Plane**: `geofence_rules` table for dynamic rule updates
+3. ✅ **Security Layer**: JWT-signed location tokens + coordinate encryption
+4. ✅ **Observability**: `geofence_metrics` table for telemetry
+5. 🔄 **Caching v2**: Basic implementation (full optimization in Phase 5.5)
+
+### Week 8: Enterprise Database Schema & Security Layer
 **Story Points:** 13 SP
 
 **Tasks:**
-- [ ] Install Capacitor core and CLI dependencies
-- [ ] Configure Capacitor for iOS and Android platforms
-- [ ] Install @capacitor/geolocation plugin
-- [ ] Install @capacitor-community/background-geolocation
-- [ ] Configure iOS Info.plist location permissions
-- [ ] Configure Android AndroidManifest.xml permissions
-- [ ] Implement location permission request UI
-- [ ] Test basic geolocation on physical devices
-- [ ] Set up background location tracking
-- [ ] Implement battery optimization strategies
+- [ ] Create `geofences` table with RLS policies
+- [ ] Create `geofence_events` table with encrypted lat/lng columns
+- [ ] Create `merchants` table for location enrichment
+- [ ] **NEW:** Create `geofence_rules` table for Control Plane
+- [ ] **NEW:** Create `geofence_metrics` table for telemetry
+- [ ] **NEW:** Create `event_log` table for Event Bus/Queue
+- [ ] Implement PostGIS extensions + geohash indexing
+- [ ] Set up Vault encryption for coordinates (`vault.encrypt`)
+- [ ] **NEW:** Implement JWT token generation in client (5min expiry)
+- [ ] **NEW:** Implement nonce tracking table for replay attack prevention
 
 **Deliverables:**
-- Working Capacitor native apps (iOS + Android)
-- Location permissions configured
-- Basic GPS tracking operational
-- Background location monitoring functional
+- Enterprise geofencing database + security layer operational
+- JWT token system implemented
+- Event queue table created
+- Control plane database ready
 
-### Week 9: Database Schema & Geofence Tables
-**Story Points:** 12 SP
+### Week 9: Core Geofencing Logic + Event Bus
+**Story Points:** 16 SP
 
 **Tasks:**
-- [ ] Create geofences table schema
-- [ ] Create geofence_events table schema
-- [ ] Create merchants cache table schema
-- [ ] Add location columns to transactions table
-- [ ] Implement RLS policies for geofence data
-- [ ] Set up location data encryption at rest
-- [ ] Create geospatial indexes for performance
-- [ ] Implement 30-day location retention policy
-- [ ] Build geofence CRUD operations
-- [ ] Create seed data for testing
+- [ ] Implement `track-location` edge function with JWT verification
+- [ ] **NEW:** Server-side JWT token validation with nonce checking
+- [ ] **NEW:** Decrypt location data using Vault
+- [ ] Build geofence validation algorithms (point-in-polygon)
+- [ ] **NEW:** Implement Control Plane rule evaluation engine
+- [ ] **NEW:** Build Event Bus integration (Supabase Realtime channels)
+- [ ] **NEW:** Add event queuing logic with `event_log` persistence
+- [ ] **NEW:** Implement at-least-once delivery guarantees
+- [ ] Create `discover-merchants` edge function
+- [ ] Integrate Google Places API (fallback: Foursquare)
+- [ ] Implement basic merchant caching (24hr TTL)
+- [ ] **NEW:** Add telemetry instrumentation (metrics collection)
 
 **Deliverables:**
-- Complete geofence database schema
-- RLS policies active
-- Location data encrypted
-- Geofence management APIs
+- Fault-tolerant location tracking with JWT security
+- Dynamic rule evaluation engine operational
+- Event Bus with persistent queue
+- Telemetry collection active
 
-### Week 10: External API Integration (Places)
+### Week 10: Mobile Integration, Observability & Testing
 **Story Points:** 13 SP
 
 **Tasks:**
-- [ ] Add Google Places API key (secret)
-- [ ] Add Foursquare API key (secret)
-- [ ] Create discover-merchants edge function
-- [ ] Implement Google Places API calls (Nearby Search)
-- [ ] Implement Foursquare Places API fallback
-- [ ] Build merchant data caching layer
-- [ ] Create reverse geocoding service
-- [ ] Implement rate limiting for Places APIs
-- [ ] Build circuit breakers for API failures
-- [ ] Test merchant discovery flow
+- [ ] Build React Native geolocation wrapper with JWT signing
+- [ ] Implement background location tracking (iOS/Android)
+- [ ] Create geofence management UI
+- [ ] Build zone creation/editing interface
+- [ ] **NEW:** Build Control Plane admin UI for rule testing
+- [ ] **NEW:** Create geofencing metrics dashboard
+- [ ] **NEW:** Implement rate limiting (100 submissions/user/hour)
+- [ ] **NEW:** Add battery drain tracking
+- [ ] End-to-end testing of geofence triggers + event replay
+- [ ] Load testing: 1000 concurrent location submissions
+- [ ] **NEW:** Security testing: JWT token tampering, replay attacks
+- [ ] **NEW:** Test event queue failover (simulate AI downtime)
 
 **Deliverables:**
-- Google Places API integration
-- Foursquare API fallback
-- Merchant cache operational
-- Location services resilient
+- Enterprise-grade mobile geofencing with observability
+- JWT security verified
+- Event queue fault-tolerance tested
+- Control plane operational
 
 **Phase 2.5 Milestone:** ✅ Native geolocation and location services operational
 
@@ -540,82 +555,82 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 
 ---
 
-## Phase 5.5: Location Intelligence (Weeks 23-25)
+## Phase 5.5: Location Intelligence 🗺️ (AI + Cache Optimization v2)
 
-**Objective:** Build location-based business rules and AI insights  
-**Duration:** 3 weeks  
-**Team:** 2 Frontend, 3 Backend, 1 ML Engineer  
-**Story Points:** 42 SP  
-**Risk Level:** Medium
+**Objective:** Enhance geofencing with AI-powered location insights, spending predictions, intelligent merchant recommendations, and optimized caching layer v2  
+**Duration:** 3 weeks (Weeks 23-25)  
+**Team:** 4 engineers (1 Backend, 1 AI/ML, 1 Frontend, 1 Mobile)  
+**Story Points:** 34 SP (updated for cache v2 optimization)  
+**Risk Level:** Medium (AI model training + caching complexity)
 
-### Layers Implemented
-- **Layer 8:** Business Logic (Location-based rules)
-- **Layer 9:** AI Agents (Location insights)
-- **Layer 13:** Notification Amplifier (Geofence alerts)
-- **Layer 14:** Event Bus (Location events)
+### Layers Enhanced
+- **Layer 9:** AI Location Pattern Analysis agent (with telemetry feedback loop)
+- **Layer 10:** Enhanced merchant discovery + `merchants_cache_v2` with geohash
+- **Layer 14:** Real-time location event streaming (consume from Event Bus)
+- **Layer 15:** Location history analytics tables
+- **Layer 16:** Advanced telemetry for AI model training
 
-### Week 23: Background Location Tracking
-**Story Points:** 14 SP
+### Enterprise Refinements Completed
+5. ✅ **Caching Optimization v2**: Geohash indexing, versioning, TTL management
 
-**Tasks:**
-- [ ] Create track-location edge function
-- [ ] Implement geofence boundary checking algorithm
-- [ ] Build location event publishing to event bus
-- [ ] Create geofence entry/exit detection
-- [ ] Implement dwelling detection (>X minutes in zone)
-- [ ] Build location update batching for efficiency
-- [ ] Test battery optimization strategies
-- [ ] Implement significant location change detection
-- [ ] Create location accuracy filtering
-- [ ] Build offline location queue
-
-**Deliverables:**
-- track-location edge function operational
-- Geofence detection working
-- Event bus publishing location events
-- Battery-optimized tracking
-
-### Week 24: Location-Based Business Rules
-**Story Points:** 14 SP
+### Week 24: Cache v2 Optimization + Enhanced Discovery
+**Story Points:** 12 SP
 
 **Tasks:**
-- [ ] Implement budget zone enforcement logic
-- [ ] Build spending alerts by location
-- [ ] Create merchant proximity validation
-- [ ] Implement fraud detection via location
-- [ ] Build location-tagged transaction validator
-- [ ] Create geocode-transaction edge function
-- [ ] Implement location-based spending limits
-- [ ] Build zone-specific budget rules
-- [ ] Create location anomaly detection
-- [ ] Test location-based rule engine
+- [ ] **NEW:** Migrate to `merchants_cache_v2` schema
+- [ ] **NEW:** Implement geohash-based location clustering (precision 7)
+- [ ] **NEW:** Add cache versioning and TTL management
+- [ ] **NEW:** Build LRU eviction policy (max 10MB cache size)
+- [ ] **NEW:** Pre-warm cache for high-traffic locations
+- [ ] Implement contextual merchant recommendations
+- [ ] Build location-based deal notifications
+- [ ] Add merchant category preferences
+- [ ] Optimize API call reduction (target: 85% cache hit rate)
+- [ ] **NEW:** Add cache analytics dashboard
 
 **Deliverables:**
-- Budget zone enforcement active
-- Location-based alerts working
-- Merchant proximity validation
-- Fraud detection operational
+- Optimized caching layer v2 operational
+- 85%+ cache hit rate achieved
+- Geohash indexing functional
+- Cache versioning working
 
-### Week 25: AI Location Insights
-**Story Points:** 14 SP
+### Week 25: Mobile Features, Analytics & Performance Tuning
+**Story Points:** 10 SP
 
 **Tasks:**
-- [ ] Create ai-location-insights edge function
-- [ ] Integrate Lovable AI (Gemini 2.5 Flash)
-- [ ] Build spending pattern analysis by location
-- [ ] Implement predictive location spending
-- [ ] Create personalized merchant recommendations
-- [ ] Build location-based budget suggestions
-- [ ] Implement location heatmap visualization
-- [ ] Create weekly location spending reports
-- [ ] Build location spending anomaly alerts
-- [ ] Test AI insights accuracy
+- [ ] Build location history dashboard (encrypted data display)
+- [ ] Create heatmap visualization of spending zones
+- [ ] Implement location-based insights UI
+- [ ] Add battery usage optimization controls
+- [ ] Build privacy controls (location retention settings)
+- [ ] **NEW:** Build admin dashboard for geofence metrics
+- [ ] **NEW:** Add A/B testing framework for geofencing algorithms
+- [ ] **NEW:** Performance tuning: < 100ms P95 geofence validation
+- [ ] Load testing: Validate 85%+ cache hit rate under 10k req/min
 
 **Deliverables:**
-- AI location insights functional
-- Spending pattern analysis by location
-- Personalized recommendations
-- Location heatmaps and reports
+- AI-powered location intelligence + optimized performance
+- Admin metrics dashboard
+- A/B testing framework operational
+- Performance targets met
+
+### Week 23: AI Agent Development + Telemetry Feedback Loop
+**Story Points:** 12 SP
+
+**Tasks:**
+- [ ] Build `location-insights` AI agent (consumes from Event Bus)
+- [ ] Implement spending pattern recognition using geofence history
+- [ ] Create location-based budget recommendations
+- [ ] Train model on historical `geofence_events` data
+- [ ] **NEW:** Integrate telemetry feedback loop (`geofence_metrics` → AI)
+- [ ] **NEW:** Implement false positive reduction using battery drain metrics
+- [ ] Integrate with existing AI pipeline (Layer 9)
+- [ ] Add noise reduction: suppress notifications if >10 triggers/day
+
+**Deliverables:**
+- AI location insights with self-optimization
+- Telemetry feedback loop operational
+- Noise reduction algorithms implemented
 
 **Phase 5.5 Milestone:** ✅ Location intelligence operational with AI insights
 

@@ -193,8 +193,8 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 
 ---
 
-### 🟪 Layer 10: Egress Gateway (#7c3aed)
-**Purpose:** External API communication management  
+### 🟪 Layer 10: Egress Gateway & Cache v2 (#7c3aed)
+**Purpose:** External API communication with intelligent caching  
 **Components:**
 - Outbound request routing
 - API key management
@@ -204,6 +204,9 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Foursquare Places API integration
 - Reverse geocoding service
 - Map tile provider (Mapbox)
+- **`merchants_cache_v2` with geohash indexing**
+- TTL management system (24hr default, configurable)
+- Cache versioning for invalidation
 
 **Responsibilities:**
 - External API calls
@@ -214,6 +217,9 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Rate limiting for location services
 - Circuit breakers for geolocation API failures
 - Merchant data enrichment
+- **Geohash-based location clustering** (precision 7 = ~150m)
+- **LRU eviction policy** (max 10MB cache size)
+- **85%+ cache hit rate target**
 
 ---
 
@@ -233,19 +239,24 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 
 ---
 
-### 🟪 Layer 12: Control Plane (#9333ea)
-**Purpose:** System configuration and orchestration  
+### 🟪 Layer 12: Control Plane & Dynamic Rules (#9333ea)
+**Purpose:** System configuration and dynamic rule management  
 **Components:**
 - Feature flags
 - Configuration management
 - Service discovery
 - Health checks
+- **`geofence_rules` table for real-time zone updates**
+- Dynamic rule evaluation engine (no redeployment needed)
+- A/B testing framework for geofencing algorithms
 
 **Responsibilities:**
 - Dynamic configuration
 - Service registry
 - Health monitoring
 - Feature toggling
+- **Real-time geofence rule updates** (add merchant zones without code deploy)
+- Control plane for dynamic zone configuration
 
 ---
 
@@ -271,24 +282,25 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 
 ---
 
-### 🟦 Layer 14: Event Bus (#06b6d4)
-**Purpose:** Asynchronous event distribution  
+### 🟦 Layer 14: Event Bus & Queue (Enterprise) (#06b6d4)
+**Purpose:** Fault-tolerant asynchronous event distribution  
 **Components:**
-- Message broker
-- Event streaming
-- Topic management
-- Subscription handling
+- Supabase Realtime (pub/sub channels)
+- `event_log` table (persistent queue)
+- Database triggers for automatic event capture
+- At-least-once delivery guarantees
 - Geofence event types (`geofence.entered`, `geofence.exited`, `geofence.dwelling`)
 - Location update events (`location.updated`)
 - Merchant discovery events (`merchant.discovered`)
 
 **Responsibilities:**
-- Event publishing
-- Message routing
-- Async communication
-- Event replay
+- Event publishing with persistence
+- Message routing and queuing
+- Async communication with retry
+- Event replay capability
 - Location-based event routing
 - Geofence event distribution
+- **Fault tolerance:** Prevents event loss during AI module downtime/scaling
 
 ---
 
@@ -391,19 +403,47 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 
 ---
 
-### ⚫ Cross-Cutting: Observability (#64748b)
-**Purpose:** System monitoring and debugging  
+### ⚫ Cross-Cutting: Observability & Telemetry (#64748b)
+**Purpose:** System monitoring, debugging, and geofencing analytics  
 **Components:**
-- Logging (structured logs)
+- Logging (structured logs in JSON)
 - Metrics (performance data)
 - Tracing (distributed traces)
-- Alerting
+- Alerting (Slack/email)
+- **`geofence_metrics` table for telemetry**
+- **Geofencing-specific metrics dashboard**
 
 **Responsibilities:**
-- Log aggregation
-- Metric collection
+- Log aggregation across all layers
+- Metric collection (P95, P99 latencies)
 - Trace correlation
 - Incident alerting
+- **Geofencing telemetry:**
+  - Geo triggers per user per day
+  - Average geofence validation latency
+  - Push notification success rate
+  - Battery drain metrics (mobile)
+  - False positive rate tracking
+- **AI Model Training Feedback:** Metrics feed back to Layer 9 for noise reduction
+
+---
+
+## Security Considerations (Enterprise-Grade)
+
+Security is implemented across multiple layers with enhanced geofencing protection:
+
+1. **Client Layer (L1)**: CSP headers, SRI, JWT token signing
+2. **Edge Layer (L2)**: TLS 1.3, DDoS protection
+3. **Gateway (L7)**: Rate limiting, HMAC signatures, JWT validation
+4. **Auth (L3)**: JWT + Refresh tokens, MFA support
+5. **Data (L15/L18)**: RLS policies, Encryption at rest (AES-256)
+6. **Geofencing Security (Enterprise)**:
+   - **Location Spoofing Prevention**: Client-side signed JWT tokens with 5min expiry
+   - **Coordinate Encryption**: Lat/long encrypted before storage using `vault.encrypt`
+   - **Token Validation**: Server-side verification with nonce tracking (replay attack prevention)
+   - **Rate Limiting**: Max 100 location submissions per user per hour
+   - **Audit Trail**: All geo events logged in `geofence_events` with timestamps
+   - **GDPR Compliance**: 30-day location retention, right to be forgotten
 
 ---
 
@@ -461,13 +501,19 @@ graph TD
     L7 -->|Aggregated| L8
     L8 <-->|AI Processing| L9
     
-    %% Geofencing Flows (highlighted in green dashed lines)
-    L1 -.->|GPS Location 📍| L2
+    %% Geofencing Flows (enterprise-grade with security & queuing)
+    L1 -.->|GPS + JWT Token 🔒| L2
     L2 -.->|track-location| L8
+    L8 -.->|Token Validation| L5
+    L5 -.->|Decrypt Location| L18
+    L8 -.->|Query Dynamic Rules| L12
     L8 -.->|Validate Geofence| L15
-    L8 -.->|Geofence Event| L14
+    L8 -.->|Queue Event| L14
+    L14 -.->|At-least-once| L9
+    L9 -.->|AI Insights| L8
     L14 -.->|Location Alert| L13
     L13 -.->|Push Notification 🔔| L1
+    OBS -.->|Telemetry| L14
     
     %% Merchant Discovery Flow
     L8 -->|Discover Merchants| L10
