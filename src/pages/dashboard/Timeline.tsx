@@ -3,10 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useTimelineData } from "@/hooks/useTimelineData";
-import { Calendar, Clock, AlertTriangle, CheckCircle2, Users } from "lucide-react";
+import { Calendar, Clock, AlertTriangle, CheckCircle2, Users, CheckCircle, Wrench, Sparkles, Map, MapPin, Plug } from "lucide-react";
 import { EnhancedGanttChart } from "@/components/timeline/EnhancedGanttChart";
 import { HierarchicalProjectDiagram } from "@/components/timeline/HierarchicalProjectDiagram";
 import { TimelineImageGenerator } from "@/components/admin/TimelineImageGenerator";
+import { MilestoneMarker } from "@/components/timeline/MilestoneMarker";
 
 export default function Timeline() {
   const { phases, milestones, currentWeek, totalWeeks, isLoading } = useTimelineData();
@@ -145,12 +146,12 @@ export default function Timeline() {
         <HierarchicalProjectDiagram />
       </div>
 
-      {/* Visual Timeline */}
+      {/* Visual Timeline with Milestone Markers */}
       <Card>
         <CardHeader>
-          <CardTitle>Timeline Overview</CardTitle>
+          <CardTitle>Timeline Overview with Key Milestones</CardTitle>
           <CardDescription>
-            37-week phase progress bars with geofencing milestones (Week 10 📍, Week 25 🗺️) and extension launch (Week 37 🔌)
+            37-week implementation with 6 major milestones: Foundation ✅ (Week 4), Geofencing 📍 (Week 10), Core Services ⚙️ (Week 19), Location Intelligence 🗺️ (Week 25), System Polish 🎨 (Week 34), Extension Launch 🔌 (Week 37)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -164,8 +165,9 @@ export default function Timeline() {
               <span>Week 37</span>
             </div>
             
-            {/* Timeline bars */}
-            <div className="space-y-2">
+            {/* Timeline bars with milestone markers overlay */}
+            <div className="relative space-y-2 pb-12">
+              {/* Phase bars */}
               {phases?.sort((a, b) => a.phase_number - b.phase_number).map((phase) => {
                 const barWidth = (phase.duration_weeks / totalWeeks) * 100;
                 const barStart = (phase.start_week / totalWeeks) * 100;
@@ -210,10 +212,56 @@ export default function Timeline() {
                   </div>
                 );
               })}
+              
+              {/* Milestone markers overlay */}
+              <div className="absolute inset-0 pointer-events-none">
+                <MilestoneMarker
+                  week={4}
+                  name="Foundation"
+                  icon="foundation"
+                  totalWeeks={totalWeeks}
+                  currentWeek={currentWeek}
+                />
+                <MilestoneMarker
+                  week={10}
+                  name="Geofencing 📍"
+                  icon="geofencing"
+                  totalWeeks={totalWeeks}
+                  currentWeek={currentWeek}
+                />
+                <MilestoneMarker
+                  week={19}
+                  name="Services ⚙️"
+                  icon="services"
+                  totalWeeks={totalWeeks}
+                  currentWeek={currentWeek}
+                />
+                <MilestoneMarker
+                  week={25}
+                  name="Location 🗺️"
+                  icon="location"
+                  totalWeeks={totalWeeks}
+                  currentWeek={currentWeek}
+                />
+                <MilestoneMarker
+                  week={34}
+                  name="Polish 🎨"
+                  icon="polish"
+                  totalWeeks={totalWeeks}
+                  currentWeek={currentWeek}
+                />
+                <MilestoneMarker
+                  week={37}
+                  name="Extension 🔌"
+                  icon="extension"
+                  totalWeeks={totalWeeks}
+                  currentWeek={currentWeek}
+                />
+              </div>
             </div>
 
             {/* Current week indicator */}
-            <div className="relative h-1 bg-muted rounded">
+            <div className="relative h-1 bg-muted rounded mt-12">
               <div
                 className="absolute top-0 bottom-0 w-1 bg-primary rounded-full -mt-1"
                 style={{ left: `${(currentWeek / totalWeeks) * 100}%` }}
@@ -223,37 +271,52 @@ export default function Timeline() {
         </CardContent>
       </Card>
 
-      {/* Upcoming Milestones */}
+      {/* Upcoming Milestones - Enhanced with Icons */}
       {upcomingMilestones.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Upcoming Milestones</CardTitle>
             <CardDescription>
-              Next major milestones in the implementation timeline
+              Next major milestones in the v4.1 implementation timeline
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {upcomingMilestones.map((milestone) => (
-                <div key={milestone.id} className="flex items-start gap-4 p-4 rounded-lg border">
-                  <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div className="flex-1">
-                    <h4 className="font-semibold">{milestone.name}</h4>
-                    <p className="text-sm text-muted-foreground">Week {milestone.week}</p>
-                    {milestone.gate_requirements && Array.isArray(milestone.gate_requirements) && (
-                      <ul className="mt-2 space-y-1">
-                        {(milestone.gate_requirements as string[]).map((req, idx) => (
-                          <li key={idx} className="text-sm flex items-center gap-2">
-                            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-                            {req}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+              {upcomingMilestones.map((milestone) => {
+                // Determine icon based on milestone week
+                const getMilestoneIcon = (week: number) => {
+                  if (week === 4) return <CheckCircle className="h-5 w-5 text-green-600" />;
+                  if (week === 10) return <MapPin className="h-5 w-5 text-orange-600" />;
+                  if (week === 19) return <Wrench className="h-5 w-5 text-blue-600" />;
+                  if (week === 25) return <Map className="h-5 w-5 text-purple-600" />;
+                  if (week === 34) return <Sparkles className="h-5 w-5 text-yellow-600" />;
+                  if (week === 37) return <Plug className="h-5 w-5 text-indigo-600" />;
+                  return <Calendar className="h-5 w-5 text-muted-foreground" />;
+                };
+                
+                return (
+                  <div key={milestone.id} className="flex items-start gap-4 p-4 rounded-lg border">
+                    <div className="mt-0.5">
+                      {getMilestoneIcon(milestone.week)}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold">{milestone.name}</h4>
+                      <p className="text-sm text-muted-foreground">Week {milestone.week}</p>
+                      {milestone.gate_requirements && Array.isArray(milestone.gate_requirements) && (
+                        <ul className="mt-2 space-y-1">
+                          {(milestone.gate_requirements as string[]).map((req, idx) => (
+                            <li key={idx} className="text-sm flex items-center gap-2">
+                              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+                              {req}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <Badge variant="outline">{milestone.status}</Badge>
                   </div>
-                  <Badge variant="outline">{milestone.status}</Badge>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

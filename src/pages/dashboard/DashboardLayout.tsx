@@ -39,7 +39,7 @@ export default function DashboardLayout() {
         {/* Sidebar */}
         <div className="w-64 border-r bg-card min-h-screen sticky top-0 flex flex-col">
           <div className="p-6 border-b">
-            <h2 className="text-xl font-bold">TrueSpend v3.0</h2>
+            <h2 className="text-xl font-bold">TrueSpend v4.1</h2>
             <p className="text-xs text-muted-foreground mt-1">Project Dashboard</p>
           </div>
           <nav className="p-4 space-y-1 flex-1">
