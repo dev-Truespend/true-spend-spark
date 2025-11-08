@@ -1902,7 +1902,6 @@ graph TD
     %% Asynchronous Events
     L8 -.->|Publish Event| L14
     L14 -.->|Route| L13
-    L13 -.->|Notify| L1
     
     %% Observability (monitors all)
     L1A -.->|Logs| OBS
