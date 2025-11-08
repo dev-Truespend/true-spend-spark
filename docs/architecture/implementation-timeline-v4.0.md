@@ -26,12 +26,14 @@
 
 ## Executive Summary
 
-This document outlines the phased implementation approach for TrueSpend v4.0's comprehensive 19-layer architecture with native mobile geofencing capabilities. The implementation is structured across **10 phases spanning 34 calendar weeks (30 active development weeks + 4 weeks buffer)**, with each phase building upon previous layers while maintaining system stability and security.
+This document outlines the phased implementation approach for TrueSpend v4.0's comprehensive 19-layer architecture with native mobile geofencing capabilities and browser extension companion. The implementation is structured across **11 phases spanning 37 calendar weeks (33 active development weeks + 4 weeks buffer)**, with each phase building upon previous layers while maintaining system stability and security.
 
-**Total Duration:** 34 weeks (8.5 months) - 30 active development weeks + 4 weeks buffer  
+**Total Duration:** 37 weeks (9.25 months) - 33 active development weeks + 4 weeks buffer  
 **Team Size:** 6-8 engineers (Frontend: 3, Backend: 4, DevOps: 1, Security: 1, ML: 1)  
-**Total Story Points:** 385 SP  
-**New in v4.0:** Native mobile geofencing (Phases 2.5 & 5.5) with GPS tracking, location intelligence, and AI-powered insights
+**Total Story Points:** 417 SP  
+**New in v4.0:** 
+- Native mobile geofencing (Phases 2.5 & 5.5) with GPS tracking, location intelligence, and AI-powered insights
+- Browser extension companion (Phase 9) for lightweight budget tracking and merchant insights
 
 ---
 
@@ -39,7 +41,7 @@ This document outlines the phased implementation approach for TrueSpend v4.0's c
 
 ```mermaid
 gantt
-    title TrueSpend v4.0 Implementation Timeline (34 Weeks)
+    title TrueSpend v4.0 Implementation Timeline (37 Weeks)
     dateFormat YYYY-MM-DD
     
     section Phase 1
@@ -72,6 +74,9 @@ gantt
     section Phase 8
     Observability & Polish              :p8, after p6, 14d
     
+    section Phase 9 🔌
+    Browser Extension MVP               :p9, after p8, 21d
+    
     section Milestones
     Phase 1 Complete                    :milestone, m1, after p1, 0d
     Phase 2 Complete                    :milestone, m2, after p2, 0d
@@ -82,7 +87,8 @@ gantt
     Location Intelligence 🗺️            :milestone, m5_5, after p5_5, 0d
     Event-Driven Architecture           :milestone, m6, after p6, 0d
     Data Protection Ready               :milestone, m7, after p7, 0d
-    Production Launch 🚀                :milestone, m8, after p8, 0d
+    System Polish Complete              :milestone, m8, after p8, 0d
+    Extension Launch 🔌                 :milestone, m9, after p9, 0d
 ```
 
 ---
@@ -91,13 +97,13 @@ gantt
 
 ```
 Phase Dependencies & Critical Path:
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  P1 ──→ P2 ──→ P2.5📍──→ P3 ──→ P4 ──→ P5 ──→ P5.5🗺️ ──→ P6 ──→ P8        │
-│  │                                                             ↑              │
-│  └─────────────────────────────────────────────────────→ P7 ──┘              │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│  P1 ──→ P2 ──→ P2.5📍──→ P3 ──→ P4 ──→ P5 ──→ P5.5🗺️ ──→ P6 ──→ P8 ──→ P9🔌      │
+│  │                                                             ↑                     │
+│  └─────────────────────────────────────────────────────→ P7 ──┘                     │
+└────────────────────────────────────────────────────────────────────────────────────┘
 
-Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺️ Location Intelligence
+Legend: ──→ Sequential Dependency  |  📍 Geofencing  |  🗺️ Location AI  |  🔌 Extension
 ```
 
 ---
@@ -106,9 +112,9 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 
 | Phase | Weeks | Duration | Layers Implemented | Story Points | Team Size | Risk | Dependencies |
 |-------|-------|----------|-------------------|--------------|-----------|------|--------------|
-| **Phase 1** | 1-4 | 4 weeks | Foundation & Client (L1, L15, L16) | 34 SP | 6 FTE | 🟡 Medium | None |
+| **Phase 1** | 1-4 | 4 weeks | Foundation & Client (L1A, L15, L16) | 34 SP | 6 FTE | 🟡 Medium | None |
 | **Phase 2** | 5-7 | 3 weeks | Security & Ingress (L2, L3, L4) | 40 SP | 6 FTE | 🔴 High | Phase 1 |
-| **Phase 2.5 📍** | **8-10** | **3 weeks** | **Geofencing Foundation (L1, L10, L15)** | **38 SP** | **5 FTE** | **🟡 Medium** | **Phase 2** |
+| **Phase 2.5 📍** | **8-10** | **3 weeks** | **Geofencing Foundation (L1A, L10, L15)** | **38 SP** | **5 FTE** | **🟡 Medium** | **Phase 2** |
 | **Phase 3** | 11-14 | 4 weeks | Auth & Safety (L5, L6) | 48 SP | 6 FTE | 🔴 High | Phase 2.5 |
 | **Phase 4** | 15-19 | 5 weeks | Core Services (L7, L8, L9) | 65 SP | 8 FTE | 🔴 Critical | Phase 3 |
 | **Phase 5** | 20-22 | 3 weeks | External Communication (L10, L11, L12) | 42 SP | 5 FTE | 🟡 Medium | Phase 4 |
@@ -116,7 +122,8 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 | **Phase 6** | 26-28 | 3 weeks | Messaging & Events (L13, L14) | 38 SP | 5 FTE | 🟡 Medium | Phase 5.5 |
 | **Phase 7** | 29-32 | 4 weeks | Data Planes (L17, L18, L19) | 45 SP | 6 FTE | 🔴 High | Phase 1 |
 | **Phase 8** | 33-34 | 2 weeks | Observability & Polish | 28 SP | 8 FTE | 🟢 Low | All Phases |
-| **Total** | **1-34** | **34 weeks** | **All 19 Layers** | **385 SP** | **6-8 FTE** | | |
+| **Phase 9 🔌** | **35-37** | **3 weeks** | **Browser Extension (L1B)** | **32 SP** | **2 FTE** | **🟢 Low** | **Phase 8** |
+| **Total** | **1-37** | **37 weeks** | **All 19 Layers + Extension** | **417 SP** | **6-8 FTE** | | |
 
 **Progress Legend:**  
 █████████░ 90% Complete | ████████░░ 80% | ███████░░░ 70% | ██████░░░░ 60% | █████░░░░░ 50%
@@ -131,7 +138,7 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 **Story Points:** 34 SP
 
 ### Layers Implemented
-- **Layer 1:** Client Layer (React SPA, PWA)
+- **Layer 1A:** Client Layer (React SPA, PWA)
 - **Layer 15:** Database (PostgreSQL with Supabase)
 - **Layer 16:** Storage (Object storage for receipts/documents)
 
@@ -283,7 +290,7 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 **Risk Level:** High (new geolocation architecture + security layer)
 
 ### Layers Implemented
-- **Layer 1:** Native mobile geolocation APIs + JWT token signing
+- **Layer 1A:** Native mobile geolocation APIs + JWT token signing
 - **Layer 7:** `track-location` edge function + Control Plane for dynamic rules
 - **Layer 8:** Geofence validation logic with encryption
 - **Layer 14:** Event Bus (`event_log` table) for fault-tolerant queuing
@@ -811,6 +818,81 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 
 ---
 
+## Phase 9: Browser Extension MVP 🔌 (Weeks 35-37)
+
+**Objective:** Build lightweight browser extension companion for budget tracking and merchant insights  
+**Duration:** 3 weeks  
+**Team:** 2 engineers (1 Frontend, 1 Backend)  
+**Story Points:** 32 SP  
+**Risk Level:** Low (reuses existing components and infrastructure)
+
+### Layers Implemented
+- **Layer 1B:** Browser Extension Client (Popup UI, Background Worker, Content Scripts)
+
+### Week 35: Extension Foundation & Manifest
+**Story Points:** 10 SP
+
+**Tasks:**
+- [ ] Create Chrome Manifest V3 configuration
+- [ ] Set up multi-entry Vite build for extension
+- [ ] Implement Popup UI with React + Tailwind (reuse `src/components/shared/`)
+- [ ] Create Background Service Worker skeleton
+- [ ] Implement chrome.storage.local caching layer
+- [ ] Set up extension routing and navigation
+- [ ] Configure CSP for extension pages
+- [ ] Create extension icons (16px, 48px, 128px)
+
+**Deliverables:**
+- Working extension skeleton
+- Popup displays budget summary
+- Chrome Manifest V3 configured
+- Build system multi-entry setup
+
+### Week 36: Authentication & Realtime Sync
+**Story Points:** 12 SP
+
+**Tasks:**
+- [ ] Implement OAuth authentication flow (`chrome.identity.launchWebAuthFlow`)
+- [ ] Set up Supabase client for extension context
+- [ ] Create background worker Realtime subscription to `budgets` table
+- [ ] Implement badge updates for budget alerts
+- [ ] Build browser notification system
+- [ ] Create session persistence in chrome.storage
+- [ ] Implement quick expense logging form
+- [ ] Add transaction sync logic
+
+**Deliverables:**
+- OAuth authentication working
+- Realtime budget sync operational
+- Browser notifications for budget alerts
+- Quick expense logging functional
+
+### Week 37: Merchant Detection & Cross-Browser
+**Story Points:** 10 SP
+
+**Tasks:**
+- [ ] Build content scripts for merchant detection
+- [ ] Implement e-commerce site form detection
+- [ ] Create inline quick-log prompts on merchant sites
+- [ ] Build Options page for preferences
+- [ ] Convert Manifest V3 → V2 for Firefox compatibility
+- [ ] Package extension for Chrome Web Store
+- [ ] Package extension for Firefox Add-ons
+- [ ] Create Safari extension wrapper (Xcode)
+- [ ] Write extension documentation
+- [ ] Submit to Chrome Web Store
+
+**Deliverables:**
+- Merchant detection working on e-commerce sites
+- Options page functional
+- Chrome extension published
+- Firefox extension packaged
+- Safari extension ready for App Store
+
+**Phase 9 Milestone:** ✅ Browser extension live on Chrome Web Store
+
+---
+
 ## Critical Path Analysis
 
 ### High-Risk Dependencies
@@ -821,19 +903,21 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 5. **Phase 5 → Phase 5.5:** External communication before location intelligence
 6. **Phase 1 → Phase 7:** Database must be stable before data planes
 7. **All Phases → Phase 8:** Observability requires all layers
+8. **Phase 8 → Phase 9:** Extension requires stable backend
 
 ### Parallel Workstreams
 - **Weeks 8-10:** Phase 2.5 (Geofencing) runs after Phase 2
 - **Weeks 15-25:** Phase 5 & 5.5 can run partially in parallel with Phase 4
 - **Weeks 26-32:** Phase 7 runs parallel to Phase 6 completion
 - **Weeks 33-34:** Full team convergence for launch
+- **Weeks 35-37:** Small team for extension (parallel to post-launch activities)
 
 ---
 
 ## Resource Allocation
 
 ### Team Composition
-- **Frontend Engineers:** 3 FTE
+- **Frontend Engineers:** 3 FTE (2 for Phase 9)
 - **Backend Engineers:** 4 FTE
 - **DevOps Engineers:** 1 FTE
 - **Security Engineer:** 1 FTE (Phases 2-3)
@@ -845,6 +929,7 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 - Lovable Cloud (Edge Functions)
 - Plaid, Stripe, Resend, Twilio
 - Lovable AI Gateway
+- Chrome Manifest V3, Web Extensions API
 
 ---
 
@@ -861,6 +946,8 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 | Location privacy concerns | High | Low | Opt-in tracking, 30-day retention, encryption at rest |
 | Data migration issues | High | Low | Thorough testing, PITR backups |
 | Performance bottlenecks | Medium | Medium | Load testing throughout, optimization phase |
+| Extension store approval delays | Low | Medium | Submit early, follow all guidelines |
+| Cross-browser compatibility | Low | Low | Test on Chrome, Firefox, Safari during dev |
 
 ---
 
@@ -875,6 +962,7 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 
 ### Production Readiness Checklist
 - [ ] All 19 layers implemented and tested
+- [ ] Browser extension live on Chrome Web Store
 - [ ] Security audit completed
 - [ ] Load testing passed (1000+ concurrent users)
 - [ ] DR drills successful (RTO < 1hr, RPO < 5min)
@@ -899,6 +987,7 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 | 28 | Phase 6 Complete | Event-driven notifications |
 | 32 | Phase 7 Complete | Data protection & DR ready |
 | 34 | Phase 8 Complete | Production launch ready |
+| **37** | **Phase 9 Complete** | **Browser extension live** |
 
 ---
 
@@ -907,6 +996,7 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 ### Week 35-38 (Month 1 Post-Launch)
 - Monitor system stability
 - Collect user feedback on geofencing features
+- Track browser extension adoption metrics
 - Address critical bugs
 - Optimize location tracking battery usage
 - Scale infrastructure as needed
@@ -918,6 +1008,7 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 - Optimize costs (Places API, location tracking)
 - Expand merchant integrations
 - Add advanced geofencing features
+- Enhance browser extension with advanced features
 - Plan v5.0 features (AR merchant discovery, time-based zones)
 
 ---
@@ -969,7 +1060,7 @@ Legend: ──→ Sequential Dependency  |  📍 Geofencing Foundation  |  🗺�
 **Review Cycle:** Weekly during implementation  
 **Related Documents:** [Blueprint v4.0](./blueprint-v4.0.md) | [Geofencing Architecture](./blueprint-v4.0.md#dedicated-geofencing-subsystem-architecture)
 
-**Note:** This timeline includes native mobile geofencing capabilities integrated across the 19-layer architecture, extending the original plan to 34 weeks (30 active development + 4 weeks buffer) with 2 additional phases (Phase 2.5: Geofencing Foundation 📍 and Phase 5.5: Location Intelligence 🗺️).
+**Note:** This timeline includes native mobile geofencing capabilities and browser extension companion integrated across the 19-layer architecture, extending the original plan to 37 weeks (33 active development + 4 weeks buffer) with 3 additional phases (Phase 2.5: Geofencing Foundation 📍, Phase 5.5: Location Intelligence 🗺️, and Phase 9: Browser Extension MVP 🔌).
 
 ---
 
@@ -980,7 +1071,7 @@ For an interactive view of the implementation timeline:
 1. **Generate Gantt Chart Image:**
    - Navigate to `/dashboard/timeline`
    - Click "Generate & Download Timeline Image" to create a visual 34-week Gantt chart
-   - The generated image will show all 10 phases with geofencing phases highlighted
+   - The generated image will show all 11 phases with geofencing and extension phases highlighted
 
 2. **View Live Timeline:**
    - Visit `/dashboard/timeline` for real-time progress tracking

@@ -9,7 +9,7 @@
 
 ## Related Documents
 
-- **[Implementation Timeline v4.0](./implementation-timeline-v4.0.md)** - 34-week phased implementation plan with Gantt chart
+- **[Implementation Timeline v4.0](./implementation-timeline-v4.0.md)** - 37-week phased implementation plan with Gantt chart
 - **[Geofencing Implementation](./implementation-timeline-v4.0.md#phase-25-geofencing-foundation-weeks-8-10)** - Phase 2.5 & 5.5 details
 - **[Dashboard Overview](/dashboard/overview)** - Interactive architecture visualization
 
@@ -19,14 +19,19 @@
 
 TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **Client → Ingress → Services → Egress → Data → Observability** pattern. This design prioritizes security, scalability, reliability, and observability across all system components.
 
-**New in v4.0:** Native mobile geofencing with location intelligence spanning 8 layers (L1, L8, L9, L10, L13, L14, L15, L18). See [Geofencing Subsystem Architecture](#dedicated-geofencing-subsystem-architecture) for details.
+**New in v4.0:** 
+- Native mobile geofencing with location intelligence spanning 8 layers (L1A, L8, L9, L10, L13, L14, L15, L18)
+- Browser extension companion (L1B) for lightweight budget tracking and merchant insights
+- See [Geofencing Subsystem Architecture](#dedicated-geofencing-subsystem-architecture) and [Browser Extension Architecture](#browser-extension-companion-architecture) for details.
 
 ---
 
 ## Layer Specifications
 
 ### 🟦 Layer 1: Client Layer (#2563EB)
-**Purpose:** User-facing interface  
+**Purpose:** User-facing interface across multiple platforms  
+
+#### Layer 1A: Web & Mobile Client
 **Components:**
 - React SPA with TypeScript
 - Capacitor Native App (iOS + Android)
@@ -46,6 +51,30 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 - Geofence boundary visualization
 - Real-time location updates
 - Location permission management
+
+#### Layer 1B: Browser Extension Client 🔌
+**Components:**
+- Chrome/Firefox/Safari extension
+- Popup UI (React + Tailwind)
+- Background service worker
+- Content scripts (merchant detection)
+- Options page for preferences
+
+**Responsibilities:**
+- Quick budget checks
+- Real-time spending alerts
+- Merchant price tracking
+- Quick expense logging
+- Transaction hints overlay
+- Session sync with main app
+
+**Limitations:**
+- ❌ No native geofencing (no GPS/background location)
+- ❌ No offline-first capabilities
+- ❌ No Capacitor native APIs
+- ✅ Supabase Auth, Realtime, Database
+- ✅ AI insights and notifications
+- ✅ Merchant detection via content scripts
 
 ---
 
@@ -428,9 +457,423 @@ TrueSpend v4.0 implements a comprehensive 19-layer architecture following the **
 
 ---
 
+## Browser Extension Companion Architecture
+
+### Overview
+
+The TrueSpend browser extension provides lightweight budget tracking and merchant insights directly in the browser, complementing the web and mobile applications. Built on Chrome Manifest V3 with React + Tailwind, it enables real-time spending alerts, quick expense logging, and merchant detection on e-commerce sites.
+
+**Key Capabilities:**
+- ✅ Supabase Authentication (OAuth flow)
+- ✅ Real-time budget sync via Supabase Realtime
+- ✅ Merchant detection with content scripts
+- ✅ AI-powered spending insights
+- ✅ Browser notifications for budget alerts
+- ❌ No geofencing (no GPS/background location)
+- ❌ No offline-first (requires network)
+
+### Extension Architecture Diagram
+
+```mermaid
+graph LR
+    subgraph Extension["🔌 Browser Extension (Layer 1B)"]
+        Popup[Popup UI<br/>React + Tailwind]
+        Background[Background<br/>Service Worker]
+        Content[Content Scripts<br/>Merchant Detection]
+        Options[Options Page<br/>Preferences]
+    end
+    
+    subgraph Storage["💾 Extension Storage"]
+        LocalCache[chrome.storage.local<br/>Budget Cache]
+        SessionData[Session Tokens<br/>Auth State]
+    end
+    
+    subgraph Backend["☁️ Lovable Cloud"]
+        Auth[Supabase Auth]
+        Realtime[Supabase Realtime]
+        DB[(Database)]
+        EdgeFn[Edge Functions]
+    end
+    
+    subgraph WebPage["🌐 Active Web Page"]
+        Merchant[E-commerce Site]
+        Form[Transaction Form]
+    end
+    
+    Popup -->|Auth| Auth
+    Popup <-.->|Subscribe| Realtime
+    Popup -->|Query| DB
+    Background <-.->|Sync| Realtime
+    Background -->|Store| LocalCache
+    
+    Content -->|Detect| Merchant
+    Content -->|Extract| Form
+    Content -.->|Send Data| Background
+    Background -.->|Log Expense| EdgeFn
+    
+    Realtime -.->|Budget Update| Background
+    Background -.->|Notify| Popup
+    Background -->|Browser Alert| User[User Notification]
+    
+    Options -->|Update| SessionData
+    Options -->|Configure| LocalCache
+    
+    classDef extension fill:#6366f1,stroke:#4f46e5,color:#fff
+    classDef storage fill:#0891b2,stroke:#0e7490,color:#fff
+    classDef backend fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef web fill:#f97316,stroke:#ea580c,color:#fff
+    
+    class Popup,Background,Content,Options extension
+    class LocalCache,SessionData storage
+    class Auth,Realtime,DB,EdgeFn backend
+    class Merchant,Form web
+```
+
+### Component Breakdown
+
+#### 1. Popup UI (React Entry Point)
+**File:** `extension/popup/index.tsx`
+
+```typescript
+// Reuses components from src/components/
+import { BudgetCard } from '@/components/budget/BudgetCard';
+import { TransactionList } from '@/components/transactions/TransactionList';
+import { supabase } from '@/integrations/supabase/client';
+
+function Popup() {
+  const { data: budgets } = useQuery({
+    queryKey: ['budgets'],
+    queryFn: async () => {
+      const { data } = await supabase.from('budgets').select('*');
+      return data;
+    }
+  });
+
+  return (
+    <div className="w-96 h-600 p-4">
+      <BudgetCard budgets={budgets} />
+      <TransactionList limit={5} />
+    </div>
+  );
+}
+```
+
+**Responsibilities:**
+- Display budget summary
+- Show recent transactions
+- Quick expense logging
+- Settings access
+
+#### 2. Background Service Worker
+**File:** `extension/background/index.ts`
+
+```typescript
+// Listen for budget updates via Supabase Realtime
+const channel = supabase
+  .channel('budget-updates')
+  .on('postgres_changes', {
+    event: '*',
+    schema: 'public',
+    table: 'budgets'
+  }, async (payload) => {
+    // Update badge with budget status
+    const budget = payload.new;
+    if (budget.spent_percent > 90) {
+      chrome.action.setBadgeText({ text: '!' });
+      chrome.action.setBadgeBackgroundColor({ color: '#dc2626' });
+      
+      // Send browser notification
+      chrome.notifications.create({
+        type: 'basic',
+        iconUrl: 'icon128.png',
+        title: 'Budget Alert',
+        message: `${budget.category} budget at ${budget.spent_percent}%`
+      });
+    }
+  })
+  .subscribe();
+```
+
+**Responsibilities:**
+- Realtime subscription management
+- Browser notifications
+- Badge updates
+- Session persistence in chrome.storage
+
+#### 3. Content Scripts (Merchant Detection)
+**File:** `extension/content/merchant-detector.ts`
+
+```typescript
+// Inject into e-commerce sites to detect merchants and transactions
+function detectMerchant() {
+  const hostname = window.location.hostname;
+  const merchantName = document.querySelector('h1')?.textContent;
+  const price = document.querySelector('[data-price]')?.textContent;
+  
+  if (price) {
+    chrome.runtime.sendMessage({
+      type: 'MERCHANT_DETECTED',
+      data: { hostname, merchantName, price }
+    });
+  }
+}
+
+// Listen for form submissions (potential transactions)
+document.addEventListener('submit', (e) => {
+  const form = e.target as HTMLFormElement;
+  if (form.querySelector('[type="number"]')) {
+    // Transaction detected, offer to log
+    showQuickLogPrompt();
+  }
+});
+```
+
+**Responsibilities:**
+- Detect merchant names and prices
+- Extract transaction data from forms
+- Show inline quick-log prompts
+- Communicate with background worker
+
+#### 4. Options Page
+**File:** `extension/options/index.tsx`
+
+```typescript
+function Options() {
+  return (
+    <div className="p-8">
+      <h1>TrueSpend Extension Settings</h1>
+      <SettingsForm />
+      <NotificationPreferences />
+      <DataSyncControls />
+    </div>
+  );
+}
+```
+
+**Responsibilities:**
+- Notification preferences
+- Budget thresholds
+- Auto-sync settings
+- Privacy controls
+
+### Build Configuration
+
+**File:** `vite.config.ts` (updated for multi-entry)
+
+```typescript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+import { resolve } from 'path';
+
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      input: {
+        // Main app
+        main: resolve(__dirname, 'index.html'),
+        // Extension entries
+        popup: resolve(__dirname, 'extension/popup/index.html'),
+        background: resolve(__dirname, 'extension/background/index.ts'),
+        'content-merchant': resolve(__dirname, 'extension/content/merchant-detector.ts'),
+        options: resolve(__dirname, 'extension/options/index.html'),
+      },
+      output: {
+        entryFileNames: (chunkInfo) => {
+          return chunkInfo.name.startsWith('extension/') 
+            ? 'extension/[name].js' 
+            : 'assets/[name]-[hash].js';
+        },
+      },
+    },
+  },
+});
+```
+
+### Manifest Configuration
+
+**File:** `extension/manifest.json` (Chrome Manifest V3)
+
+```json
+{
+  "manifest_version": 3,
+  "name": "TrueSpend Budget Tracker",
+  "version": "1.0.0",
+  "description": "Real-time budget tracking and spending insights",
+  "permissions": [
+    "storage",
+    "notifications",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://uolpwcngftpmgkopltwz.supabase.co/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.com/*"],
+      "js": ["content-merchant.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html"
+}
+```
+
+### Cross-Platform Component Reuse
+
+**Shared Component Strategy:**
+
+```
+src/
+├── components/
+│   ├── shared/               # Reusable across all platforms
+│   │   ├── BudgetCard.tsx   # Used in web, mobile, extension
+│   │   ├── TransactionList.tsx
+│   │   ├── QuickLogForm.tsx
+│   │   └── BudgetProgress.tsx
+│   ├── web/                  # Web-only components
+│   ├── mobile/               # Mobile-only (Capacitor)
+│   └── extension/            # Extension-only
+└── hooks/
+    ├── shared/               # Platform-agnostic hooks
+    │   ├── useBudgets.ts
+    │   ├── useTransactions.ts
+    │   └── useAuth.ts
+    └── extension/            # Extension-specific
+        ├── useChromeStorage.ts
+        └── useContentScript.ts
+```
+
+**Component Sharing Example:**
+
+```typescript
+// src/components/shared/BudgetCard.tsx
+export function BudgetCard({ budgets }: { budgets: Budget[] }) {
+  // Works in web, mobile, and extension
+  // Uses only standard React + Tailwind
+  return (
+    <Card className="w-full">
+      {budgets.map(budget => (
+        <div key={budget.id} className="p-4">
+          <h3>{budget.category}</h3>
+          <Progress value={budget.spent_percent} />
+        </div>
+      ))}
+    </Card>
+  );
+}
+```
+
+### Authentication Flow
+
+**Extension OAuth with Supabase:**
+
+```typescript
+// extension/background/auth.ts
+async function handleAuth() {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: chrome.identity.getRedirectURL(),
+    }
+  });
+  
+  if (data.url) {
+    chrome.identity.launchWebAuthFlow({
+      url: data.url,
+      interactive: true
+    }, async (redirectUrl) => {
+      const params = new URL(redirectUrl).searchParams;
+      const accessToken = params.get('access_token');
+      
+      // Store session in chrome.storage
+      await chrome.storage.local.set({ 
+        session: { access_token: accessToken }
+      });
+    });
+  }
+}
+```
+
+### Data Sync Strategy
+
+**Dual Storage Approach:**
+- **Chrome Storage Local:** Cache budgets, recent transactions (fast access, offline-capable)
+- **Supabase Database:** Source of truth (persistent, cross-device sync)
+
+**Sync Flow:**
+1. Extension loads → Check chrome.storage.local
+2. If cache exists → Display immediately
+3. Background worker → Subscribe to Supabase Realtime
+4. On updates → Update both chrome.storage and UI
+5. On cache miss → Fetch from Supabase, cache locally
+
+### Security Considerations
+
+**Extension-Specific Security:**
+1. **Content Security Policy (CSP):**
+   ```json
+   "content_security_policy": {
+     "extension_pages": "script-src 'self'; object-src 'self'"
+   }
+   ```
+
+2. **OAuth Token Storage:**
+   - Access tokens stored in `chrome.storage.local` (encrypted by browser)
+   - Never expose tokens to content scripts
+   - Refresh tokens managed by background worker
+
+3. **Content Script Isolation:**
+   - Content scripts run in isolated world
+   - Can't access extension storage directly
+   - Communication via `chrome.runtime.sendMessage()`
+
+4. **Permission Scoping:**
+   - Request minimal permissions
+   - `activeTab` for current tab only
+   - No `<all_urls>` permission
+
+### Publishing Strategy
+
+**Chrome Web Store:**
+1. Build production extension: `npm run build:extension`
+2. Create ZIP: `extension/dist/chrome-extension.zip`
+3. Upload to Chrome Web Store Developer Dashboard
+4. Privacy policy required (https://truespend.app/privacy)
+
+**Firefox Add-ons:**
+1. Convert manifest V3 → V2 compatibility layer
+2. Build: `npm run build:extension:firefox`
+3. Submit to addons.mozilla.org
+
+**Safari Extension:**
+1. Use Xcode to wrap web extension
+2. Submit via App Store Connect
+
+### Performance Considerations
+
+**Extension-Specific Optimizations:**
+- Popup renders in <200ms (cached data from chrome.storage)
+- Background worker idles when no realtime subscriptions
+- Content scripts lazy-load (only on merchant sites)
+- Badge updates debounced (max 1/second)
+
+---
+
 ## Security Considerations (Enterprise-Grade)
 
-Security is implemented across multiple layers with enhanced geofencing protection:
+Security is implemented across multiple layers with enhanced geofencing and extension protection:
 
 1. **Client Layer (L1)**: CSP headers, SRI, JWT token signing
 2. **Edge Layer (L2)**: TLS 1.3, DDoS protection
@@ -454,7 +897,8 @@ Security is implemented across multiple layers with enhanced geofencing protecti
 ```mermaid
 graph TD
     %% Client & Ingress Group
-    L1[Layer 1: Client Layer<br/>React SPA, PWA, Native GPS 📍]
+    L1A[Layer 1A: Web & Mobile<br/>React SPA, PWA, Native GPS 📍]
+    L1B[Layer 1B: Browser Extension 🔌<br/>Popup UI, Content Scripts]
     L2[Layer 2: Edge & Ingress<br/>CDN, WAF, DDoS]
     L3[Layer 3: API Gateway<br/>Rate Limit, Routing]
     
@@ -491,8 +935,8 @@ graph TD
     PlacesAPI[Google Places API 🗺️]
     FSQAPI[Foursquare API]
     
-    %% Main Synchronous Flow
-    L1 -->|HTTP Request| L2
+    %% Main Synchronous Flow - Web & Mobile
+    L1A -->|HTTP Request| L2
     L2 -->|Filtered| L3
     L3 -->|Routed| L4
     L4 -->|Security Check| L5
@@ -501,8 +945,14 @@ graph TD
     L7 -->|Aggregated| L8
     L8 <-->|AI Processing| L9
     
-    %% Geofencing Flows (enterprise-grade with security & queuing)
-    L1 -.->|GPS + JWT Token 🔒| L2
+    %% Browser Extension Flow
+    L1B -->|Extension API| L2
+    L1B -.->|Content Script| L8
+    L1B -.->|Background Worker| L14
+    L1B <-.->|Realtime Sync| L14
+    
+    %% Geofencing Flows (enterprise-grade with security & queuing) - Mobile Only
+    L1A -.->|GPS + JWT Token 🔒| L2
     L2 -.->|track-location| L8
     L8 -.->|Token Validation| L5
     L5 -.->|Decrypt Location| L18
@@ -512,7 +962,8 @@ graph TD
     L14 -.->|At-least-once| L9
     L9 -.->|AI Insights| L8
     L14 -.->|Location Alert| L13
-    L13 -.->|Push Notification 🔔| L1
+    L13 -.->|Push Notification 🔔| L1A
+    L13 -.->|Browser Notification| L1B
     OBS -.->|Telemetry| L14
     
     %% Merchant Discovery Flow
@@ -547,7 +998,8 @@ graph TD
     L13 -.->|Notify| L1
     
     %% Observability (monitors all)
-    L1 -.->|Logs| OBS
+    L1A -.->|Logs| OBS
+    L1B -.->|Logs| OBS
     L2 -.->|Metrics| OBS
     L3 -.->|Traces| OBS
     L8 -.->|Traces| OBS
@@ -555,6 +1007,7 @@ graph TD
     
     %% Styling
     classDef client fill:#2563EB,stroke:#1e40af,color:#fff
+    classDef extension fill:#6366f1,stroke:#4f46e5,color:#fff
     classDef ingress fill:#f97316,stroke:#ea580c,color:#fff
     classDef gateway fill:#7c3aed,stroke:#6d28d9,color:#fff
     classDef security fill:#16a34a,stroke:#15803d,color:#fff
@@ -574,7 +1027,8 @@ graph TD
     classDef obs fill:#64748b,stroke:#475569,color:#fff
     classDef external fill:#d97706,stroke:#b45309,color:#000
     
-    class L1 client
+    class L1A client
+    class L1B extension
     class L2 ingress
     class L3 gateway
     class L4 security
@@ -2191,8 +2645,8 @@ Blueprint v4.0 represents a production-ready, enterprise-grade architecture that
 
 ---
 
-**Document Version:** 4.0 (with Geofencing)  
+**Document Version:** 4.0 (with Geofencing + Browser Extension)  
 **Last Updated:** 2025-11-08  
 **Maintained By:** TrueSpend Architecture Team  
 **Review Cycle:** Quarterly  
-**Related Documents:** [Implementation Timeline v4.0](./implementation-timeline-v4.0.md)
+**Related Documents:** [Implementation Timeline v4.0](./implementation-timeline-v4.0.md) | [Browser Extension Architecture](#browser-extension-companion-architecture)
