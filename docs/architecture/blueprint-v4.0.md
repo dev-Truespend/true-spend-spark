@@ -1853,7 +1853,7 @@ graph TD
     L1B -->|Extension API + Bearer Auth ✅| L2
     L1B -.->|Content Script| L8
     L1B -.->|Ephemeral SW (MV3) ✅| L14
-    L1B <-.->|Realtime Sync (Filtered) ✅| L14
+    L1B <.->|Realtime Sync (Filtered) ✅| L14
     L1B -.->|Feature Flags (15min poll) ✅| L12
     L1B -.->|Telemetry ✅| L18
     
