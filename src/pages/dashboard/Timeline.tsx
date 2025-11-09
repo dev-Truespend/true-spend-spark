@@ -2,12 +2,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTimelineData } from "@/hooks/useTimelineData";
 import { Calendar, Clock, AlertTriangle, CheckCircle2, Users, CheckCircle, Wrench, Sparkles, Map, MapPin, Plug } from "lucide-react";
 import { EnhancedGanttChart } from "@/components/timeline/EnhancedGanttChart";
 import { HierarchicalProjectDiagram } from "@/components/timeline/HierarchicalProjectDiagram";
 import { TimelineImageGenerator } from "@/components/admin/TimelineImageGenerator";
 import { MilestoneMarker } from "@/components/timeline/MilestoneMarker";
+import { FeaturesByPhaseView } from "@/components/timeline/FeaturesByPhaseView";
 
 export default function Timeline() {
   const { phases, milestones, currentWeek, totalWeeks, isLoading } = useTimelineData();
@@ -64,6 +66,14 @@ export default function Timeline() {
 
       {/* Timeline Image Generator */}
       <TimelineImageGenerator />
+
+      <Tabs defaultValue="timeline" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="timeline">Timeline View</TabsTrigger>
+          <TabsTrigger value="features">Features by Phase</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="timeline" className="space-y-8 mt-8">
 
       {/* Timeline Statistics */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -435,6 +445,12 @@ export default function Timeline() {
           </Accordion>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="features" className="mt-8">
+          <FeaturesByPhaseView />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

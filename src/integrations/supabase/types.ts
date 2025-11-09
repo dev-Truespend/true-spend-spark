@@ -362,6 +362,56 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_features: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          feature_description: string | null
+          feature_name: string
+          icon: string | null
+          id: string
+          phase_id: string | null
+          platform: string
+          priority: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          feature_description?: string | null
+          feature_name: string
+          icon?: string | null
+          id?: string
+          phase_id?: string | null
+          platform: string
+          priority?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          feature_description?: string | null
+          feature_name?: string
+          icon?: string | null
+          id?: string
+          phase_id?: string | null
+          platform?: string
+          priority?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_features_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "phases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_metadata: {
         Row: {
           id: string
