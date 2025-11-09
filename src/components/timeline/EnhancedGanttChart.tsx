@@ -37,6 +37,11 @@ const PHASE_SECTIONS = [
   { id: 'phase6', label: 'Phase 6: Messaging & Events', color: 'bg-cyan-500' },
   { id: 'phase7', label: 'Phase 7: Data Planes & DR', color: 'bg-indigo-500' },
   { id: 'phase8', label: 'Phase 8: Observability & Polish', color: 'bg-slate-500' },
+  { id: 'phase9', label: 'Phase 9: Browser Extension MVP 🔌', color: 'bg-rose-500' },
+  { id: 'phase12', label: 'Phase 12: Performance Optimization 🚀', color: 'bg-violet-500' },
+  { id: 'phase13', label: 'Phase 13: ML Infrastructure 🤖', color: 'bg-fuchsia-500' },
+  { id: 'phase14', label: 'Phase 14: Advanced ML & Layer 10B 💰', color: 'bg-pink-500' },
+  { id: 'phase15', label: 'Phase 15: Cost Optimization & Polish ✨', color: 'bg-sky-500' },
 ];
 
 export function EnhancedGanttChart({ currentWeek, totalWeeks, phases }: EnhancedGanttChartProps) {
@@ -50,7 +55,7 @@ export function EnhancedGanttChart({ currentWeek, totalWeeks, phases }: Enhanced
     const enabledPhases = filters.filter(f => f.enabled).map(f => f.id);
     
     let chart = `gantt
-    title TrueSpend v4.0: Blueprint Implementation Timeline (34 Weeks)
+    title TrueSpend v4.2: Blueprint Implementation Timeline (48 Weeks)
     dateFormat YYYY-MM-DD
     axisFormat Week %W
     `;
@@ -180,6 +185,71 @@ export function EnhancedGanttChart({ currentWeek, totalWeeks, phases }: Enhanced
     Security Hardening              :p8_3, after p8_2, 5d`;
       if (showMilestones) {
         chart += `\n    Production Launch               :milestone, p8_m, after p8_3, 0d`;
+      }
+    }
+
+    if (enabledPhases.includes('phase9')) {
+      chart += `
+    
+    section Phase 9: Browser Extension MVP 🔌
+    Extension Manifest Setup        :p9_1, after p8_m, 3d
+    Transaction Capture Logic       :p9_2, after p9_1, 5d
+    Chrome Web Store Submission     :p9_3, after p9_2, 2d`;
+      if (showMilestones) {
+        chart += `\n    Browser Extension Live          :milestone, p9_m, after p9_3, 0d`;
+      }
+    }
+
+    if (enabledPhases.includes('phase12')) {
+      chart += `
+    
+    section Phase 12: Performance Optimization 🚀
+    GraphQL BFF Implementation      :p12_1, after p9_m, 7d
+    Read Replica Setup              :p12_2, after p12_1, 5d
+    Redis Caching Layer             :p12_3, after p12_2, 5d
+    Response Compression            :p12_4, after p12_3, 3d`;
+      if (showMilestones) {
+        chart += `\n    Performance Baseline Met        :milestone, p12_m, after p12_4, 0d`;
+      }
+    }
+
+    if (enabledPhases.includes('phase13')) {
+      chart += `
+    
+    section Phase 13: ML Infrastructure 🤖
+    Model Registry Setup            :p13_1, after p12_m, 5d
+    RL Cache Implementation         :p13_2, after p13_1, 7d
+    LSTM Anomaly Detection          :p13_3, after p13_2, 7d
+    Collaborative Filtering         :p13_4, after p13_3, 5d`;
+      if (showMilestones) {
+        chart += `\n    ML Models Production Ready      :milestone, p13_m, after p13_4, 0d`;
+      }
+    }
+
+    if (enabledPhases.includes('phase14')) {
+      chart += `
+    
+    section Phase 14: Advanced ML & Layer 10B 💰
+    Multi-Armed Bandit Optimization :p14_1, after p13_m, 7d
+    Affiliate Provider Integrations :p14_2, after p14_1, 7d
+    Offer Ranking Engine            :p14_3, after p14_2, 5d
+    Fraud Detection ML              :p14_4, after p14_3, 5d`;
+      if (showMilestones) {
+        chart += `\n    Layer 10B Revenue Active        :milestone, p14_m, after p14_4, 0d`;
+      }
+    }
+
+    if (enabledPhases.includes('phase15')) {
+      chart += `
+    
+    section Phase 15: Cost Optimization & Polish ✨
+    R-Tree Indexes                  :p15_1, after p14_m, 3d
+    Bloom Filters                   :p15_2, after p15_1, 3d
+    Time-Series Compression         :p15_3, after p15_2, 3d
+    CDN Prewarming                  :p15_4, after p15_3, 3d
+    Final Cost Audit                :p15_5, after p15_4, 2d`;
+      if (showMilestones) {
+        chart += `\n    v4.2 Production Complete        :milestone, p15_m, after p15_5, 0d`;
       }
     }
 

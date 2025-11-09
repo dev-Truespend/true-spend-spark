@@ -204,6 +204,89 @@ const BLUEPRINT_PHASES: Phase[] = [
         ]
       }
     ]
+  },
+  {
+    id: 9,
+    name: "Phase 9: Browser Extension MVP 🔌",
+    sections: [
+      {
+        name: "Extension Development",
+        tasks: [
+          { name: "Extension manifest setup", status: "pending" },
+          { name: "Transaction capture logic", status: "pending" },
+          { name: "Chrome Web Store submission", status: "pending" },
+          { name: "Browser Extension Live", status: "milestone" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 12,
+    name: "Phase 12: Performance Optimization 🚀",
+    sections: [
+      {
+        name: "Performance Layer",
+        tasks: [
+          { name: "GraphQL BFF implementation", status: "pending" },
+          { name: "Read replica setup", status: "pending" },
+          { name: "Redis caching layer", status: "pending" },
+          { name: "Response compression", status: "pending" },
+          { name: "Batch operations", status: "pending" },
+          { name: "Performance Baseline Met", status: "milestone" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 13,
+    name: "Phase 13: ML Infrastructure 🤖",
+    sections: [
+      {
+        name: "Machine Learning",
+        tasks: [
+          { name: "Model registry setup", status: "pending" },
+          { name: "RL cache implementation", status: "pending" },
+          { name: "LSTM anomaly detection", status: "pending" },
+          { name: "Collaborative filtering", status: "pending" },
+          { name: "Predictive caching", status: "pending" },
+          { name: "ML Models Production Ready", status: "milestone" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 14,
+    name: "Phase 14: Advanced ML & Layer 10B 💰",
+    sections: [
+      {
+        name: "Revenue & Advanced ML",
+        tasks: [
+          { name: "Multi-armed bandit optimization", status: "pending" },
+          { name: "Affiliate provider integrations", status: "pending" },
+          { name: "Offer ranking engine", status: "pending" },
+          { name: "Fraud detection ML", status: "pending" },
+          { name: "Attribution tracking", status: "pending" },
+          { name: "Layer 10B Revenue Active", status: "milestone" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 15,
+    name: "Phase 15: Cost Optimization & Polish ✨",
+    sections: [
+      {
+        name: "Final Optimization",
+        tasks: [
+          { name: "R-Tree indexes", status: "pending" },
+          { name: "Bloom filters", status: "pending" },
+          { name: "Time-series compression", status: "pending" },
+          { name: "CDN prewarming", status: "pending" },
+          { name: "Final cost audit", status: "pending" },
+          { name: "v4.2 Production Complete", status: "milestone" },
+        ]
+      }
+    ]
   }
 ];
 
@@ -224,9 +307,9 @@ export function HierarchicalProjectDiagram() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>TrueSpend v4.0: Blueprint Implementation with Geofencing</CardTitle>
+        <CardTitle>TrueSpend v4.2: Complete Implementation with Performance & ML</CardTitle>
         <CardDescription>
-          Hierarchical view of all 10 phases, sections, and tasks in the 34-week timeline
+          Hierarchical view of all 15 phases, sections, and tasks in the 48-week timeline
         </CardDescription>
       </CardHeader>
       <CardContent>

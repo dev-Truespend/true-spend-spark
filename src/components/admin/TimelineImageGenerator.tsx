@@ -22,7 +22,7 @@ export function TimelineImageGenerator() {
         // Download the image
         const link = document.createElement('a');
         link.href = data.imageData;
-        link.download = 'truespend-timeline-v4.0.png';
+        link.download = 'truespend-timeline-v4.2.png';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
