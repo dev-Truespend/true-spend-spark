@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,7 @@ type AuthFormValues = z.infer<typeof authSchema>;
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
+  const { hasRole, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -41,9 +43,18 @@ export default function Auth() {
     },
   });
 
-  // Redirect if already logged in
+  // Redirect if already logged in based on role
+  useEffect(() => {
+    if (user && !roleLoading) {
+      if (hasRole('admin')) {
+        navigate("/launcher");
+      } else {
+        navigate("/dashboard");
+      }
+    }
+  }, [user, hasRole, roleLoading, navigate]);
+
   if (user) {
-    navigate("/dashboard");
     return null;
   }
 
@@ -62,7 +73,7 @@ export default function Auth() {
         title: "Welcome back!",
         description: "You've successfully logged in.",
       });
-      navigate("/dashboard");
+      // Navigation handled by useEffect based on role
     }
     setIsLoading(false);
   };
@@ -90,7 +101,7 @@ export default function Auth() {
         title: "Account created!",
         description: "You can now log in with your credentials.",
       });
-      navigate("/dashboard");
+      // Navigation handled by useEffect based on role
     }
     setIsLoading(false);
   };

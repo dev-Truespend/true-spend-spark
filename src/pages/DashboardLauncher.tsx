@@ -27,6 +27,16 @@ interface Dashboard {
 
 const dashboards: Dashboard[] = [
   {
+    id: 'user-dashboard',
+    title: 'User Dashboard',
+    description: 'Your personal TrueSpend dashboard - receipts, budgets, and spending',
+    route: '/dashboard',
+    icon: LayoutDashboard,
+    roles: ['user', 'developer', 'admin'],
+    status: 'active',
+    progress: 100
+  },
+  {
     id: 'admin',
     title: 'Project Management',
     description: 'Track TrueSpend development progress, phases, and team tasks',
