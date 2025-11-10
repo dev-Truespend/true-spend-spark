@@ -68,14 +68,15 @@ export default function Auth() {
         description: error.message || "Invalid email or password",
         variant: "destructive",
       });
+      setIsLoading(false);
     } else {
       toast({
         title: "Welcome back!",
         description: "You've successfully logged in.",
       });
-      // Navigation handled by useEffect based on role
+      // Wait for roles to load, then redirect
+      // The useEffect will handle the redirect based on role
     }
-    setIsLoading(false);
   };
 
   const handleSignup = async (values: AuthFormValues) => {
@@ -96,14 +97,15 @@ export default function Auth() {
           variant: "destructive",
         });
       }
+      setIsLoading(false);
     } else {
       toast({
         title: "Account created!",
         description: "You can now log in with your credentials.",
       });
-      // Navigation handled by useEffect based on role
+      // Wait for roles to load, then redirect
+      // The useEffect will handle the redirect based on role
     }
-    setIsLoading(false);
   };
 
   return (
