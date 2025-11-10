@@ -112,6 +112,42 @@ export type Database = {
           },
         ]
       }
+      csp_violations: {
+        Row: {
+          blocked_uri: string | null
+          column_number: number | null
+          document_uri: string
+          id: string
+          line_number: number | null
+          source_file: string | null
+          timestamp: string | null
+          user_agent: string | null
+          violated_directive: string
+        }
+        Insert: {
+          blocked_uri?: string | null
+          column_number?: number | null
+          document_uri: string
+          id?: string
+          line_number?: number | null
+          source_file?: string | null
+          timestamp?: string | null
+          user_agent?: string | null
+          violated_directive: string
+        }
+        Update: {
+          blocked_uri?: string | null
+          column_number?: number | null
+          document_uri?: string
+          id?: string
+          line_number?: number | null
+          source_file?: string | null
+          timestamp?: string | null
+          user_agent?: string | null
+          violated_directive?: string
+        }
+        Relationships: []
+      }
       geofence_events: {
         Row: {
           accuracy_meters: number | null
@@ -536,6 +572,36 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          id: string
+          identifier: string
+          request_count: number | null
+          window_size_seconds: number
+          window_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          identifier: string
+          request_count?: number | null
+          window_size_seconds?: number
+          window_start: string
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          identifier?: string
+          request_count?: number | null
+          window_size_seconds?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       readiness_gates: {
         Row: {
           created_at: string | null
@@ -863,6 +929,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_csp_violations: { Args: never; Returns: number }
+      cleanup_old_rate_limits: { Args: never; Returns: number }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]

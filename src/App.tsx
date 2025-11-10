@@ -25,6 +25,8 @@ import NotFound from "./pages/NotFound";
 import { PWAInstallPrompt } from "./components/pwa/PWAInstallPrompt";
 import { OfflineIndicator } from "./components/pwa/OfflineIndicator";
 import { SyncIndicator } from "./components/pwa/SyncIndicator";
+import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
+import { RateLimitStatus } from "./components/api/RateLimitStatus";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,10 +49,12 @@ const App = () => (
         <AuthProvider>
           <Toaster />
           <Sonner />
+          <CSPViolationReporter />
           <PWAInstallPrompt />
           <OfflineIndicator />
           <SyncIndicator />
           <GlobalNav />
+          <RateLimitStatus />
           <div className="pt-14">
             <Routes>
               {/* Public Home Page */}
