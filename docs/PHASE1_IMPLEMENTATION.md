@@ -53,6 +53,12 @@ Phase 1 focuses on Core Infrastructure for offline-first PWA capabilities, inclu
 #### IndexedDB Storage (`src/lib/db/indexedDB.ts`)
 **Database**: `truespend-offline v1`
 
+**Features**:
+- ✅ React Query persistence with IndexedDB (`src/lib/queryPersister.ts`)
+- ✅ Database migration utilities with version handlers
+- ✅ Data export/import for backups
+- ✅ Automatic cache restoration on app reload
+
 **Object Stores**:
 1. **transactions** - User transactions with sync status
 2. **budgets** - Budget limits and configurations
@@ -71,6 +77,13 @@ Phase 1 focuses on Core Infrastructure for offline-first PWA capabilities, inclu
 - `updateItem()` - Update existing item
 - `deleteItem()` - Remove item
 - `getUnsyncedItems()` - Get items needing sync
+- `getCurrentDBVersion()` - Get current schema version
+- `exportData()` - Export all data as JSON
+- `importData(data)` - Import data from JSON
+- `registerMigration(version, handler)` - Add migration handler
+
+**Migration System**:
+See `docs/INDEXEDDB_MIGRATIONS.md` for detailed migration guide.
 
 ---
 

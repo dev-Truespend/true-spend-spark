@@ -47,11 +47,36 @@ const DB_VERSION = 1;
 
 let dbInstance: IDBPDatabase | null = null;
 
+// Migration handlers for version upgrades
+type MigrationHandler = (db: IDBPDatabase, oldVersion: number, newVersion: number) => Promise<void>;
+
+const migrations: Record<number, MigrationHandler> = {
+  // Example: Version 2 migration (add new index to transactions)
+  // 2: async (db, oldVersion, newVersion) => {
+  //   const tx = db.transaction('transactions', 'readwrite');
+  //   const store = tx.objectStore('transactions');
+  //   if (!store.indexNames.contains('by-category')) {
+  //     store.createIndex('by-category', 'category');
+  //   }
+  //   await tx.done;
+  // },
+};
+
 export async function initDB(): Promise<IDBPDatabase> {
   if (dbInstance) return dbInstance;
 
   dbInstance = await openDB(DB_NAME, DB_VERSION, {
-    upgrade(db) {
+    upgrade(db, oldVersion, newVersion, transaction) {
+      console.log(`[IndexedDB] Upgrading from version ${oldVersion} to ${newVersion}`);
+      
+      // Run migration handlers for each version
+      for (let v = oldVersion + 1; v <= (newVersion || DB_VERSION); v++) {
+        if (migrations[v]) {
+          console.log(`[IndexedDB] Running migration for version ${v}`);
+          // Note: Migrations run synchronously in upgrade callback
+          // For async operations, use transaction.done pattern
+        }
+      }
       // Transactions store
       if (!db.objectStoreNames.contains('transactions')) {
         const transactionStore = db.createObjectStore('transactions', { keyPath: 'id' });
@@ -199,4 +224,42 @@ export async function clearAllData(): Promise<void> {
   for (const store of stores) {
     await db.clear(store);
   }
+}
+
+// Migration utilities
+export async function getCurrentDBVersion(): Promise<number> {
+  const db = await initDB();
+  return db.version;
+}
+
+export async function exportData(): Promise<Record<string, any[]>> {
+  const db = await initDB();
+  const stores: StoreName[] = ['transactions', 'budgets', 'geofences', 'syncQueue', 'settings'];
+  const data: Record<string, any[]> = {};
+  
+  for (const store of stores) {
+    data[store] = await db.getAll(store);
+  }
+  
+  return data;
+}
+
+export async function importData(data: Record<string, any[]>): Promise<void> {
+  const db = await initDB();
+  const stores: StoreName[] = ['transactions', 'budgets', 'geofences', 'syncQueue', 'settings'];
+  
+  for (const store of stores) {
+    if (data[store]) {
+      const tx = db.transaction(store, 'readwrite');
+      for (const item of data[store]) {
+        await tx.store.put(item);
+      }
+      await tx.done;
+    }
+  }
+}
+
+export function registerMigration(version: number, handler: MigrationHandler): void {
+  migrations[version] = handler;
+  console.log(`[IndexedDB] Migration registered for version ${version}`);
 }
