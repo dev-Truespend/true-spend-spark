@@ -1,15 +1,28 @@
 import { useEffect, useState } from 'react';
 import { WifiOff, Wifi } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useSync } from '@/hooks/useSync';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 
 export function OfflineIndicator() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOfflineAlert, setShowOfflineAlert] = useState(false);
+  const { pendingCount } = useSync();
+  const { performFullSync } = useOfflineSync();
 
   useEffect(() => {
-    const handleOnline = () => {
+    const handleOnline = async () => {
       setIsOnline(true);
       setShowOfflineAlert(false);
+      
+      // Auto-sync when coming back online
+      if (pendingCount > 0) {
+        try {
+          await performFullSync();
+        } catch (error) {
+          console.error('[OfflineIndicator] Auto-sync failed:', error);
+        }
+      }
     };
 
     const handleOffline = () => {
@@ -24,7 +37,7 @@ export function OfflineIndicator() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [pendingCount, performFullSync]);
 
   if (isOnline && !showOfflineAlert) return null;
 
@@ -39,7 +52,7 @@ export function OfflineIndicator() {
           )}
           <AlertDescription>
             {isOnline
-              ? 'Back online! Syncing your data...'
+              ? `Back online! ${pendingCount > 0 ? `Syncing ${pendingCount} items...` : 'All synced.'}`
               : 'You are offline. Changes will sync when connection is restored.'}
           </AlertDescription>
         </div>
