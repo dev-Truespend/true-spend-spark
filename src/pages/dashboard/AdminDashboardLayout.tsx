@@ -18,20 +18,20 @@ import {
 } from "lucide-react";
 
 const navigation = [
-  { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Timeline", href: "/dashboard/timeline", icon: Calendar },
-  { name: "Phases", href: "/dashboard/phases", icon: FolderKanban },
-  { name: "Tasks", href: "/dashboard/tasks", icon: ListTodo },
-  { name: "Team", href: "/dashboard/team", icon: Users },
-  { name: "Milestones", href: "/dashboard/milestones", icon: Target },
-  { name: "Metrics", href: "/dashboard/metrics", icon: BarChart3 },
-  { name: "v4.2 Optimizations", href: "/dashboard/optimization", icon: Zap },
-  { name: "Risks", href: "/dashboard/risks", icon: AlertTriangle },
-  { name: "Testing", href: "/dashboard/testing", icon: TestTube },
-  { name: "Architecture", href: "/dashboard/architecture", icon: Layers },
+  { name: "Overview", href: "/admin", icon: LayoutDashboard },
+  { name: "Timeline", href: "/admin/timeline", icon: Calendar },
+  { name: "Phases", href: "/admin/phases", icon: FolderKanban },
+  { name: "Tasks", href: "/admin/tasks", icon: ListTodo },
+  { name: "Team", href: "/admin/team", icon: Users },
+  { name: "Milestones", href: "/admin/milestones", icon: Target },
+  { name: "Metrics", href: "/admin/metrics", icon: BarChart3 },
+  { name: "v4.2 Optimizations", href: "/admin/optimization", icon: Zap },
+  { name: "Risks", href: "/admin/risks", icon: AlertTriangle },
+  { name: "Testing", href: "/admin/testing", icon: TestTube },
+  { name: "Architecture", href: "/admin/architecture", icon: Layers },
 ];
 
-export default function DashboardLayout() {
+export default function AdminDashboardLayout() {
   const location = useLocation();
   const { signOut, user } = useAuth();
 
@@ -42,13 +42,13 @@ export default function DashboardLayout() {
         <div className="w-64 border-r bg-card min-h-screen sticky top-0 flex flex-col">
           <div className="p-6 border-b">
             <h2 className="text-xl font-bold">TrueSpend v4.2</h2>
-            <p className="text-xs text-muted-foreground mt-1">Project Dashboard</p>
+            <p className="text-xs text-muted-foreground mt-1">Project Dashboard (Admin)</p>
           </div>
           <nav className="p-4 space-y-1 flex-1">
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href || 
-                             (item.href !== "/dashboard" && location.pathname.startsWith(item.href));
+                             (item.href !== "/admin" && location.pathname.startsWith(item.href));
               
               return (
                 <Link
