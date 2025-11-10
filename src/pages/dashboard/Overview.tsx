@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useProjectOverview, usePhases, useRisks } from "@/hooks/useProjectData";
+import { useProjectOverview, usePhases, useRisks, useTasks } from "@/hooks/useProjectData";
 import { Calendar, TrendingUp, AlertTriangle, CheckCircle2, Clock, Target } from "lucide-react";
 
 export default function Overview() {
@@ -20,6 +20,12 @@ export default function Overview() {
 
   const activeRisks = risks?.filter(r => r.status !== 'Mitigated').length || 0;
   const criticalRisks = risks?.filter(r => r.status !== 'Mitigated' && r.impact === 'High').length || 0;
+
+  // Get Phase 1 data
+  const phase1 = phases?.find(p => p.phase_number === 1);
+  const { data: tasks } = useTasks();
+  const phase1Tasks = tasks?.filter(t => t.phase_id === phase1?.id) || [];
+  const completedPhase1Tasks = phase1Tasks.filter(t => t.status === 'Completed').length;
 
   if (isLoading) {
     return (
@@ -59,14 +65,14 @@ export default function Overview() {
             <Target className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">65%</div>
-            <Progress value={65} className="mt-2" />
+            <div className="text-2xl font-bold">{phase1?.progress || 0}%</div>
+            <Progress value={phase1?.progress || 0} className="mt-2" />
             <p className="text-xs text-muted-foreground mt-2">
               Foundation & Client Layer
             </p>
             <div className="flex gap-2 mt-2">
-              <Badge variant="outline" className="text-xs">8/10 Tasks</Badge>
-              <Badge variant="default" className="text-xs">In Progress</Badge>
+              <Badge variant="outline" className="text-xs">{completedPhase1Tasks}/{phase1Tasks.length} Tasks</Badge>
+              <Badge variant={phase1?.status === 'Completed' ? 'default' : 'secondary'} className="text-xs">{phase1?.status || 'Unknown'}</Badge>
             </div>
           </CardContent>
         </Card>
