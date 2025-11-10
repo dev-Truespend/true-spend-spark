@@ -24,6 +24,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { PWAInstallPrompt } from "./components/pwa/PWAInstallPrompt";
 import { OfflineIndicator } from "./components/pwa/OfflineIndicator";
+import { SyncIndicator } from "./components/pwa/SyncIndicator";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +49,7 @@ const App = () => (
           <Sonner />
           <PWAInstallPrompt />
           <OfflineIndicator />
+          <SyncIndicator />
           <GlobalNav />
           <div className="pt-14">
             <Routes>
