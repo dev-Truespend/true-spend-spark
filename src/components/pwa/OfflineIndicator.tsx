@@ -3,6 +3,7 @@ import { WifiOff, Wifi } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useSync } from '@/hooks/useSync';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { NetworkQualityIndicator } from '@/components/network/NetworkQualityIndicator';
 
 export function OfflineIndicator() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -39,7 +40,14 @@ export function OfflineIndicator() {
     };
   }, [pendingCount, performFullSync]);
 
-  if (isOnline && !showOfflineAlert) return null;
+  if (isOnline && !showOfflineAlert) {
+    // Show network quality indicator in top-right when online
+    return (
+      <div className="fixed top-4 right-4 z-50">
+        <NetworkQualityIndicator />
+      </div>
+    );
+  }
 
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4">

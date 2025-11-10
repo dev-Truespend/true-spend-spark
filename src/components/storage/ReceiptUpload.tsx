@@ -6,14 +6,16 @@ import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { uploadFile, getUserPath } from '@/services/storageService';
+import { prepareImageForOCR } from '@/services/ocrPreparation';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { CameraCapture } from '@/components/camera/CameraCapture';
 import { ImagePreview } from '@/components/receipt/ImagePreview';
+import { OCRQualityIndicator } from '@/components/receipt/OCRQualityIndicator';
 
 interface UploadedFile {
   name: string;
-  status: 'uploading' | 'success' | 'error';
+  status: 'uploading' | 'success' | 'error' | 'analyzing';
   progress: number;
   url?: string;
   error?: string;
@@ -22,6 +24,8 @@ interface UploadedFile {
     type: string;
     timestamp: number;
     location?: { lat: number; lng: number };
+    ocrReady?: boolean;
+    ocrQuality?: number;
   };
 }
 
@@ -30,6 +34,7 @@ export function ReceiptUpload() {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [showCamera, setShowCamera] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ url: string; file: File } | null>(null);
+  const [qualityCheckFile, setQualityCheckFile] = useState<File | null>(null);
 
   const processFile = async (file: File, metadata?: Partial<UploadedFile['metadata']>) => {
     if (!user) {
@@ -39,7 +44,7 @@ export function ReceiptUpload() {
 
     const uploadedFile: UploadedFile = {
       name: file.name,
-      status: 'uploading',
+      status: 'analyzing',
       progress: 0,
       metadata: {
         size: file.size,
@@ -53,12 +58,47 @@ export function ReceiptUpload() {
     const fileIndex = files.length;
 
     try {
+      // Prepare image for OCR if it's an image
+      let fileToUpload = file;
+      if (file.type.startsWith('image/')) {
+        const ocrResult = await prepareImageForOCR(file);
+        
+        // Create file-like object from blob
+        const timestamp = Date.now();
+        const fileObj = ocrResult.blob as any;
+        fileObj.name = file.name;
+        fileObj.lastModified = timestamp;
+        fileToUpload = fileObj as File;
+        
+        // Update metadata with OCR info
+        setFiles(prev => {
+          const updated = [...prev];
+          if (updated[fileIndex]) {
+            updated[fileIndex].metadata = {
+              ...updated[fileIndex].metadata!,
+              ocrReady: true,
+              ocrQuality: Math.round((ocrResult.metadata.brightness / 255) * 100),
+            };
+          }
+          return updated;
+        });
+      }
+
+      // Update status to uploading
+      setFiles(prev => {
+        const updated = [...prev];
+        if (updated[fileIndex]) {
+          updated[fileIndex].status = 'uploading';
+        }
+        return updated;
+      });
+
       const path = getUserPath(user.id, file.name);
       
       const result = await uploadFile({
         bucket: 'receipts',
         path,
-        file,
+        file: fileToUpload,
         onProgress: (progress) => {
           setFiles(prev => {
             const updated = [...prev];
@@ -97,8 +137,9 @@ export function ReceiptUpload() {
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     acceptedFiles.forEach(file => {
-      // Show preview for images
+      // Show quality check and preview for images
       if (file.type.startsWith('image/')) {
+        setQualityCheckFile(file);
         const url = URL.createObjectURL(file);
         setPreviewImage({ url, file });
       } else {
@@ -243,6 +284,9 @@ export function ReceiptUpload() {
                         {file.status === 'success' && (
                           <CheckCircle className="h-5 w-5 text-green-500" />
                         )}
+                        {file.status === 'analyzing' && (
+                          <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        )}
                         {file.status === 'error' && (
                           <AlertCircle className="h-5 w-5 text-destructive" />
                         )}
@@ -275,17 +319,22 @@ export function ReceiptUpload() {
         </DialogContent>
       </Dialog>
 
-      {/* Image Preview Dialog */}
+      {/* Image Preview Dialog with Quality Check */}
       <Dialog open={!!previewImage} onOpenChange={(open) => !open && handlePreviewCancel()}>
         <DialogContent className="max-w-4xl">
-          <DialogTitle className="sr-only">Image Preview</DialogTitle>
-          {previewImage && (
-            <ImagePreview
-              imageUrl={previewImage.url}
-              onConfirm={handlePreviewConfirm}
-              onCancel={handlePreviewCancel}
-            />
-          )}
+          <DialogTitle className="sr-only">Image Preview & Quality Check</DialogTitle>
+          <div className="space-y-4">
+            {qualityCheckFile && (
+              <OCRQualityIndicator file={qualityCheckFile} />
+            )}
+            {previewImage && (
+              <ImagePreview
+                imageUrl={previewImage.url}
+                onConfirm={handlePreviewConfirm}
+                onCancel={handlePreviewCancel}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>
