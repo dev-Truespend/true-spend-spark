@@ -108,7 +108,7 @@ export function useProjectOverview() {
   const tasks = useTasks();
   const milestones = useMilestones();
 
-  const currentWeek = 5; // This should be calculated based on project start date
+  const currentWeek = 7; // End of Phase 2 (awaiting Cloudflare configuration)
   const totalWeeks = 48; // Blueprint v4.2: 48 weeks with 15 phases (performance + ML + Layer 10B)
 
   const overallProgress = phases.data
