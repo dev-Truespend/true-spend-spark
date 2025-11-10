@@ -1,21 +1,22 @@
-// React Query persistence with IndexedDB
-import { get, set, del } from 'idb-keyval';
+// React Query persistence with localStorage
 import { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 
 /**
- * Creates an IDBKeyVal persister for React Query
- * Stores query cache in IndexedDB for offline-first behavior
+ * Creates a localStorage persister for React Query
+ * Stores query cache in localStorage for offline-first behavior
+ * Using localStorage instead of IndexedDB to avoid initialization race conditions
  */
-export function createIDBPersister(idbValidKey: IDBValidKey = 'reactQuery'): Persister {
+export function createSyncPersister(): Persister {
   return {
     persistClient: async (client: PersistedClient) => {
-      await set(idbValidKey, client);
+      localStorage.setItem('truespend-query-cache', JSON.stringify(client));
     },
     restoreClient: async () => {
-      return await get<PersistedClient>(idbValidKey);
+      const cached = localStorage.getItem('truespend-query-cache');
+      return cached ? JSON.parse(cached) : undefined;
     },
     removeClient: async () => {
-      await del(idbValidKey);
+      localStorage.removeItem('truespend-query-cache');
     },
   };
 }

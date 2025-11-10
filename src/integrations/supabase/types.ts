@@ -56,6 +56,62 @@ export type Database = {
         }
         Relationships: []
       }
+      budgets: {
+        Row: {
+          active: boolean | null
+          alert_threshold: number | null
+          category: string
+          created_at: string | null
+          end_date: string | null
+          geofence_id: string | null
+          id: string
+          limit_amount: number
+          period: string
+          start_date: string
+          synced: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          alert_threshold?: number | null
+          category: string
+          created_at?: string | null
+          end_date?: string | null
+          geofence_id?: string | null
+          id?: string
+          limit_amount: number
+          period: string
+          start_date: string
+          synced?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          alert_threshold?: number | null
+          category?: string
+          created_at?: string | null
+          end_date?: string | null
+          geofence_id?: string | null
+          id?: string
+          limit_amount?: number
+          period?: string
+          start_date?: string
+          synced?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_geofence_id_fkey"
+            columns: ["geofence_id"]
+            isOneToOne: false
+            referencedRelation: "geofences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       geofence_events: {
         Row: {
           accuracy_meters: number | null
@@ -711,6 +767,72 @@ export type Database = {
           timestamp?: string | null
         }
         Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          description: string | null
+          geofence_id: string | null
+          id: string
+          location_lat: number | null
+          location_lng: number | null
+          merchant_id: string | null
+          receipt_url: string | null
+          synced: boolean | null
+          timestamp: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string | null
+          description?: string | null
+          geofence_id?: string | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          merchant_id?: string | null
+          receipt_url?: string | null
+          synced?: boolean | null
+          timestamp?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          geofence_id?: string | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          merchant_id?: string | null
+          receipt_url?: string | null
+          synced?: boolean | null
+          timestamp?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_geofence_id_fkey"
+            columns: ["geofence_id"]
+            isOneToOne: false
+            referencedRelation: "geofences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
