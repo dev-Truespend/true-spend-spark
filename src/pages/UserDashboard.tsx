@@ -4,11 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Receipt, Wallet, TrendingUp, Settings, User, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function UserDashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAdmin, loading: roleLoading } = useUserRole();
+
+  useEffect(() => {
+    if (!roleLoading && isAdmin) {
+      navigate("/launcher", { replace: true });
+    }
+  }, [isAdmin, roleLoading, navigate]);
+
 
   const handleSignOut = async () => {
     await signOut();
