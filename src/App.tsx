@@ -2,8 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { createIDBPersister } from "@/lib/queryPersister";
+// TODO: Re-enable React Query persistence using persistQueryClient utility to avoid initialization issues
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -32,13 +31,8 @@ const queryClient = new QueryClient({
   },
 });
 
-const persister = createIDBPersister();
-
 const App = () => (
-  <PersistQueryClientProvider 
-    client={queryClient} 
-    persistOptions={{ persister }}
-  >
+  <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <BrowserRouter>
         <AuthProvider>
@@ -135,7 +129,7 @@ const App = () => (
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
-  </PersistQueryClientProvider>
+  </QueryClientProvider>
 );
 
 export default App;
