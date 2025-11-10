@@ -40,12 +40,12 @@ const App = () => (
     persistOptions={{ persister }}
   >
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <PWAInstallPrompt />
-      <OfflineIndicator />
       <BrowserRouter>
         <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <PWAInstallPrompt />
+          <OfflineIndicator />
           <GlobalNav />
           <div className="pt-14">
             <Routes>
