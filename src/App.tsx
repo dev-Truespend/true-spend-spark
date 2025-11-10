@@ -10,6 +10,8 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { GlobalNav } from "@/components/navigation/GlobalNav";
 import AdminDashboardLayout from "./pages/dashboard/AdminDashboardLayout";
 import DashboardLauncher from "./pages/DashboardLauncher";
+import Home from "./pages/Home";
+import UserDashboard from "./pages/UserDashboard";
 import Overview from "./pages/dashboard/Overview";
 import Phases from "./pages/dashboard/Phases";
 import Architecture from "./pages/dashboard/Architecture";
@@ -49,20 +51,30 @@ const App = () => (
           <GlobalNav />
           <div className="pt-14">
             <Routes>
+              {/* Public Home Page */}
+              <Route path="/" element={<Home />} />
+              
               <Route path="/auth" element={<Auth />} />
               
-              {/* Dashboard Launcher */}
+              {/* User Dashboard */}
               <Route 
-                path="/" 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <UserDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Dashboard Launcher (kept for workspace selection if needed) */}
+              <Route 
+                path="/launcher" 
                 element={
                   <ProtectedRoute>
                     <DashboardLauncher />
                   </ProtectedRoute>
                 } 
               />
-
-              {/* Legacy Dashboard Redirect */}
-              <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
 
               {/* Admin Dashboard - Project Management */}
               <Route 

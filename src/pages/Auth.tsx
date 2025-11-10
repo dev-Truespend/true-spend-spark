@@ -43,7 +43,7 @@ export default function Auth() {
 
   // Redirect if already logged in
   if (user) {
-    navigate("/");
+    navigate("/dashboard");
     return null;
   }
 
@@ -62,7 +62,7 @@ export default function Auth() {
         title: "Welcome back!",
         description: "You've successfully logged in.",
       });
-      navigate("/");
+      navigate("/dashboard");
     }
     setIsLoading(false);
   };
@@ -90,7 +90,7 @@ export default function Auth() {
         title: "Account created!",
         description: "You can now log in with your credentials.",
       });
-      navigate("/");
+      navigate("/dashboard");
     }
     setIsLoading(false);
   };
