@@ -14,6 +14,7 @@ import {
   TestTube,
   Layers,
   Zap,
+  Shield,
   LogOut
 } from "lucide-react";
 
@@ -28,6 +29,7 @@ const navigation = [
   { name: "v4.2 Optimizations", href: "/admin/optimization", icon: Zap },
   { name: "Risks", href: "/admin/risks", icon: AlertTriangle },
   { name: "Testing", href: "/admin/testing", icon: TestTube },
+  { name: "Security", href: "/admin/security", icon: Shield },
   { name: "Architecture", href: "/admin/architecture", icon: Layers },
 ];
 

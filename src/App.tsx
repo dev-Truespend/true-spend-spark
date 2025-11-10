@@ -20,6 +20,7 @@ import Tasks from "./pages/dashboard/Tasks";
 import Metrics from "./pages/dashboard/Metrics";
 import Optimization from "./pages/dashboard/Optimization";
 import Testing from "./pages/dashboard/Testing";
+import Security from "./pages/dashboard/Security";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { PWAInstallPrompt } from "./components/pwa/PWAInstallPrompt";
@@ -102,6 +103,7 @@ const App = () => (
                 <Route path="optimization" element={<Optimization />} />
                 <Route path="risks" element={<div className="p-8">Risks view coming soon...</div>} />
                 <Route path="testing" element={<Testing />} />
+                <Route path="security" element={<Security />} />
               </Route>
 
               {/* TrueSpend User App - Coming Soon */}
