@@ -23,7 +23,7 @@ type AuthFormValues = z.infer<typeof authSchema>;
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
-  const { hasRole, loading: roleLoading } = useUserRole();
+  const { roles, hasRole, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -44,6 +44,7 @@ export default function Auth() {
   });
 
   // Redirect if already logged in based on role
+  // Wait for both user existence and role loading completion before redirecting
   useEffect(() => {
     if (user && !roleLoading) {
       if (hasRole('admin')) {
@@ -52,7 +53,7 @@ export default function Auth() {
         navigate("/dashboard");
       }
     }
-  }, [user, hasRole, roleLoading, navigate]);
+  }, [user, roles, hasRole, roleLoading, navigate]);
 
   if (user) {
     return null;
