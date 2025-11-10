@@ -101,21 +101,38 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Background sync for offline actions
+// Background sync for offline actions with retry logic
 self.addEventListener('sync', (event) => {
   console.log('[SW] Background sync triggered:', event.tag);
   
   if (event.tag === 'sync-pending-actions') {
     event.waitUntil(
-      // Send message to clients to process pending actions
-      self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({
-            type: 'BACKGROUND_SYNC',
-            tag: event.tag
+      // Send message to all clients to process pending actions
+      self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
+        .then(clients => {
+          if (clients.length === 0) {
+            console.log('[SW] No clients found for sync message');
+            return;
+          }
+          
+          console.log(`[SW] Notifying ${clients.length} clients to sync`);
+          const promises = clients.map(client => {
+            return new Promise((resolve) => {
+              client.postMessage({
+                type: 'BACKGROUND_SYNC',
+                tag: event.tag,
+                timestamp: Date.now()
+              });
+              resolve();
+            });
           });
-        });
-      })
+          
+          return Promise.all(promises);
+        })
+        .catch(error => {
+          console.error('[SW] Background sync failed:', error);
+          throw error;
+        })
     );
   }
 });

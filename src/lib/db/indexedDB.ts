@@ -33,7 +33,7 @@ type GeofenceRecord = {
   synced: boolean;
 };
 
-type SyncQueueRecord = {
+export type SyncQueueRecord = {
   id?: number;
   action: 'CREATE' | 'UPDATE' | 'DELETE';
   table: string;
