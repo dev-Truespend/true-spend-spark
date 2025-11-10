@@ -91,9 +91,11 @@ export default function DashboardLauncher() {
     );
   }
 
-  const accessibleDashboards = dashboards.filter(d => 
-    d.roles.some(role => roles.includes(role))
-  );
+  // Show all dashboards to admin users, otherwise filter by role
+  const isAdmin = roles.includes('admin');
+  const accessibleDashboards = isAdmin 
+    ? dashboards 
+    : dashboards.filter(d => d.roles.some(role => roles.includes(role)));
 
   const getStatusBadge = (status: Dashboard['status']) => {
     switch (status) {
