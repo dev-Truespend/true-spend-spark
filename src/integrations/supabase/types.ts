@@ -308,6 +308,53 @@ export type Database = {
           },
         ]
       }
+      phase_tests: {
+        Row: {
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          phase_id: string | null
+          status: string
+          test_category: string
+          test_name: string
+          timestamp: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          phase_id?: string | null
+          status: string
+          test_category: string
+          test_name: string
+          timestamp?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          phase_id?: string | null
+          status?: string
+          test_category?: string
+          test_name?: string
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phase_tests_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "phases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       phases: {
         Row: {
           created_at: string | null

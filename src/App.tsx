@@ -15,8 +15,11 @@ import Timeline from "./pages/dashboard/Timeline";
 import Tasks from "./pages/dashboard/Tasks";
 import Metrics from "./pages/dashboard/Metrics";
 import Optimization from "./pages/dashboard/Optimization";
+import Testing from "./pages/dashboard/Testing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import { PWAInstallPrompt } from "./components/pwa/PWAInstallPrompt";
+import { OfflineIndicator } from "./components/pwa/OfflineIndicator";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +28,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <PWAInstallPrompt />
+      <OfflineIndicator />
       <BrowserRouter>
         <AuthProvider>
           <GlobalNav />
@@ -64,7 +69,7 @@ const App = () => (
                 <Route path="metrics" element={<Metrics />} />
                 <Route path="optimization" element={<Optimization />} />
                 <Route path="risks" element={<div className="p-8">Risks view coming soon...</div>} />
-                <Route path="testing" element={<div className="p-8">Testing view coming soon...</div>} />
+                <Route path="testing" element={<Testing />} />
               </Route>
 
               {/* TrueSpend User App - Coming Soon */}

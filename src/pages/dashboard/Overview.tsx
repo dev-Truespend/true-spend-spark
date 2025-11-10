@@ -52,6 +52,25 @@ export default function Overview() {
 
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Phase 1 Status - NEW */}
+        <Card className="border-primary/50 bg-primary/5">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Phase 1 Status</CardTitle>
+            <Target className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">65%</div>
+            <Progress value={65} className="mt-2" />
+            <p className="text-xs text-muted-foreground mt-2">
+              Foundation & Client Layer
+            </p>
+            <div className="flex gap-2 mt-2">
+              <Badge variant="outline" className="text-xs">8/10 Tasks</Badge>
+              <Badge variant="default" className="text-xs">In Progress</Badge>
+            </div>
+          </CardContent>
+        </Card>
+        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Overall Progress</CardTitle>
