@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { usePhases } from '@/hooks/useProjectData';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Phase1TestSuite } from '@/components/testing/Phase1TestSuite';
+import { Phase1TestResults } from '@/components/testing/Phase1TestResults';
 import { Badge } from '@/components/ui/badge';
 import { TestTube, TrendingUp, AlertCircle } from 'lucide-react';
 
@@ -83,8 +83,8 @@ export default function Testing() {
 
         {phases?.slice(0, 5).map(phase => (
           <TabsContent key={phase.id} value={phase.phase_number.toString()} className="mt-6">
-            {phase.phase_number === 1 && currentPhase ? (
-              <Phase1TestSuite phaseId={currentPhase.id} />
+            {phase.phase_number === 1 ? (
+              <Phase1TestResults />
             ) : (
               <Card className="p-8 text-center">
                 <p className="text-muted-foreground">
