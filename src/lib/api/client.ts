@@ -24,7 +24,7 @@ export class ApiClient {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = import.meta.env.VITE_API_ORIGIN || import.meta.env.VITE_SUPABASE_URL;
+    this.baseUrl = import.meta.env.VITE_SUPABASE_URL;
   }
 
   /**

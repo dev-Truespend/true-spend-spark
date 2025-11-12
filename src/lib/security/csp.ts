@@ -29,7 +29,6 @@ export const CSP_DIRECTIVES = {
     "'self'",
     "https://*.supabase.co",
     "wss://*.supabase.co",
-    "https://api.truespend.org",
   ],
   
   // Frame ancestors - prevent clickjacking
@@ -84,7 +83,7 @@ export interface CSPViolation {
 export async function reportCSPViolation(violation: CSPViolation): Promise<void> {
   try {
     const response = await fetch(
-      import.meta.env.VITE_CSP_REPORT_URI || `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/csp-reporter`,
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/csp-reporter`,
       {
         method: 'POST',
         headers: {
