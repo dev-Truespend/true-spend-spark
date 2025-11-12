@@ -28,19 +28,12 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', '@tanstack/react-query'],
-    esbuildOptions: {
-      resolveExtensions: ['.tsx', '.ts', '.jsx', '.js'],
-    },
   },
   build: {
-    commonjsOptions: {
-      include: [/node_modules/],
-    },
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react/jsx-runtime'],
-          'query': ['@tanstack/react-query'],
+          vendor: ['react', 'react-dom', 'react/jsx-runtime', '@tanstack/react-query'],
         },
       },
     },

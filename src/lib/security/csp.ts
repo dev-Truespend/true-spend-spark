@@ -10,8 +10,7 @@ export const CSP_DIRECTIVES = {
   // Scripts - allow self, inline (with nonce), and CDN
   scriptSrc: [
     "'self'",
-    "'unsafe-inline'", // Required for Vite HMR in development
-    "'unsafe-eval'", // Required for Vite in development
+    ...(import.meta.env.DEV ? ["'unsafe-inline'", "'unsafe-eval'"] : []), // Only in development for Vite HMR
     "https://cdn.jsdelivr.net",
   ],
   
