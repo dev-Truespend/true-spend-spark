@@ -54,7 +54,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true }),
+      null,
       {
         status: 204,
         headers: corsHeaders,
