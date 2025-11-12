@@ -1,5 +1,8 @@
 project_id = "uolpwcngftpmgkopltwz"
 
+[functions.csp-reporter]
+verify_jwt = false
+
 [functions.generate-timeline-image]
 verify_jwt = false
 
