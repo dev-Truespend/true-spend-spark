@@ -24,7 +24,8 @@ import {
   Shield,
   Network,
   CheckCircle2,
-  Clock
+  Clock,
+  MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -146,6 +147,14 @@ const dashboards: Dashboard[] = [
         description: 'System architecture and components',
         route: '/admin/architecture',
         icon: Network,
+        status: 'active',
+      },
+      {
+        id: 'geofences',
+        title: 'Geofences',
+        description: 'Location-based spending zones (Phase 3)',
+        route: '/admin/geofences',
+        icon: MapPin,
         status: 'active',
       },
     ],
