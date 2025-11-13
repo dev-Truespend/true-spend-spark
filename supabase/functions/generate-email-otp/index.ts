@@ -107,7 +107,7 @@ serve(async (req) => {
 
     // Generate 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    const expiresAt = new Date(Date.now() + 60 * 1000); // 60 seconds
 
     // Store code in database
     const { error: insertError } = await supabase
@@ -145,7 +145,7 @@ serve(async (req) => {
                       <div style="background-color: #f7fafc; border: 2px dashed #4F46E5; border-radius: 8px; padding: 24px; text-align: center; margin: 0 0 24px 0;">
                         <div style="font-size: 40px; font-weight: bold; letter-spacing: 12px; color: #4F46E5; font-family: 'Courier New', monospace;">${code}</div>
                       </div>
-                      <p style="margin: 0 0 16px 0; color: #e53e3e; font-size: 14px; font-weight: 500;">⏱️ This code will expire in 5 minutes.</p>
+                      <p style="margin: 0 0 16px 0; color: #e53e3e; font-size: 14px; font-weight: 500;">⏱️ This code will expire in 60 seconds.</p>
                       <p style="margin: 0 0 24px 0; color: #718096; font-size: 14px; line-height: 1.5;">For your security, this code is only valid for one use. If you didn't request this code, please ignore this email.</p>
                       <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 32px 0;">
                       <p style="margin: 0; color: #a0aec0; font-size: 12px; text-align: center;">TrueSpend Security Team</p>

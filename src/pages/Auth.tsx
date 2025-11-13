@@ -32,7 +32,7 @@ export default function Auth() {
   const [otp, setOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(300);
+  const [timeRemaining, setTimeRemaining] = useState(60);
   const sentRef = useRef(false);
   const oauthFlowHandledRef = useRef(false);
 
@@ -70,7 +70,7 @@ export default function Auth() {
     }
   }, [toast]);
 
-  // Handle Google OAuth callback -> Email OTP flow
+  // Handle Google OAuth callback -> Email OTP flow (inline)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const isOAuthCallback = params.has('oauth') || session?.user.app_metadata?.provider === 'google';
@@ -92,12 +92,9 @@ export default function Auth() {
             description: "Check your email for the 6-digit code",
           });
         }
-        
-        // Navigate to dedicated OTP page
-        navigate('/auth/verify-email-otp', { replace: true });
       });
     }
-  }, [user, session, requiresEmailOTP, sendEmailOTP, setRequiresEmailOTP, toast, navigate]);
+  }, [user, session, requiresEmailOTP, sendEmailOTP, setRequiresEmailOTP, toast]);
 
   // Countdown timer for OTP
   useEffect(() => {
@@ -184,6 +181,12 @@ export default function Auth() {
       title: "Verified!",
       description: "Redirecting to dashboard...",
     });
+    
+    // Navigate based on role
+    if (!roleLoading) {
+      const destination = hasRole('admin') ? '/launcher' : '/dashboard';
+      navigate(destination);
+    }
   };
 
   const handleResendOTP = async () => {
@@ -202,7 +205,7 @@ export default function Auth() {
         title: "New code sent",
         description: "Check your email again",
       });
-      setTimeRemaining(300);
+      setTimeRemaining(60);
       setOtp("");
     }
   };
@@ -264,7 +267,10 @@ export default function Auth() {
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-semibold">Enter Verification Code</h3>
                 <p className="text-sm text-muted-foreground">
-                  We sent a 6-digit code to your email
+                  Check your email and enter OTP to login
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Code sent to: <span className="font-semibold">{user?.email}</span>
                 </p>
               </div>
               
@@ -289,11 +295,11 @@ export default function Auth() {
                     type="button"
                     variant="link"
                     size="sm"
-                    disabled={isResending || timeRemaining === 0}
+                    disabled={isResending || timeRemaining > 0}
                     onClick={handleResendOTP}
                     className="h-auto p-0"
                   >
-                    Resend code
+                    {isResending ? "Sending..." : timeRemaining > 0 ? `Resend in ${timeRemaining}s` : "Resend code"}
                   </Button>
                 </div>
                 
