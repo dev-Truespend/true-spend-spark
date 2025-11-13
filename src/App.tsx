@@ -30,6 +30,7 @@ import { PWAInstallPrompt } from "./components/pwa/PWAInstallPrompt";
 import { OfflineIndicator } from "./components/pwa/OfflineIndicator";
 import { SyncIndicator } from "./components/pwa/SyncIndicator";
 import { ServiceWorkerUpdatePrompt } from "./components/pwa/ServiceWorkerUpdatePrompt";
+import { ForceRefreshBanner } from "./components/pwa/ForceRefreshBanner";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
 
@@ -54,6 +55,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <CSPViolationReporter />
+          <ForceRefreshBanner />
           {PWA_ENABLED && <ServiceWorkerUpdatePrompt />}
           {PWA_ENABLED && <PWAInstallPrompt />}
           {PWA_ENABLED && <OfflineIndicator />}

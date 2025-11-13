@@ -4,13 +4,14 @@ import "./index.css";
 
 // PWA Service Worker - Feature flag control
 const PWA_ENABLED = import.meta.env.VITE_PWA_ENABLED === 'true';
+const BUILD_TAG = import.meta.env.VITE_BUILD_TAG || '20251113T0030';
 
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD && PWA_ENABLED) {
     // PWA enabled - register service worker
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('/sw.js')
+        .register(`/sw.js?v=${BUILD_TAG}`)
         .then((registration) => {
           console.log('[PWA] Service Worker registered:', registration);
           
