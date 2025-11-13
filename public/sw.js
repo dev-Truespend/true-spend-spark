@@ -1,5 +1,5 @@
 // Service Worker for PWA - Production Ready with Dynamic Versioning
-const CACHE_VERSION = 'v__BUILD_TIMESTAMP__'; // Replaced at build time
+const CACHE_VERSION = 'v2.0.0-__BUILD_TIMESTAMP__'; // Replaced at build time
 const CACHE_NAME = `truespend-static-${CACHE_VERSION}`;
 const API_CACHE_NAME = `truespend-api-${CACHE_VERSION}`;
 const RUNTIME_CACHE_NAME = `truespend-runtime-${CACHE_VERSION}`;
@@ -121,10 +121,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // NEVER cache HTML - always fetch fresh from network/CDN
+  // NEVER cache HTML or verification/auth routes - always fetch fresh from network/CDN
   const isHTMLRequest = 
     request.mode === 'navigate' ||
     url.pathname === '/' ||
+    url.pathname === '/auth' ||
+    url.pathname === '/verify-email' ||
+    url.pathname === '/confirm-email-change' ||
     url.pathname.endsWith('.html') ||
     (request.headers.get('Accept') || '').includes('text/html');
   
