@@ -27,6 +27,7 @@ import NotFound from "./pages/NotFound";
 import { PWAInstallPrompt } from "./components/pwa/PWAInstallPrompt";
 import { OfflineIndicator } from "./components/pwa/OfflineIndicator";
 import { SyncIndicator } from "./components/pwa/SyncIndicator";
+import { ServiceWorkerUpdatePrompt } from "./components/pwa/ServiceWorkerUpdatePrompt";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
 
@@ -47,6 +48,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <CSPViolationReporter />
+          <ServiceWorkerUpdatePrompt />
           <PWAInstallPrompt />
           <OfflineIndicator />
           <SyncIndicator />

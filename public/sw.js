@@ -1,5 +1,5 @@
 // Service Worker for PWA - Phase 1 Enhanced
-const CACHE_VERSION = 'v1.1.0';
+const CACHE_VERSION = 'v1.2.0';
 const CACHE_NAME = `truespend-static-${CACHE_VERSION}`;
 const API_CACHE_NAME = `truespend-api-${CACHE_VERSION}`;
 const RUNTIME_CACHE_NAME = `truespend-runtime-${CACHE_VERSION}`;
@@ -272,6 +272,14 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || 'TrueSpend', options)
   );
+});
+
+// Listen for skip waiting message from update prompt
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') {
+    console.log('[SW] Received SKIP_WAITING message, activating new service worker');
+    self.skipWaiting();
+  }
 });
 
 console.log('[SW] Service Worker loaded');
