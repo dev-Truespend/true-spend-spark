@@ -26,9 +26,42 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    console.log(`Generating OTP for user: ${user.id}`);
+    // Extract IP address for rate limiting
+    const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0].trim() 
+                   || req.headers.get('cf-connecting-ip') 
+                   || 'unknown';
 
-    // Rate limiting: Check if user has requested OTP in last 15 minutes (max 3 requests)
+    console.log(`Generating OTP for user: ${user.id}, IP: ${ipAddress}`);
+
+    // IP-based rate limiting: Check requests from this IP in last hour (max 10 per hour)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: ipAttempts, error: ipError } = await supabase
+      .from('auth_attempts')
+      .select('created_at')
+      .eq('ip_address', ipAddress)
+      .eq('attempt_type', 'otp_request')
+      .gt('created_at', oneHourAgo);
+
+    if (ipAttempts && ipAttempts.length >= 10) {
+      // Log security event
+      await supabase.from('security_logs').insert({
+        user_id: user.id,
+        event_type: 'rate_limit_exceeded',
+        severity: 'warning',
+        ip_address: ipAddress,
+        details: { attempt_type: 'otp_request', count: ipAttempts.length }
+      });
+
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many requests from this location. Please try again later.',
+          remainingMinutes: 60
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // User-based rate limiting: Check if user has requested OTP in last 15 minutes (max 3 requests)
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
     const { data: recentCodes } = await supabase
       .from('mfa_email_codes')
@@ -42,6 +75,15 @@ serve(async (req) => {
       const resetTime = oldestRequestTime + (15 * 60 * 1000);
       const remainingSeconds = Math.ceil((resetTime - Date.now()) / 1000);
       const remainingMinutes = Math.ceil(remainingSeconds / 60);
+
+      // Log security event
+      await supabase.from('security_logs').insert({
+        user_id: user.id,
+        event_type: 'rate_limit_exceeded',
+        severity: 'info',
+        ip_address: ipAddress,
+        details: { attempt_type: 'otp_request', count: recentCodes.length }
+      });
       
       return new Response(
         JSON.stringify({ 
@@ -53,6 +95,15 @@ serve(async (req) => {
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Log successful OTP request attempt
+    await supabase.from('auth_attempts').insert({
+      ip_address: ipAddress,
+      user_id: user.id,
+      attempt_type: 'otp_request',
+      success: true,
+      metadata: { email: user.email }
+    });
 
     // Generate 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();

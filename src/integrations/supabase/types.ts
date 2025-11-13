@@ -56,6 +56,36 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_attempts: {
+        Row: {
+          attempt_type: string
+          created_at: string
+          id: string
+          ip_address: string
+          metadata: Json | null
+          success: boolean
+          user_id: string | null
+        }
+        Insert: {
+          attempt_type: string
+          created_at?: string
+          id?: string
+          ip_address: string
+          metadata?: Json | null
+          success?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          attempt_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: string
+          metadata?: Json | null
+          success?: boolean
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       budgets: {
         Row: {
           active: boolean | null
@@ -750,6 +780,39 @@ export type Database = {
           },
         ]
       }
+      security_logs: {
+        Row: {
+          created_at: string
+          details: Json | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          severity: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           architecture_components: Json | null
@@ -990,8 +1053,10 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_mfa_codes: { Args: never; Returns: number }
+      cleanup_old_auth_attempts: { Args: never; Returns: number }
       cleanup_old_csp_violations: { Args: never; Returns: number }
       cleanup_old_rate_limits: { Args: never; Returns: number }
+      cleanup_old_security_logs: { Args: never; Returns: number }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
