@@ -58,8 +58,8 @@ const App = () => (
           <RateLimitStatus />
           <div className="pt-14">
             <Routes>
-              {/* Public Home Page */}
-              <Route path="/" element={<Home />} />
+              {/* Root redirects to auth - single entry point */}
+              <Route path="/" element={<Navigate to="/auth" replace />} />
               
               {/* Legacy Login Route Redirects - Force consistency to /auth */}
               <Route path="/login" element={<Navigate to="/auth" replace />} />
