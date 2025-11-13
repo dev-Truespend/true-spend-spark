@@ -6,6 +6,7 @@ import { RefreshCw } from "lucide-react";
 export const ForceRefreshBanner = () => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
     const checkForUpdates = async () => {
@@ -32,14 +33,43 @@ export const ForceRefreshBanner = () => {
       }
     };
 
+    // Listen for service worker update messages
+    const handleSWUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log('[Version Check] SW update detected:', customEvent.detail);
+      setUpdateAvailable(true);
+    };
+
+    window.addEventListener('appUpdateAvailable', handleSWUpdate);
+
     // Check immediately on mount
     checkForUpdates();
 
-    // Then check every 20 seconds
-    const interval = setInterval(checkForUpdates, 20000);
+    // Check every 10 seconds (more aggressive)
+    const interval = setInterval(checkForUpdates, 10000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('appUpdateAvailable', handleSWUpdate);
+    };
   }, []);
+
+  // Auto-refresh countdown
+  useEffect(() => {
+    if (!updateAvailable) return;
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          handleRefresh();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [updateAvailable]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -66,7 +96,7 @@ export const ForceRefreshBanner = () => {
           <RefreshCw className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between gap-4">
             <span className="text-sm font-medium">
-              A new version is available. Please refresh to get the latest updates.
+              A new version is available. Updating in {countdown}s...
             </span>
             <Button 
               onClick={handleRefresh}
@@ -82,7 +112,7 @@ export const ForceRefreshBanner = () => {
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh Now
+                  Update Now
                 </>
               )}
             </Button>

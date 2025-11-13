@@ -21,10 +21,16 @@ if ('serviceWorker' in navigator) {
             console.log('[PWA] 🔍 Checking for updates...');
           }, 10000);
 
-          // Listen for SW activation messages (force reload)
+          // Listen for SW update messages
           navigator.serviceWorker.addEventListener('message', (event) => {
-            if (event.data.type === 'SW_ACTIVATED' && 
-                event.data.action === 'RELOAD_REQUIRED') {
+            if (event.data.type === 'UPDATE_AVAILABLE') {
+              console.log('[PWA] 🎉 Update available from SW:', event.data.buildId);
+              // Dispatch event for ForceRefreshBanner
+              window.dispatchEvent(new CustomEvent('appUpdateAvailable', {
+                detail: { buildId: event.data.buildId, oldBuildId: event.data.oldBuildId }
+              }));
+            } else if (event.data.type === 'SW_ACTIVATED' && 
+                       event.data.action === 'RELOAD_REQUIRED') {
               console.log('[PWA] 🔄 New version activated, reloading in 1 second...');
               setTimeout(() => window.location.reload(), 1000);
             }
