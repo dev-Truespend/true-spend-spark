@@ -10,7 +10,13 @@ export function VersionDisplay() {
   const [version, setVersion] = useState<string>("");
 
   useEffect(() => {
-    fetch('/meta.json')
+    fetch(`/meta.json?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    })
       .then(res => res.json())
       .then((data: VersionInfo) => {
         setVersion(data.version || data.buildId);
