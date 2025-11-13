@@ -22,6 +22,8 @@ import Testing from "./pages/dashboard/Testing";
 import Security from "./pages/dashboard/Security";
 import Geofences from "./pages/dashboard/Geofences";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ConfirmEmailChange from "./pages/ConfirmEmailChange";
 import ResendTest from "./pages/ResendTest";
@@ -64,8 +66,8 @@ const App = () => (
           <RateLimitStatus />
           <div className="pt-14">
             <Routes>
-              {/* Root redirects to auth - single entry point */}
-              <Route path="/" element={<Navigate to="/auth" replace />} />
+              {/* Root shows Home page */}
+              <Route path="/" element={<Home />} />
               
               {/* Legacy Login Route Redirects - Force consistency to /auth */}
               <Route path="/login" element={<Navigate to="/auth" replace />} />
@@ -80,6 +82,8 @@ const App = () => (
               {/* Main Auth Route */}
               <Route path="/auth" element={<Auth />} />
               <Route path="/auth/*" element={<Auth />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/confirm-email-change" element={<ConfirmEmailChange />} />
             <Route path="/resend-test" element={<ResendTest />} />
