@@ -38,10 +38,14 @@ export default function ResetPassword() {
     },
   });
 
-  // Check if we have the required token
+  // Check if we have the required token (Supabase uses hash parameters)
   useEffect(() => {
-    const token = searchParams.get('token') || searchParams.get('access_token');
-    if (!token) {
+    // Supabase sends tokens in URL hash, not query params
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const token = hashParams.get('access_token') || searchParams.get('token') || searchParams.get('access_token');
+    const type = hashParams.get('type');
+    
+    if (!token || type !== 'recovery') {
       toast({
         title: "Invalid link",
         description: "This password reset link is invalid or has expired.",
