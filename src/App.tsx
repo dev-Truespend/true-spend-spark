@@ -61,7 +61,19 @@ const App = () => (
               {/* Public Home Page */}
               <Route path="/" element={<Home />} />
               
-            <Route path="/auth" element={<Auth />} />
+              {/* Legacy Login Route Redirects - Force consistency to /auth */}
+              <Route path="/login" element={<Navigate to="/auth" replace />} />
+              <Route path="/signin" element={<Navigate to="/auth" replace />} />
+              <Route path="/sign-in" element={<Navigate to="/auth" replace />} />
+              <Route path="/account/login" element={<Navigate to="/auth" replace />} />
+              <Route path="/v3" element={<Navigate to="/auth" replace />} />
+              <Route path="/v3/*" element={<Navigate to="/auth" replace />} />
+              <Route path="/old-auth" element={<Navigate to="/auth" replace />} />
+              <Route path="/project-management-dashboard" element={<Navigate to="/auth" replace />} />
+              
+              {/* Main Auth Route */}
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/*" element={<Auth />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/confirm-email-change" element={<ConfirmEmailChange />} />
             <Route path="/resend-test" element={<ResendTest />} />
