@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +22,7 @@ export function GoogleSignInButton({
   const { signInWithGoogle, user, session, sendEmailOTP, setRequiresEmailOTP } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -66,12 +67,14 @@ export function GoogleSignInButton({
             description: `Check your email for the 6-digit code`,
           });
           
-          // Redirect to OTP verification page
-          navigate("/auth/verify-email-otp");
+          // Navigate to auth page if not already there
+          if (location.pathname !== "/auth") {
+            navigate("/auth");
+          }
         });
       }
     }
-  }, [user, session, sendEmailOTP, setRequiresEmailOTP, toast, navigate]);
+  }, [user, session, sendEmailOTP, setRequiresEmailOTP, toast, navigate, location]);
 
   return (
     <Button 
