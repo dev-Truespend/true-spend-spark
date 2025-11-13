@@ -13,9 +13,9 @@ const STATIC_ASSETS = [
 // Cache configuration
 const CACHE_CONFIG = {
   maxAge: {
-    static: 30 * 24 * 60 * 60 * 1000, // 30 days
-    api: 7 * 24 * 60 * 60 * 1000,      // 7 days
-    runtime: 24 * 60 * 60 * 1000,      // 1 day
+    static: 5 * 60 * 1000,  // 5 minutes (reduced from 30 days)
+    api: 60 * 1000,         // 1 minute (reduced from 7 days)
+    runtime: 5 * 60 * 1000, // 5 minutes (reduced from 1 day)
   },
   maxEntries: {
     api: 100,
