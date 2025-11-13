@@ -3,24 +3,34 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
+interface Profile {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  status: 'pending_verification' | 'active' | 'deleted';
+  verification_expires_at: string | null;
+  email_verified_at: string | null;
+  auth_provider: string | null;
+}
+
+interface SignUpData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  requiresEmailOTP: boolean;
-  requires2FA: boolean;
-  verified2FA: boolean;
+  profile: Profile | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (data: SignUpData) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  sendEmailOTP: () => Promise<{ error: any; data?: any }>;
-  send2FAOTP: (method: 'email' | 'sms') => Promise<{ error: any; data?: any }>;
-  verifyEmailOTP: (code: string) => Promise<{ error: any }>;
-  verify2FAOTP: (code: string) => Promise<{ error: any }>;
-  setRequiresEmailOTP: (requires: boolean) => void;
-  setRequires2FA: (requires: boolean) => void;
-  setVerified2FA: (verified: boolean) => void;
+  sendVerificationEmail: () => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,11 +38,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [requiresEmailOTP, setRequiresEmailOTP] = useState(false);
-  const [requires2FA, setRequires2FA] = useState(false);
-  const [verified2FA, setVerified2FA] = useState(false);
   const navigate = useNavigate();
+
+  // Fetch profile whenever user changes
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        setProfile(data);
+      } else {
+        setProfile(null);
+      }
+    };
+    fetchProfile();
+  }, [user]);
 
   useEffect(() => {
     // Set up auth state listener first
@@ -55,31 +80,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+
+    if (!error && data.user) {
+      // Check account status
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('status, verification_expires_at')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profile?.status === 'deleted') {
+        await supabase.auth.signOut();
+        return { error: { message: 'This account no longer exists. Please sign up again.' } };
+      }
+
+      if (profile?.status === 'pending_verification' && profile.verification_expires_at) {
+        const expiry = new Date(profile.verification_expires_at);
+        if (expiry < new Date()) {
+          await supabase.auth.signOut();
+          return { error: { message: 'Your verification link expired. Please sign up again.' } };
+        }
+      }
+    }
+
     return { error };
   };
 
-  const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
+  const signUp = async (data: SignUpData) => {
+    const { error, data: authData } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
       options: {
-        emailRedirectTo: redirectUrl,
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: {
+          first_name: data.firstName,
+          last_name: data.lastName,
+        }
       },
     });
-    return { error };
+
+    if (error) return { error };
+
+    // Trigger verification email via edge function
+    if (authData.user && authData.session) {
+      try {
+        await supabase.functions.invoke('send-verification-email', {
+          headers: {
+            Authorization: `Bearer ${authData.session.access_token}`,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+      }
+    }
+
+    return { error: null };
   };
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth?oauth=google`,
+        redirectTo: `${window.location.origin}/dashboard`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -91,9 +157,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    setRequiresEmailOTP(false);
-    setRequires2FA(false);
-    setVerified2FA(false);
     navigate("/auth");
   };
 
