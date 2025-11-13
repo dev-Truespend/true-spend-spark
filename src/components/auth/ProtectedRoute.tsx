@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireRole, redirectTo }: ProtectedRouteProps) {
-  const { user, loading: authLoading, verified2FA, requires2FA } = useAuth();
+  const { user, loading: authLoading, profile } = useAuth();
   const { hasRole, loading: roleLoading } = useUserRole();
 
   if (authLoading || roleLoading) {
@@ -30,10 +30,13 @@ export function ProtectedRoute({ children, requireRole, redirectTo }: ProtectedR
     return <Navigate to={`/auth?redirectTo=${encodeURIComponent(destination)}`} replace />;
   }
 
-  // Check 2FA verification for protected routes
-  if (requires2FA && !verified2FA) {
-    return <Navigate to="/auth/verify-2fa" replace />;
+  // Check account status
+  if (profile?.status === 'deleted') {
+    return <Navigate to="/auth" replace />;
   }
+
+  // Allow access for pending_verification (restricted mode in dashboard)
+  // Allow access for active accounts
 
   if (requireRole) {
     const requiredRoles = Array.isArray(requireRole) ? requireRole : [requireRole];

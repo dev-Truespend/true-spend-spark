@@ -50,8 +50,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
-        setProfile(data);
+          .maybeSingle();
+        
+        if (data) {
+          // Cast to any to bypass stale TypeScript types
+          const profile = data as any;
+          setProfile({
+            id: profile.id,
+            email: profile.email,
+            first_name: profile.first_name || null,
+            last_name: profile.last_name || null,
+            status: profile.status as 'pending_verification' | 'active' | 'deleted',
+            verification_expires_at: profile.verification_expires_at || null,
+            email_verified_at: profile.email_verified_at || null,
+            auth_provider: profile.auth_provider || null,
+          });
+        } else {
+          setProfile(null);
+        }
       } else {
         setProfile(null);
       }
@@ -86,13 +102,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!error && data.user) {
-      // Check account status
-      const { data: profile } = await supabase
+      // Check account status - cast to any to bypass stale types
+      const { data: profileData } = await supabase
         .from('profiles')
-        .select('status, verification_expires_at')
+        .select('*')
         .eq('id', data.user.id)
-        .single();
+        .maybeSingle();
 
+      const profile = profileData as any;
       if (profile?.status === 'deleted') {
         await supabase.auth.signOut();
         return { error: { message: 'This account no longer exists. Please sign up again.' } };
@@ -160,106 +177,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     navigate("/auth");
   };
 
-  const sendEmailOTP = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-email-otp', {
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-      });
-
-      if (error) throw error;
-
-      return { error: null, data };
-    } catch (error: any) {
-      console.error('Error sending OTP:', error);
-      return { error };
+  const sendVerificationEmail = async () => {
+    if (!session) {
+      return { error: { message: 'No active session' } };
     }
-  };
 
-  const send2FAOTP = async (method: 'email' | 'sms') => {
     try {
-      const { data, error } = await supabase.functions.invoke('generate-email-otp', {
-        body: { method },
+      const { data, error } = await supabase.functions.invoke('send-verification-email', {
         headers: {
-          Authorization: `Bearer ${session?.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
-
-      if (error) throw error;
-
-      return { error: null, data };
+      return { error, data };
     } catch (error: any) {
-      console.error('Error sending 2FA OTP:', error);
-      return { error };
-    }
-  };
-
-  const verifyEmailOTP = async (code: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('verify-email-otp', {
-        body: { code },
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        setRequiresEmailOTP(false);
-      }
-
-      return { error: null };
-    } catch (error: any) {
-      console.error('Error verifying OTP:', error);
-      return { error };
-    }
-  };
-
-  const verify2FAOTP = async (code: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('verify-email-otp', {
-        body: { code },
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        setRequires2FA(false);
-        setVerified2FA(true);
-      }
-
-      return { error: null };
-    } catch (error: any) {
-      console.error('Error verifying 2FA OTP:', error);
       return { error };
     }
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      loading, 
-      requiresEmailOTP,
-      requires2FA,
-      verified2FA,
-      signIn, 
-      signUp, 
-      signInWithGoogle, 
-      signOut,
-      sendEmailOTP,
-      send2FAOTP,
-      verifyEmailOTP,
-      verify2FAOTP,
-      setRequiresEmailOTP,
-      setRequires2FA,
-      setVerified2FA
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        profile,
+        signIn,
+        signUp,
+        signInWithGoogle,
+        signOut,
+        sendVerificationEmail,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

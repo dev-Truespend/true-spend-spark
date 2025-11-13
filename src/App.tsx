@@ -22,6 +22,8 @@ import Testing from "./pages/dashboard/Testing";
 import Security from "./pages/dashboard/Security";
 import Geofences from "./pages/dashboard/Geofences";
 import Auth from "./pages/Auth";
+import VerifyEmail from "./pages/VerifyEmail";
+import ConfirmEmailChange from "./pages/ConfirmEmailChange";
 import ResendTest from "./pages/ResendTest";
 import NotFound from "./pages/NotFound";
 import { PWAInstallPrompt } from "./components/pwa/PWAInstallPrompt";
@@ -60,6 +62,8 @@ const App = () => (
               <Route path="/" element={<Home />} />
               
             <Route path="/auth" element={<Auth />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/confirm-email-change" element={<ConfirmEmailChange />} />
             <Route path="/resend-test" element={<ResendTest />} />
               
               {/* User Dashboard */}

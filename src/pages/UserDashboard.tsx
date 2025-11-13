@@ -5,11 +5,16 @@ import { Receipt, Wallet, TrendingUp, Settings, User, LogOut } from "lucide-reac
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
+import { UnverifiedBanner } from "@/components/auth/UnverifiedBanner";
+import { cn } from "@/lib/utils";
+
 export default function UserDashboard() {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Restrict actions if unverified
+  const isRestricted = profile?.status === 'pending_verification';
 
   const handleSignOut = async () => {
     await signOut();
@@ -23,10 +28,15 @@ export default function UserDashboard() {
   return (
     <div className="min-h-screen bg-muted/20">
       <div className="container mx-auto px-6 py-8">
+        {/* Unverified Banner */}
+        <UnverifiedBanner />
+
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Welcome back!</h1>
+            <h1 className="text-3xl font-bold mb-2">
+              Welcome back{profile?.first_name ? `, ${profile.first_name}` : ''}!
+            </h1>
             <p className="text-muted-foreground">{user?.email}</p>
           </div>
           <Button variant="outline" onClick={handleSignOut} className="gap-2">
@@ -73,7 +83,10 @@ export default function UserDashboard() {
 
         {/* Feature Cards */}
         <div className="grid md:grid-cols-2 gap-6">
-          <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+          <Card className={cn(
+            "hover:border-primary/50 transition-colors",
+            isRestricted ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+          )}>
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -81,12 +94,19 @@ export default function UserDashboard() {
                 </div>
                 <div>
                   <CardTitle>Receipts & Expenses</CardTitle>
-                  <CardDescription>Capture and manage your receipts</CardDescription>
+                  <CardDescription>
+                    {isRestricted 
+                      ? "Verify your email to access this feature" 
+                      : "Capture and manage your receipts"
+                    }
+                  </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full">Coming Soon</Button>
+              <Button variant="outline" className="w-full" disabled={isRestricted}>
+                {isRestricted ? "🔒 Locked" : "Coming Soon"}
+              </Button>
             </CardContent>
           </Card>
 
