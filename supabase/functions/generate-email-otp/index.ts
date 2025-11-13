@@ -102,7 +102,7 @@ serve(async (req) => {
     `;
 
     const { error: emailError } = await resend.emails.send({
-      from: 'TrueSpend Security <security@truespend.org>',
+      from: 'TrueSpend <onboarding@resend.dev>',
       to: [user.email!],
       subject: 'Your TrueSpend Verification Code',
       html: emailHtml,
