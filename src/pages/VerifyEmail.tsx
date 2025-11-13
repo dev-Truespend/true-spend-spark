@@ -47,10 +47,7 @@ export default function VerifyEmail() {
       }
 
       setStatus('success');
-      setMessage('Your email has been verified successfully!');
-
-      // Redirect to dashboard after 2 seconds
-      setTimeout(() => navigate('/dashboard'), 2000);
+      setMessage('Your email has been verified successfully! Please log in to continue.');
 
     } catch (err: any) {
       console.error('Verification error:', err);
@@ -91,7 +88,9 @@ export default function VerifyEmail() {
           <p className="text-muted-foreground">{message}</p>
           
           {status === 'success' && (
-            <p className="text-sm text-muted-foreground">Redirecting to dashboard...</p>
+            <Button onClick={() => navigate('/auth')} className="w-full">
+              Go to Login
+            </Button>
           )}
           
           {(status === 'expired' || status === 'deleted') && (
