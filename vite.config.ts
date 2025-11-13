@@ -5,9 +5,24 @@ import { componentTagger } from "lovable-tagger";
 import sri from "rollup-plugin-sri";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 
-// Custom plugin to inject build timestamp into Service Worker
+// Custom plugin to inject version and build timestamp
 const swVersionPlugin = () => ({
   name: 'sw-version-injector',
+  buildStart() {
+    // Update meta.json with version info
+    const buildId = new Date().toISOString().replace(/[-:]/g, '').split('.')[0].replace('T', 'T');
+    const timestamp = Date.now();
+    
+    const meta = {
+      version: "1.0.0",
+      buildId,
+      commit: process.env.VERCEL_GIT_COMMIT_SHA || 'local-build',
+      timestamp
+    };
+    
+    writeFileSync('public/meta.json', JSON.stringify(meta, null, 2));
+    console.log('✅ meta.json updated:', meta.version, meta.buildId);
+  },
   writeBundle() {
     const swPath = 'dist/sw.js';
     if (existsSync(swPath)) {
