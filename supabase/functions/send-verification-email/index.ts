@@ -46,14 +46,75 @@ serve(async (req) => {
       );
     }
 
-    // Rate limiting: Check last verification email sent
+    // Advanced rate limiting using database
+    const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
+    const MAX_ATTEMPTS_PER_HOUR = 3;
+
+    // Check rate limit
+    const { data: rateLimit, error: rateLimitError } = await supabase
+      .from('email_rate_limits')
+      .select('*')
+      .eq('email', user.email)
+      .single();
+
+    const now = new Date();
+    
+    if (rateLimit && !rateLimitError) {
+      const windowStart = new Date(rateLimit.window_start);
+      const timeSinceWindowStart = now.getTime() - windowStart.getTime();
+
+      // If within current window
+      if (timeSinceWindowStart < RATE_LIMIT_WINDOW) {
+        if (rateLimit.attempt_count >= MAX_ATTEMPTS_PER_HOUR) {
+          const minutesRemaining = Math.ceil((RATE_LIMIT_WINDOW - timeSinceWindowStart) / 60000);
+          return new Response(
+            JSON.stringify({ 
+              error: `Rate limit exceeded. You can request another verification email in ${minutesRemaining} minutes.`,
+              retryAfter: minutesRemaining
+            }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        // Increment attempt count
+        await supabase
+          .from('email_rate_limits')
+          .update({
+            attempt_count: rateLimit.attempt_count + 1,
+            last_attempt_at: now.toISOString()
+          })
+          .eq('email', user.email);
+      } else {
+        // Window expired, reset
+        await supabase
+          .from('email_rate_limits')
+          .update({
+            attempt_count: 1,
+            window_start: now.toISOString(),
+            last_attempt_at: now.toISOString()
+          })
+          .eq('email', user.email);
+      }
+    } else {
+      // First attempt, create new record
+      await supabase
+        .from('email_rate_limits')
+        .insert({
+          email: user.email,
+          attempt_count: 1,
+          window_start: now.toISOString(),
+          last_attempt_at: now.toISOString()
+        });
+    }
+
+    // Additional check: Don't resend if verification expires in > 20 minutes
     const lastExpiry = profile.verification_expires_at;
     if (lastExpiry && new Date(lastExpiry) > new Date()) {
       const minutesRemaining = Math.ceil((new Date(lastExpiry).getTime() - Date.now()) / 60000);
-      if (minutesRemaining > 20) { // Allow resend only if < 4 hours left
+      if (minutesRemaining > 20) {
         return new Response(
           JSON.stringify({ 
-            error: `Verification email already sent. Please wait or check your inbox.`,
+            error: `Verification email already sent. Please check your inbox or wait ${minutesRemaining} minutes.`,
             expiresAt: lastExpiry
           }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
