@@ -3,6 +3,22 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import sri from "rollup-plugin-sri";
+import { readFileSync, writeFileSync, existsSync } from "fs";
+
+// Custom plugin to inject build timestamp into Service Worker
+const swVersionPlugin = () => ({
+  name: 'sw-version-injector',
+  writeBundle() {
+    const swPath = 'dist/sw.js';
+    if (existsSync(swPath)) {
+      let content = readFileSync(swPath, 'utf-8');
+      const buildTimestamp = Date.now().toString();
+      content = content.replace('__BUILD_TIMESTAMP__', buildTimestamp);
+      writeFileSync(swPath, content);
+      console.log('✅ Service Worker version updated:', buildTimestamp);
+    }
+  }
+});
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -17,6 +33,7 @@ export default defineConfig(({ mode }) => ({
       algorithms: ["sha384"],
       publicPath: "/",
     }),
+    mode === "production" && swVersionPlugin(),
   ].filter(Boolean),
   resolve: {
     alias: {

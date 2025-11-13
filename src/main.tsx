@@ -11,10 +11,20 @@ if ('serviceWorker' in navigator) {
         .then((registration) => {
           console.log('[PWA] Service Worker registered:', registration);
           
-          // Check for updates periodically (every 60 seconds)
+          // Force check for updates every 30 seconds (aggressive)
           setInterval(() => {
             registration.update();
-          }, 60000);
+            console.log('[PWA] 🔍 Checking for updates...');
+          }, 30000);
+
+          // Listen for SW activation messages (force reload)
+          navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data.type === 'SW_ACTIVATED' && 
+                event.data.action === 'RELOAD_REQUIRED') {
+              console.log('[PWA] 🔄 New version activated, reloading in 1 second...');
+              setTimeout(() => window.location.reload(), 1000);
+            }
+          });
 
           // Detect when a new service worker is waiting
           registration.addEventListener('updatefound', () => {
@@ -23,6 +33,7 @@ if ('serviceWorker' in navigator) {
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                   // New service worker is ready, dispatch event
+                  console.log('[PWA] 📦 New version available');
                   window.dispatchEvent(new CustomEvent('swUpdateAvailable', { detail: registration }));
                 }
               });

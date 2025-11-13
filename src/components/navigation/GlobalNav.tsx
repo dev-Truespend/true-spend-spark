@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
-import { Settings, LayoutDashboard, BarChart3, Globe, Home, User, LogOut } from 'lucide-react';
+import { Settings, LayoutDashboard, BarChart3, Globe, Home, User, LogOut, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu, 
@@ -11,6 +11,8 @@ import {
   DropdownMenuSeparator 
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 const navItems = [
   { id: 'home', label: 'Home', route: '/', icon: Home, roles: [] as string[], publicOnly: true },
@@ -25,6 +27,41 @@ export function GlobalNav() {
   const navigate = useNavigate();
   const { roles, hasRole } = useUserRole();
   const { user, signOut } = useAuth();
+  const [showDebug, setShowDebug] = useState(false);
+
+  // Emergency force refresh: Ctrl+Shift+R
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+        e.preventDefault();
+        setShowDebug(true);
+        toast.info('Debug panel activated. Click the refresh button to force update.');
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
+  const handleForceRefresh = async () => {
+    toast.loading('Forcing cache clear and reload...');
+    try {
+      // Unregister all service workers
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(r => r.unregister()));
+      
+      // Clear all caches
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+      
+      console.log('[Force Refresh] 💥 Cleared all caches and SWs');
+      
+      // Reload
+      setTimeout(() => window.location.reload(), 500);
+    } catch (error) {
+      console.error('[Force Refresh] Failed:', error);
+      toast.error('Failed to force refresh');
+    }
+  };
 
   if (location.pathname === '/auth') return null;
 
@@ -64,6 +101,18 @@ export function GlobalNav() {
                 </Link>
               );
             })}
+            
+            {showDebug && (
+              <Button 
+                onClick={handleForceRefresh} 
+                variant="destructive" 
+                size="sm"
+                className="gap-2 animate-pulse"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Force Refresh
+              </Button>
+            )}
             
             {!user ? (
               <>

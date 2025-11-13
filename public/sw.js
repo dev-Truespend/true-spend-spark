@@ -1,5 +1,5 @@
-// Service Worker for PWA - Phase 1 Enhanced
-const CACHE_VERSION = 'v1.2.0';
+// Service Worker for PWA - Production Ready with Dynamic Versioning
+const CACHE_VERSION = 'v__BUILD_TIMESTAMP__'; // Replaced at build time
 const CACHE_NAME = `truespend-static-${CACHE_VERSION}`;
 const API_CACHE_NAME = `truespend-api-${CACHE_VERSION}`;
 const RUNTIME_CACHE_NAME = `truespend-runtime-${CACHE_VERSION}`;
@@ -36,29 +36,39 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - aggressively clean up ALL old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...');
+  console.log('[SW] Activating NEW service worker version:', CACHE_VERSION);
   event.waitUntil(
     Promise.all([
-      // Clean up old caches
+      // Delete ALL old caches (not just truespend- prefixed)
       caches.keys().then(cacheNames => {
         return Promise.all(
           cacheNames
-            .filter(name => 
-              name.startsWith('truespend-') && 
-              name !== CACHE_NAME && 
-              name !== API_CACHE_NAME && 
-              name !== RUNTIME_CACHE_NAME
-            )
+            .filter(name => name !== CACHE_NAME && 
+                           name !== API_CACHE_NAME && 
+                           name !== RUNTIME_CACHE_NAME)
             .map(name => {
-              console.log('[SW] Deleting old cache:', name);
+              console.log('[SW] 💥 Deleting cache:', name);
               return caches.delete(name);
             })
         );
       }),
-      // Take control of all clients
-      self.clients.claim()
+      // Force immediate control and notify clients
+      self.clients.claim().then(() => {
+        console.log('[SW] ✅ Service worker took control');
+        // Notify all clients to reload
+        return self.clients.matchAll({ type: 'window' }).then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'SW_ACTIVATED',
+              version: CACHE_VERSION,
+              action: 'RELOAD_REQUIRED'
+            });
+          });
+          console.log(`[SW] 📢 Notified ${clients.length} clients to reload`);
+        });
+      })
     ])
   );
 });
