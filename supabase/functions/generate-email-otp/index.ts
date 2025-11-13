@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { Resend } from "npm:resend@4.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -64,28 +65,53 @@ serve(async (req) => {
       throw insertError;
     }
 
-    // Send OTP via Supabase Auth email (using magic link template for now)
-    // Note: In production, you'd customize the email template in Supabase dashboard
+    // Send OTP via Resend
+    const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+    
     const emailHtml = `
-      <h2>Your TrueSpend Verification Code</h2>
-      <p>Your verification code is:</p>
-      <h1 style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #4F46E5;">${code}</h1>
-      <p>This code will expire in 5 minutes.</p>
-      <p style="color: #6B7280; font-size: 14px;">If you didn't request this code, please ignore this email.</p>
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8f9fa;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; padding: 40px 0;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  <tr>
+                    <td style="padding: 40px;">
+                      <h2 style="margin: 0 0 24px 0; color: #1a1a1a; font-size: 24px; font-weight: 600;">Your TrueSpend Verification Code</h2>
+                      <p style="margin: 0 0 24px 0; color: #4a5568; font-size: 16px; line-height: 1.5;">Your verification code is:</p>
+                      <div style="background-color: #f7fafc; border: 2px dashed #4F46E5; border-radius: 8px; padding: 24px; text-align: center; margin: 0 0 24px 0;">
+                        <div style="font-size: 40px; font-weight: bold; letter-spacing: 12px; color: #4F46E5; font-family: 'Courier New', monospace;">${code}</div>
+                      </div>
+                      <p style="margin: 0 0 16px 0; color: #e53e3e; font-size: 14px; font-weight: 500;">⏱️ This code will expire in 5 minutes.</p>
+                      <p style="margin: 0 0 24px 0; color: #718096; font-size: 14px; line-height: 1.5;">For your security, this code is only valid for one use. If you didn't request this code, please ignore this email.</p>
+                      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 32px 0;">
+                      <p style="margin: 0; color: #a0aec0; font-size: 12px; text-align: center;">TrueSpend Security Team</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
     `;
 
-    // Use Supabase Admin API to send email
-    const { error: emailError } = await supabase.auth.admin.generateLink({
-      type: 'magiclink',
-      email: user.email!,
-      options: {
-        redirectTo: `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify`,
-      }
+    const { error: emailError } = await resend.emails.send({
+      from: 'TrueSpend Security <security@truespend.org>',
+      to: [user.email!],
+      subject: 'Your TrueSpend Verification Code',
+      html: emailHtml,
     });
 
-    // Note: The above generates a magic link, but we're actually sending our custom OTP
-    // For now, we'll use a simple approach and let the frontend handle the OTP
-    // In production, you'd configure a custom SMTP or use the email template customization
+    if (emailError) {
+      console.error('Error sending email via Resend:', emailError);
+      throw new Error('Failed to send verification email');
+    }
 
     console.log(`OTP code generated successfully for user ${user.id}`);
 
@@ -93,9 +119,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true,
         message: 'OTP code sent to your email',
-        expiresAt: expiresAt.toISOString(),
-        // In development, return the code (remove in production)
-        ...(Deno.env.get('ENVIRONMENT') === 'development' && { code })
+        expiresAt: expiresAt.toISOString()
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
