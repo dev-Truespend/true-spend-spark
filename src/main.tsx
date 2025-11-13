@@ -2,9 +2,12 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// PWA Service Worker - register only in production, clean up in dev
+// PWA Service Worker - Feature flag control
+const PWA_ENABLED = import.meta.env.VITE_PWA_ENABLED === 'true';
+
 if ('serviceWorker' in navigator) {
-  if (import.meta.env.PROD) {
+  if (import.meta.env.PROD && PWA_ENABLED) {
+    // PWA enabled - register service worker
     window.addEventListener('load', () => {
       navigator.serviceWorker
         .register('/sw.js')
@@ -44,8 +47,30 @@ if ('serviceWorker' in navigator) {
           console.error('[PWA] Service Worker registration failed:', error);
         });
     });
+  } else if (import.meta.env.PROD && !PWA_ENABLED) {
+    // PWA disabled in production - cleanup
+    console.log('[PWA] PWA disabled - cleaning up service workers and caches');
+    window.addEventListener('load', async () => {
+      // Unregister all service workers
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        await registration.unregister();
+        console.log('[PWA] Unregistered service worker');
+      }
+      
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        for (const cacheName of cacheNames) {
+          await caches.delete(cacheName);
+          console.log('[PWA] Deleted cache:', cacheName);
+        }
+      }
+      
+      console.log('[PWA] Cleanup complete');
+    });
   } else {
-    // In development, ensure no stale SW or caches interfere with Vite modules
+    // Development mode - ensure no stale SW or caches interfere with Vite modules
     navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister()));
     if ('caches' in window) {
       caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)));
