@@ -119,14 +119,9 @@ export function GlobalNav() {
             )}
             
             {!user ? (
-              <>
-                <Button onClick={() => navigate('/auth')} variant="ghost" size="sm">
-                  Sign In
-                </Button>
-                <Button onClick={() => navigate('/auth')} size="sm">
-                  Sign Up
-                </Button>
-              </>
+              <Button onClick={() => navigate('/auth')} size="sm">
+                Login/Create Account
+              </Button>
             ) : (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
