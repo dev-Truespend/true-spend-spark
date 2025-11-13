@@ -94,7 +94,6 @@ export default function ResendTest() {
                     <p><strong>To:</strong> {result.to}</p>
                     <p><strong>Code (masked):</strong> {result.code}</p>
                     <p><strong>Sent at:</strong> {new Date(result.sentAt).toLocaleString()}</p>
-                    <p><strong>Resend ID:</strong> {result.resendId}</p>
                   </div>
                   <p className="text-xs text-muted-foreground mt-3">
                     ✅ Check your inbox at raj.yagateela@gmail.com (including spam folder)

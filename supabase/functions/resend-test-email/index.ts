@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@4.0.0";
+import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -58,7 +58,7 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`[Resend Test] Sending test email to ${ALLOWED_EMAIL}, code: ${testCode}`);
 
     // Send email via Resend
-    const emailResponse = await resend.emails.send({
+    const { error: emailError } = await resend.emails.send({
       from: "TrueSpend <noreply@truespend.org>",
       to: [ALLOWED_EMAIL],
       subject: "TrueSpend: Test OTP (Resend Path Verification)",
@@ -92,7 +92,11 @@ serve(async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log(`[Resend Test] Email sent successfully:`, emailResponse);
+    if (emailError) {
+      throw emailError;
+    }
+
+    console.log(`[Resend Test] Email sent successfully to ${ALLOWED_EMAIL}`);
 
     return new Response(
       JSON.stringify({
@@ -100,7 +104,6 @@ serve(async (req: Request): Promise<Response> => {
         code: testCode.slice(0, 3) + "***", // Mask last 3 digits in response
         sentAt,
         to: ALLOWED_EMAIL,
-        resendId: emailResponse.id,
       }),
       {
         status: 200,
