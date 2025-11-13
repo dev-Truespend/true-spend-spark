@@ -1,134 +1,111 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
-import { RefreshCw, AlertCircle } from "lucide-react";
+import { RefreshCw, AlertCircle, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Link } from "react-router-dom";
 
-const authSchema = z.object({
+const loginSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }).max(255),
 });
 
-type AuthFormValues = z.infer<typeof authSchema>;
+const signupSchema = z.object({
+  firstName: z.string().trim().min(1, "First name is required").max(100),
+  lastName: z.string().trim().min(1, "Last name is required").max(100),
+  email: z.string().trim().email("Invalid email address").max(255),
+  password: z.string().min(8, "Password must be at least 8 characters").max(255),
+  confirmPassword: z.string(),
+  agreeToTerms: z.boolean().refine(val => val === true, {
+    message: "You must agree to the Terms & Privacy Policy"
+  })
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"]
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, signOut, user, session, requiresEmailOTP, sendEmailOTP, verifyEmailOTP, setRequiresEmailOTP, setRequires2FA } = useAuth();
-  const { roles, hasRole, loading: roleLoading } = useUserRole();
+  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  // OTP state
-  const [otp, setOtp] = useState("");
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isResending, setIsResending] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(60);
-  const sentRef = useRef(false);
-  const oauthFlowHandledRef = useRef(false);
 
-  const loginForm = useForm<AuthFormValues>({
-    resolver: zodResolver(authSchema),
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
     },
   });
 
-  const signupForm = useForm<AuthFormValues>({
-    resolver: zodResolver(authSchema),
+  const signupForm = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
     defaultValues: {
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
+      confirmPassword: "",
+      agreeToTerms: false,
     },
   });
 
-  // Handle OAuth callback errors
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const error = params.get('error');
-    const errorDescription = params.get('error_description');
-    
-    if (error) {
-      toast({
-        title: "Authentication Error",
-        description: errorDescription || "Failed to authenticate with Google",
-        variant: "destructive",
-      });
-      
-      // Clean up URL
-      window.history.replaceState({}, '', '/auth');
-    }
-  }, [toast]);
-
-  // Handle Google OAuth callback -> Email OTP flow (inline)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const isOAuthCallback = params.has('oauth') || session?.user.app_metadata?.provider === 'google';
-    
-    if (user && session && isOAuthCallback && !requiresEmailOTP && !oauthFlowHandledRef.current) {
-      oauthFlowHandledRef.current = true;
-      setRequiresEmailOTP(true);
-      
-      sendEmailOTP().then(({ error }) => {
-        if (error) {
-          toast({
-            title: "Failed to send OTP",
-            description: error.message || "Could not send verification code",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Verification code sent",
-            description: "Check your email for the 6-digit code",
-          });
-        }
-      });
-    }
-  }, [user, session, requiresEmailOTP, sendEmailOTP, setRequiresEmailOTP, toast]);
-
-  // Countdown timer for OTP
-  useEffect(() => {
-    if (!requiresEmailOTP) return;
-    const timer = setInterval(() => {
-      setTimeRemaining((t) => (t > 0 ? t - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [requiresEmailOTP]);
-
-
-  const handleLogin = async (values: AuthFormValues) => {
+  const handleLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
     const { error } = await signIn(values.email, values.password);
     
     if (error) {
-      toast({
-        title: "Login failed",
-        description: error.message || "Invalid email or password",
-        variant: "destructive",
-      });
+      if (error.message?.includes('deleted') || error.message?.includes('not found')) {
+        toast({
+          title: "Account not found",
+          description: "This account no longer exists. Please sign up again.",
+          variant: "destructive",
+        });
+      } else if (error.message?.includes('expired') || error.message?.includes('unverified')) {
+        toast({
+          title: "Account expired",
+          description: "Your verification link expired. Please sign up again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login failed",
+          description: error.message || "Invalid email or password",
+          variant: "destructive",
+        });
+      }
       setIsLoading(false);
-    } else {
-      // Redirect to 2FA verification
-      setRequires2FA(true);
-      navigate("/auth/verify-2fa");
+      return;
     }
+
+    // MANDATORY: Redirect to dashboard
+    navigate('/dashboard');
   };
 
-  const handleSignup = async (values: AuthFormValues) => {
+  const handleSignup = async (values: SignupFormValues) => {
     setIsLoading(true);
-    const { error } = await signUp(values.email, values.password);
+    
+    const { error } = await signUp({
+      firstName: values.firstName,
+      lastName: values.lastName,
+      email: values.email,
+      password: values.password,
+    });
     
     if (error) {
       if (error.message?.includes("already registered")) {
@@ -145,89 +122,16 @@ export default function Auth() {
         });
       }
       setIsLoading(false);
-    } else {
-      toast({
-        title: "Account created!",
-        description: "You can now log in with your credentials.",
-      });
-      // Wait for roles to load, then redirect
-      // The useEffect will handle the redirect based on role
+      return;
     }
-  };
 
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otp.length !== 6) {
-      toast({
-        title: "Invalid code",
-        description: "Please enter a 6-digit code",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsVerifying(true);
-    const { error } = await verifyEmailOTP(otp);
-    setIsVerifying(false);
-    
-    if (error) {
-      toast({
-        title: "Invalid code",
-        description: error.message || "Please try again",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     toast({
-      title: "Verified!",
-      description: "Redirecting to dashboard...",
+      title: "Account created!",
+      description: "Check your email to verify your account.",
     });
-    
-    // Navigate based on role
-    if (!roleLoading) {
-      const destination = hasRole('admin') ? '/launcher' : '/dashboard';
-      navigate(destination);
-    }
-  };
 
-  const handleResendOTP = async () => {
-    setIsResending(true);
-    const { error } = await sendEmailOTP();
-    setIsResending(false);
-    
-    if (error) {
-      toast({
-        title: "Failed to resend",
-        description: error.message || "Please try again",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "New code sent",
-        description: "Check your email again",
-      });
-      setTimeRemaining(60);
-      setOtp("");
-    }
-  };
-
-
-  // Show "already signed in" panel if user exists and no OTP flow
-  const showAlreadySignedIn = user && !requiresEmailOTP && !oauthFlowHandledRef.current;
-
-  const handleContinueToDashboard = () => {
-    if (!roleLoading) {
-      if (hasRole('admin')) {
-        navigate("/launcher");
-      } else {
-        navigate("/dashboard");
-      }
-    }
-  };
-
-  const handleSwitchAccount = async () => {
-    await signOut();
+    // MANDATORY: Auto-login and redirect to dashboard
+    navigate('/dashboard');
   };
 
   const handleForceRefresh = async () => {
@@ -260,220 +164,204 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">TrueSpend v3.0</CardTitle>
-          <CardDescription>Project Management Dashboard</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {showAlreadySignedIn ? (
-            <div className="space-y-4 text-center">
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Already signed in</h3>
-                <p className="text-sm text-muted-foreground">
-                  You're signed in as <strong>{user.email}</strong>
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Button 
-                  onClick={handleContinueToDashboard} 
-                  className="w-full"
-                  disabled={roleLoading}
-                >
-                  Continue to Dashboard
-                </Button>
-                <Button 
-                  onClick={handleSwitchAccount} 
-                  variant="outline" 
-                  className="w-full"
-                >
-                  Sign out to switch accounts
-                </Button>
-              </div>
-            </div>
-          ) : requiresEmailOTP ? (
-            <div className="space-y-4">
-              <div className="text-center space-y-2">
-                <h3 className="text-lg font-semibold">Enter Verification Code</h3>
-                <p className="text-sm text-muted-foreground">
-                  Check your email and enter OTP to login
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Code sent to: <span className="font-semibold">{user?.email}</span>
-                </p>
-              </div>
-              
-              <form onSubmit={handleVerifyOTP} className="space-y-4">
-                <div>
-                  <Input
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
-                    placeholder="123456"
-                    inputMode="numeric"
-                    maxLength={6}
-                    className="text-center text-2xl tracking-widest"
-                    disabled={isVerifying}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>
-                    Expires in {Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, "0")}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="sm"
-                    disabled={isResending || timeRemaining > 0}
-                    onClick={handleResendOTP}
-                    className="h-auto p-0"
-                  >
-                    {isResending ? "Sending..." : timeRemaining > 0 ? `Resend in ${timeRemaining}s` : "Resend code"}
-                  </Button>
-                </div>
-                
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isVerifying || otp.length !== 6}
-                >
-                  {isVerifying ? "Verifying..." : "Verify Code"}
-                </Button>
-              </form>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-4 mb-6">
-                <GoogleSignInButton fullWidth />
-                
-                <div className="relative">
-                  <Separator />
-                  <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
-                    Or continue with email
-                  </span>
-                </div>
-              </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+      <div className="w-full max-w-md space-y-4">
+        {/* Back to Home Button */}
+        <Link to="/">
+          <Button variant="ghost" size="sm" className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </Button>
+        </Link>
 
-              <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="login">
-                  <Form {...loginForm}>
-                    <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-                      <FormField
-                        control={loginForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="email" 
-                                placeholder="your@email.com"
-                                disabled={isLoading}
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={loginForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Password</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="password"
-                                placeholder="••••••••"
-                                disabled={isLoading}
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? "Logging in..." : "Log In"}
-                      </Button>
-                    </form>
-                  </Form>
-                </TabsContent>
-                
-                <TabsContent value="signup">
-                  <Form {...signupForm}>
-                    <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
-                      <FormField
-                        control={signupForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="email" 
-                                placeholder="your@email.com"
-                                disabled={isLoading}
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+        <Card>
+          <CardHeader className="text-center space-y-2">
+            <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+              <span className="text-2xl">💳</span>
+            </div>
+            <CardTitle className="text-2xl">TrueSpend</CardTitle>
+            <CardDescription>Smart spending, verified rewards</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Google Sign In */}
+            <GoogleSignInButton fullWidth />
+            
+            <div className="relative">
+              <Separator />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                or continue with email
+              </span>
+            </div>
+
+            {/* Login/Signup Tabs */}
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signup">Create Account</TabsTrigger>
+              </TabsList>
+
+              {/* Login Tab */}
+              <TabsContent value="login" className="space-y-4 mt-4">
+                <Form {...loginForm}>
+                  <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+                    <FormField
+                      control={loginForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="you@example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? "Signing in..." : "Login"}
+                    </Button>
+                  </form>
+                </Form>
+              </TabsContent>
+
+              {/* Signup Tab */}
+              <TabsContent value="signup" className="space-y-4 mt-4">
+                <Form {...signupForm}>
+                  <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={signupForm.control}
-                        name="password"
+                        name="firstName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel>First Name</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="password"
-                                placeholder="••••••••"
-                                disabled={isLoading}
-                                {...field} 
-                              />
+                              <Input placeholder="John" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? "Creating account..." : "Sign Up"}
-                      </Button>
-                    </form>
-                  </Form>
-                </TabsContent>
-              </Tabs>
-            </>
-          )}
-          
-          <Alert className="mt-6 border-muted">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between">
-              <span className="text-sm">Not seeing updates?</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleForceRefresh}
-                className="gap-2"
-              >
-                <RefreshCw className="w-3 h-3" />
-                Force Refresh
-              </Button>
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+                      <FormField
+                        control={signupForm.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Last Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Doe" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={signupForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="you@example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signupForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signupForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirm Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signupForm.control}
+                      name="agreeToTerms"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="text-sm font-normal">
+                              I agree to the{" "}
+                              <Link to="/terms" className="text-primary hover:underline">
+                                Terms
+                              </Link>{" "}
+                              and{" "}
+                              <Link to="/privacy" className="text-primary hover:underline">
+                                Privacy Policy
+                              </Link>
+                            </FormLabel>
+                            <FormMessage />
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? "Creating account..." : "Create Account"}
+                    </Button>
+                  </form>
+                </Form>
+              </TabsContent>
+            </Tabs>
+            
+            {/* Force Refresh Button */}
+            <Alert className="border-muted">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between">
+                <span className="text-sm">Not seeing updates?</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleForceRefresh}
+                  className="gap-2"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Force Refresh
+                </Button>
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

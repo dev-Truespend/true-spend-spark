@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -19,10 +19,8 @@ export function GoogleSignInButton({
   fullWidth = false 
 }: GoogleSignInButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { signInWithGoogle, user, session, sendEmailOTP, setRequiresEmailOTP } = useAuth();
+  const { signInWithGoogle } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const location = useLocation();
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
