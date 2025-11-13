@@ -7,10 +7,14 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  requiresEmailOTP: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  sendEmailOTP: () => Promise<{ error: any; data?: any }>;
+  verifyEmailOTP: (code: string) => Promise<{ error: any }>;
+  setRequiresEmailOTP: (requires: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,6 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [requiresEmailOTP, setRequiresEmailOTP] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -78,11 +83,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setRequiresEmailOTP(false);
     navigate("/auth");
   };
 
+  const sendEmailOTP = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-email-otp', {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      return { error: null, data };
+    } catch (error: any) {
+      console.error('Error sending OTP:', error);
+      return { error };
+    }
+  };
+
+  const verifyEmailOTP = async (code: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-email-otp', {
+        body: { code },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        setRequiresEmailOTP(false);
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      console.error('Error verifying OTP:', error);
+      return { error };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      loading, 
+      requiresEmailOTP,
+      signIn, 
+      signUp, 
+      signInWithGoogle, 
+      signOut,
+      sendEmailOTP,
+      verifyEmailOTP,
+      setRequiresEmailOTP
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -356,6 +356,36 @@ export type Database = {
         }
         Relationships: []
       }
+      mfa_email_codes: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       milestones: {
         Row: {
           created_at: string | null
@@ -905,6 +935,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           id: string
+          mfa_email_enabled: boolean | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
@@ -912,6 +943,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
+          mfa_email_enabled?: boolean | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
@@ -919,6 +951,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
+          mfa_email_enabled?: boolean | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
@@ -929,6 +962,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_mfa_codes: { Args: never; Returns: number }
       cleanup_old_csp_violations: { Args: never; Returns: number }
       cleanup_old_rate_limits: { Args: never; Returns: number }
       get_user_roles: {

@@ -23,7 +23,7 @@ type AuthFormValues = z.infer<typeof authSchema>;
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, signInWithGoogle, user } = useAuth();
+  const { signIn, signUp, signInWithGoogle, user, sendEmailOTP, setRequiresEmailOTP, session } = useAuth();
   const { roles, hasRole, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -142,6 +142,41 @@ export default function Auth() {
     }
     // If successful, Google will redirect and Supabase will handle the session
   };
+
+  // Handle OTP flow after Google OAuth
+  useEffect(() => {
+    if (user && session) {
+      // Check if user logged in with OAuth (Google)
+      const isOAuthUser = session.user.app_metadata.provider === 'google';
+      
+      if (isOAuthUser) {
+        // Trigger OTP flow
+        setRequiresEmailOTP(true);
+        setIsLoading(true);
+        
+        sendEmailOTP().then(({ error, data }) => {
+          setIsLoading(false);
+          
+          if (error) {
+            toast({
+              title: "Failed to send OTP",
+              description: error.message || "Could not send verification code",
+              variant: "destructive",
+            });
+            return;
+          }
+          
+          toast({
+            title: "Verification code sent",
+            description: `Check your email for the 6-digit code`,
+          });
+          
+          // Redirect to OTP verification page
+          navigate("/auth/verify-email-otp");
+        });
+      }
+    }
+  }, [user, session]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

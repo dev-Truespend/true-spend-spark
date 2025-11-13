@@ -22,6 +22,7 @@ import Testing from "./pages/dashboard/Testing";
 import Security from "./pages/dashboard/Security";
 import Geofences from "./pages/dashboard/Geofences";
 import Auth from "./pages/Auth";
+import VerifyEmailOTP from "./pages/VerifyEmailOTP";
 import NotFound from "./pages/NotFound";
 import { PWAInstallPrompt } from "./components/pwa/PWAInstallPrompt";
 import { OfflineIndicator } from "./components/pwa/OfflineIndicator";
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="/" element={<Home />} />
               
               <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/verify-email-otp" element={<VerifyEmailOTP />} />
               
               {/* User Dashboard */}
               <Route 
