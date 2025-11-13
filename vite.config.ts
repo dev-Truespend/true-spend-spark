@@ -9,14 +9,28 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 const swVersionPlugin = () => ({
   name: 'sw-version-injector',
   buildStart() {
-    // Update meta.json with version info
-    const buildId = new Date().toISOString().replace(/[-:]/g, '').split('.')[0].replace('T', 'T');
-    const timestamp = Date.now();
+    // Auto-increment version based on timestamp
+    const now = new Date();
+    const buildId = now.toISOString().replace(/[-:]/g, '').split('.')[0].replace('T', 'T');
+    const timestamp = now.getTime();
+    
+    // Auto semantic versioning: 1.0.X where X is incremented per build
+    // Read current version if exists, else start at 1.0.0
+    let version = "1.0.0";
+    try {
+      const currentMeta = JSON.parse(readFileSync('public/meta.json', 'utf-8'));
+      if (currentMeta.version) {
+        const [major, minor, patch] = currentMeta.version.split('.').map(Number);
+        version = `${major}.${minor}.${patch + 1}`;
+      }
+    } catch {
+      // First build, use 1.0.0
+    }
     
     const meta = {
-      version: "1.0.1",
+      version,
       buildId,
-      commit: process.env.VERCEL_GIT_COMMIT_SHA || 'unified-login-button',
+      commit: process.env.VERCEL_GIT_COMMIT_SHA || `build-${buildId}`,
       timestamp
     };
     
