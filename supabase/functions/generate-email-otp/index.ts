@@ -28,20 +28,27 @@ serve(async (req) => {
 
     console.log(`Generating OTP for user: ${user.id}`);
 
-    // Rate limiting: Check if user has requested OTP in last 1 minute
+    // Rate limiting: Check if user has requested OTP in last 15 minutes (max 3 requests)
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
     const { data: recentCodes } = await supabase
       .from('mfa_email_codes')
       .select('created_at')
       .eq('user_id', user.id)
-      .gt('created_at', new Date(Date.now() - 60000).toISOString())
-      .order('created_at', { ascending: false })
-      .limit(1);
+      .gt('created_at', fifteenMinutesAgo)
+      .order('created_at', { ascending: false });
 
-    if (recentCodes && recentCodes.length > 0) {
+    if (recentCodes && recentCodes.length >= 3) {
+      const oldestRequestTime = new Date(recentCodes[recentCodes.length - 1].created_at).getTime();
+      const resetTime = oldestRequestTime + (15 * 60 * 1000);
+      const remainingSeconds = Math.ceil((resetTime - Date.now()) / 1000);
+      const remainingMinutes = Math.ceil(remainingSeconds / 60);
+      
       return new Response(
         JSON.stringify({ 
-          error: 'Please wait 1 minute before requesting a new code',
-          remainingSeconds: Math.ceil((60000 - (Date.now() - new Date(recentCodes[0].created_at).getTime())) / 1000)
+          error: `Too many requests. Please wait ${remainingMinutes} minute(s) before requesting a new code.`,
+          remainingSeconds,
+          maxRequests: 3,
+          windowMinutes: 15
         }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -102,7 +109,7 @@ serve(async (req) => {
     `;
 
     const { error: emailError } = await resend.emails.send({
-      from: 'TrueSpend <onboarding@resend.dev>',
+      from: 'TrueSpend <noreply@truespend.org>',
       to: [user.email!],
       subject: 'Your TrueSpend Verification Code',
       html: emailHtml,
