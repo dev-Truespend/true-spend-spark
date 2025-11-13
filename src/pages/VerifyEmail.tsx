@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 type VerificationStatus = 'verifying' | 'success' | 'invalid' | 'expired' | 'deleted';
 
@@ -12,6 +13,7 @@ export default function VerifyEmail() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<VerificationStatus>('verifying');
   const [message, setMessage] = useState('');
+  const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -56,6 +58,44 @@ export default function VerifyEmail() {
     }
   };
 
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error('Please log in to resend verification email');
+        navigate('/auth');
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke('send-verification-email', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        const errorMsg = error.message || 'Failed to resend verification email';
+        if (errorMsg.includes('Rate limit exceeded')) {
+          toast.error(errorMsg);
+        } else if (errorMsg.includes('already verified')) {
+          toast.info('Your email is already verified!');
+          navigate('/auth');
+        } else {
+          toast.error(errorMsg);
+        }
+      } else {
+        toast.success('Verification email sent! Please check your inbox.');
+      }
+    } catch (err: any) {
+      console.error('Resend error:', err);
+      toast.error('An error occurred. Please try again.');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <Card className="w-full max-w-md">
@@ -93,17 +133,25 @@ export default function VerifyEmail() {
             </Button>
           )}
           
-          {(status === 'expired' || status === 'deleted') && (
+          {(status === 'expired' || status === 'invalid') && (
             <div className="space-y-2">
-              <Button onClick={() => navigate('/auth')} className="w-full">
-                {status === 'deleted' ? 'Sign Up Again' : 'Go to Login'}
+              <Button 
+                onClick={handleResendVerification} 
+                disabled={isResending}
+                className="w-full"
+              >
+                {isResending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Resend Verification Email
+              </Button>
+              <Button onClick={() => navigate('/auth')} variant="outline" className="w-full">
+                Go to Login
               </Button>
             </div>
           )}
           
-          {status === 'invalid' && (
-            <Button onClick={() => navigate('/auth')} variant="outline" className="w-full">
-              Go to Login
+          {status === 'deleted' && (
+            <Button onClick={() => navigate('/auth')} className="w-full">
+              Sign Up Again
             </Button>
           )}
         </CardContent>
