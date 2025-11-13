@@ -4,11 +4,10 @@ const CACHE_NAME = `truespend-static-${CACHE_VERSION}`;
 const API_CACHE_NAME = `truespend-api-${CACHE_VERSION}`;
 const RUNTIME_CACHE_NAME = `truespend-runtime-${CACHE_VERSION}`;
 
+// Only cache hashed assets - HTML should always be fresh
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/src/main.tsx',
-  '/src/index.css',
+  // Do NOT cache HTML/index - users need latest version
+  // Only cache hashed JS/CSS files which change with each build
 ];
 
 // Cache configuration
@@ -159,8 +158,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets - Cache first with background update
-  if (STATIC_ASSETS.includes(url.pathname) || url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+  // Static assets - Cache ONLY hashed files (cache-busted assets)
+  // Do NOT cache HTML or non-hashed files
+  const isHashedAsset = /\/assets\/[^/]+-[a-f0-9]+\.(js|css|png|jpg|svg|woff2?)$/i.test(url.pathname);
+  
+  if (isHashedAsset) {
     event.respondWith(
       caches.open(CACHE_NAME).then(async (cache) => {
         const cachedResponse = await cache.match(request);

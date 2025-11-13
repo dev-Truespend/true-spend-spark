@@ -23,7 +23,7 @@ type AuthFormValues = z.infer<typeof authSchema>;
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, user, session, requiresEmailOTP, sendEmailOTP, verifyEmailOTP, setRequiresEmailOTP } = useAuth();
+  const { signIn, signUp, user, session, requiresEmailOTP, sendEmailOTP, verifyEmailOTP, setRequiresEmailOTP, setRequires2FA } = useAuth();
   const { roles, hasRole, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -123,12 +123,9 @@ export default function Auth() {
       });
       setIsLoading(false);
     } else {
-      toast({
-        title: "Welcome back!",
-        description: "You've successfully logged in.",
-      });
-      // Wait for roles to load, then redirect
-      // The useEffect will handle the redirect based on role
+      // Redirect to 2FA verification
+      setRequires2FA(true);
+      navigate("/auth/verify-2fa");
     }
   };
 

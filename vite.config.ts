@@ -32,6 +32,10 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
+        // Cache-busting: hashed filenames for long-term caching
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
         manualChunks: {
           vendor: ['react', 'react-dom', 'react/jsx-runtime', '@tanstack/react-query'],
         },

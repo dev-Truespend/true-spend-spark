@@ -8,13 +8,19 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   requiresEmailOTP: boolean;
+  requires2FA: boolean;
+  verified2FA: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   sendEmailOTP: () => Promise<{ error: any; data?: any }>;
+  send2FAOTP: (method: 'email' | 'sms') => Promise<{ error: any; data?: any }>;
   verifyEmailOTP: (code: string) => Promise<{ error: any }>;
+  verify2FAOTP: (code: string) => Promise<{ error: any }>;
   setRequiresEmailOTP: (requires: boolean) => void;
+  setRequires2FA: (requires: boolean) => void;
+  setVerified2FA: (verified: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +30,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [requiresEmailOTP, setRequiresEmailOTP] = useState(false);
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [verified2FA, setVerified2FA] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -84,6 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setRequiresEmailOTP(false);
+    setRequires2FA(false);
+    setVerified2FA(false);
     navigate("/auth");
   };
 
@@ -100,6 +110,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: null, data };
     } catch (error: any) {
       console.error('Error sending OTP:', error);
+      return { error };
+    }
+  };
+
+  const send2FAOTP = async (method: 'email' | 'sms') => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-email-otp', {
+        body: { method },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      return { error: null, data };
+    } catch (error: any) {
+      console.error('Error sending 2FA OTP:', error);
       return { error };
     }
   };
@@ -126,19 +154,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const verify2FAOTP = async (code: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-email-otp', {
+        body: { code },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        setRequires2FA(false);
+        setVerified2FA(true);
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      console.error('Error verifying 2FA OTP:', error);
+      return { error };
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
       session, 
       loading, 
       requiresEmailOTP,
+      requires2FA,
+      verified2FA,
       signIn, 
       signUp, 
       signInWithGoogle, 
       signOut,
       sendEmailOTP,
+      send2FAOTP,
       verifyEmailOTP,
-      setRequiresEmailOTP
+      verify2FAOTP,
+      setRequiresEmailOTP,
+      setRequires2FA,
+      setVerified2FA
     }}>
       {children}
     </AuthContext.Provider>

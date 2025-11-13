@@ -7,10 +7,11 @@ type AppRole = 'admin' | 'developer' | 'user';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireRole?: AppRole | AppRole[];
+  redirectTo?: string;
 }
 
-export function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
-  const { user, loading: authLoading } = useAuth();
+export function ProtectedRoute({ children, requireRole, redirectTo }: ProtectedRouteProps) {
+  const { user, loading: authLoading, verified2FA, requires2FA } = useAuth();
   const { hasRole, loading: roleLoading } = useUserRole();
 
   if (authLoading || roleLoading) {
@@ -25,7 +26,13 @@ export function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    const destination = redirectTo || window.location.pathname;
+    return <Navigate to={`/auth?redirectTo=${encodeURIComponent(destination)}`} replace />;
+  }
+
+  // Check 2FA verification for protected routes
+  if (requires2FA || !verified2FA) {
+    return <Navigate to="/auth/verify-2fa" replace />;
   }
 
   if (requireRole) {

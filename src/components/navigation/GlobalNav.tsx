@@ -1,8 +1,16 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
-import { Settings, LayoutDashboard, BarChart3, Globe, Home } from 'lucide-react';
+import { Settings, LayoutDashboard, BarChart3, Globe, Home, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator 
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const navItems = [
   { id: 'home', label: 'Home', route: '/', icon: Home, roles: [] as string[], publicOnly: true },
@@ -14,8 +22,9 @@ const navItems = [
 
 export function GlobalNav() {
   const location = useLocation();
-  const { roles } = useUserRole();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { roles, hasRole } = useUserRole();
+  const { user, signOut } = useAuth();
 
   if (location.pathname === '/auth') return null;
 
@@ -36,7 +45,7 @@ export function GlobalNav() {
       <div className="container mx-auto px-6">
         <div className="flex items-center gap-6 h-14">
           <Link to="/" className="font-bold text-lg">TrueSpend</Link>
-          <nav className="flex gap-2 ml-auto">
+          <nav className="flex gap-2 ml-auto items-center">
             {accessibleItems.map(item => {
               const Icon = item.icon;
               const isActive = location.pathname.startsWith(item.route) && item.route !== '/' 
@@ -55,6 +64,41 @@ export function GlobalNav() {
                 </Link>
               );
             })}
+            
+            {!user ? (
+              <>
+                <Button onClick={() => navigate('/auth')} variant="ghost" size="sm">
+                  Sign In
+                </Button>
+                <Button onClick={() => navigate('/auth')} size="sm">
+                  Sign Up
+                </Button>
+              </>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <Avatar className="w-6 h-6">
+                      <AvatarFallback className="text-xs">
+                        {user.email?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden md:inline">{user.email}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate(hasRole('admin') ? '/launcher' : '/dashboard')}>
+                    <LayoutDashboard className="w-4 h-4 mr-2" />
+                    My Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </nav>
         </div>
       </div>
