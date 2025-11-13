@@ -52,10 +52,10 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <div className="w-full max-w-md space-y-4">
-        <Link to="/auth">
+        <Link to="/">
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back to Login
+            Back to Home
           </Button>
         </Link>
 

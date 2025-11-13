@@ -1,6 +1,6 @@
 {
-  "version": "1.0.2",
-  "buildId": "20251113T1235",
-  "commit": "remove-home-nav-button",
-  "timestamp": 1731467700000
+  "version": "1.0.3",
+  "buildId": "20251113T1554",
+  "commit": "fix-auth-flow-and-navigation",
+  "timestamp": 1731514440000
 }
