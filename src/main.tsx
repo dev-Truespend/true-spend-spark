@@ -11,11 +11,11 @@ if ('serviceWorker' in navigator) {
         .then((registration) => {
           console.log('[PWA] Service Worker registered:', registration);
           
-          // Force check for updates every 30 seconds (aggressive)
+          // Force check for updates every 10 seconds (aggressive)
           setInterval(() => {
             registration.update();
             console.log('[PWA] 🔍 Checking for updates...');
-          }, 30000);
+          }, 10000);
 
           // Listen for SW activation messages (force reload)
           navigator.serviceWorker.addEventListener('message', (event) => {

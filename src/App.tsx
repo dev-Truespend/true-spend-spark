@@ -36,8 +36,10 @@ import { RateLimitStatus } from "./components/api/RateLimitStatus";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      gcTime: 1000 * 60 * 60 * 24, // 24 hours
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 5, // 5 minutes (reduced from 24 hours)
+      staleTime: 1000 * 30, // 30 seconds (reduced from 5 minutes)
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
     },
   },
 });
