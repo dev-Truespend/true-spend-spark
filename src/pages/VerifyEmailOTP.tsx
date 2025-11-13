@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,8 @@ export default function VerifyEmailOTP() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(300); // 5 minutes
-  const { user, verifyEmailOTP, sendEmailOTP, requiresEmailOTP } = useAuth();
+  const { user, verifyEmailOTP, sendEmailOTP, requiresEmailOTP, signOut } = useAuth();
+  const { hasRole, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -59,8 +61,16 @@ export default function VerifyEmailOTP() {
     }
 
     toast.success("Verification successful! Redirecting...");
+    
+    // Navigate to role-based destination
     setTimeout(() => {
-      navigate("/");
+      if (!roleLoading) {
+        if (hasRole('admin')) {
+          navigate("/launcher");
+        } else {
+          navigate("/dashboard");
+        }
+      }
     }, 1000);
   };
 

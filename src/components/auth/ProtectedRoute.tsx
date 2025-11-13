@@ -31,7 +31,7 @@ export function ProtectedRoute({ children, requireRole, redirectTo }: ProtectedR
   }
 
   // Check 2FA verification for protected routes
-  if (requires2FA || !verified2FA) {
+  if (requires2FA && !verified2FA) {
     return <Navigate to="/auth/verify-2fa" replace />;
   }
 

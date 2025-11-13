@@ -23,7 +23,7 @@ type AuthFormValues = z.infer<typeof authSchema>;
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, user, session, requiresEmailOTP, sendEmailOTP, verifyEmailOTP, setRequiresEmailOTP, setRequires2FA } = useAuth();
+  const { signIn, signUp, signOut, user, session, requiresEmailOTP, sendEmailOTP, verifyEmailOTP, setRequiresEmailOTP, setRequires2FA } = useAuth();
   const { roles, hasRole, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -34,6 +34,7 @@ export default function Auth() {
   const [isResending, setIsResending] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(300);
   const sentRef = useRef(false);
+  const oauthFlowHandledRef = useRef(false);
 
   const loginForm = useForm<AuthFormValues>({
     resolver: zodResolver(authSchema),
@@ -69,11 +70,15 @@ export default function Auth() {
     }
   }, [toast]);
 
-  // Trigger OTP sending after Google OAuth
+  // Handle Google OAuth callback -> Email OTP flow
   useEffect(() => {
-    if (user && session?.user.app_metadata?.provider === 'google' && !requiresEmailOTP && !sentRef.current) {
-      sentRef.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const isOAuthCallback = params.has('oauth') || session?.user.app_metadata?.provider === 'google';
+    
+    if (user && session && isOAuthCallback && !requiresEmailOTP && !oauthFlowHandledRef.current) {
+      oauthFlowHandledRef.current = true;
       setRequiresEmailOTP(true);
+      
       sendEmailOTP().then(({ error }) => {
         if (error) {
           toast({
@@ -87,9 +92,12 @@ export default function Auth() {
             description: "Check your email for the 6-digit code",
           });
         }
+        
+        // Navigate to dedicated OTP page
+        navigate('/auth/verify-email-otp', { replace: true });
       });
     }
-  }, [user, session, requiresEmailOTP, sendEmailOTP, setRequiresEmailOTP, toast]);
+  }, [user, session, requiresEmailOTP, sendEmailOTP, setRequiresEmailOTP, toast, navigate]);
 
   // Countdown timer for OTP
   useEffect(() => {
@@ -100,16 +108,6 @@ export default function Auth() {
     return () => clearInterval(timer);
   }, [requiresEmailOTP]);
 
-  // Redirect if already logged in based on role (only if OTP not required)
-  useEffect(() => {
-    if (user && !requiresEmailOTP && !roleLoading) {
-      if (hasRole('admin')) {
-        navigate("/launcher");
-      } else {
-        navigate("/dashboard");
-      }
-    }
-  }, [user, requiresEmailOTP, hasRole, roleLoading, navigate]);
 
   const handleLogin = async (values: AuthFormValues) => {
     setIsLoading(true);
@@ -210,6 +208,23 @@ export default function Auth() {
   };
 
 
+  // Show "already signed in" panel if user exists and no OTP flow
+  const showAlreadySignedIn = user && !requiresEmailOTP && !oauthFlowHandledRef.current;
+
+  const handleContinueToDashboard = () => {
+    if (!roleLoading) {
+      if (hasRole('admin')) {
+        navigate("/launcher");
+      } else {
+        navigate("/dashboard");
+      }
+    }
+  };
+
+  const handleSwitchAccount = async () => {
+    await signOut();
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -218,7 +233,33 @@ export default function Auth() {
           <CardDescription>Project Management Dashboard</CardDescription>
         </CardHeader>
         <CardContent>
-          {requiresEmailOTP ? (
+          {showAlreadySignedIn ? (
+            <div className="space-y-4 text-center">
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">Already signed in</h3>
+                <p className="text-sm text-muted-foreground">
+                  You're signed in as <strong>{user.email}</strong>
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Button 
+                  onClick={handleContinueToDashboard} 
+                  className="w-full"
+                  disabled={roleLoading}
+                >
+                  Continue to Dashboard
+                </Button>
+                <Button 
+                  onClick={handleSwitchAccount} 
+                  variant="outline" 
+                  className="w-full"
+                >
+                  Sign out to switch accounts
+                </Button>
+              </div>
+            </div>
+          ) : requiresEmailOTP ? (
             <div className="space-y-4">
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-semibold">Enter Verification Code</h3>

@@ -39,19 +39,6 @@ export function GoogleSignInButton({
     // If successful, Google will redirect and Supabase will handle the session
   };
 
-  // Handle 2FA redirect after Google OAuth
-  useEffect(() => {
-    if (user && session) {
-      // Check if user logged in with OAuth (Google)
-      const isOAuthUser = session.user.app_metadata.provider === 'google';
-      
-      if (isOAuthUser) {
-        // Redirect to 2FA verification page
-        setRequiresEmailOTP(true);
-        navigate("/auth/verify-2fa");
-      }
-    }
-  }, [user, session, setRequiresEmailOTP, navigate]);
 
   return (
     <Button 
