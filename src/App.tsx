@@ -24,6 +24,7 @@ import Geofences from "./pages/dashboard/Geofences";
 import Auth from "./pages/Auth";
 import Verify2FA from "./pages/Verify2FA";
 import VerifyEmailOTP from "./pages/VerifyEmailOTP";
+import ResendTest from "./pages/ResendTest";
 import NotFound from "./pages/NotFound";
 import { PWAInstallPrompt } from "./components/pwa/PWAInstallPrompt";
 import { OfflineIndicator } from "./components/pwa/OfflineIndicator";
@@ -60,9 +61,10 @@ const App = () => (
               {/* Public Home Page */}
               <Route path="/" element={<Home />} />
               
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/auth/verify-2fa" element={<Verify2FA />} />
-              <Route path="/auth/verify-email-otp" element={<VerifyEmailOTP />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/verify-2fa" element={<Verify2FA />} />
+            <Route path="/auth/verify-email-otp" element={<VerifyEmailOTP />} />
+            <Route path="/resend-test" element={<ResendTest />} />
               
               {/* User Dashboard */}
               <Route 
