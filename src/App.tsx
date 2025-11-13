@@ -44,6 +44,8 @@ const queryClient = new QueryClient({
   },
 });
 
+const PWA_ENABLED = import.meta.env.VITE_PWA_ENABLED === 'true';
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -52,10 +54,10 @@ const App = () => (
           <Toaster />
           <Sonner />
           <CSPViolationReporter />
-          <ServiceWorkerUpdatePrompt />
-          <PWAInstallPrompt />
-          <OfflineIndicator />
-          <SyncIndicator />
+          {PWA_ENABLED && <ServiceWorkerUpdatePrompt />}
+          {PWA_ENABLED && <PWAInstallPrompt />}
+          {PWA_ENABLED && <OfflineIndicator />}
+          {PWA_ENABLED && <SyncIndicator />}
           <GlobalNav />
           <RateLimitStatus />
           <div className="pt-14">
