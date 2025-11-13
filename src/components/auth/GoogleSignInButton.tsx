@@ -39,42 +39,19 @@ export function GoogleSignInButton({
     // If successful, Google will redirect and Supabase will handle the session
   };
 
-  // Handle OTP flow after Google OAuth
+  // Handle 2FA redirect after Google OAuth
   useEffect(() => {
     if (user && session) {
       // Check if user logged in with OAuth (Google)
       const isOAuthUser = session.user.app_metadata.provider === 'google';
       
       if (isOAuthUser) {
-        // Trigger OTP flow
+        // Redirect to 2FA verification page
         setRequiresEmailOTP(true);
-        setIsLoading(true);
-        
-        sendEmailOTP().then(({ error, data }) => {
-          setIsLoading(false);
-          
-          if (error) {
-            toast({
-              title: "Failed to send OTP",
-              description: error.message || "Could not send verification code",
-              variant: "destructive",
-            });
-            return;
-          }
-          
-          toast({
-            title: "Verification code sent",
-            description: `Check your email for the 6-digit code`,
-          });
-          
-          // Navigate to auth page if not already there
-          if (location.pathname !== "/auth") {
-            navigate("/auth");
-          }
-        });
+        navigate("/auth/verify-2fa");
       }
     }
-  }, [user, session, sendEmailOTP, setRequiresEmailOTP, toast, navigate, location]);
+  }, [user, session, setRequiresEmailOTP, navigate]);
 
   return (
     <Button 
