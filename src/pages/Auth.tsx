@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -41,9 +41,16 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Auto-redirect if user is already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -73,13 +80,36 @@ export default function Auth() {
       if (error.message?.includes('deleted') || error.message?.includes('not found')) {
         toast({
           title: "Account not found",
-          description: "This account no longer exists. Please sign up again.",
+          description: (
+            <span>
+              No account found with this email.{" "}
+              <button
+                onClick={() => document.querySelector<HTMLButtonElement>('[value="signup"]')?.click()}
+                className="underline font-semibold"
+              >
+                Want to sign up?
+              </button>
+            </span>
+          ),
           variant: "destructive",
         });
       } else if (error.message?.includes('expired') || error.message?.includes('unverified')) {
         toast({
           title: "Account expired",
           description: "Your verification link expired. Please sign up again.",
+          variant: "destructive",
+        });
+      } else if (error.message?.includes('Invalid login credentials')) {
+        toast({
+          title: "Incorrect password",
+          description: (
+            <span>
+              Wrong password for this account.{" "}
+              <Link to="/forgot-password" className="underline font-semibold">
+                Forgot your password?
+              </Link>
+            </span>
+          ),
           variant: "destructive",
         });
       } else {
@@ -93,6 +123,11 @@ export default function Auth() {
       return;
     }
 
+    toast({
+      title: "Welcome back!",
+      description: "Successfully logged in.",
+    });
+    
     // MANDATORY: Redirect to dashboard
     navigate('/dashboard');
   };
@@ -108,10 +143,20 @@ export default function Auth() {
     });
     
     if (error) {
-      if (error.message?.includes("already registered")) {
+      if (error.message?.includes("already registered") || error.message?.includes("already been registered")) {
         toast({
           title: "Account exists",
-          description: "This email is already registered. Please log in instead.",
+          description: (
+            <span>
+              This email is already registered.{" "}
+              <button
+                onClick={() => document.querySelector<HTMLButtonElement>('[value="login"]')?.click()}
+                className="underline font-semibold"
+              >
+                Log in instead?
+              </button>
+            </span>
+          ),
           variant: "destructive",
         });
       } else {
@@ -126,8 +171,8 @@ export default function Auth() {
     }
 
     toast({
-      title: "Account created!",
-      description: "Check your email to verify your account.",
+      title: "Welcome to TrueSpend!",
+      description: "Your account has been created. Check your email to verify.",
     });
 
     // MANDATORY: Auto-login and redirect to dashboard
@@ -222,7 +267,15 @@ export default function Auth() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Password</FormLabel>
+                            <Link 
+                              to="/forgot-password" 
+                              className="text-xs text-muted-foreground hover:text-primary"
+                            >
+                              Forgot password?
+                            </Link>
+                          </div>
                           <FormControl>
                             <Input type="password" placeholder="••••••••" {...field} />
                           </FormControl>
