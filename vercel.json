@@ -84,8 +84,8 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!assets|sw\\.js|robots\\.txt|sitemap\\.xml|manifest\\.json|favicon\\.ico).*)",
-      "destination": "/?v=20251113T0030"
+      "source": "/((?!assets|sw\\.js|robots\\.txt|sitemap\\.xml|manifest\\.json|favicon\\.ico|meta\\.json).*)",
+      "destination": "/?v=20251113T1230"
     }
   ]
 }
