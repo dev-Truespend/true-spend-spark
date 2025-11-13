@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Receipt, TrendingUp, Shield, Smartphone } from "lucide-react";
-import { VersionDisplay } from "@/components/version/VersionDisplay";
 
 export default function Home() {
   return (
@@ -10,9 +9,8 @@ export default function Home() {
       {/* Hero Section */}
       <div className="container mx-auto px-6 py-20">
         <div className="text-center max-w-3xl mx-auto">
-          <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent flex items-center justify-center gap-2">
+          <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             TrueSpend
-            <VersionDisplay />
           </h1>
           <p className="text-xl text-muted-foreground mb-8">
             Smart expense tracking that works everywhere. Capture receipts, track spending, and manage budgets with ease.

@@ -14,9 +14,9 @@ const swVersionPlugin = () => ({
     const timestamp = Date.now();
     
     const meta = {
-      version: "1.0.0",
+      version: "1.0.1",
       buildId,
-      commit: process.env.VERCEL_GIT_COMMIT_SHA || 'local-build',
+      commit: process.env.VERCEL_GIT_COMMIT_SHA || 'unified-login-button',
       timestamp
     };
     
