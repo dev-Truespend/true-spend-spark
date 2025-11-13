@@ -361,6 +361,11 @@ export default function Auth() {
             </Alert>
           </CardContent>
         </Card>
+        
+        {/* Build Version Stamp for Diagnostics */}
+        <div className="mt-4 text-center text-xs text-muted-foreground/50">
+          v{import.meta.env.MODE}-{new Date().toISOString().split('T')[0].replace(/-/g, '')}
+        </div>
       </div>
     </div>
   );
