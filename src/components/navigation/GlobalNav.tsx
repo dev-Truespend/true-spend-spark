@@ -3,6 +3,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
 import { Settings, LayoutDashboard, BarChart3, Globe, Home, User, LogOut, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { VersionDisplay } from '@/components/version/VersionDisplay';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -81,7 +82,10 @@ export function GlobalNav() {
     <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
       <div className="container mx-auto px-6">
         <div className="flex items-center gap-6 h-14">
-          <Link to={user ? "/dashboard" : "/auth"} className="font-bold text-lg">TrueSpend</Link>
+          <Link to={user ? "/dashboard" : "/auth"} className="font-bold text-lg flex items-center gap-2">
+            TrueSpend
+            <VersionDisplay />
+          </Link>
           <nav className="flex gap-2 ml-auto items-center">
             {accessibleItems.map(item => {
               const Icon = item.icon;
