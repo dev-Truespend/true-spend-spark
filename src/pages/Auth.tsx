@@ -13,6 +13,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { RefreshCw, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
@@ -228,6 +230,35 @@ export default function Auth() {
     await signOut();
   };
 
+  const handleForceRefresh = async () => {
+    try {
+      toast({
+        title: "Clearing cache...",
+        description: "This will refresh the page",
+      });
+      
+      // Unregister all service workers
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(r => r.unregister()));
+      
+      // Clear all caches
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+      
+      console.log('[Force Refresh] Cleared all caches and service workers');
+      
+      // Reload after a brief delay
+      setTimeout(() => window.location.reload(), 500);
+    } catch (error) {
+      console.error('[Force Refresh] Failed:', error);
+      toast({
+        title: "Failed to clear cache",
+        description: "Please try manually clearing your browser cache",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -425,6 +456,22 @@ export default function Auth() {
               </Tabs>
             </>
           )}
+          
+          <Alert className="mt-6 border-muted">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span className="text-sm">Not seeing updates?</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleForceRefresh}
+                className="gap-2"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Force Refresh
+              </Button>
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     </div>
