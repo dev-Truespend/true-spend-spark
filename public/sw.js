@@ -121,6 +121,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // NEVER cache HTML - always fetch fresh from network/CDN
+  const isHTMLRequest = 
+    request.mode === 'navigate' ||
+    url.pathname === '/' ||
+    url.pathname.endsWith('.html') ||
+    (request.headers.get('Accept') || '').includes('text/html');
+  
+  if (isHTMLRequest) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   // API requests - Stale-while-revalidate with expiration
   if (url.pathname.includes('/rest/v1/') || url.pathname.includes('/auth/v1/')) {
     event.respondWith(
@@ -207,31 +219,42 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Runtime cache - For images and other dynamic assets
-  event.respondWith(
-    caches.open(RUNTIME_CACHE_NAME).then(async (cache) => {
-      const cachedResponse = await cache.match(request);
+  // Runtime cache - ONLY for images and fonts
+  const isImageOrFont = 
+    request.destination === 'image' || 
+    request.destination === 'font' ||
+    /\.(png|jpg|jpeg|gif|svg|webp|ico|woff2?|ttf|eot)$/i.test(url.pathname);
+  
+  if (isImageOrFont) {
+    event.respondWith(
+      caches.open(RUNTIME_CACHE_NAME).then(async (cache) => {
+        const cachedResponse = await cache.match(request);
 
-      if (cachedResponse) {
-        const expired = await isCacheExpired(cache, request, CACHE_CONFIG.maxAge.runtime);
-        if (!expired) {
-          return cachedResponse;
+        if (cachedResponse) {
+          const expired = await isCacheExpired(cache, request, CACHE_CONFIG.maxAge.runtime);
+          if (!expired) {
+            return cachedResponse;
+          }
         }
-      }
 
-      try {
-        const response = await fetch(request);
-        if (response.ok && request.method === 'GET') {
-          const responseToCache = addCacheTimestamp(response.clone());
-          await cache.put(request, responseToCache);
-          await limitCacheSize(RUNTIME_CACHE_NAME, CACHE_CONFIG.maxEntries.runtime);
+        try {
+          const response = await fetch(request);
+          if (response.ok && request.method === 'GET') {
+            const responseToCache = addCacheTimestamp(response.clone());
+            await cache.put(request, responseToCache);
+            await limitCacheSize(RUNTIME_CACHE_NAME, CACHE_CONFIG.maxEntries.runtime);
+          }
+          return response;
+        } catch (error) {
+          return cachedResponse || new Response('Offline', { status: 503 });
         }
-        return response;
-      } catch (error) {
-        return cachedResponse || new Response('Offline', { status: 503 });
-      }
-    })
-  );
+      })
+    );
+    return;
+  }
+
+  // All other requests - fetch directly from network (no caching)
+  event.respondWith(fetch(request));
 });
 
 // Background sync for offline actions with retry logic
