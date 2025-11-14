@@ -14,6 +14,7 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
+import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { RefreshCw, AlertCircle, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
@@ -346,7 +347,10 @@ export default function Auth() {
                     />
                     
                     {signupForm.watch("password") && (
-                      <PasswordRequirements password={signupForm.watch("password")} />
+                      <>
+                        <PasswordStrengthMeter password={signupForm.watch("password")} />
+                        <PasswordRequirements password={signupForm.watch("password")} />
+                      </>
                     )}
                     
                     <FormField

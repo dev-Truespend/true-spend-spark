@@ -33,7 +33,7 @@ export default function ForgotPassword() {
 
   const handleSubmit = async (values: FormValues) => {
     setIsLoading(true);
-    const { error } = await requestPasswordReset(values.email);
+    const { error, message } = await requestPasswordReset(values.email);
     
     if (error) {
       toast({
@@ -47,6 +47,11 @@ export default function ForgotPassword() {
 
     setEmailSent(true);
     setIsLoading(false);
+    
+    toast({
+      title: "Check your email",
+      description: message || "If an account exists, we've sent a password reset link.",
+    });
   };
 
   return (

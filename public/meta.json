@@ -1,6 +1,6 @@
 {
-  "version": "1.0.3",
-  "buildId": "20251113T1554",
-  "commit": "fix-auth-flow-and-navigation",
-  "timestamp": 1731514440000
+  "version": "2.0.0",
+  "buildId": "20250114T000000",
+  "commit": "production-auth-system-v2",
+  "timestamp": 1736812800000
 }

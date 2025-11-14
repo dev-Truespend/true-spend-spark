@@ -20,6 +20,7 @@ import Metrics from "./pages/dashboard/Metrics";
 import Optimization from "./pages/dashboard/Optimization";
 import Testing from "./pages/dashboard/Testing";
 import Security from "./pages/dashboard/Security";
+import SecurityDashboard from "./pages/dashboard/SecurityDashboard";
 import Geofences from "./pages/dashboard/Geofences";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -128,8 +129,9 @@ const App = () => (
                 <Route path="optimization" element={<Optimization />} />
                 <Route path="risks" element={<div className="p-8">Risks view coming soon...</div>} />
                 <Route path="testing" element={<Testing />} />
-                <Route path="security" element={<Security />} />
-                <Route path="geofences" element={<Geofences />} />
+                  <Route path="security" element={<Security />} />
+                  <Route path="security-monitor" element={<SecurityDashboard />} />
+                  <Route path="geofences" element={<Geofences />} />
               </Route>
 
               {/* TrueSpend User App - Coming Soon */}

@@ -35,3 +35,12 @@ verify_jwt = false
 
 [functions.record-login-attempt]
 verify_jwt = false
+
+[functions.request-password-reset]
+verify_jwt = false
+
+[functions.complete-password-reset]
+verify_jwt = false
+
+[functions.send-security-alert]
+verify_jwt = false
