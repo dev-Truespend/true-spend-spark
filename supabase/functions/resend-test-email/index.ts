@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -54,6 +55,7 @@ serve(async (req: Request): Promise<Response> => {
     // Generate test code
     const testCode = Math.floor(100000 + Math.random() * 900000).toString();
     const sentAt = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
 
     console.log(`[Resend Test] Sending test email to ${ALLOWED_EMAIL}, code: ${testCode}`);
 
@@ -93,22 +95,56 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     if (emailError) {
-      throw emailError;
+      console.error("[Resend Test] Email send error:", emailError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: emailError.message,
+          details: emailError 
+        }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
-    console.log(`[Resend Test] Email sent successfully to ${ALLOWED_EMAIL}`);
+    // Store code in database for verification
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
+    const { data: codeRecord, error: dbError } = await supabase
+      .from("test_email_codes")
+      .insert({
+        email: ALLOWED_EMAIL,
+        code: testCode,
+        expires_at: expiresAt
+      })
+      .select()
+      .single();
+
+    if (dbError || !codeRecord) {
+      console.error("[Resend Test] Failed to store code:", dbError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Failed to store verification code",
+          details: dbError 
+        }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    console.log(`[Resend Test] ✅ Email sent and code stored. Session ID: ${codeRecord.id}`);
+    
     return new Response(
-      JSON.stringify({
+      JSON.stringify({ 
         success: true,
-        code: testCode.slice(0, 3) + "***", // Mask last 3 digits in response
-        sentAt,
         to: ALLOWED_EMAIL,
+        sentAt,
+        sessionId: codeRecord.id,
+        expiresIn: 600 // seconds
       }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
     console.error("[Resend Test] Error:", error);
