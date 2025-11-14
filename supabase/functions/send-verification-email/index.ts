@@ -185,7 +185,7 @@ serve(async (req) => {
     `;
 
     // Use environment variable for "from" address to allow easy switching
-    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'TrueSpend <onboarding@resend.dev>';
+    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'TrueSpend <noreply@truespend.org>';
     
     const { error: emailError } = await resend.emails.send({
       from: fromEmail,
