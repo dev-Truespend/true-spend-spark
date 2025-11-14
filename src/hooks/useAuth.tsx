@@ -170,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
-    // Step 5: Check account status for verified users
+    // Step 5: Check account status and MFA for verified users
     if (data.user) {
       const { data: profileData } = await supabase
         .from('profiles')
@@ -213,6 +213,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             message: `Your account isn't verified yet. Please click the verification link we sent to ${profile.email}. Accounts not verified within 24 hours are deleted automatically.`,
             code: 'account_not_verified'
           } 
+        };
+      }
+
+      // Check if MFA is enabled
+      const { data: mfaSettings } = await supabase
+        .from('mfa_settings' as any)
+        .select('totp_enabled')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
+
+      if (mfaSettings?.totp_enabled) {
+        // Sign out and require MFA verification
+        await supabase.auth.signOut();
+        return { 
+          error: null, 
+          requiresMFA: true, 
+          userId: data.user.id 
         };
       }
     }

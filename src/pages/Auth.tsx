@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
+import { MFAVerifyModal } from "@/components/auth/MFAVerifyModal";
 import { RefreshCw, AlertCircle, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
@@ -57,7 +58,10 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, user, loading, checkAuthProvider } = useAuth();
+  const [showMFAModal, setShowMFAModal] = useState(false);
+  const [mfaUserId, setMfaUserId] = useState<string | null>(null);
+  const [mfaError, setMfaError] = useState<string | null>(null);
+  const { signIn, signUp, user, loading, checkAuthProvider, verifyMFACode, verifyBackupCode } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -165,7 +169,15 @@ export default function Auth() {
       }
       
       // Step 2: Proceed with normal email/password login
-      const { error } = await signIn(values.email, values.password);
+      const { error, requiresMFA, userId } = await signIn(values.email, values.password);
+      
+      // Handle MFA requirement
+      if (requiresMFA && userId) {
+        setMfaUserId(userId);
+        setShowMFAModal(true);
+        setIsLoading(false);
+        return;
+      }
       
       if (error) {
         // Use error code to determine the type of error
@@ -330,6 +342,40 @@ export default function Auth() {
     }
   };
 
+  const handleMFAVerify = async (code: string, isBackupCode: boolean) => {
+    if (!mfaUserId) return;
+    
+    setIsLoading(true);
+    setMfaError(null);
+    
+    try {
+      const { error } = isBackupCode 
+        ? await verifyBackupCode(mfaUserId, code)
+        : await verifyMFACode(mfaUserId, code);
+      
+      if (error) {
+        setMfaError(error.message || 'Verification failed');
+      } else {
+        setShowMFAModal(false);
+        toast({
+          title: "Success",
+          description: "Login successful!",
+        });
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      setMfaError('Verification failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMFACancel = () => {
+    setShowMFAModal(false);
+    setMfaUserId(null);
+    setMfaError(null);
+  };
+
   const handleForceRefresh = async () => {
     try {
       toast({
@@ -361,6 +407,13 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+      <MFAVerifyModal
+        open={showMFAModal}
+        onVerify={handleMFAVerify}
+        onCancel={handleMFACancel}
+        loading={isLoading}
+        error={mfaError}
+      />
       <div className="w-full max-w-md space-y-4">
         {/* Back to Home Button */}
         <Link to="/">
