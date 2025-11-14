@@ -41,8 +41,6 @@ const loginSchema = z.object({
 });
 
 const signupSchema = z.object({
-  firstName: z.string().trim().min(1, "First name is required").max(100),
-  lastName: z.string().trim().min(1, "Last name is required").max(100),
   email: z.string().trim().email("Invalid email address").max(255),
   password: passwordValidation,
   confirmPassword: z.string(),
@@ -110,8 +108,6 @@ export default function Auth() {
   const signupForm = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -350,8 +346,8 @@ export default function Auth() {
       
       // Step 2: Proceed with normal signup
       const { error } = await signUp({
-        firstName: values.firstName,
-        lastName: values.lastName,
+        firstName: "",
+        lastName: "",
         email: values.email,
         password: values.password,
       });
@@ -628,34 +624,6 @@ export default function Auth() {
               <TabsContent value="signup" className="space-y-4 mt-4">
                 <Form {...signupForm}>
                   <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={signupForm.control}
-                        name="firstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>First Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="John" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={signupForm.control}
-                        name="lastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Last Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Doe" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
                     <FormField
                       control={signupForm.control}
                       name="email"
