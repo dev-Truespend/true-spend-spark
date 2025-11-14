@@ -13,20 +13,35 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
 import { RefreshCw, AlertCircle, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
 
+const passwordValidation = z
+  .string()
+  .min(12, { message: "Password must be at least 12 characters" })
+  .max(255)
+  .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+  .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
+  .regex(/[0-9]/, { message: "Password must contain at least one number" })
+  .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one special character (!@#$%^&*)" })
+  .refine((password) => {
+    // Reject common weak passwords
+    const weakPasswords = ['password123', 'qwerty123456', '123456789012', 'abcdefgh1234'];
+    return !weakPasswords.includes(password.toLowerCase());
+  }, { message: "This password is too common. Please choose a stronger password." });
+
 const loginSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }).max(255),
+  password: z.string().min(1, { message: "Password is required" }),
 });
 
 const signupSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(100),
   lastName: z.string().trim().min(1, "Last name is required").max(100),
   email: z.string().trim().email("Invalid email address").max(255),
-  password: z.string().min(8, "Password must be at least 8 characters").max(255),
+  password: passwordValidation,
   confirmPassword: z.string(),
   agreeToTerms: z.boolean().refine(val => val === true, {
     message: "You must agree to the Terms & Privacy Policy"
@@ -77,59 +92,40 @@ export default function Auth() {
     const { error } = await signIn(values.email, values.password);
     
     if (error) {
-      if (error.message?.includes('deleted') || error.message?.includes('not found')) {
+      // Use error code to determine the type of error
+      if (error.code === 'account_locked') {
         toast({
-          title: "Account not found",
-          description: (
-            <span>
-              No account found with this email.{" "}
-              <button
-                onClick={() => document.querySelector<HTMLButtonElement>('[value="signup"]')?.click()}
-                className="underline font-semibold"
-              >
-                Want to sign up?
-              </button>
-            </span>
-          ),
+          title: "Account Locked",
+          description: error.message,
           variant: "destructive",
         });
-      } else if (error.message?.includes('expired') || error.message?.includes('unverified')) {
+      } else if (error.code === 'account_not_verified') {
         toast({
-          title: "Account expired",
-          description: "Your verification link expired. Please sign up again.",
+          title: "Email Not Verified",
+          description: error.message,
           variant: "destructive",
         });
-      } else if (error.message?.includes('Invalid login credentials')) {
+      } else if (error.code === 'verification_expired') {
         toast({
-          title: "Incorrect password",
-          description: (
-            <span>
-              Wrong password for this account.{" "}
-              <Link to="/forgot-password" className="underline font-semibold">
-                Forgot your password?
-              </Link>
-            </span>
-          ),
+          title: "Verification Expired",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else if (error.code === 'account_not_found') {
+        toast({
+          title: "Account Not Found",
+          description: error.message,
           variant: "destructive",
         });
       } else {
+        // Generic error for all other cases (including invalid credentials)
         toast({
-          title: "Login failed",
-          description: error.message || "Invalid email or password",
+          title: "Sign In Failed",
+          description: error.message || "We couldn't sign you in with those details. Check your email and password and try again.",
           variant: "destructive",
         });
       }
-      setIsLoading(false);
-      return;
     }
-
-    toast({
-      title: "Welcome back!",
-      description: "Successfully logged in.",
-    });
-    
-    // MANDATORY: Redirect to dashboard
-    navigate('/dashboard');
   };
 
   const handleSignup = async (values: SignupFormValues) => {
@@ -348,6 +344,11 @@ export default function Auth() {
                         </FormItem>
                       )}
                     />
+                    
+                    {signupForm.watch("password") && (
+                      <PasswordRequirements password={signupForm.watch("password")} />
+                    )}
+                    
                     <FormField
                       control={signupForm.control}
                       name="confirmPassword"

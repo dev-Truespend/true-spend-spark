@@ -98,13 +98,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    // Step 1: Check if account is locked (BEFORE attempting login)
+    try {
+      const lockCheckResponse = await supabase.functions.invoke('check-login-attempts', {
+        body: { email: email.toLowerCase(), ipAddress: 'web' }
+      });
+
+      if (lockCheckResponse.error) {
+        throw lockCheckResponse.error;
+      }
+
+      if (lockCheckResponse.data?.locked) {
+        const lockData = lockCheckResponse.data;
+        let remainingTime = '';
+        
+        if (lockData.lockExpiresAt && !lockData.isEscalated) {
+          const expiresAt = new Date(lockData.lockExpiresAt);
+          const now = new Date();
+          const diffMinutes = Math.ceil((expiresAt.getTime() - now.getTime()) / 60000);
+          if (diffMinutes > 0) {
+            remainingTime = ` Try again in about ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}.`;
+          }
+        }
+
+        return { 
+          error: { 
+            message: lockData.message + remainingTime,
+            code: 'account_locked'
+          } 
+        };
+      }
+    } catch (lockCheckError) {
+      console.error('Lock check failed:', lockCheckError);
+      // Continue with login attempt if lock check fails (fail open for better UX)
+    }
+
+    // Step 2: Attempt login with Supabase
     const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (!error && data.user) {
-      // Check account status - cast to any to bypass stale types
+    // Step 3: Record login attempt
+    const userId = data?.user?.id || null;
+    try {
+      await supabase.functions.invoke('record-login-attempt', {
+        body: {
+          email: email.toLowerCase(),
+          success: !error,
+          ipAddress: 'web',
+          userId,
+          metadata: { timestamp: new Date().toISOString() }
+        }
+      });
+    } catch (recordError) {
+      console.error('Failed to record login attempt:', recordError);
+      // Don't block login if recording fails
+    }
+
+    // Step 4: If login failed, return generic error
+    if (error) {
+      // NEVER reveal specific details about why login failed
+      return { 
+        error: { 
+          message: "We couldn't sign you in with those details. Check your email and password and try again.",
+          code: 'invalid_credentials'
+        } 
+      };
+    }
+
+    // Step 5: Check account status for verified users
+    if (data.user) {
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
@@ -112,21 +176,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       const profile = profileData as any;
+      
+      // Block deleted accounts
       if (profile?.status === 'deleted') {
         await supabase.auth.signOut();
-        return { error: { message: 'This account no longer exists. Please sign up again.' } };
+        return { 
+          error: { 
+            message: "We couldn't find an account with those details. Check your email or create a new account.",
+            code: 'account_not_found'
+          } 
+        };
       }
 
-      if (profile?.status === 'pending_verification' && profile.verification_expires_at) {
-        const expiry = new Date(profile.verification_expires_at);
-        if (expiry < new Date()) {
-          await supabase.auth.signOut();
-          return { error: { message: 'Your verification link expired. Please sign up again.' } };
+      // BLOCK unverified accounts - do NOT allow login
+      if (profile?.status === 'pending_verification') {
+        await supabase.auth.signOut();
+        
+        // Check if verification expired
+        if (profile.verification_expires_at) {
+          const expiry = new Date(profile.verification_expires_at);
+          if (expiry < new Date()) {
+            return { 
+              error: { 
+                message: "Your verification link expired. Accounts not verified within 24 hours are automatically deleted. Please create a new account.",
+                code: 'verification_expired'
+              } 
+            };
+          }
         }
+        
+        return { 
+          error: { 
+            message: `Your account isn't verified yet. Please click the verification link we sent to ${profile.email}. Accounts not verified within 24 hours are deleted automatically.`,
+            code: 'account_not_verified'
+          } 
+        };
       }
     }
 
-    return { error };
+    return { error: null };
   };
 
   const signUp = async (data: SignUpData) => {

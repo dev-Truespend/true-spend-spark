@@ -11,9 +11,24 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Lock, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
+
+const passwordValidation = z
+  .string()
+  .min(12, { message: "Password must be at least 12 characters" })
+  .max(255)
+  .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+  .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
+  .regex(/[0-9]/, { message: "Password must contain at least one number" })
+  .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one special character (!@#$%^&*)" })
+  .refine((password) => {
+    // Reject common weak passwords
+    const weakPasswords = ['password123', 'qwerty123456', '123456789012', 'abcdefgh1234'];
+    return !weakPasswords.includes(password.toLowerCase());
+  }, { message: "This password is too common. Please choose a stronger password." });
 
 const schema = z.object({
-  password: z.string().min(8, { message: "Password must be at least 8 characters" }).max(255),
+  password: passwordValidation,
   confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -125,6 +140,11 @@ export default function ResetPassword() {
                       </FormItem>
                     )}
                   />
+                  
+                  {form.watch("password") && (
+                    <PasswordRequirements password={form.watch("password")} />
+                  )}
+                  
                   <FormField
                     control={form.control}
                     name="confirmPassword"
