@@ -477,8 +477,11 @@ export type Database = {
           center_lat: number
           center_lng: number
           created_at: string | null
+          formatted_address: string | null
+          google_place_data: Json | null
           id: string
           name: string
+          place_id: string | null
           radius_meters: number
           type: string
           updated_at: string | null
@@ -491,8 +494,11 @@ export type Database = {
           center_lat: number
           center_lng: number
           created_at?: string | null
+          formatted_address?: string | null
+          google_place_data?: Json | null
           id?: string
           name: string
+          place_id?: string | null
           radius_meters: number
           type: string
           updated_at?: string | null
@@ -505,12 +511,131 @@ export type Database = {
           center_lat?: number
           center_lng?: number
           created_at?: string | null
+          formatted_address?: string | null
+          google_place_data?: Json | null
           id?: string
           name?: string
+          place_id?: string | null
           radius_meters?: number
           type?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      google_maps_api_logs: {
+        Row: {
+          api_type: string
+          cache_hit: boolean | null
+          cost_usd: number | null
+          created_at: string | null
+          endpoint: string
+          id: string
+          request_params: Json | null
+          response_status: number | null
+          response_time_ms: number | null
+          user_id: string | null
+        }
+        Insert: {
+          api_type: string
+          cache_hit?: boolean | null
+          cost_usd?: number | null
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          request_params?: Json | null
+          response_status?: number | null
+          response_time_ms?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          api_type?: string
+          cache_hit?: boolean | null
+          cost_usd?: number | null
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          request_params?: Json | null
+          response_status?: number | null
+          response_time_ms?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_maps_api_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_maps_geocode_cache: {
+        Row: {
+          address: string | null
+          cached_at: string | null
+          components: Json | null
+          expires_at: string | null
+          formatted_address: string | null
+          hit_count: number | null
+          id: string
+          lat: number | null
+          lng: number | null
+          place_id: string | null
+          query_hash: string
+        }
+        Insert: {
+          address?: string | null
+          cached_at?: string | null
+          components?: Json | null
+          expires_at?: string | null
+          formatted_address?: string | null
+          hit_count?: number | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          place_id?: string | null
+          query_hash: string
+        }
+        Update: {
+          address?: string | null
+          cached_at?: string | null
+          components?: Json | null
+          expires_at?: string | null
+          formatted_address?: string | null
+          hit_count?: number | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          place_id?: string | null
+          query_hash?: string
+        }
+        Relationships: []
+      }
+      google_places_cache: {
+        Row: {
+          cached_at: string | null
+          expires_at: string | null
+          hit_count: number | null
+          id: string
+          place_data: Json
+          place_id: string
+        }
+        Insert: {
+          cached_at?: string | null
+          expires_at?: string | null
+          hit_count?: number | null
+          id?: string
+          place_data: Json
+          place_id: string
+        }
+        Update: {
+          cached_at?: string | null
+          expires_at?: string | null
+          hit_count?: number | null
+          id?: string
+          place_data?: Json
+          place_id?: string
         }
         Relationships: []
       }
@@ -1536,10 +1661,12 @@ export type Database = {
         Returns: boolean
       }
       cleanup_expired_foursquare_cache: { Args: never; Returns: number }
+      cleanup_expired_google_maps_cache: { Args: never; Returns: number }
       cleanup_expired_mfa_codes: { Args: never; Returns: number }
       cleanup_old_auth_attempts: { Args: never; Returns: number }
       cleanup_old_csp_violations: { Args: never; Returns: number }
       cleanup_old_foursquare_logs: { Args: never; Returns: number }
+      cleanup_old_google_maps_logs: { Args: never; Returns: number }
       cleanup_old_rate_limits: { Args: never; Returns: number }
       cleanup_old_security_logs: { Args: never; Returns: number }
       cleanup_unverified_accounts: { Args: never; Returns: number }
