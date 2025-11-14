@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.send-security-alert]
 verify_jwt = false
+
+[functions.check-auth-provider]
+verify_jwt = false
