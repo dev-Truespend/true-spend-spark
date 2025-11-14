@@ -1,6 +1,21 @@
 {
-  "version": "2.0.0",
-  "buildId": "20250114T000000",
-  "commit": "production-auth-system-v2",
-  "timestamp": 1736812800000
+  "version": "2.0.1",
+  "buildId": "20250414T120000",
+  "commit": "security-headers-and-auth-fixes-v2.0.1",
+  "timestamp": 1744804800000,
+  "changelog": {
+    "2.0.1": [
+      "Added comprehensive security response headers (HSTS, X-Frame-Options, CSP, etc.)",
+      "Fixed Google OAuth users blocked from password reset attempts",
+      "Fixed TypeScript errors in SecurityDashboard component",
+      "Enhanced auto-redirect to login after password reset with email pre-fill",
+      "Enhanced UX with countdown timers in forgot password flow",
+      "Fixed React hooks initialization issue in App component"
+    ],
+    "2.0.0": [
+      "Production authentication system v2 with enhanced security",
+      "Comprehensive rate limiting and DDoS protection",
+      "Advanced monitoring and alerting system"
+    ]
+  }
 }
