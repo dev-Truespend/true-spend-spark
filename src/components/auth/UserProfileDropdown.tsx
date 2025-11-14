@@ -95,7 +95,29 @@ export function UserProfileDropdown() {
 
   if (!user || !profile) return null;
 
-  const initials = `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase() || 'U';
+  const getInitials = () => {
+    if (profile.first_name && profile.last_name) {
+      return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase();
+    }
+    
+    // Fallback to full_name
+    if (profile.full_name) {
+      const names = profile.full_name.trim().split(' ');
+      if (names.length >= 2) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+      }
+      return names[0][0].toUpperCase();
+    }
+    
+    // Fallback to email
+    if (profile.email) {
+      return profile.email[0].toUpperCase();
+    }
+    
+    return 'U';
+  };
+
+  const initials = getInitials();
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

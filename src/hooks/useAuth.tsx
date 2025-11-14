@@ -8,6 +8,7 @@ interface Profile {
   email: string;
   first_name: string | null;
   last_name: string | null;
+  full_name: string | null;
   status: 'pending_verification' | 'active' | 'deleted';
   verification_expires_at: string | null;
   email_verified_at: string | null;
@@ -67,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: profile.email,
             first_name: profile.first_name || null,
             last_name: profile.last_name || null,
+            full_name: profile.full_name || null,
             status: profile.status as 'pending_verification' | 'active' | 'deleted',
             verification_expires_at: profile.verification_expires_at || null,
             email_verified_at: profile.email_verified_at || null,
@@ -218,22 +220,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
 
-      // Check if MFA is enabled
-      const { data: mfaSettings } = await supabase
-        .from('mfa_settings' as any)
-        .select('totp_enabled')
-        .eq('user_id', data.user.id)
-        .maybeSingle();
+      // Only check MFA for email/password logins, not Google OAuth
+      // Google users rely on Google's own 2FA
+      if (profile.auth_provider === 'email') {
+        const { data: mfaSettings } = await supabase
+          .from('mfa_settings' as any)
+          .select('totp_enabled')
+          .eq('user_id', data.user.id)
+          .maybeSingle();
 
-      if ((mfaSettings as any)?.totp_enabled) {
-        // Keep session active but mark MFA as pending
-        // This prevents access to protected routes until MFA is verified
-        setMfaPending(true);
-        return { 
-          error: null, 
-          requiresMFA: true, 
-          userId: data.user.id 
-        };
+        if ((mfaSettings as any)?.totp_enabled) {
+          // Keep session active but mark MFA as pending
+          // This prevents access to protected routes until MFA is verified
+          setMfaPending(true);
+          return { 
+            error: null, 
+            requiresMFA: true, 
+            userId: data.user.id 
+          };
+        }
       }
     }
 
