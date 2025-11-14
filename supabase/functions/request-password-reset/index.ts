@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
       message: `If an account exists for ${email}, we've sent a password reset link. Please check your inbox and spam folder.`
     };
 
-    // Rate limiting: check if too many reset requests from this email (5 per hour for testing)
+    // Rate limiting: 3 password reset requests per hour
     const { data: recentRequests } = await supabase
       .from('password_reset_tokens')
       .select('created_at')
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       .gte('created_at', new Date(Date.now() - 3600000).toISOString())
       .order('created_at', { ascending: false });
 
-    if (recentRequests && recentRequests.length >= 5) {
+    if (recentRequests && recentRequests.length >= 3) {
       // Too many requests, but still return success message
       console.log(`Rate limit hit for email: ${normalizedEmail}`);
       return new Response(
