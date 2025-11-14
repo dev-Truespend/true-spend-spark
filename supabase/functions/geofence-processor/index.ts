@@ -51,6 +51,37 @@ Deno.serve(async (req) => {
       const geofence = event.geofences;
       if (!geofence) continue;
 
+      // 🆕 FOURSQUARE ENRICHMENT - Enrich event with place data
+      if (event.event_type === 'enter' && event.location_lat && event.location_lng) {
+        try {
+          console.log('🏪 Enriching geofence event with Foursquare data...');
+          
+          const enrichResponse = await fetch(`${supabaseUrl}/functions/v1/foursquare-enrich-geofence`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              geofence_event_id: event.id,
+              lat: event.location_lat,
+              lng: event.location_lng,
+              user_id: event.user_id,
+            }),
+          });
+
+          if (enrichResponse.ok) {
+            const enrichResult = await enrichResponse.json();
+            console.log('✅ Geofence enriched:', enrichResult.place?.name || 'No place found');
+          } else {
+            console.error('⚠️ Enrichment failed:', await enrichResponse.text());
+          }
+        } catch (enrichError) {
+          console.error('⚠️ Enrichment error:', enrichError);
+          // Continue processing even if enrichment fails
+        }
+      }
+
       // Log metric for event
       await supabase.from('geofence_metrics').insert({
         user_id: event.user_id,
