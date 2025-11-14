@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
       );
 
       await resend.emails.send({
-        from: 'TrueSpend Security <security@truespend.app>',
+        from: Deno.env.get('RESEND_FROM_EMAIL') || 'TrueSpend <noreply@truespend.org>',
         to: [profile.email],
         subject: 'Your TrueSpend password was changed',
         html: emailHtml,
