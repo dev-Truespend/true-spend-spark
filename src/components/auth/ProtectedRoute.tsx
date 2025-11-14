@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireRole, redirectTo }: ProtectedRouteProps) {
-  const { user, loading: authLoading, profile } = useAuth();
+  const { user, loading: authLoading, profile, mfaPending } = useAuth();
   const { hasRole, loading: roleLoading } = useUserRole();
 
   if (authLoading || roleLoading) {
@@ -28,6 +28,11 @@ export function ProtectedRoute({ children, requireRole, redirectTo }: ProtectedR
   if (!user) {
     const destination = redirectTo || window.location.pathname;
     return <Navigate to={`/auth?redirectTo=${encodeURIComponent(destination)}`} replace />;
+  }
+
+  // Block access if MFA verification is pending
+  if (mfaPending) {
+    return <Navigate to="/auth" replace />;
   }
 
   // Check account status

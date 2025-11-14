@@ -66,7 +66,7 @@ export default function Auth() {
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [mfaInlineProcessing, setMfaInlineProcessing] = useState(false);
-  const { signIn, signUp, user, loading, checkAuthProvider, verifyMFACode, verifyBackupCode } = useAuth();
+  const { signIn, signUp, user, loading, checkAuthProvider, verifyMFACode, verifyBackupCode, mfaPending } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -76,10 +76,10 @@ export default function Auth() {
 
   // Auto-redirect if user is already logged in (but not during MFA processing)
   useEffect(() => {
-    if (!loading && user && !showMFAModal && !mfaInlineProcessing) {
+    if (!loading && user && !showMFAModal && !mfaInlineProcessing && !mfaPending) {
       navigate(redirectTo, { replace: true });
     }
-  }, [user, loading, navigate, showMFAModal, mfaInlineProcessing, redirectTo]);
+  }, [user, loading, navigate, showMFAModal, mfaInlineProcessing, mfaPending, redirectTo]);
 
   // Pre-fill email from password reset redirect
   useEffect(() => {
@@ -192,7 +192,7 @@ export default function Auth() {
         if (mfaCode && mfaCode.length === 6) {
           setMfaInlineProcessing(true);
           try {
-            const { error: mfaError } = await verifyMFACode(userId, mfaCode, values.email, values.password);
+            const { error: mfaError } = await verifyMFACode(userId, mfaCode);
             
             if (mfaError) {
               setMfaError(mfaError.message || 'Incorrect code. Please try again.');
@@ -393,8 +393,8 @@ export default function Auth() {
     
     try {
       const { error } = isBackupCode 
-        ? await verifyBackupCode(mfaUserId, code, mfaCredentials.email, mfaCredentials.password)
-        : await verifyMFACode(mfaUserId, code, mfaCredentials.email, mfaCredentials.password);
+        ? await verifyBackupCode(mfaUserId, code)
+        : await verifyMFACode(mfaUserId, code);
       
       if (error) {
         setMfaError(error.message || 'Verification failed');
