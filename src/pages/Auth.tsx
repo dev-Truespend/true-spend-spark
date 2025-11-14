@@ -57,7 +57,7 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, user, loading } = useAuth();
+  const { signIn, signUp, user, loading, checkAuthProvider } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -109,90 +109,225 @@ export default function Auth() {
 
   const handleLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
-    const { error } = await signIn(values.email, values.password);
     
-    if (error) {
-      // Use error code to determine the type of error
-      if (error.code === 'account_locked') {
+    try {
+      // Step 1: Check auth provider and account status
+      const providerData = await checkAuthProvider(values.email);
+      
+      if (!providerData) {
         toast({
-          title: "Account Locked",
-          description: error.message,
+          title: "Error",
+          description: "Unable to verify account. Please try again.",
           variant: "destructive",
         });
-      } else if (error.code === 'account_not_verified') {
+        setIsLoading(false);
+        return;
+      }
+      
+      // Handle Google OAuth account
+      if (providerData.provider === 'google') {
         toast({
-          title: "Email Not Verified",
-          description: error.message,
-          variant: "destructive",
+          title: "Google Account Detected",
+          description: (
+            <div className="space-y-2">
+              <p>This email is registered with Google sign-in.</p>
+              <p className="font-semibold">Please use the "Sign in with Google" button below.</p>
+            </div>
+          ),
+          variant: "default",
+          duration: 6000,
         });
-      } else if (error.code === 'verification_expired') {
+        setIsLoading(false);
+        return;
+      }
+      
+      // Handle pending verification
+      if (providerData.accountStatus === 'pending_verification') {
         toast({
-          title: "Verification Expired",
-          description: error.message,
-          variant: "destructive",
+          title: "Email Verification Required",
+          description: "Please verify your email before logging in. Check your inbox for the verification link.",
+          variant: "default",
+          duration: 6000,
         });
-      } else if (error.code === 'account_not_found') {
+        setIsLoading(false);
+        return;
+      }
+      
+      // Handle deleted account
+      if (providerData.accountStatus === 'deleted') {
         toast({
           title: "Account Not Found",
-          description: error.message,
+          description: "This account no longer exists. Please sign up again.",
           variant: "destructive",
         });
-      } else {
-        // Generic error for all other cases (including invalid credentials)
-        toast({
-          title: "Sign In Failed",
-          description: error.message || "We couldn't sign you in with those details. Check your email and password and try again.",
-          variant: "destructive",
-        });
+        setIsLoading(false);
+        return;
       }
+      
+      // Step 2: Proceed with normal email/password login
+      const { error } = await signIn(values.email, values.password);
+      
+      if (error) {
+        // Use error code to determine the type of error
+        if (error.code === 'account_locked') {
+          toast({
+            title: "Account Locked",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else if (error.code === 'account_not_verified') {
+          toast({
+            title: "Email Not Verified",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else if (error.code === 'verification_expired') {
+          toast({
+            title: "Verification Expired",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else if (error.code === 'account_not_found') {
+          toast({
+            title: "Account Not Found",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          // Generic error for all other cases (including invalid credentials)
+          toast({
+            title: "Sign In Failed",
+            description: error.message || "We couldn't sign you in with those details. Check your email and password and try again.",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSignup = async (values: SignupFormValues) => {
     setIsLoading(true);
     
-    const { error } = await signUp({
-      firstName: values.firstName,
-      lastName: values.lastName,
-      email: values.email,
-      password: values.password,
-    });
-    
-    if (error) {
-      if (error.message?.includes("already registered") || error.message?.includes("already been registered")) {
+    try {
+      // Step 1: Check if email already exists and which provider
+      const providerData = await checkAuthProvider(values.email);
+      
+      if (!providerData) {
         toast({
-          title: "Account exists",
+          title: "Error",
+          description: "Unable to verify email availability. Please try again.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Handle existing Google OAuth account
+      if (providerData.provider === 'google') {
+        toast({
+          title: "Account Already Exists",
           description: (
-            <span>
-              This email is already registered.{" "}
+            <div className="space-y-2">
+              <p>This email is already registered with Google sign-in.</p>
+              <p className="font-semibold">Please use the "Sign in with Google" button to access your account.</p>
+            </div>
+          ),
+          variant: "default",
+          duration: 7000,
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Handle existing email/password account
+      if (providerData.provider === 'email') {
+        const statusMessage = providerData.accountStatus === 'pending_verification'
+          ? 'This email is already registered but not verified. Please check your email for the verification link.'
+          : 'This email is already registered.';
+        
+        toast({
+          title: "Account Already Exists",
+          description: (
+            <div className="space-y-2">
+              <p>{statusMessage}</p>
               <button
                 onClick={() => document.querySelector<HTMLButtonElement>('[value="login"]')?.click()}
-                className="underline font-semibold"
+                className="underline font-semibold hover:text-primary"
               >
                 Log in instead?
               </button>
-            </span>
+            </div>
           ),
           variant: "destructive",
+          duration: 7000,
         });
-      } else {
-        toast({
-          title: "Signup failed",
-          description: error.message || "Could not create account",
-          variant: "destructive",
-        });
+        setIsLoading(false);
+        return;
       }
+      
+      // Step 2: Proceed with normal signup
+      const { error } = await signUp({
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email,
+        password: values.password,
+      });
+      
+      if (error) {
+        if (error.message?.includes("already registered") || error.message?.includes("already been registered")) {
+          toast({
+            title: "Account exists",
+            description: (
+              <span>
+                This email is already registered.{" "}
+                <button
+                  onClick={() => document.querySelector<HTMLButtonElement>('[value="login"]')?.click()}
+                  className="underline font-semibold"
+                >
+                  Log in instead?
+                </button>
+              </span>
+            ),
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Signup failed",
+            description: error.message || "Could not create account",
+            variant: "destructive",
+          });
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      toast({
+        title: "Welcome to TrueSpend!",
+        description: "Your account has been created. Check your email to verify.",
+        duration: 7000,
+      });
+
+      // MANDATORY: Auto-login and redirect to dashboard
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Signup error:', error);
+      toast({
+        title: "Signup Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    toast({
-      title: "Welcome to TrueSpend!",
-      description: "Your account has been created. Check your email to verify.",
-    });
-
-    // MANDATORY: Auto-login and redirect to dashboard
-    navigate('/dashboard');
   };
 
   const handleForceRefresh = async () => {
@@ -275,6 +410,9 @@ export default function Auth() {
                             <Input placeholder="you@example.com" {...field} />
                           </FormControl>
                           <FormMessage />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Signed up with Google? Use the "Sign in with Google" button above.
+                          </p>
                         </FormItem>
                       )}
                     />
@@ -348,6 +486,9 @@ export default function Auth() {
                             <Input placeholder="you@example.com" {...field} />
                           </FormControl>
                           <FormMessage />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Already have a Google account? Use the sign-in button above.
+                          </p>
                         </FormItem>
                       )}
                     />

@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ArrowLeft, Mail, Chrome, Clock } from "lucide-react";
+import { ArrowLeft, Mail, Chrome, Clock, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const schema = z.object({
@@ -85,7 +85,7 @@ export default function ForgotPassword() {
     
     if (error) {
       // Check if this is a Google OAuth account
-      if (error.message?.includes('google_oauth_account') || error.message?.includes('Google sign-in')) {
+      if (error.code === 'google_oauth_account') {
         setIsGoogleOAuth(true);
         setIsLoading(false);
         return;
@@ -144,21 +144,25 @@ export default function ForgotPassword() {
           <CardContent>
             {isGoogleOAuth ? (
               <div className="space-y-4">
-                <Alert className="border-primary/20 bg-primary/5">
-                  <Chrome className="h-5 w-5 text-primary" />
-                  <AlertDescription className="ml-2">
-                    <strong className="block mb-2">This account uses Google sign-in</strong>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Password reset isn't available for Google accounts. Please use the "Sign in with Google" button to access your account.
-                    </p>
+                <Alert className="border-primary bg-primary/5">
+                  <AlertCircle className="h-5 w-5 text-primary" />
+                  <AlertDescription className="space-y-3 mt-2">
+                    <p className="font-semibold text-lg text-foreground">Google Account Detected</p>
+                    <p>This email is registered with Google sign-in. Password reset is not available for Google accounts.</p>
+                    <p className="font-semibold text-foreground">To access your account:</p>
+                    <ul className="list-disc list-inside space-y-1 ml-2 text-sm">
+                      <li>Go back to the login page</li>
+                      <li>Click the "Sign in with Google" button</li>
+                    </ul>
                   </AlertDescription>
                 </Alert>
                 <Button 
                   onClick={() => navigate('/auth')} 
-                  className="w-full gap-2"
+                  className="w-full mt-4"
+                  variant="default"
                 >
-                  <Chrome className="h-4 w-4" />
-                  Go to Sign In
+                  <Chrome className="mr-2 h-4 w-4" />
+                  Go to Login Page
                 </Button>
                 <Link to="/" className="block">
                   <Button variant="outline" className="w-full">

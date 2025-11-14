@@ -33,6 +33,7 @@ interface AuthContextType {
   sendVerificationEmail: () => Promise<{ error: any }>;
   requestPasswordReset: (email: string) => Promise<{ error: any; message?: string }>;
   resetPassword: (token: string, newPassword: string) => Promise<{ error: any }>;
+  checkAuthProvider: (email: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -284,20 +285,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const checkAuthProvider = async (email: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('check-auth-provider', {
+        body: { email: email.toLowerCase().trim() }
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Provider check error:', error);
+      return null;
+    }
+  };
+
   const requestPasswordReset = async (email: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('request-password-reset', {
         body: { email: email.toLowerCase().trim() }
       });
       
-      if (error) throw error;
+      // Check response data for Google OAuth error FIRST
+      if (data?.error === 'google_oauth_account') {
+        // Log the wrong provider attempt
+        await supabase.functions.invoke('record-login-attempt', {
+          body: {
+            email,
+            success: false,
+            ipAddress: 'unknown',
+            metadata: { 
+              error_type: 'wrong_provider',
+              attempted_method: 'password_reset',
+              actual_provider: 'google'
+            }
+          }
+        });
+        
+        return { 
+          error: { 
+            message: data.message,
+            code: 'google_oauth_account'
+          }
+        };
+      }
+      
+      if (error) {
+        console.error('Password reset error:', error);
+      }
       
       return { 
         error: null, 
         message: data?.message || `If an account exists for ${email}, we've sent a password reset link.`
       };
     } catch (error: any) {
-      // Always return success message (never reveal if email exists)
       return { 
         error: null,
         message: `If an account exists for ${email}, we've sent a password reset link.`
@@ -341,6 +381,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         sendVerificationEmail,
         requestPasswordReset,
         resetPassword,
+        checkAuthProvider,
       }}
     >
       {children}
