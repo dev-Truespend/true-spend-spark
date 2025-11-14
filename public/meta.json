@@ -1,9 +1,14 @@
 {
-  "version": "2.0.1",
-  "buildId": "20250414T120000",
-  "commit": "security-headers-and-auth-fixes-v2.0.1",
-  "timestamp": 1744804800000,
+  "version": "2.0.2",
+  "buildId": "20250414T140000",
+  "commit": "migrate-security-headers-to-cloudflare-v2.0.2",
+  "timestamp": 1744812000000,
   "changelog": {
+    "2.0.2": [
+      "Migrated security headers to Cloudflare Transform Rules for optimal edge performance",
+      "Removed security headers from vercel.json (now managed in Cloudflare)",
+      "Updated documentation with Cloudflare cache troubleshooting"
+    ],
     "2.0.1": [
       "Added comprehensive security response headers (HSTS, X-Frame-Options, CSP, etc.)",
       "Fixed Google OAuth users blocked from password reset attempts",
