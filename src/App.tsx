@@ -50,22 +50,24 @@ const queryClient = new QueryClient({
 
 const PWA_ENABLED = import.meta.env.VITE_PWA_ENABLED === 'true';
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <CSPViolationReporter />
-          <ForceRefreshBanner />
-          {PWA_ENABLED && <ServiceWorkerUpdatePrompt />}
-          {PWA_ENABLED && <PWAInstallPrompt />}
-          {PWA_ENABLED && <OfflineIndicator />}
-          {PWA_ENABLED && <SyncIndicator />}
-          <GlobalNav />
-          <RateLimitStatus />
-          <div className="pt-14">
+function App() {
+  return (
+    <React.Fragment>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <Toaster />
+              <Sonner />
+              <CSPViolationReporter />
+              <ForceRefreshBanner />
+              {PWA_ENABLED && <ServiceWorkerUpdatePrompt />}
+              {PWA_ENABLED && <PWAInstallPrompt />}
+              {PWA_ENABLED && <OfflineIndicator />}
+              {PWA_ENABLED && <SyncIndicator />}
+              <GlobalNav />
+              <RateLimitStatus />
+              <div className="pt-14">
             <Routes>
               {/* Root shows Home page */}
               <Route path="/" element={<Home />} />
@@ -184,6 +186,8 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  </React.Fragment>
+  );
+}
 
 export default App;
