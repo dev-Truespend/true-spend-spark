@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.cleanup-unverified-accounts]
 verify_jwt = false
+
+[functions.check-login-attempts]
+verify_jwt = false
+
+[functions.record-login-attempt]
+verify_jwt = false
