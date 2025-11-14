@@ -26,6 +26,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   profile: Profile | null;
+  mfaPending: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any; requiresMFA?: boolean; userId?: string }>;
   signUp: (data: SignUpData) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
@@ -34,8 +35,8 @@ interface AuthContextType {
   requestPasswordReset: (email: string) => Promise<{ error: any; message?: string }>;
   resetPassword: (token: string, newPassword: string) => Promise<{ error: any }>;
   checkAuthProvider: (email: string) => Promise<any>;
-  verifyMFACode: (userId: string, code: string, email: string, password: string) => Promise<{ error: any }>;
-  verifyBackupCode: (userId: string, code: string, email: string, password: string) => Promise<{ error: any }>;
+  verifyMFACode: (userId: string, code: string) => Promise<{ error: any }>;
+  verifyBackupCode: (userId: string, code: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mfaPending, setMfaPending] = useState(false);
   const navigate = useNavigate();
 
   // Fetch profile whenever user changes
@@ -224,9 +226,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if ((mfaSettings as any)?.totp_enabled) {
-        // Don't sign out - just indicate MFA is required
-        // The session will remain pending until MFA verification completes
-        await supabase.auth.signOut();
+        // Keep session active but mark MFA as pending
+        // This prevents access to protected routes until MFA is verified
+        setMfaPending(true);
         return { 
           error: null, 
           requiresMFA: true, 
@@ -387,9 +389,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const verifyMFACode = async (userId: string, code: string, email: string, password: string) => {
+  const verifyMFACode = async (userId: string, code: string) => {
     try {
-      // First verify the MFA code
+      // Verify the MFA code
       const { data, error } = await supabase.functions.invoke('mfa-verify-totp', {
         body: { userId, code }
       });
@@ -398,15 +400,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: { message: 'Invalid code' } };
       }
       
-      // If valid, complete the sign-in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (signInError) {
-        return { error: { message: 'Authentication failed after MFA verification' } };
-      }
+      // Clear MFA pending state - session is now fully authenticated
+      setMfaPending(false);
       
       return { error: null };
     } catch (error: any) {
@@ -414,9 +409,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const verifyBackupCode = async (userId: string, code: string, email: string, password: string) => {
+  const verifyBackupCode = async (userId: string, code: string) => {
     try {
-      // First verify the backup code
+      // Verify the backup code
       const { data, error } = await supabase.functions.invoke('mfa-verify-backup-code', {
         body: { userId, code }
       });
@@ -425,15 +420,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: { message: 'Invalid backup code' } };
       }
       
-      // If valid, complete the sign-in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (signInError) {
-        return { error: { message: 'Authentication failed after backup code verification' } };
-      }
+      // Clear MFA pending state - session is now fully authenticated
+      setMfaPending(false);
       
       return { error: null };
     } catch (error: any) {
@@ -448,6 +436,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         loading,
         profile,
+        mfaPending,
         signIn,
         signUp,
         signInWithGoogle,
