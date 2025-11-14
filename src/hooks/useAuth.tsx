@@ -34,8 +34,8 @@ interface AuthContextType {
   requestPasswordReset: (email: string) => Promise<{ error: any; message?: string }>;
   resetPassword: (token: string, newPassword: string) => Promise<{ error: any }>;
   checkAuthProvider: (email: string) => Promise<any>;
-  verifyMFACode: (userId: string, code: string) => Promise<{ error: any }>;
-  verifyBackupCode: (userId: string, code: string) => Promise<{ error: any }>;
+  verifyMFACode: (userId: string, code: string, email: string, password: string) => Promise<{ error: any }>;
+  verifyBackupCode: (userId: string, code: string, email: string, password: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -224,7 +224,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if ((mfaSettings as any)?.totp_enabled) {
-        // Sign out and require MFA verification
+        // Don't sign out - just indicate MFA is required
+        // The session will remain pending until MFA verification completes
         await supabase.auth.signOut();
         return { 
           error: null, 
@@ -386,18 +387,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const verifyMFACode = async (userId: string, code: string) => {
-    const { data, error } = await supabase.functions.invoke('mfa-verify-totp', {
-      body: { userId, code }
-    });
-    return data?.valid ? { error: null } : { error: { message: 'Invalid code' } };
+  const verifyMFACode = async (userId: string, code: string, email: string, password: string) => {
+    try {
+      // First verify the MFA code
+      const { data, error } = await supabase.functions.invoke('mfa-verify-totp', {
+        body: { userId, code }
+      });
+      
+      if (!data?.valid) {
+        return { error: { message: 'Invalid code' } };
+      }
+      
+      // If valid, complete the sign-in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (signInError) {
+        return { error: { message: 'Authentication failed after MFA verification' } };
+      }
+      
+      return { error: null };
+    } catch (error: any) {
+      return { error: { message: error.message || 'MFA verification failed' } };
+    }
   };
 
-  const verifyBackupCode = async (userId: string, code: string) => {
-    const { data, error } = await supabase.functions.invoke('mfa-verify-backup-code', {
-      body: { userId, code }
-    });
-    return data?.valid ? { error: null } : { error: { message: 'Invalid backup code' } };
+  const verifyBackupCode = async (userId: string, code: string, email: string, password: string) => {
+    try {
+      // First verify the backup code
+      const { data, error } = await supabase.functions.invoke('mfa-verify-backup-code', {
+        body: { userId, code }
+      });
+      
+      if (!data?.valid) {
+        return { error: { message: 'Invalid backup code' } };
+      }
+      
+      // If valid, complete the sign-in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (signInError) {
+        return { error: { message: 'Authentication failed after backup code verification' } };
+      }
+      
+      return { error: null };
+    } catch (error: any) {
+      return { error: { message: error.message || 'Backup code verification failed' } };
+    }
   };
 
   return (

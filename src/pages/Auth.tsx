@@ -61,6 +61,7 @@ export default function Auth() {
   const [showMFAModal, setShowMFAModal] = useState(false);
   const [mfaUserId, setMfaUserId] = useState<string | null>(null);
   const [mfaError, setMfaError] = useState<string | null>(null);
+  const [mfaCredentials, setMfaCredentials] = useState<{ email: string; password: string } | null>(null);
   const { signIn, signUp, user, loading, checkAuthProvider, verifyMFACode, verifyBackupCode } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -174,6 +175,7 @@ export default function Auth() {
       // Handle MFA requirement
       if (requiresMFA && userId) {
         setMfaUserId(userId);
+        setMfaCredentials({ email: values.email, password: values.password });
         setShowMFAModal(true);
         setIsLoading(false);
         return;
@@ -343,20 +345,21 @@ export default function Auth() {
   };
 
   const handleMFAVerify = async (code: string, isBackupCode: boolean) => {
-    if (!mfaUserId) return;
+    if (!mfaUserId || !mfaCredentials) return;
     
     setIsLoading(true);
     setMfaError(null);
     
     try {
       const { error } = isBackupCode 
-        ? await verifyBackupCode(mfaUserId, code)
-        : await verifyMFACode(mfaUserId, code);
+        ? await verifyBackupCode(mfaUserId, code, mfaCredentials.email, mfaCredentials.password)
+        : await verifyMFACode(mfaUserId, code, mfaCredentials.email, mfaCredentials.password);
       
       if (error) {
         setMfaError(error.message || 'Verification failed');
       } else {
         setShowMFAModal(false);
+        setMfaCredentials(null); // Clear stored credentials
         toast({
           title: "Success",
           description: "Login successful!",
@@ -374,6 +377,7 @@ export default function Auth() {
     setShowMFAModal(false);
     setMfaUserId(null);
     setMfaError(null);
+    setMfaCredentials(null); // Clear stored credentials on cancel
   };
 
   const handleForceRefresh = async () => {
