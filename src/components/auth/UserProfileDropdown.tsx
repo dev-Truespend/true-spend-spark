@@ -41,15 +41,33 @@ export function UserProfileDropdown() {
     if (!user) return;
     
     try {
-      // Fetch profile
-      const { data: profileData } = await supabase
+      // Fetch profile with error handling
+      const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (error) {
+        console.error('Profile fetch error:', error);
+      }
 
       if (profileData) {
         setProfile(profileData);
+      } else if (user) {
+        // Fallback to auth user data if profile doesn't exist yet
+        setProfile({
+          id: user.id,
+          email: user.email || '',
+          first_name: user.user_metadata?.first_name || user.user_metadata?.given_name || null,
+          last_name: user.user_metadata?.last_name || user.user_metadata?.family_name || null,
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+          auth_provider: user.app_metadata?.provider || 'email',
+          status: 'active'
+        });
+
+        // Retry after 1 second in case profile is being created by trigger
+        setTimeout(() => fetchData(), 1000);
       }
 
       // Fetch MFA status - if row exists, MFA is enabled

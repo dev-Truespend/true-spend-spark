@@ -54,18 +54,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchProfile = async () => {
       if (user) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .maybeSingle();
+        
+        if (error) {
+          console.error('Profile fetch error:', error);
+        }
         
         if (data) {
           // Cast to any to bypass stale TypeScript types
           const profile = data as any;
           setProfile({
             id: profile.id,
-            email: profile.email,
+            email: profile.email || user.email,
             first_name: profile.first_name || null,
             last_name: profile.last_name || null,
             full_name: profile.full_name || null,
@@ -74,8 +78,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email_verified_at: profile.email_verified_at || null,
             auth_provider: profile.auth_provider || null,
           });
-        } else {
-          setProfile(null);
+        } else if (user) {
+          // Fallback to auth user data if profile doesn't exist yet
+          setProfile({
+            id: user.id,
+            email: user.email || '',
+            first_name: user.user_metadata?.first_name || user.user_metadata?.given_name || null,
+            last_name: user.user_metadata?.last_name || user.user_metadata?.family_name || null,
+            full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+            status: 'active',
+            verification_expires_at: null,
+            email_verified_at: user.email_confirmed_at || null,
+            auth_provider: user.app_metadata?.provider || 'email',
+          });
+
+          // Retry after 1 second in case profile is being created by trigger
+          setTimeout(() => fetchProfile(), 1000);
         }
       } else {
         setProfile(null);
