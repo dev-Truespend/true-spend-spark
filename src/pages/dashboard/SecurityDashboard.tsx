@@ -24,9 +24,10 @@ interface SecurityLog {
 interface AuthAttempt {
   id: string;
   user_id: string;
-  identifier: string;
+  attempt_type: string;
   success: boolean;
   ip_address: string;
+  metadata: any;
   created_at: string;
 }
 
@@ -169,8 +170,11 @@ export default function SecurityDashboard() {
                 const created = new Date(attempt.created_at);
                 return created > new Date(Date.now() - 604800000);
               }).reduce((acc, curr) => {
-                const identifier = curr.identifier;
-                const count = authAttempts.filter(a => a.identifier === identifier).length;
+                const identifier = curr.metadata?.email || curr.metadata?.identifier || curr.ip_address;
+                const count = authAttempts.filter(a => {
+                  const aIdentifier = a.metadata?.email || a.metadata?.identifier || a.ip_address;
+                  return aIdentifier === identifier;
+                }).length;
                 return count >= 5 ? acc + 1 : acc;
               }, 0)}
             </div>
@@ -260,7 +264,9 @@ export default function SecurityDashboard() {
                     <TableBody>
                       {authAttempts.map((attempt) => (
                         <TableRow key={attempt.id}>
-                          <TableCell className="font-medium">{attempt.identifier}</TableCell>
+                          <TableCell className="font-medium">
+                            {attempt.metadata?.email || attempt.metadata?.identifier || 'N/A'}
+                          </TableCell>
                           <TableCell className="font-mono text-sm">{attempt.ip_address}</TableCell>
                           <TableCell>{new Date(attempt.created_at).toLocaleString()}</TableCell>
                           <TableCell>
