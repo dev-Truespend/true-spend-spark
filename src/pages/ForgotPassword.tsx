@@ -118,10 +118,6 @@ export default function ForgotPassword() {
     await handleSubmit(form.getValues());
   };
 
-  const handleOpenEmail = () => {
-    window.location.href = `mailto:${form.getValues("email")}`;
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <div className="w-full max-w-md space-y-4">
@@ -185,23 +181,14 @@ export default function ForgotPassword() {
                   <span>Link expires in: <strong className="text-foreground">{formatTime(timeRemaining)}</strong></span>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleOpenEmail}
-                    className="flex-1"
-                  >
-                    Open Email App
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={handleResend}
-                    disabled={resendCooldown > 0}
-                    className="flex-1"
-                  >
-                    {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend Email'}
-                  </Button>
-                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={handleResend}
+                  disabled={resendCooldown > 0}
+                  className="w-full"
+                >
+                  {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend Email'}
+                </Button>
 
                 <div className="text-center text-sm text-muted-foreground">
                   Didn't receive the email? Check your spam folder
