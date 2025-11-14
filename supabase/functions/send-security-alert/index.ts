@@ -56,24 +56,29 @@ Deno.serve(async (req) => {
     );
 
     // Send email
-    const { error: emailError } = await resend.emails.send({
-      from: 'TrueSpend Security <security@truespend.app>',
-      to: [email],
-      subject: alertType === 'password_changed' 
-        ? 'Your password was changed'
-        : alertType === 'account_locked'
-        ? 'Your account has been locked'
-        : 'Unusual sign-in activity detected',
-      html: emailHtml,
-    });
+  const { error: emailError } = await resend.emails.send({
+    from: Deno.env.get('RESEND_FROM_EMAIL') || 'TrueSpend <noreply@truespend.org>',
+    to: [email],
+    subject: alertType === 'password_changed' 
+      ? 'Your password was changed'
+      : alertType === 'account_locked'
+      ? 'Your account has been locked'
+      : 'Unusual sign-in activity detected',
+    html: emailHtml,
+  });
 
-    if (emailError) {
-      console.error('Failed to send security alert:', emailError);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to send email' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+  if (emailError) {
+    console.error('❌ Security alert email failed:', {
+      error: emailError,
+      to: email
+    });
+    return new Response(
+      JSON.stringify({ success: false, error: 'Failed to send email' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } else {
+    console.log('✅ Security alert sent to:', email);
+  }
 
     return new Response(
       JSON.stringify({ success: true }),
