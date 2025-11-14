@@ -35,7 +35,7 @@ export function MFASetup() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('mfa_settings')
+        .from('mfa_settings' as any)
         .select('totp_enabled')
         .eq('user_id', user.id)
         .single();
@@ -44,7 +44,7 @@ export function MFASetup() {
         console.error('Error checking MFA status:', error);
       }
       
-      setMfaEnabled(data?.totp_enabled || false);
+      setMfaEnabled((data as any)?.totp_enabled || false);
     } catch (error) {
       console.error('Error checking MFA status:', error);
     } finally {
