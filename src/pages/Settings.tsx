@@ -77,24 +77,6 @@ export default function Settings() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input 
-                      id="firstName" 
-                      value={profile?.first_name || ''} 
-                      placeholder="John"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input 
-                      id="lastName" 
-                      value={profile?.last_name || ''} 
-                      placeholder="Doe"
-                    />
-                  </div>
-                </div>
                 <Button className="w-full">Save Changes</Button>
               </CardContent>
             </Card>
