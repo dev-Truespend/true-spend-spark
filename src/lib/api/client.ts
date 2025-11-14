@@ -50,7 +50,7 @@ export class ApiClient {
       headers.set('Authorization', `Bearer ${token}`);
     }
     headers.set('Content-Type', 'application/json');
-    headers.set('X-Client-Version', '1.0.0');
+    headers.set('X-Client-Version', '2.1.0');
 
     const url = `${this.baseUrl}/functions/v1/${path}`;
 
