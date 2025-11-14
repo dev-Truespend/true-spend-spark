@@ -26,6 +26,58 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check rate limiting - max 5 attempts per 15 minutes
+    const rateLimitWindow = new Date(Date.now() - 15 * 60 * 1000);
+    const { data: rateLimitData } = await supabaseClient
+      .from('rate_limits')
+      .select('request_count, window_start')
+      .eq('identifier', userId)
+      .eq('endpoint', 'mfa-verify')
+      .gte('window_start', rateLimitWindow.toISOString())
+      .single();
+
+    if (rateLimitData && rateLimitData.request_count >= 5) {
+      const timeRemaining = Math.ceil((new Date(rateLimitData.window_start).getTime() + 15 * 60 * 1000 - Date.now()) / 1000 / 60);
+      
+      await supabaseClient.from('security_logs').insert({
+        user_id: userId,
+        event_type: 'mfa_rate_limit_exceeded',
+        severity: 'warn',
+        details: { method: 'totp', attempts: rateLimitData.request_count },
+      });
+
+      console.log('MFA rate limit exceeded for user:', userId);
+      
+      return new Response(
+        JSON.stringify({ 
+          valid: false, 
+          error: 'Too many MFA verification attempts',
+          retryAfter: timeRemaining 
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Record this attempt
+    if (rateLimitData) {
+      await supabaseClient
+        .from('rate_limits')
+        .update({ request_count: rateLimitData.request_count + 1 })
+        .eq('identifier', userId)
+        .eq('endpoint', 'mfa-verify')
+        .gte('window_start', rateLimitWindow.toISOString());
+    } else {
+      await supabaseClient
+        .from('rate_limits')
+        .insert({
+          identifier: userId,
+          endpoint: 'mfa-verify',
+          window_start: new Date().toISOString(),
+          window_size_seconds: 900,
+          request_count: 1
+        });
+    }
+
     // Get user's MFA settings
     const { data: mfaSettings, error: mfaError } = await supabaseClient
       .from('mfa_settings')
@@ -51,6 +103,13 @@ Deno.serve(async (req) => {
     const isValid = totp.validate({ token: code, window: 1 }) !== null;
 
     if (isValid) {
+      // Clear rate limits on successful verification
+      await supabaseClient
+        .from('rate_limits')
+        .delete()
+        .eq('identifier', userId)
+        .eq('endpoint', 'mfa-verify');
+
       // Update last verified timestamp
       await supabaseClient
         .from('mfa_settings')

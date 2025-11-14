@@ -195,7 +195,17 @@ export default function Auth() {
             const { error: mfaError } = await verifyMFACode(userId, mfaCode);
             
             if (mfaError) {
-              setMfaError(mfaError.message || 'Incorrect code. Please try again.');
+              const errorMessage = mfaError.message || 'Incorrect code. Please try again.';
+              if (errorMessage.includes('Too many')) {
+                setMfaError('Too many verification attempts. Please try again in 15 minutes.');
+                toast({
+                  title: "Rate Limit Exceeded",
+                  description: "Too many verification attempts. Please try again in 15 minutes.",
+                  variant: "destructive",
+                });
+              } else {
+                setMfaError(errorMessage);
+              }
               setIsLoading(false);
               setMfaInlineProcessing(false);
               return;
@@ -397,7 +407,17 @@ export default function Auth() {
         : await verifyMFACode(mfaUserId, code);
       
       if (error) {
-        setMfaError(error.message || 'Verification failed');
+        const errorMessage = error.message || 'Verification failed';
+        if (errorMessage.includes('Too many')) {
+          setMfaError('Too many verification attempts. Please try again in 15 minutes.');
+          toast({
+            title: "Rate Limit Exceeded",
+            description: "Too many verification attempts. Please try again in 15 minutes.",
+            variant: "destructive",
+          });
+        } else {
+          setMfaError(errorMessage);
+        }
       } else {
         setShowMFAModal(false);
         setMfaCredentials(null); // Clear stored credentials
