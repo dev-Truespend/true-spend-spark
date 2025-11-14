@@ -51,12 +51,24 @@ Deno.serve(async (req) => {
     // Generate OTPAuth URL for QR code
     const otpauthUrl = totp.toString();
 
-    // Store secret in database
+    // Encrypt the secret using Vault
+    const { data: encryptedSecretId, error: encryptError } = await supabaseClient
+      .rpc('encrypt_totp_secret', { secret });
+
+    if (encryptError || !encryptedSecretId) {
+      console.error('Encryption error:', encryptError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to encrypt TOTP secret' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Store encrypted secret ID in database
     const { error: insertError } = await supabaseClient
       .from('mfa_settings')
       .upsert({
         user_id: user.id,
-        totp_secret: secret,
+        totp_secret: encryptedSecretId,
         totp_enabled: false,
         backup_codes_generated: false,
       }, {

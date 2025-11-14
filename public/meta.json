@@ -1,9 +1,18 @@
 {
-  "version": "2.2.0",
-  "buildId": "20251114T140000",
-  "commit": "profile-ux-improvements-v2.2.0",
-  "timestamp": 1731592800000,
+  "version": "2.3.0",
+  "buildId": "20251114T150000",
+  "commit": "totp-vault-encryption-v2.3.0",
+  "timestamp": 1731596400000,
   "changelog": {
+    "2.3.0": [
+      "Enabled Supabase Vault for encrypted secret storage",
+      "Implemented TOTP secret encryption using AES-256-GCM",
+      "Added encryption/decryption helper functions for Vault operations",
+      "Migrated existing TOTP secrets to encrypted Vault storage",
+      "Updated all MFA edge functions to use encrypted secrets",
+      "Added secure vault secret deletion on MFA disable",
+      "Enhanced security: TOTP secrets no longer stored in plaintext"
+    ],
     "2.2.0": [
       "Redesigned user profile dropdown with improved professional layout",
       "Moved Change Password to Profile Information section",
