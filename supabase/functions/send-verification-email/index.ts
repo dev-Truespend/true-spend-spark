@@ -184,8 +184,11 @@ serve(async (req) => {
       </html>
     `;
 
+    // Use environment variable for "from" address to allow easy switching
+    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'TrueSpend <onboarding@resend.dev>';
+    
     const { error: emailError } = await resend.emails.send({
-      from: 'TrueSpend <noreply@truespend.org>',
+      from: fromEmail,
       to: [profile.email],
       subject: 'Verify your TrueSpend account',
       html: emailHtml,
