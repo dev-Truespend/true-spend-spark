@@ -249,6 +249,138 @@ export type Database = {
         }
         Relationships: []
       }
+      foursquare_api_logs: {
+        Row: {
+          cache_hit: boolean | null
+          created_at: string | null
+          endpoint: string
+          error_message: string | null
+          id: string
+          request_params: Json | null
+          response_status: number | null
+          response_time_ms: number | null
+          user_id: string | null
+        }
+        Insert: {
+          cache_hit?: boolean | null
+          created_at?: string | null
+          endpoint: string
+          error_message?: string | null
+          id?: string
+          request_params?: Json | null
+          response_status?: number | null
+          response_time_ms?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          cache_hit?: boolean | null
+          created_at?: string | null
+          endpoint?: string
+          error_message?: string | null
+          id?: string
+          request_params?: Json | null
+          response_status?: number | null
+          response_time_ms?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      foursquare_categories: {
+        Row: {
+          category_id: number
+          category_name: string
+          created_at: string | null
+          icon_prefix: string | null
+          icon_suffix: string | null
+          id: string
+          level: number | null
+          metadata: Json | null
+          parent_category_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          category_id: number
+          category_name: string
+          created_at?: string | null
+          icon_prefix?: string | null
+          icon_suffix?: string | null
+          id?: string
+          level?: number | null
+          metadata?: Json | null
+          parent_category_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: number
+          category_name?: string
+          created_at?: string | null
+          icon_prefix?: string | null
+          icon_suffix?: string | null
+          id?: string
+          level?: number | null
+          metadata?: Json | null
+          parent_category_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      foursquare_places: {
+        Row: {
+          categories: Json | null
+          chains: Json | null
+          created_at: string | null
+          fsq_id: string
+          geocodes: Json | null
+          hours: Json | null
+          id: string
+          last_verified_at: string | null
+          location: Json | null
+          metadata: Json | null
+          name: string
+          popularity: number | null
+          price_tier: number | null
+          primary_category: string | null
+          rating: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          categories?: Json | null
+          chains?: Json | null
+          created_at?: string | null
+          fsq_id: string
+          geocodes?: Json | null
+          hours?: Json | null
+          id?: string
+          last_verified_at?: string | null
+          location?: Json | null
+          metadata?: Json | null
+          name: string
+          popularity?: number | null
+          price_tier?: number | null
+          primary_category?: string | null
+          rating?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          categories?: Json | null
+          chains?: Json | null
+          created_at?: string | null
+          fsq_id?: string
+          geocodes?: Json | null
+          hours?: Json | null
+          id?: string
+          last_verified_at?: string | null
+          location?: Json | null
+          metadata?: Json | null
+          name?: string
+          popularity?: number | null
+          price_tier?: number | null
+          primary_category?: string | null
+          rating?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       geofence_events: {
         Row: {
           accuracy_meters: number | null
@@ -382,11 +514,56 @@ export type Database = {
         }
         Relationships: []
       }
+      merchant_foursquare_mapping: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          fsq_id: string
+          id: string
+          match_method: string | null
+          merchant_id: string | null
+          updated_at: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          fsq_id: string
+          id?: string
+          match_method?: string | null
+          merchant_id?: string | null
+          updated_at?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          fsq_id?: string
+          id?: string
+          match_method?: string | null
+          merchant_id?: string | null
+          updated_at?: string | null
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_foursquare_mapping_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchants: {
         Row: {
           address: string | null
           category: string | null
+          chain_name: string | null
+          foursquare_verified: boolean | null
+          fsq_id: string | null
           id: string
+          last_foursquare_sync: string | null
           last_updated: string | null
           lat: number | null
           lng: number | null
@@ -400,7 +577,11 @@ export type Database = {
         Insert: {
           address?: string | null
           category?: string | null
+          chain_name?: string | null
+          foursquare_verified?: boolean | null
+          fsq_id?: string | null
           id?: string
+          last_foursquare_sync?: string | null
           last_updated?: string | null
           lat?: number | null
           lng?: number | null
@@ -414,7 +595,11 @@ export type Database = {
         Update: {
           address?: string | null
           category?: string | null
+          chain_name?: string | null
+          foursquare_verified?: boolean | null
+          fsq_id?: string | null
           id?: string
+          last_foursquare_sync?: string | null
           last_updated?: string | null
           lat?: number | null
           lng?: number | null
@@ -716,6 +901,39 @@ export type Database = {
           story_points?: number | null
           team_size?: number | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      place_enrichment_cache: {
+        Row: {
+          cached_at: string | null
+          created_at: string | null
+          enrichment_type: string
+          expires_at: string | null
+          fsq_id: string
+          hit_count: number | null
+          id: string
+          place_data: Json
+        }
+        Insert: {
+          cached_at?: string | null
+          created_at?: string | null
+          enrichment_type: string
+          expires_at?: string | null
+          fsq_id: string
+          hit_count?: number | null
+          id?: string
+          place_data: Json
+        }
+        Update: {
+          cached_at?: string | null
+          created_at?: string | null
+          enrichment_type?: string
+          expires_at?: string | null
+          fsq_id?: string
+          hit_count?: number | null
+          id?: string
+          place_data?: Json
         }
         Relationships: []
       }
@@ -1317,9 +1535,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_expired_foursquare_cache: { Args: never; Returns: number }
       cleanup_expired_mfa_codes: { Args: never; Returns: number }
       cleanup_old_auth_attempts: { Args: never; Returns: number }
       cleanup_old_csp_violations: { Args: never; Returns: number }
+      cleanup_old_foursquare_logs: { Args: never; Returns: number }
       cleanup_old_rate_limits: { Args: never; Returns: number }
       cleanup_old_security_logs: { Args: never; Returns: number }
       cleanup_unverified_accounts: { Args: never; Returns: number }
