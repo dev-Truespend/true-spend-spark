@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +59,7 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   // Auto-redirect if user is already logged in
@@ -67,6 +68,24 @@ export default function Auth() {
       navigate('/dashboard', { replace: true });
     }
   }, [user, loading, navigate]);
+
+  // Pre-fill email from password reset redirect
+  useEffect(() => {
+    const state = location.state as { email?: string; fromReset?: boolean } | null;
+    if (state?.email) {
+      loginForm.setValue('email', state.email);
+      
+      // Show success message if coming from password reset
+      if (state.fromReset) {
+        toast({
+          title: "Password updated successfully!",
+          description: "Please log in with your new password.",
+        });
+        // Clear the state to prevent message on refresh
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state]);
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),

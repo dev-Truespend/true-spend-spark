@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     // Check if user exists
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, email, first_name, status')
+      .select('id, email, first_name, status, auth_provider')
       .eq('email', normalizedEmail)
       .maybeSingle();
 
@@ -69,6 +69,30 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify(successResponse),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Block Google OAuth users from password reset
+    if (profile.auth_provider === 'google') {
+      console.log(`Password reset blocked for Google OAuth user: ${normalizedEmail}`);
+      
+      // Log security event
+      await supabase.from('security_logs').insert({
+        user_id: profile.id,
+        event_type: 'google_oauth_password_reset_attempt',
+        severity: 'warn',
+        ip_address: req.headers.get('x-forwarded-for') || 'unknown',
+        user_agent: req.headers.get('user-agent') || 'unknown',
+        details: { email: normalizedEmail, blocked_reason: 'google_oauth_account' }
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'google_oauth_account',
+          message: 'This account uses Google sign-in. Please use the "Sign in with Google" button to access your account. Password reset is not available for Google accounts.'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

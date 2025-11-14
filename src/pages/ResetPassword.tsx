@@ -40,7 +40,9 @@ type FormValues = z.infer<typeof schema>;
 export default function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [countdown, setCountdown] = useState(3);
   const [tokenError, setTokenError] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
   const [searchParams] = useSearchParams();
   const { resetPassword } = useAuth();
   const { toast } = useToast();
@@ -65,6 +67,25 @@ export default function ResetPassword() {
     }
   }, [token, navigate]);
 
+  // Countdown timer after success
+  useEffect(() => {
+    if (!success) return;
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          // Navigate to auth page with email pre-filled
+          navigate('/auth', { state: { email: userEmail, fromReset: true } });
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [success, navigate, userEmail]);
+
   const handleSubmit = async (values: FormValues) => {
     if (!token) {
       toast({
@@ -76,6 +97,11 @@ export default function ResetPassword() {
     }
 
     setIsLoading(true);
+    
+    // Extract email from form if available
+    const email = searchParams.get('email') || '';
+    setUserEmail(email);
+    
     const { error } = await resetPassword(token, values.password);
     
     if (error) {
@@ -89,13 +115,11 @@ export default function ResetPassword() {
     }
 
     setSuccess(true);
+    setIsLoading(false);
     toast({
       title: "Password reset!",
-      description: "Your password has been successfully reset. You can now log in.",
+      description: "Your password has been successfully reset. Redirecting to login...",
     });
-    
-    // Redirect to login after 3 seconds
-    setTimeout(() => navigate('/auth'), 3000);
   };
 
   if (tokenError) {
@@ -142,23 +166,31 @@ export default function ResetPassword() {
               )}
             </div>
             <CardTitle className="text-2xl">
-              {success ? "Password Reset!" : "Set New Password"}
+              {success ? "Password Updated Successfully!" : "Set New Password"}
             </CardTitle>
             <CardDescription>
               {success 
-                ? "Redirecting you to login..."
+                ? `Redirecting to login in ${countdown} second${countdown !== 1 ? 's' : ''}...`
                 : "Enter your new password below"
               }
             </CardDescription>
           </CardHeader>
           <CardContent>
             {success ? (
-              <Alert>
-                <CheckCircle2 className="h-4 w-4" />
-                <AlertDescription>
-                  Your password has been successfully reset. You can now log in with your new password.
-                </AlertDescription>
-              </Alert>
+              <div className="space-y-4">
+                <Alert>
+                  <CheckCircle2 className="h-4 w-4" />
+                  <AlertDescription>
+                    Your password has been successfully reset. You'll be redirected to the login page automatically.
+                  </AlertDescription>
+                </Alert>
+                <Button 
+                  onClick={() => navigate('/auth', { state: { email: userEmail, fromReset: true } })}
+                  className="w-full"
+                >
+                  Go to Login Now
+                </Button>
+              </div>
             ) : (
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
