@@ -7,105 +7,68 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Shield, Clock, AlertTriangle, Mail, Key, LogOut, Edit2, Check, X } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { User, Shield, Mail, Key, LogOut, Edit2, Check, X, ExternalLink, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { MFAStatusBadge } from "./MFAStatusBadge";
 import { PasswordChangeDialog } from "./PasswordChangeDialog";
 import { EmailChangeDialog } from "./EmailChangeDialog";
-import { formatDistanceToNow } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
-
-interface SecurityLog {
-  id: string;
-  event_type: string;
-  severity: string;
-  created_at: string;
-  details: any;
-}
-
-interface LoginAttempt {
-  id: string;
-  success: boolean;
-  created_at: string;
-  ip_address: string;
-  metadata: any;
-}
 
 export function UserProfileDropdown() {
-  const { user, profile, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
   const [mfaEnabled, setMfaEnabled] = useState(false);
-  const [securityLogs, setSecurityLogs] = useState<SecurityLog[]>([]);
-  const [loginHistory, setLoginHistory] = useState<LoginAttempt[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [mfaDisablePassword, setMfaDisablePassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   
-  // Edit states
-  const [editingFirstName, setEditingFirstName] = useState(false);
-  const [editingLastName, setEditingLastName] = useState(false);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [saving, setSaving] = useState(false);
+  // Edit states - null means not editing, string means editing with that value
+  const [editingFirstName, setEditingFirstName] = useState<string | null>(null);
+  const [editingLastName, setEditingLastName] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open && user) {
+    if (user) {
       fetchData();
     }
-  }, [open, user]);
-
-  useEffect(() => {
-    if (profile) {
-      setFirstName(profile.first_name || "");
-      setLastName(profile.last_name || "");
-    }
-  }, [profile]);
+  }, [user]);
 
   const fetchData = async () => {
     if (!user) return;
     
-    setLoading(true);
     try {
+      // Fetch profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profileData) {
+        setProfile(profileData);
+      }
+
+      // Fetch MFA status - if row exists, MFA is enabled
       const { data: mfaData } = await supabase
         .from('mfa_settings' as any)
-        .select('totp_enabled')
+        .select('user_id')
         .eq('user_id', user.id)
         .maybeSingle();
-      
-      setMfaEnabled((mfaData as any)?.totp_enabled || false);
 
-      const { data: logs } = await supabase
-        .from('security_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      
-      setSecurityLogs(logs || []);
-
-      const { data: attempts } = await supabase
-        .from('auth_attempts')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      
-      setLoginHistory(attempts || []);
+      setMfaEnabled(!!mfaData);
     } catch (error) {
       console.error('Failed to fetch profile data:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleSaveField = async (field: 'first_name' | 'last_name', value: string) => {
     if (!user) return;
 
-    setSaving(true);
+    setLoading(true);
     try {
       const { error } = await supabase
         .from('profiles')
@@ -119,77 +82,96 @@ export function UserProfileDropdown() {
 
       toast({
         title: "Profile Updated",
-        description: `Your ${field.replace('_', ' ')} has been updated.`,
+        description: `Your ${field.replace('_', ' ')} has been updated successfully.`,
       });
 
-      if (field === 'first_name') setEditingFirstName(false);
-      if (field === 'last_name') setEditingLastName(false);
-
+      // Reset editing state and refresh data
+      if (field === 'first_name') setEditingFirstName(null);
+      if (field === 'last_name') setEditingLastName(null);
       await fetchData();
     } catch (error: any) {
       toast({
         title: "Update Failed",
-        description: error.message || "Could not update profile.",
+        description: error.message || "Could not update profile. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setSaving(false);
+      setLoading(false);
+    }
+  };
+
+  const handleDisableMFA = async () => {
+    if (!mfaDisablePassword) {
+      toast({
+        title: "Password Required",
+        description: "Please enter your password to disable MFA.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('mfa-disable', {
+        body: { password: mfaDisablePassword }
+      });
+
+      if (error) throw error;
+
+      setMfaEnabled(false);
+      setMfaDisablePassword("");
+      toast({
+        title: "MFA Disabled",
+        description: "Two-factor authentication has been disabled.",
+      });
+      await fetchData();
+    } catch (error: any) {
+      toast({
+        title: "Failed to Disable MFA",
+        description: error.message || "Could not disable MFA. Please check your password.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSignOut = async () => {
-    await signOut();
-    setOpen(false);
-  };
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'error': return 'destructive';
-      case 'warn': return 'default';
-      default: return 'secondary';
+    try {
+      await signOut();
+    } catch (error) {
+      toast({
+        title: "Sign out failed",
+        description: "There was an error signing out. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  const getEventTypeLabel = (eventType: string) => {
-    return eventType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  if (!user || !profile) return null;
+  if (!user || !profile) {
+    return null;
+  }
 
   const getInitials = () => {
-    if (profile.first_name && profile.last_name) {
-      return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase();
-    }
-    
-    if (profile.full_name) {
-      const names = profile.full_name.trim().split(' ');
-      if (names.length >= 2) {
-        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-      }
-      return names[0][0].toUpperCase();
-    }
-    
-    if (profile.email) {
-      return profile.email[0].toUpperCase();
-    }
-    
-    return 'U';
+    const first = profile.first_name?.[0] || '';
+    const last = profile.last_name?.[0] || '';
+    return (first + last).toUpperCase() || user.email?.[0]?.toUpperCase() || '?';
   };
 
-  const initials = getInitials();
-  const displayName = profile.first_name && profile.last_name 
-    ? `${profile.first_name} ${profile.last_name}`
-    : profile.full_name || profile.email;
+  const getDisplayName = () => {
+    if (profile.first_name || profile.last_name) {
+      return `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+    }
+    return 'User';
+  };
 
   return (
     <>
-      <Sheet open={open} onOpenChange={setOpen}>
+      <Sheet>
         <SheetTrigger asChild>
-          <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-            <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-primary text-primary-foreground">
-                {initials}
-              </AvatarFallback>
+          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+            <Avatar className="h-10 w-10">
+              <AvatarFallback>{getInitials()}</AvatarFallback>
             </Avatar>
           </Button>
         </SheetTrigger>
@@ -201,17 +183,17 @@ export function UserProfileDropdown() {
           <ScrollArea className="h-[calc(100vh-8rem)] pr-4">
             <div className="space-y-6 py-4">
               {/* Profile Header */}
-              <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                    {initials}
+              <div className="flex flex-col items-center space-y-3">
+                <Avatar className="h-20 w-20">
+                  <AvatarFallback className="text-2xl bg-primary/10">
+                    {getInitials()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <p className="font-semibold text-lg">{displayName}</p>
-                  <p className="text-sm text-muted-foreground">{profile.email}</p>
-                  <Badge variant={profile.status === 'active' ? 'default' : 'secondary'} className="mt-1">
-                    {profile.status}
+                <div className="text-center">
+                  <h3 className="font-semibold text-lg">{getDisplayName()}</h3>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                  <Badge variant="secondary" className="mt-2">
+                    {profile.auth_provider === 'google' ? 'Google Account' : 'Email Account'}
                   </Badge>
                 </div>
               </div>
@@ -227,153 +209,194 @@ export function UserProfileDropdown() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Email */}
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">Email</Label>
+                    <Label className="text-sm text-muted-foreground">Email</Label>
                     <div className="flex gap-2">
-                      <Input value={profile.email} disabled className="bg-muted" />
-                      <Button variant="outline" size="sm" onClick={() => setShowEmailDialog(true)}>
+                      <Input value={user.email || ''} disabled className="flex-1" />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowEmailDialog(true)}
+                        disabled={profile.auth_provider === 'google'}
+                      >
                         <Mail className="h-4 w-4" />
                       </Button>
                     </div>
+                    {profile.auth_provider === 'google' && (
+                      <p className="text-xs text-muted-foreground">Email managed by Google</p>
+                    )}
                   </div>
 
+                  {/* First Name */}
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">First Name</Label>
+                    <Label className="text-sm text-muted-foreground">First Name</Label>
                     <div className="flex gap-2">
                       <Input
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        disabled={!editingFirstName || saving}
-                        placeholder="Add your first name"
+                        value={editingFirstName !== null ? editingFirstName : (profile.first_name || '')}
+                        onChange={(e) => setEditingFirstName(e.target.value)}
+                        disabled={editingFirstName === null}
+                        placeholder="Enter first name"
+                        className="flex-1"
                       />
-                      {editingFirstName ? (
+                      {editingFirstName === null ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingFirstName(profile.first_name || '')}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      ) : (
                         <>
-                          <Button variant="outline" size="sm" onClick={() => handleSaveField('first_name', firstName)} disabled={saving}>
-                            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSaveField('first_name', editingFirstName)}
+                            disabled={loading}
+                          >
+                            <Check className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => { setFirstName(profile.first_name || ""); setEditingFirstName(false); }} disabled={saving}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingFirstName(null)}
+                          >
                             <X className="h-4 w-4" />
                           </Button>
                         </>
-                      ) : (
-                        <Button variant="outline" size="sm" onClick={() => setEditingFirstName(true)}>
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
                       )}
                     </div>
                   </div>
 
+                  {/* Last Name */}
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">Last Name</Label>
+                    <Label className="text-sm text-muted-foreground">Last Name</Label>
                     <div className="flex gap-2">
                       <Input
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        disabled={!editingLastName || saving}
-                        placeholder="Add your last name"
+                        value={editingLastName !== null ? editingLastName : (profile.last_name || '')}
+                        onChange={(e) => setEditingLastName(e.target.value)}
+                        disabled={editingLastName === null}
+                        placeholder="Enter last name"
+                        className="flex-1"
                       />
-                      {editingLastName ? (
+                      {editingLastName === null ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingLastName(profile.last_name || '')}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      ) : (
                         <>
-                          <Button variant="outline" size="sm" onClick={() => handleSaveField('last_name', lastName)} disabled={saving}>
-                            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSaveField('last_name', editingLastName)}
+                            disabled={loading}
+                          >
+                            <Check className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => { setLastName(profile.last_name || ""); setEditingLastName(false); }} disabled={saving}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingLastName(null)}
+                          >
                             <X className="h-4 w-4" />
                           </Button>
                         </>
-                      ) : (
-                        <Button variant="outline" size="sm" onClick={() => setEditingLastName(true)}>
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
                       )}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              {/* Security Settings */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Shield className="h-4 w-4" />
-                    Security
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Two-Factor Authentication</span>
-                    <MFAStatusBadge enabled={mfaEnabled} />
-                  </div>
-                  <Button variant="outline" className="w-full" onClick={() => setShowPasswordDialog(true)}>
-                    <Key className="mr-2 h-4 w-4" />
-                    Change Password
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Recent Login Activity */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Clock className="h-4 w-4" />
-                    Recent Login Activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {loading ? (
-                    <p className="text-sm text-muted-foreground">Loading...</p>
-                  ) : loginHistory.length > 0 ? (
-                    <div className="space-y-2">
-                      {loginHistory.map((attempt) => (
-                        <div key={attempt.id} className="flex items-start gap-2 text-xs">
-                          <div className={`mt-0.5 h-2 w-2 rounded-full ${attempt.success ? 'bg-green-500' : 'bg-red-500'}`} />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium">
-                              {attempt.success ? 'Successful login' : 'Failed login attempt'}
-                            </p>
-                            <p className="text-muted-foreground">
-                              {formatDistanceToNow(new Date(attempt.created_at), { addSuffix: true })}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                  {/* Change Password */}
+                  {profile.auth_provider === 'email' && (
+                    <div className="space-y-2 pt-2 border-t">
+                      <Button 
+                        variant="outline" 
+                        className="w-full" 
+                        onClick={() => setShowPasswordDialog(true)}
+                      >
+                        <Key className="mr-2 h-4 w-4" />
+                        Change Password
+                      </Button>
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No recent activity</p>
                   )}
                 </CardContent>
               </Card>
 
-              {/* Security Events */}
-              {securityLogs.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <AlertTriangle className="h-4 w-4" />
-                      Security Events
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {securityLogs.map((log) => (
-                        <div key={log.id} className="flex items-start gap-2 text-xs">
-                          <Badge variant={getSeverityColor(log.severity) as any} className="mt-0.5">
-                            {log.severity}
-                          </Badge>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium">{getEventTypeLabel(log.event_type)}</p>
-                            <p className="text-muted-foreground">
-                              {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
-                            </p>
-                          </div>
+              {/* Two-Factor Authentication */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Shield className="h-4 w-4" />
+                    Two-Factor Authentication
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {profile.auth_provider === 'google' ? (
+                    <>
+                      <Alert>
+                        <Shield className="h-4 w-4" />
+                        <AlertDescription>
+                          You're signed in with Google. Manage 2-Step Verification in your Google Account settings.
+                        </AlertDescription>
+                      </Alert>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => window.open('https://myaccount.google.com/signinoptions/two-step-verification', '_blank')}
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Manage Google 2FA
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Status</span>
+                        <MFAStatusBadge enabled={mfaEnabled} />
+                      </div>
+                      
+                      {!mfaEnabled ? (
+                        <Button 
+                          variant="default" 
+                          className="w-full"
+                          onClick={() => window.location.href = '/settings'}
+                        >
+                          <Shield className="mr-2 h-4 w-4" />
+                          Enable Two-Factor Authentication
+                        </Button>
+                      ) : (
+                        <div className="space-y-3 pt-2 border-t">
+                          <Label htmlFor="mfa-disable-password" className="text-sm text-muted-foreground">
+                            Enter password to disable MFA
+                          </Label>
+                          <Input
+                            id="mfa-disable-password"
+                            type="password"
+                            value={mfaDisablePassword}
+                            onChange={(e) => setMfaDisablePassword(e.target.value)}
+                            placeholder="Enter your password"
+                          />
+                          <Button
+                            variant="destructive"
+                            className="w-full"
+                            onClick={handleDisableMFA}
+                            disabled={!mfaDisablePassword || loading}
+                          >
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Disable Two-Factor Authentication
+                          </Button>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
 
-              {/* Sign Out */}
+              {/* Sign Out Button */}
               <Button variant="destructive" className="w-full" onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
@@ -383,8 +406,15 @@ export function UserProfileDropdown() {
         </SheetContent>
       </Sheet>
 
-      <PasswordChangeDialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog} />
-      <EmailChangeDialog open={showEmailDialog} onOpenChange={setShowEmailDialog} />
+      <PasswordChangeDialog 
+        open={showPasswordDialog} 
+        onOpenChange={setShowPasswordDialog}
+      />
+      
+      <EmailChangeDialog 
+        open={showEmailDialog} 
+        onOpenChange={setShowEmailDialog}
+      />
     </>
   );
 }
