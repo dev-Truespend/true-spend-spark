@@ -1,9 +1,15 @@
 {
-  "version": "2.0.2",
-  "buildId": "20250414T140000",
-  "commit": "migrate-security-headers-to-cloudflare-v2.0.2",
-  "timestamp": 1744812000000,
+  "version": "2.1.0",
+  "buildId": "20251114T120000",
+  "commit": "mfa-google-oauth-integration-v2.1.0",
+  "timestamp": 1731585600000,
   "changelog": {
+    "2.1.0": [
+      "Fixed MFA redirect loop issue for password-based users",
+      "Added Google 2-Step Verification instructions for OAuth users",
+      "Enhanced MFA flow with proper session handling and navigation",
+      "Improved MFA verification UX with inline and modal options"
+    ],
     "2.0.2": [
       "Migrated security headers to Cloudflare Transform Rules for optimal edge performance",
       "Removed security headers from vercel.json (now managed in Cloudflare)",
