@@ -40,10 +40,14 @@ type FormValues = z.infer<typeof schema>;
 export default function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const { resetPassword } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Get token from URL
+  const token = searchParams.get('token');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -53,26 +57,26 @@ export default function ResetPassword() {
     },
   });
 
-  // Check if we have the required token (Supabase uses hash parameters)
+  // Check if we have a valid token on mount
   useEffect(() => {
-    // Supabase sends tokens in URL hash, not query params
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const token = hashParams.get('access_token') || searchParams.get('token') || searchParams.get('access_token');
-    const type = hashParams.get('type');
-    
-    if (!token || type !== 'recovery') {
-      toast({
-        title: "Invalid link",
-        description: "This password reset link is invalid or has expired.",
-        variant: "destructive",
-      });
-      setTimeout(() => navigate('/forgot-password'), 2000);
+    if (!token) {
+      setTokenError('This password reset link is invalid or has expired.');
+      setTimeout(() => navigate('/forgot-password'), 3000);
     }
-  }, [searchParams, toast, navigate]);
+  }, [token, navigate]);
 
   const handleSubmit = async (values: FormValues) => {
+    if (!token) {
+      toast({
+        title: "Invalid link",
+        description: "No reset token found. Please request a new password reset link.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
-    const { error } = await resetPassword(values.password);
+    const { error } = await resetPassword(token, values.password);
     
     if (error) {
       toast({
@@ -87,12 +91,43 @@ export default function ResetPassword() {
     setSuccess(true);
     toast({
       title: "Password reset!",
-      description: "Your password has been successfully reset.",
+      description: "Your password has been successfully reset. You can now log in.",
     });
     
     // Redirect to login after 3 seconds
     setTimeout(() => navigate('/auth'), 3000);
   };
+
+  if (tokenError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <div className="w-full max-w-md">
+          <Card>
+            <CardHeader className="text-center space-y-2">
+              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
+                <Lock className="w-6 h-6 text-destructive" />
+              </div>
+              <CardTitle className="text-2xl">Link Expired</CardTitle>
+              <CardDescription>{tokenError}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Password reset links are valid for 30 minutes. Please request a new one.
+                </AlertDescription>
+              </Alert>
+              <Button 
+                onClick={() => navigate('/forgot-password')} 
+                className="w-full mt-4"
+              >
+                Request New Link
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">

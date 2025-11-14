@@ -31,8 +31,8 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   sendVerificationEmail: () => Promise<{ error: any }>;
-  requestPasswordReset: (email: string) => Promise<{ error: any }>;
-  resetPassword: (newPassword: string) => Promise<{ error: any }>;
+  requestPasswordReset: (email: string) => Promise<{ error: any; message?: string }>;
+  resetPassword: (token: string, newPassword: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -286,23 +286,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const requestPasswordReset = async (email: string) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const { data, error } = await supabase.functions.invoke('request-password-reset', {
+        body: { email: email.toLowerCase().trim() }
       });
-      return { error };
+      
+      if (error) throw error;
+      
+      return { 
+        error: null, 
+        message: data?.message || `If an account exists for ${email}, we've sent a password reset link.`
+      };
     } catch (error: any) {
-      return { error };
+      // Always return success message (never reveal if email exists)
+      return { 
+        error: null,
+        message: `If an account exists for ${email}, we've sent a password reset link.`
+      };
     }
   };
 
-  const resetPassword = async (newPassword: string) => {
+  const resetPassword = async (token: string, newPassword: string) => {
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
+      const { data, error } = await supabase.functions.invoke('complete-password-reset', {
+        body: { token, newPassword }
       });
-      return { error };
+
+      if (error) throw error;
+      
+      if (data?.error) {
+        return { error: { message: data.error } };
+      }
+
+      return { error: null };
     } catch (error: any) {
-      return { error };
+      return { 
+        error: { 
+          message: error.message || 'Failed to reset password. The link may have expired.'
+        } 
+      };
     }
   };
 
