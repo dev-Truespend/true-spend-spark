@@ -63,3 +63,18 @@ verify_jwt = false
 
 [functions.check-auth-provider]
 verify_jwt = false
+
+[functions.foursquare-places-search]
+verify_jwt = false
+
+[functions.foursquare-place-details]
+verify_jwt = false
+
+[functions.foursquare-enrich-geofence]
+verify_jwt = false
+
+[functions.foursquare-sync-categories]
+verify_jwt = false
+
+[functions.foursquare-cache-cleanup]
+verify_jwt = false
