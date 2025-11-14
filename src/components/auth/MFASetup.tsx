@@ -9,12 +9,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { BackupCodesDisplay } from "./BackupCodesDisplay";
 import { MFAStatusBadge } from "./MFAStatusBadge";
-import { Shield, QrCode, AlertTriangle, Loader2 } from "lucide-react";
+import { Shield, QrCode, AlertTriangle, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import QRCodeLib from "qrcode";
 
 export function MFASetup() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [setupMode, setSetupMode] = useState(false);
@@ -141,6 +141,59 @@ export function MFASetup() {
     return <BackupCodesDisplay codes={backupCodes} onClose={() => setShowBackupCodes(false)} />;
   }
 
+  // Show Google 2FA instructions for Google OAuth users
+  if (profile?.auth_provider === 'google') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Two-Factor Authentication
+          </CardTitle>
+          <CardDescription>
+            Secure your account with Google's 2-Step Verification
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <Alert>
+            <Shield className="h-4 w-4" />
+            <AlertDescription>
+              You're signed in with Google. For the best security, enable 2-Step Verification on your Google Account.
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm">How to enable Google 2-Step Verification:</h4>
+              <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
+                <li>Go to your Google Account security settings</li>
+                <li>Navigate to Security → 2-Step Verification</li>
+                <li>Follow Google's setup wizard to enable 2FA</li>
+                <li>Choose your preferred method (phone, authenticator app, or security key)</li>
+                <li>Save your backup codes in a safe place</li>
+              </ol>
+            </div>
+
+            <Alert variant="default" className="bg-muted">
+              <AlertDescription className="text-sm">
+                Once enabled, you'll be prompted for 2-Step Verification every time you sign in to Google, protecting this app and all your Google services.
+              </AlertDescription>
+            </Alert>
+
+            <Button 
+              className="w-full" 
+              onClick={() => window.open('https://myaccount.google.com/signinoptions/two-step-verification', '_blank')}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Enable Google 2-Step Verification
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show app-level TOTP setup for password-based users
   return (
     <Card>
       <CardHeader>
