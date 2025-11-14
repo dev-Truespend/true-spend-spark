@@ -1,17 +1,22 @@
 # Security Headers Configuration
 
-**Version:** 2.0.1  
+**Version:** 2.0.2  
 **Phase:** Security & Ingress - Layer 4 (Modern Safety)
 
 ## Overview
 
 This document explains the comprehensive security headers implementation across different layers of the TrueSpend application to protect against various web vulnerabilities.
 
+**⚠️ Important:** Security headers are managed in **Cloudflare Transform Rules**, not in vercel.json. See [`docs/CLOUDFLARE_COMPLETE_SETUP.md`](./CLOUDFLARE_COMPLETE_SETUP.md) for setup instructions.
+
 ## Architecture Layers
 
-### 1. Vercel Edge Headers (`vercel.json`)
+### 1. Cloudflare Transform Rules (Primary Implementation)
 
-Applied at the CDN/edge level before requests reach the application. These headers are the first line of defense.
+Applied at the Cloudflare edge before requests reach Vercel or any application code. These headers protect all traffic at the outermost layer.
+
+**Configuration Location:**  
+Cloudflare Dashboard → Rules → Transform Rules → Modify Response Header
 
 **Configured Headers:**
 
@@ -80,6 +85,10 @@ Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsa
 - **Protection:** XSS, code injection, data exfiltration
 - **Mode:** Report-only for testing (switch to enforcing after validation)
 
+**⚠️ Important:** After updating Transform Rules, always purge Cloudflare cache:
+- Cloudflare Dashboard → Caching → Configuration → Purge Everything
+- Allow 1-2 minutes for global propagation
+
 ### 2. Supabase Edge Function (`supabase/functions/security-headers`)
 
 Provides security headers programmatically for backend API responses. Used by edge functions that need to add security headers to their responses.
@@ -134,10 +143,11 @@ CREATE TABLE csp_violations (
 
 ## Security Headers Hierarchy
 
-### Layer 1: Vercel Edge (First Defense)
-- Applied before request reaches application
-- Protects all routes automatically
+### Layer 1: Cloudflare Transform Rules (First Defense)
+- Applied at the outermost edge before requests reach Vercel
+- Protects all routes automatically at global edge locations
 - Cannot be bypassed by application code
+- Must purge cache after rule updates
 
 ### Layer 2: Supabase Edge Functions (API Defense)
 - Applied to backend API responses
@@ -155,7 +165,7 @@ CREATE TABLE csp_violations (
 
 ```bash
 # Test security headers
-curl -I https://yourdomain.com
+curl -I https://truespend.app
 
 # Expected headers:
 # Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
@@ -166,6 +176,11 @@ curl -I https://yourdomain.com
 # Permissions-Policy: camera=(), microphone=(), geolocation=(self), interest-cohort=()
 # Content-Security-Policy-Report-Only: ...
 ```
+
+**⚠️ Important:** After updating Cloudflare Transform Rules:
+1. Purge Cloudflare cache: Dashboard → Caching → Purge Everything
+2. Wait 1-2 minutes for global propagation
+3. Test with curl to verify headers
 
 ### Online Security Scanners
 
@@ -289,11 +304,13 @@ connectSrc: [
 - curl doesn't show expected headers
 
 **Checklist:**
-1. ✅ Verify `vercel.json` syntax is correct
-2. ✅ Redeploy to Vercel (headers only apply after deployment)
-3. ✅ Clear browser cache and CDN cache
-4. ✅ Check for conflicting headers in code
-5. ✅ Test with `curl -I` (bypasses browser cache)
+1. ✅ **Purge Cloudflare cache** (most common cause)
+2. ✅ Verify Transform Rules are enabled in Cloudflare Dashboard
+3. ✅ Check rule priority/order in Cloudflare
+4. ✅ Verify rule match condition is "All incoming requests"
+5. ✅ Clear browser cache (Ctrl+Shift+R)
+6. ✅ Test with `curl -I` (bypasses browser cache)
+7. ✅ Wait 1-2 minutes for global propagation
 
 ### Issue: HSTS Preload Not Working
 
@@ -322,6 +339,7 @@ connectSrc: [
 
 ## Related Documentation
 
+- [Cloudflare Complete Setup](./CLOUDFLARE_COMPLETE_SETUP.md) - **Primary reference for security headers**
 - [WAF Setup Guide](./WAF_SETUP.md) - Cloudflare WAF configuration
 - [DDoS Protection](./DDOS_PROTECTION.md) - DDoS mitigation strategies
 - [Security Dashboard](./DASHBOARD_README.md) - Security monitoring UI
@@ -337,7 +355,14 @@ connectSrc: [
 
 ## Version History
 
-### v2.0.1 (Current)
+### v2.0.2 (Current)
+- **Migrated security headers to Cloudflare Transform Rules**
+- Removed security headers from `vercel.json` (caching rules remain)
+- Updated documentation with Cloudflare-specific instructions
+- Added cache purging requirements and troubleshooting
+- Improved verification procedures with propagation timing
+
+### v2.0.1
 - Added comprehensive security headers to `vercel.json`
 - Implemented CSP in report-only mode
 - Created security headers documentation
@@ -351,9 +376,9 @@ connectSrc: [
 ## Next Steps
 
 1. **Immediate Actions:**
-   - [ ] Deploy updated `vercel.json` to production
-   - [ ] Run SecurityHeaders.com scan
-   - [ ] Verify all headers are applied correctly
+   - [x] Migrated security headers to Cloudflare Transform Rules
+   - [x] Removed security headers from `vercel.json`
+   - [ ] Run SecurityHeaders.com scan to verify all headers
    - [ ] Monitor CSP violations for first 48 hours
 
 2. **Short Term (1-2 weeks):**
