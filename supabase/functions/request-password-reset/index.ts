@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
     }
 
     // Create reset link
-    const resetLink = `${Deno.env.get('SITE_URL') || 'https://truespend.lovable.app'}/reset-password?token=${token}`;
+    const resetLink = `${Deno.env.get('SITE_URL') || 'https://truespend.org'}/reset-password?token=${token}`;
 
     // Render email template
     const emailHtml = await renderAsync(

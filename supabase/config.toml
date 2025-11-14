@@ -30,11 +30,6 @@ verify_jwt = false
 [functions.geofence-processor]
 verify_jwt = false
 
-[functions.resend-test-email]
-verify_jwt = false
-
-[functions.verify-test-code]
-verify_jwt = false
 
 [functions.send-verification-email]
 verify_jwt = true
