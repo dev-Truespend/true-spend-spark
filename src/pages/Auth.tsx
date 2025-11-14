@@ -76,10 +76,10 @@ export default function Auth() {
 
   // Auto-redirect if user is already logged in (but not during MFA processing)
   useEffect(() => {
-    if (!loading && user && !showMFAModal && !mfaInlineProcessing && !mfaPending) {
+    if (!loading && user && !showMFAModal && !mfaInlineProcessing && !mfaPending && !isLoading && !mfaRequired) {
       navigate(redirectTo, { replace: true });
     }
-  }, [user, loading, navigate, showMFAModal, mfaInlineProcessing, mfaPending, redirectTo]);
+  }, [user, loading, navigate, redirectTo, showMFAModal, mfaInlineProcessing, mfaPending, isLoading, mfaRequired]);
 
   // Pre-fill email from password reset redirect
   useEffect(() => {
@@ -216,7 +216,7 @@ export default function Auth() {
               title: "Success",
               description: "Login successful!",
             });
-            navigate(redirectTo);
+            navigate(redirectTo, { replace: true });
             return;
           } catch (err) {
             setMfaError('Verification failed. Please try again.');
@@ -232,40 +232,49 @@ export default function Auth() {
         return;
       }
       
-      if (error) {
-        // Use error code to determine the type of error
-        if (error.code === 'account_locked') {
-          toast({
-            title: "Account Locked",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else if (error.code === 'account_not_verified') {
-          toast({
-            title: "Email Not Verified",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else if (error.code === 'verification_expired') {
-          toast({
-            title: "Verification Expired",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else if (error.code === 'account_not_found') {
-          toast({
-            title: "Account Not Found",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else {
-          // Generic error for all other cases (including invalid credentials)
-          toast({
-            title: "Sign In Failed",
-            description: error.message || "We couldn't sign you in with those details. Check your email and password and try again.",
-            variant: "destructive",
-          });
-        }
+      // No MFA required - check for errors
+      // No MFA required and no error - success!
+      if (!error) {
+        toast({
+          title: "Success",
+          description: "Login successful!",
+        });
+        navigate(redirectTo, { replace: true });
+        return;
+      }
+      
+      // Handle errors
+      if (error.code === 'account_locked') {
+        toast({
+          title: "Account Locked",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else if (error.code === 'account_not_verified') {
+        toast({
+          title: "Email Not Verified",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else if (error.code === 'verification_expired') {
+        toast({
+          title: "Verification Expired",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else if (error.code === 'account_not_found') {
+        toast({
+          title: "Account Not Found",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        // Generic error for all other cases (including invalid credentials)
+        toast({
+          title: "Sign In Failed",
+          description: error.message || "We couldn't sign you in with those details. Check your email and password and try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -426,7 +435,7 @@ export default function Auth() {
           title: "Success",
           description: "Login successful!",
         });
-        navigate(redirectTo);
+        navigate(redirectTo, { replace: true });
       }
     } catch (error) {
       setMfaError('Verification failed. Please try again.');
