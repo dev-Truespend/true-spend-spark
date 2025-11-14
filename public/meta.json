@@ -1,9 +1,18 @@
 {
-  "version": "2.1.0",
-  "buildId": "20251114T120000",
-  "commit": "mfa-google-oauth-integration-v2.1.0",
-  "timestamp": 1731585600000,
+  "version": "2.2.0",
+  "buildId": "20251114T140000",
+  "commit": "profile-ux-improvements-v2.2.0",
+  "timestamp": 1731592800000,
   "changelog": {
+    "2.2.0": [
+      "Redesigned user profile dropdown with improved professional layout",
+      "Moved Change Password to Profile Information section",
+      "Added inline MFA enable/disable controls for email/password users",
+      "Added Google 2FA management guidance for OAuth users",
+      "Removed Recent Login Activity and Security Events sections",
+      "Fixed Google OAuth redirect to dashboard instead of home page",
+      "Removed Website link from navigation menu"
+    ],
     "2.1.0": [
       "Fixed MFA redirect loop issue for password-based users",
       "Added Google 2-Step Verification instructions for OAuth users",
