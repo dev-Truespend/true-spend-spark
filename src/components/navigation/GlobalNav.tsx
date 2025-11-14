@@ -1,17 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
-import { Settings, LayoutDashboard, BarChart3, Globe, User, LogOut, RefreshCw } from 'lucide-react';
+import { Settings, LayoutDashboard, BarChart3, Globe, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VersionDisplay } from '@/components/version/VersionDisplay';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger,
-  DropdownMenuSeparator 
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { UserProfileDropdown } from '@/components/auth/UserProfileDropdown';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -117,35 +110,7 @@ export function GlobalNav() {
               </Button>
             )}
             
-            {!user ? (
-              <Button onClick={() => navigate('/auth')} size="sm">
-                Login/Create Account
-              </Button>
-            ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    <Avatar className="w-6 h-6">
-                      <AvatarFallback className="text-xs">
-                        {user.email?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="hidden md:inline">{user.email}</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate(hasRole('admin') ? '/launcher' : '/dashboard')}>
-                    <LayoutDashboard className="w-4 h-4 mr-2" />
-                    My Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={signOut}>
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            {user && <UserProfileDropdown />}
           </nav>
         </div>
       </div>
