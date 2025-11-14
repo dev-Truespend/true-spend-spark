@@ -60,31 +60,78 @@ export type Database = {
         Row: {
           attempt_type: string
           created_at: string
+          endpoint: string | null
           id: string
+          identifier: string | null
           ip_address: string
+          ip_address_hash: string | null
           metadata: Json | null
           success: boolean
           user_id: string | null
+          window_start: string | null
         }
         Insert: {
           attempt_type: string
           created_at?: string
+          endpoint?: string | null
           id?: string
+          identifier?: string | null
           ip_address: string
+          ip_address_hash?: string | null
           metadata?: Json | null
           success?: boolean
           user_id?: string | null
+          window_start?: string | null
         }
         Update: {
           attempt_type?: string
           created_at?: string
+          endpoint?: string | null
           id?: string
+          identifier?: string | null
           ip_address?: string
+          ip_address_hash?: string | null
           metadata?: Json | null
           success?: boolean
           user_id?: string | null
+          window_start?: string | null
         }
         Relationships: []
+      }
+      auth_identities: {
+        Row: {
+          created_at: string
+          id: string
+          last_sign_in_at: string | null
+          provider: string
+          provider_user_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_sign_in_at?: string | null
+          provider: string
+          provider_user_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_sign_in_at?: string | null
+          provider?: string
+          provider_user_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auth_identities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       budgets: {
         Row: {
@@ -175,6 +222,30 @@ export type Database = {
           timestamp?: string | null
           user_agent?: string | null
           violated_directive?: string
+        }
+        Relationships: []
+      }
+      email_rate_limits: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          email: string
+          last_attempt_at: string
+          window_start: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          email: string
+          last_attempt_at?: string
+          window_start?: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          email?: string
+          last_attempt_at?: string
+          window_start?: string
         }
         Relationships: []
       }
@@ -386,33 +457,63 @@ export type Database = {
         }
         Relationships: []
       }
-      mfa_email_codes: {
+      mfa_backup_codes: {
         Row: {
-          attempts: number
           code: string
-          created_at: string
-          expires_at: string
+          created_at: string | null
           id: string
+          used_at: string | null
           user_id: string
-          verified: boolean
         }
         Insert: {
-          attempts?: number
           code: string
-          created_at?: string
-          expires_at: string
+          created_at?: string | null
           id?: string
+          used_at?: string | null
           user_id: string
-          verified?: boolean
         }
         Update: {
-          attempts?: number
           code?: string
-          created_at?: string
-          expires_at?: string
+          created_at?: string | null
           id?: string
+          used_at?: string | null
           user_id?: string
-          verified?: boolean
+        }
+        Relationships: []
+      }
+      mfa_settings: {
+        Row: {
+          backup_codes_generated: boolean | null
+          created_at: string | null
+          enabled_at: string | null
+          id: string
+          last_verified_at: string | null
+          totp_enabled: boolean | null
+          totp_secret: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          backup_codes_generated?: boolean | null
+          created_at?: string | null
+          enabled_at?: string | null
+          id?: string
+          last_verified_at?: string | null
+          totp_enabled?: boolean | null
+          totp_secret?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          backup_codes_generated?: boolean | null
+          created_at?: string | null
+          enabled_at?: string | null
+          id?: string
+          last_verified_at?: string | null
+          totp_enabled?: boolean | null
+          totp_secret?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -459,6 +560,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      password_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          password_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          password_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          password_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      password_reset_tokens: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          ip_address: string | null
+          ip_address_hash: string | null
+          token: string
+          used_at: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          ip_address?: string | null
+          ip_address_hash?: string | null
+          token: string
+          used_at?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          ip_address_hash?: string | null
+          token?: string
+          used_at?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       phase_tests: {
         Row: {
@@ -611,30 +769,125 @@ export type Database = {
           },
         ]
       }
-      profiles: {
+      previous_emails: {
         Row: {
           created_at: string
           email: string
-          full_name: string | null
           id: string
-          phone: string | null
-          updated_at: string
+          replaced_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
           email: string
-          full_name?: string | null
-          id: string
-          phone?: string | null
-          updated_at?: string
+          id?: string
+          replaced_at?: string
+          user_id: string
         }
         Update: {
           created_at?: string
           email?: string
+          id?: string
+          replaced_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "previous_emails_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          auth_provider: string | null
+          avatar_url: string | null
+          created_at: string
+          deleted_at: string | null
+          email: string
+          email_change_expires_at: string | null
+          email_change_token: string | null
+          email_encrypted: string | null
+          email_hash: string | null
+          email_verified_at: string | null
+          first_name: string | null
+          first_name_encrypted: string | null
+          full_name: string | null
+          id: string
+          last_name: string | null
+          last_name_encrypted: string | null
+          pending_new_email: string | null
+          pending_new_email_encrypted: string | null
+          pending_new_email_hash: string | null
+          phone: string | null
+          phone_encrypted: string | null
+          phone_hash: string | null
+          provider_user_id: string | null
+          status: string
+          updated_at: string
+          verification_expires_at: string | null
+          verification_token: string | null
+        }
+        Insert: {
+          auth_provider?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          email: string
+          email_change_expires_at?: string | null
+          email_change_token?: string | null
+          email_encrypted?: string | null
+          email_hash?: string | null
+          email_verified_at?: string | null
+          first_name?: string | null
+          first_name_encrypted?: string | null
+          full_name?: string | null
+          id: string
+          last_name?: string | null
+          last_name_encrypted?: string | null
+          pending_new_email?: string | null
+          pending_new_email_encrypted?: string | null
+          pending_new_email_hash?: string | null
+          phone?: string | null
+          phone_encrypted?: string | null
+          phone_hash?: string | null
+          provider_user_id?: string | null
+          status?: string
+          updated_at?: string
+          verification_expires_at?: string | null
+          verification_token?: string | null
+        }
+        Update: {
+          auth_provider?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          email?: string
+          email_change_expires_at?: string | null
+          email_change_token?: string | null
+          email_encrypted?: string | null
+          email_hash?: string | null
+          email_verified_at?: string | null
+          first_name?: string | null
+          first_name_encrypted?: string | null
           full_name?: string | null
           id?: string
+          last_name?: string | null
+          last_name_encrypted?: string | null
+          pending_new_email?: string | null
+          pending_new_email_encrypted?: string | null
+          pending_new_email_hash?: string | null
           phone?: string | null
+          phone_encrypted?: string | null
+          phone_hash?: string | null
+          provider_user_id?: string | null
+          status?: string
           updated_at?: string
+          verification_expires_at?: string | null
+          verification_token?: string | null
         }
         Relationships: []
       }
@@ -787,6 +1040,7 @@ export type Database = {
           event_type: string
           id: string
           ip_address: string | null
+          ip_address_hash: string | null
           severity: string
           user_agent: string | null
           user_id: string | null
@@ -797,6 +1051,7 @@ export type Database = {
           event_type: string
           id?: string
           ip_address?: string | null
+          ip_address_hash?: string | null
           severity?: string
           user_agent?: string | null
           user_id?: string | null
@@ -807,6 +1062,7 @@ export type Database = {
           event_type?: string
           id?: string
           ip_address?: string | null
+          ip_address_hash?: string | null
           severity?: string
           user_agent?: string | null
           user_id?: string | null
@@ -1025,7 +1281,6 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           id: string
-          mfa_email_enabled: boolean | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
@@ -1033,7 +1288,6 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
-          mfa_email_enabled?: boolean | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
@@ -1041,7 +1295,6 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
-          mfa_email_enabled?: boolean | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
@@ -1052,11 +1305,52 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_password_to_history: {
+        Args: { p_password_hash: string; p_user_id: string }
+        Returns: undefined
+      }
+      check_password_history: {
+        Args: {
+          p_history_count?: number
+          p_password_hash: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       cleanup_expired_mfa_codes: { Args: never; Returns: number }
       cleanup_old_auth_attempts: { Args: never; Returns: number }
       cleanup_old_csp_violations: { Args: never; Returns: number }
       cleanup_old_rate_limits: { Args: never; Returns: number }
       cleanup_old_security_logs: { Args: never; Returns: number }
+      cleanup_unverified_accounts: { Args: never; Returns: number }
+      clear_login_attempts: {
+        Args: { p_identifier: string }
+        Returns: undefined
+      }
+      decrypt_pii: { Args: { secret_id: string }; Returns: string }
+      decrypt_totp_secret: { Args: { secret_id: string }; Returns: string }
+      delete_totp_vault_secret: {
+        Args: { secret_id: string }
+        Returns: undefined
+      }
+      encrypt_pii: { Args: { data: string }; Returns: string }
+      encrypt_totp_secret: { Args: { secret: string }; Returns: string }
+      get_decrypted_profile: {
+        Args: { p_user_id: string }
+        Returns: {
+          auth_provider: string
+          created_at: string
+          email: string
+          first_name: string
+          full_name: string
+          id: string
+          last_name: string
+          pending_new_email: string
+          phone: string
+          status: string
+          updated_at: string
+        }[]
+      }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
@@ -1067,6 +1361,44 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      hash_ip: { Args: { ip: string }; Returns: string }
+      hash_pii: { Args: { data: string }; Returns: string }
+      invalidate_all_user_sessions: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
+      is_account_locked: {
+        Args: { p_identifier: string }
+        Returns: Record<string, unknown>
+      }
+      mark_token_used: { Args: { p_token: string }; Returns: undefined }
+      migrate_existing_pii_to_encrypted: {
+        Args: never
+        Returns: {
+          error_count: number
+          errors: Json
+          migrated_count: number
+        }[]
+      }
+      record_login_attempt: {
+        Args: {
+          p_identifier: string
+          p_ip_address: string
+          p_metadata?: Json
+          p_success: boolean
+          p_user_id?: string
+        }
+        Returns: undefined
+      }
+      validate_reset_token: {
+        Args: { p_token: string }
+        Returns: {
+          error_message: string
+          expires_at: string
+          is_valid: boolean
+          user_id: string
+        }[]
       }
     }
     Enums: {
