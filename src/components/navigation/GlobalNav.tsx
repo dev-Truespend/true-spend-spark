@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
-import { Settings, LayoutDashboard, BarChart3, Globe, RefreshCw } from 'lucide-react';
+import { Settings, LayoutDashboard, BarChart3, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VersionDisplay } from '@/components/version/VersionDisplay';
 import { UserProfileDropdown } from '@/components/auth/UserProfileDropdown';
@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', route: '/dashboard', icon: LayoutDashboard, roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'monitoring', label: 'Monitoring', route: '/monitoring', icon: BarChart3, roles: ['admin', 'developer'], authRequired: true },
-  { id: 'website', label: 'Website', route: '/website', icon: Globe, roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'admin', label: 'Admin', route: '/admin', icon: Settings, roles: ['admin'], authRequired: true },
 ];
 
