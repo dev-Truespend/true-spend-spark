@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     // Query profiles table for auth provider and status
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('auth_provider, status, email_verified_at')
+      .select('id, auth_provider, status, email_verified_at')
       .eq('email', email.toLowerCase().trim())
       .maybeSingle();
 
@@ -116,12 +116,20 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check if user has MFA enabled
+    const { data: mfaSettings } = await supabase
+      .from('mfa_settings')
+      .select('totp_enabled')
+      .eq('user_id', profile.id)
+      .maybeSingle();
+
     // Profile found - return details
     const response = {
       provider: profile.auth_provider || 'email',
       accountStatus: profile.status || 'active',
       verified: !!profile.email_verified_at,
-      requiresVerification: profile.status === 'pending_verification'
+      requiresVerification: profile.status === 'pending_verification',
+      mfaEnabled: mfaSettings?.totp_enabled || false
     };
 
     // Log the check (for analytics, not security)

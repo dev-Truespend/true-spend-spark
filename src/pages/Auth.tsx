@@ -16,6 +16,7 @@ import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { MFAVerifyModal } from "@/components/auth/MFAVerifyModal";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { RefreshCw, AlertCircle, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
@@ -62,17 +63,23 @@ export default function Auth() {
   const [mfaUserId, setMfaUserId] = useState<string | null>(null);
   const [mfaError, setMfaError] = useState<string | null>(null);
   const [mfaCredentials, setMfaCredentials] = useState<{ email: string; password: string } | null>(null);
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaInlineProcessing, setMfaInlineProcessing] = useState(false);
   const { signIn, signUp, user, loading, checkAuthProvider, verifyMFACode, verifyBackupCode } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  
+  // Get redirectTo from URL params
+  const redirectTo = new URLSearchParams(location.search).get('redirectTo') || '/dashboard';
 
-  // Auto-redirect if user is already logged in
+  // Auto-redirect if user is already logged in (but not during MFA processing)
   useEffect(() => {
-    if (!loading && user) {
-      navigate('/dashboard', { replace: true });
+    if (!loading && user && !showMFAModal && !mfaInlineProcessing) {
+      navigate(redirectTo, { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, showMFAModal, mfaInlineProcessing, redirectTo]);
 
   // Pre-fill email from password reset redirect
   useEffect(() => {
@@ -114,10 +121,14 @@ export default function Auth() {
 
   const handleLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
+    setMfaError(null);
     
     try {
       // Step 1: Check auth provider and account status
       const providerData = await checkAuthProvider(values.email);
+      
+      // Store MFA requirement state
+      setMfaRequired(providerData?.mfaEnabled || false);
       
       if (!providerData) {
         toast({
@@ -176,6 +187,36 @@ export default function Auth() {
       if (requiresMFA && userId) {
         setMfaUserId(userId);
         setMfaCredentials({ email: values.email, password: values.password });
+        
+        // If user already entered MFA code inline, verify it now
+        if (mfaCode && mfaCode.length === 6) {
+          setMfaInlineProcessing(true);
+          try {
+            const { error: mfaError } = await verifyMFACode(userId, mfaCode, values.email, values.password);
+            
+            if (mfaError) {
+              setMfaError(mfaError.message || 'Incorrect code. Please try again.');
+              setIsLoading(false);
+              setMfaInlineProcessing(false);
+              return;
+            }
+            
+            // Success - navigate to redirectTo
+            toast({
+              title: "Success",
+              description: "Login successful!",
+            });
+            navigate(redirectTo);
+            return;
+          } catch (err) {
+            setMfaError('Verification failed. Please try again.');
+            setIsLoading(false);
+            setMfaInlineProcessing(false);
+            return;
+          }
+        }
+        
+        // No inline code entered - show modal
         setShowMFAModal(true);
         setIsLoading(false);
         return;
@@ -360,11 +401,12 @@ export default function Auth() {
       } else {
         setShowMFAModal(false);
         setMfaCredentials(null); // Clear stored credentials
+        setMfaCode(""); // Clear inline code
         toast({
           title: "Success",
           description: "Login successful!",
         });
-        navigate('/dashboard');
+        navigate(redirectTo);
       }
     } catch (error) {
       setMfaError('Verification failed. Please try again.');
@@ -378,6 +420,8 @@ export default function Auth() {
     setMfaUserId(null);
     setMfaError(null);
     setMfaCredentials(null); // Clear stored credentials on cancel
+    setMfaCode(""); // Clear inline code
+    setMfaInlineProcessing(false);
   };
 
   const handleForceRefresh = async () => {
@@ -464,7 +508,26 @@ export default function Auth() {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="you@example.com" {...field} />
+                            <Input 
+                              placeholder="you@example.com" 
+                              {...field}
+                              onBlur={async (e) => {
+                                field.onBlur();
+                                // Check if MFA is required for this email
+                                const email = e.target.value.trim();
+                                if (email && email.includes('@')) {
+                                  try {
+                                    const providerData = await checkAuthProvider(email);
+                                    setMfaRequired(providerData?.mfaEnabled || false);
+                                    if (providerData?.mfaEnabled) {
+                                      setMfaCode(""); // Reset code when checking new email
+                                    }
+                                  } catch (err) {
+                                    // Silently fail - will check again on login
+                                  }
+                                }
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                           <p className="text-xs text-muted-foreground mt-1">
@@ -494,6 +557,37 @@ export default function Auth() {
                         </FormItem>
                       )}
                     />
+                    
+                    {/* Inline MFA Code Input - shown when MFA is required */}
+                    {mfaRequired && (
+                      <div className="space-y-2">
+                        <FormLabel>2FA Code</FormLabel>
+                        <InputOTP 
+                          maxLength={6} 
+                          value={mfaCode}
+                          onChange={(value) => setMfaCode(value)}
+                        >
+                          <InputOTPGroup>
+                            <InputOTPSlot index={0} />
+                            <InputOTPSlot index={1} />
+                            <InputOTPSlot index={2} />
+                            <InputOTPSlot index={3} />
+                            <InputOTPSlot index={4} />
+                            <InputOTPSlot index={5} />
+                          </InputOTPGroup>
+                        </InputOTP>
+                        <p className="text-xs text-muted-foreground">
+                          Enter the 6-digit code from your authenticator app
+                        </p>
+                        {mfaError && (
+                          <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{mfaError}</AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+                    )}
+                    
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? "Signing in..." : "Login"}
                     </Button>
