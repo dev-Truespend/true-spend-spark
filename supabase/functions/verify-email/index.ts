@@ -85,12 +85,12 @@ serve(async (req) => {
       throw updateError;
     }
 
-    // Log security event
+    // Log security event (without PII)
     await supabase.from('security_logs').insert({
       user_id: profile.id,
       event_type: 'email_verified',
       severity: 'info',
-      details: { email: profile.email }
+      details: { timestamp: new Date().toISOString() }
     });
 
     console.log(`Email verified for user ${profile.id}`);

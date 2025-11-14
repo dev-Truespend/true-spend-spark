@@ -28,7 +28,7 @@ serve(async (req) => {
     // Find profile by email change token
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('*')
+      .select('*, email_encrypted, pending_new_email_encrypted')
       .eq('email_change_token', token)
       .maybeSingle();
 
