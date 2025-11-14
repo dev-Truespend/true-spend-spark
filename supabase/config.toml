@@ -3,6 +3,21 @@ project_id = "uolpwcngftpmgkopltwz"
 [functions.csp-reporter]
 verify_jwt = false
 
+[functions.google-maps-geocode]
+verify_jwt = false
+
+[functions.google-places-details]
+verify_jwt = false
+
+[functions.google-maps-autocomplete]
+verify_jwt = false
+
+[functions.google-geolocation]
+verify_jwt = false
+
+[functions.google-maps-directions]
+verify_jwt = false
+
 [functions.mfa-generate-secret]
 verify_jwt = true
 
