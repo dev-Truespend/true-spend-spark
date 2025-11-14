@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
         });
     }
 
-    // Get user's MFA settings
+    // Get user's encrypted TOTP secret
     const { data: mfaSettings, error: mfaError } = await supabaseClient
       .from('mfa_settings')
       .select('totp_secret, totp_enabled')
@@ -92,9 +92,21 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Decrypt the TOTP secret from Vault
+    const { data: decryptedSecret, error: decryptError } = await supabaseClient
+      .rpc('decrypt_totp_secret', { secret_id: mfaSettings.totp_secret });
+
+    if (decryptError || !decryptedSecret) {
+      console.error('Decryption error:', decryptError);
+      return new Response(
+        JSON.stringify({ valid: false, error: 'Failed to decrypt TOTP secret' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Verify TOTP code
     const totp = new OTPAuth.TOTP({
-      secret: OTPAuth.Secret.fromBase32(mfaSettings.totp_secret),
+      secret: OTPAuth.Secret.fromBase32(decryptedSecret),
       algorithm: 'SHA1',
       digits: 6,
       period: 30,

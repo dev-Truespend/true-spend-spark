@@ -58,6 +58,13 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Get encrypted secret ID before deleting
+    const { data: mfaData } = await supabaseClient
+      .from('mfa_settings')
+      .select('totp_secret')
+      .eq('user_id', user.id)
+      .single();
+
     // Delete MFA settings
     const { error: deleteSettingsError } = await supabaseClient
       .from('mfa_settings')
@@ -70,6 +77,17 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: 'Failed to disable MFA' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Delete the encrypted secret from Vault
+    if (mfaData?.totp_secret) {
+      const { error: vaultDeleteError } = await supabaseClient
+        .rpc('delete_totp_vault_secret', { secret_id: mfaData.totp_secret });
+
+      if (vaultDeleteError) {
+        console.error('Error deleting Vault secret:', vaultDeleteError);
+        // Non-fatal, continue
+      }
     }
 
     // Delete backup codes
