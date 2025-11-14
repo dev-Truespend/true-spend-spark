@@ -3,6 +3,24 @@ project_id = "uolpwcngftpmgkopltwz"
 [functions.csp-reporter]
 verify_jwt = false
 
+[functions.mfa-generate-secret]
+verify_jwt = true
+
+[functions.mfa-enable]
+verify_jwt = true
+
+[functions.mfa-verify-totp]
+verify_jwt = false
+
+[functions.mfa-verify-backup-code]
+verify_jwt = false
+
+[functions.mfa-disable]
+verify_jwt = true
+
+[functions.mfa-regenerate-backup-codes]
+verify_jwt = true
+
 [functions.generate-timeline-image]
 verify_jwt = false
 

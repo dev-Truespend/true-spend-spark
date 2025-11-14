@@ -23,6 +23,7 @@ import Security from "./pages/dashboard/Security";
 import SecurityDashboard from "./pages/dashboard/SecurityDashboard";
 import Geofences from "./pages/dashboard/Geofences";
 import Auth from "./pages/Auth";
+import Settings from "./pages/Settings";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
@@ -97,6 +98,16 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <UserDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Settings */}
+              <Route 
+                path="/settings" 
+                element={
+                  <ProtectedRoute>
+                    <Settings />
                   </ProtectedRoute>
                 } 
               />

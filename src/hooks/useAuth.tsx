@@ -26,7 +26,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   profile: Profile | null;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: any; requiresMFA?: boolean; userId?: string }>;
   signUp: (data: SignUpData) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -34,6 +34,8 @@ interface AuthContextType {
   requestPasswordReset: (email: string) => Promise<{ error: any; message?: string }>;
   resetPassword: (token: string, newPassword: string) => Promise<{ error: any }>;
   checkAuthProvider: (email: string) => Promise<any>;
+  verifyMFACode: (userId: string, code: string) => Promise<{ error: any }>;
+  verifyBackupCode: (userId: string, code: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -367,6 +369,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const verifyMFACode = async (userId: string, code: string) => {
+    const { data, error } = await supabase.functions.invoke('mfa-verify-totp', {
+      body: { userId, code }
+    });
+    return data?.valid ? { error: null } : { error: { message: 'Invalid code' } };
+  };
+
+  const verifyBackupCode = async (userId: string, code: string) => {
+    const { data, error } = await supabase.functions.invoke('mfa-verify-backup-code', {
+      body: { userId, code }
+    });
+    return data?.valid ? { error: null } : { error: { message: 'Invalid backup code' } };
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -382,6 +398,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         requestPasswordReset,
         resetPassword,
         checkAuthProvider,
+        verifyMFACode,
+        verifyBackupCode
       }}
     >
       {children}
