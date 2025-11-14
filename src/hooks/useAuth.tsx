@@ -223,7 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('user_id', data.user.id)
         .maybeSingle();
 
-      if (mfaSettings?.totp_enabled) {
+      if ((mfaSettings as any)?.totp_enabled) {
         // Sign out and require MFA verification
         await supabase.auth.signOut();
         return { 

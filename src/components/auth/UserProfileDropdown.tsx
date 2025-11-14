@@ -53,7 +53,7 @@ export function UserProfileDropdown() {
         .eq('user_id', user.id)
         .maybeSingle();
       
-      setMfaEnabled(mfaData?.totp_enabled || false);
+      setMfaEnabled((mfaData as any)?.totp_enabled || false);
 
       // Fetch recent security logs
       const { data: logs } = await supabase
