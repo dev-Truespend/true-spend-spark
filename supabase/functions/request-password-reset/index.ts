@@ -1,8 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.80.0';
 import { Resend } from 'https://esm.sh/resend@4.0.0';
-import { renderAsync } from 'https://esm.sh/@react-email/components@0.0.22';
-import React from 'https://esm.sh/react@18.3.1';
-import { PasswordResetEmail } from '../_shared/email-templates/password-reset.tsx';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,7 +36,7 @@ Deno.serve(async (req) => {
       message: `If an account exists for ${email}, we've sent a password reset link. Please check your inbox and spam folder.`
     };
 
-    // Rate limiting: check if too many reset requests from this email
+    // Rate limiting: check if too many reset requests from this email (5 per hour for testing)
     const { data: recentRequests } = await supabase
       .from('password_reset_tokens')
       .select('created_at')
@@ -47,7 +44,7 @@ Deno.serve(async (req) => {
       .gte('created_at', new Date(Date.now() - 3600000).toISOString())
       .order('created_at', { ascending: false });
 
-    if (recentRequests && recentRequests.length >= 3) {
+    if (recentRequests && recentRequests.length >= 5) {
       // Too many requests, but still return success message
       console.log(`Rate limit hit for email: ${normalizedEmail}`);
       return new Response(
@@ -123,24 +120,50 @@ Deno.serve(async (req) => {
     // Create reset link
     const resetLink = `${Deno.env.get('SITE_URL') || 'https://truespend.org'}/reset-password?token=${token}`;
 
-    // Render email template
-    const emailHtml = await renderAsync(
-      React.createElement(PasswordResetEmail, {
-        firstName: profile.first_name || 'there',
-        resetLink,
-      })
-    );
+    // Create simple HTML email (avoiding React SSR issues)
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">Reset Your Password</h1>
+          </div>
+          <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+            <p style="font-size: 16px; margin-bottom: 20px;">Hi ${profile.first_name || 'there'},</p>
+            <p style="font-size: 16px; margin-bottom: 20px;">We received a request to reset your TrueSpend password. Click the button below to create a new password:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">Reset Password</a>
+            </div>
+            <p style="font-size: 14px; color: #666; margin-bottom: 20px;">Or copy and paste this link into your browser:</p>
+            <p style="font-size: 14px; color: #667eea; word-break: break-all; margin-bottom: 20px;">${resetLink}</p>
+            <p style="font-size: 14px; color: #666; margin-bottom: 10px;"><strong>This link will expire in 30 minutes.</strong></p>
+            <p style="font-size: 14px; color: #666; margin-bottom: 20px;">If you didn't request a password reset, you can safely ignore this email.</p>
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+            <p style="font-size: 12px; color: #999; text-align: center;">TrueSpend Security Team</p>
+          </div>
+        </body>
+      </html>
+    `;
 
     // Send email
     const { error: emailError } = await resend.emails.send({
-      from: 'TrueSpend <noreply@truespend.app>',
+      from: Deno.env.get('RESEND_FROM_EMAIL') || 'TrueSpend <noreply@truespend.org>',
       to: [profile.email],
       subject: 'Reset your TrueSpend password',
       html: emailHtml,
     });
 
     if (emailError) {
-      console.error('Failed to send password reset email:', emailError);
+      console.error('❌ Password reset email failed:', {
+        error: emailError,
+        to: profile.email
+      });
+    } else {
+      console.log('✅ Password reset email sent to:', profile.email);
     }
 
     // Log security event
