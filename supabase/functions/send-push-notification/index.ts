@@ -14,60 +14,37 @@ let tokenExpiresAt = 0;
  * Uses JWT assertion flow as per Google OAuth 2.0 spec
  */
 async function getFirebaseAccessToken(): Promise<string> {
-  // Return cached token if still valid (with 5 minute buffer)
-  const now = Date.now();
-  if (cachedAccessToken && tokenExpiresAt > now + 300000) {
+  const now = Math.floor(Date.now() / 1000);
+
+  if (cachedAccessToken && tokenExpiresAt > now + 300) {
+    console.log('Using cached Firebase access token');
     return cachedAccessToken;
   }
 
+  console.log('Generating new Firebase access token');
   const serviceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT_JSON');
   if (!serviceAccountJson) {
     throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON not configured');
   }
 
   const serviceAccount = JSON.parse(serviceAccountJson);
-  const { client_email, private_key } = serviceAccount;
-
-  if (!client_email || !private_key) {
-    throw new Error('Invalid service account JSON');
-  }
-
-  // Create JWT for token exchange
-  const jwtHeader = {
-    alg: 'RS256',
-    typ: 'JWT',
-  };
-
-  const iat = Math.floor(now / 1000);
-  const exp = iat + 3600; // 1 hour
-
-  const jwtClaims = {
-    iss: client_email,
-    sub: client_email,
+  const jwtPayload = {
+    iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
     aud: 'https://oauth2.googleapis.com/token',
-    iat,
-    exp,
+    iat: now,
+    exp: now + 3600,
     scope: 'https://www.googleapis.com/auth/firebase.messaging',
   };
 
-  // Encode JWT
-  const encoder = new TextEncoder();
-  const headerEncoded = btoa(JSON.stringify(jwtHeader)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-  const claimsEncoded = btoa(JSON.stringify(jwtClaims)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-  const unsignedToken = `${headerEncoded}.${claimsEncoded}`;
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const encodedHeader = btoa(JSON.stringify(header));
+  const encodedPayload = btoa(JSON.stringify(jwtPayload));
+  const unsignedToken = `${encodedHeader}.${encodedPayload}`;
 
-  // Sign JWT with private key
-  const privateKeyPem = private_key.replace(/\\n/g, '\n');
-  const pemContents = privateKeyPem
-    .replace('-----BEGIN PRIVATE KEY-----', '')
-    .replace('-----END PRIVATE KEY-----', '')
-    .replace(/\s/g, '');
-  
-  const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
-
-  const cryptoKey = await crypto.subtle.importKey(
+  const privateKey = await crypto.subtle.importKey(
     'pkcs8',
-    binaryKey,
+    new TextEncoder().encode(serviceAccount.private_key),
     { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
     false,
     ['sign']
@@ -75,42 +52,90 @@ async function getFirebaseAccessToken(): Promise<string> {
 
   const signature = await crypto.subtle.sign(
     'RSASSA-PKCS1-v1_5',
-    cryptoKey,
-    encoder.encode(unsignedToken)
+    privateKey,
+    new TextEncoder().encode(unsignedToken)
   );
 
-  const signatureEncoded = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
+  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)));
+  const jwt = `${unsignedToken}.${encodedSignature}`;
 
-  const jwt = `${unsignedToken}.${signatureEncoded}`;
-
-  // Exchange JWT for access token
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: jwt,
-    }),
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
   });
 
   if (!tokenResponse.ok) {
-    const error = await tokenResponse.text();
-    console.error('Token exchange failed:', error);
-    throw new Error('Failed to get OAuth 2.0 access token');
+    throw new Error(`Failed to get Firebase access token: ${await tokenResponse.text()}`);
   }
 
   const tokenData = await tokenResponse.json();
   cachedAccessToken = tokenData.access_token;
-  tokenExpiresAt = now + (tokenData.expires_in * 1000);
+  tokenExpiresAt = now + (tokenData.expires_in || 3600);
+  
+  return cachedAccessToken;
+}
 
-  if (!cachedAccessToken) {
-    throw new Error('Failed to receive access token from OAuth 2.0');
+// Generate iOS APNS JWT token
+async function getApnsToken(): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+
+  if (cachedApnsToken && apnsTokenExpiresAt > now + 300) {
+    console.log('Using cached APNS token');
+    return cachedApnsToken;
   }
 
-  return cachedAccessToken;
+  console.log('Generating new APNS token');
+  
+  if (!IOS_APNS_KEY || !IOS_APNS_KEY_ID || !IOS_APNS_TEAM_ID) {
+    throw new Error('iOS APNS credentials not configured');
+  }
+
+  const header = {
+    alg: 'ES256',
+    kid: IOS_APNS_KEY_ID,
+  };
+
+  const payload = {
+    iss: IOS_APNS_TEAM_ID,
+    iat: now,
+  };
+
+  const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  const encodedPayload = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  const unsignedToken = `${encodedHeader}.${encodedPayload}`;
+
+  // Parse PKCS#8 private key
+  const pemContents = IOS_APNS_KEY
+    .replace('-----BEGIN PRIVATE KEY-----', '')
+    .replace('-----END PRIVATE KEY-----', '')
+    .replace(/\s/g, '');
+  
+  const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+
+  const privateKey = await crypto.subtle.importKey(
+    'pkcs8',
+    binaryKey,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    privateKey,
+    new TextEncoder().encode(unsignedToken)
+  );
+
+  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+
+  cachedApnsToken = `${unsignedToken}.${encodedSignature}`;
+  apnsTokenExpiresAt = now + 3000; // APNS tokens are valid for ~1 hour
+  
+  return cachedApnsToken;
 }
 
 /**
