@@ -16,7 +16,7 @@ import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const passwordValidation = z
@@ -49,7 +49,8 @@ const signupSchema = z.object({
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [mfaRequired, setMfaRequired] = useState(false);
-  const { signIn, signUp, user, loading, checkAuthProvider } = useAuth();
+  const [checkingMfa, setCheckingMfa] = useState(false);
+  const { signIn, signUp, user, loading, checkAuthProvider, checkMfaStatus } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -93,6 +94,18 @@ export default function Auth() {
       agreeToTerms: false,
     },
   });
+
+  const handleEmailBlur = async (email: string) => {
+    if (!email || !email.includes('@')) {
+      setMfaRequired(false);
+      return;
+    }
+    
+    setCheckingMfa(true);
+    const status = await checkMfaStatus(email);
+    setMfaRequired(status.mfaEnabled);
+    setCheckingMfa(false);
+  };
 
   const handleLogin = async (values: z.infer<typeof loginSchema>) => {
     try {
@@ -198,7 +211,18 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20 p-4">
-      <Card className="w-full max-w-md">
+      <div className="w-full max-w-md">
+        {/* Back to Home button */}
+        <Button
+          variant="ghost"
+          className="mb-4"
+          onClick={() => window.location.href = 'https://truespend.org'}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Home
+        </Button>
+        
+        <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-2xl text-center">TrueSpend</CardTitle>
           <CardDescription className="text-center">Sign in or create account</CardDescription>
@@ -221,13 +245,25 @@ export default function Auth() {
             <TabsContent value="login">
               <Form {...loginForm}>
                 <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-                  <FormField control={loginForm.control} name="email" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl><Input {...field} type="email" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                    <FormField
+                      control={loginForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              type="email" 
+                              placeholder="you@example.com"
+                              disabled={isLoading || checkingMfa}
+                              onBlur={(e) => handleEmailBlur(e.target.value)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   <FormField control={loginForm.control} name="password" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Password</FormLabel>
@@ -304,7 +340,8 @@ export default function Auth() {
             </TabsContent>
           </Tabs>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

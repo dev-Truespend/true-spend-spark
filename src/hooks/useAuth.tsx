@@ -37,6 +37,7 @@ interface AuthContextType {
   requestPasswordReset: (email: string) => Promise<{ error: any; message?: string }>;
   resetPassword: (token: string, newPassword: string) => Promise<{ error: any }>;
   checkAuthProvider: (email: string) => Promise<any>;
+  checkMfaStatus: (email: string) => Promise<{ exists: boolean; hasLocal: boolean; mfaEnabled: boolean; }>;
   verifyMFACode: (userId: string, code: string) => Promise<{ error: any }>;
   verifyBackupCode: (userId: string, code: string) => Promise<{ error: any }>;
 }
@@ -399,23 +400,24 @@ const navigate = useNavigate();
 
   const signOut = async () => {
     try {
-      // Clear all local state first
+      // Clear all local state FIRST
       setUser(null);
       setSession(null);
       setProfile(null);
       setMfaPending(false);
       
-      // Clear any localStorage items
-      localStorage.removeItem('ts_redirect_to');
+      // Clear ALL localStorage items related to auth
+      localStorage.clear();
       
-      // Sign out from Supabase (clears session)
-      await supabase.auth.signOut();
+      // Sign out with GLOBAL scope to invalidate ALL tokens/sessions
+      await supabase.auth.signOut({ scope: 'global' });
       
-      // Force navigate to auth page
-      navigate("/auth", { replace: true });
+      // Force hard redirect (not navigate) to ensure clean state
+      window.location.href = '/auth';
     } catch (error) {
       console.error('Logout error:', error);
-      // Even on error, force redirect
+      // Even on error, clear storage and force redirect
+      localStorage.clear();
       window.location.href = '/auth';
     }
   };
@@ -448,6 +450,20 @@ const navigate = useNavigate();
     } catch (error) {
       console.error('Provider check error:', error);
       return null;
+    }
+  };
+
+  const checkMfaStatus = async (email: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('check-mfa-status', {
+        body: { email: email.toLowerCase().trim() }
+      });
+      
+      if (error) throw error;
+      return data || { exists: false, hasLocal: false, mfaEnabled: false };
+    } catch (error) {
+      console.error('MFA check error:', error);
+      return { exists: false, hasLocal: false, mfaEnabled: false };
     }
   };
 
@@ -575,6 +591,7 @@ const navigate = useNavigate();
         requestPasswordReset,
         resetPassword,
         checkAuthProvider,
+        checkMfaStatus,
         verifyMFACode,
         verifyBackupCode
       }}
