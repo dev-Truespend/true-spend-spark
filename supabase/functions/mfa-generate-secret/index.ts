@@ -56,8 +56,24 @@ Deno.serve(async (req) => {
     // Generate OTPAuth URL for QR code
     const otpauthUrl = totp.toString();
 
+    const { data: existing } = await userClient
+      .from('mfa_settings' as any)
+      .select('totp_secret')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (existing?.totp_secret) {
+      // Best-effort cleanup to avoid duplicate Vault secret name errors
+      const { error: vaultDeleteErr } = await adminClient
+        .rpc('delete_totp_vault_secret', { secret_id: existing.totp_secret });
+      if (vaultDeleteErr) {
+        console.warn('Vault delete before re-encrypt failed (non-fatal):', vaultDeleteErr);
+      }
+    }
+
     const { data: encryptedSecretId, error: encryptError } = await adminClient
       .rpc('encrypt_totp_secret', { secret });
+
 
     if (encryptError || !encryptedSecretId) {
       console.error('Encryption error:', encryptError);

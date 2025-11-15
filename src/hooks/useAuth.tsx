@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -47,8 +47,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mfaPending, setMfaPending] = useState(false);
-  const navigate = useNavigate();
+const [mfaPending, setMfaPending] = useState(false);
+const mfaPendingRef = useRef(false);
+useEffect(() => { mfaPendingRef.current = mfaPending; }, [mfaPending]);
+const navigate = useNavigate();
 
   // Fetch profile whenever user changes
   useEffect(() => {
@@ -123,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
 
             // If MFA verification is pending, never auto-redirect
-            if (mfaPending) {
+            if (mfaPendingRef.current) {
               console.log('[useAuth] MFA pending, skipping auto-redirect');
               return;
             }
