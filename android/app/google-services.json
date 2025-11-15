@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "537776974459",
+    "project_id": "oauth-setup-476417",
+    "storage_bucket": "oauth-setup-476417.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:537776974459:android:78c0e9d4e55dd13c73d0de",
+        "android_client_info": {
+          "package_name": "ai.truespend.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "537776974459-0o0pp2bjffh3v6bfhsdfn69a4a9u6k66.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_hrI7upZwnLktE7MQMp2SQIYVPcr0IEQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "537776974459-0o0pp2bjffh3v6bfhsdfn69a4a9u6k66.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

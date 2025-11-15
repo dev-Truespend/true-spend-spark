@@ -1,202 +1,221 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Bell, BellOff, Check, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Bell, BellOff } from 'lucide-react';
+
+// Type definitions for Capacitor Push Notifications
+interface PushNotificationToken {
+  value: string;
+}
+
+interface PushNotification {
+  title?: string;
+  body?: string;
+  id: string;
+  badge?: number;
+  data?: any;
+}
+
+interface PushNotificationActionPerformed {
+  actionId: string;
+  notification: PushNotification;
+}
+
+interface CapacitorPlatform {
+  getPlatform: () => string;
+}
+
+declare global {
+  interface Window {
+    Capacitor?: CapacitorPlatform;
+    PushNotifications?: {
+      checkPermissions: () => Promise<{ receive: string }>;
+      requestPermissions: () => Promise<{ receive: string }>;
+      register: () => Promise<void>;
+      addListener: (eventName: string, callback: (data: any) => void) => Promise<{ remove: () => void }>;
+      removeAllListeners: () => Promise<void>;
+    };
+  }
+}
 
 export function PushNotificationManager() {
   const { user } = useAuth();
-  const [permission, setPermission] = useState<NotificationPermission>('default');
-  const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+  const [isEnabled, setIsEnabled] = useState(false);
+  const [isSupported, setIsSupported] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
-    if ('Notification' in window) {
-      setPermission(Notification.permission);
-      
-      // Check if already subscribed
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
-        navigator.serviceWorker.ready.then(async (registration) => {
-          const existingSub = await registration.pushManager.getSubscription();
-          setSubscription(existingSub);
-        });
-      }
-
-      // Show prompt if permission is default and user is logged in
-      if (Notification.permission === 'default' && user) {
-        const dismissed = localStorage.getItem('push-notification-dismissed');
-        if (!dismissed) {
-          setTimeout(() => setShowPrompt(true), 5000); // Show after 5 seconds
-        }
-      }
-    }
-  }, [user]);
-
-  const urlBase64ToUint8Array = (base64String: string) => {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-      .replace(/\-/g, '+')
-      .replace(/_/g, '/');
-
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  };
-
-  const subscribeToPush = async () => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      toast.error('Push notifications are not supported');
-      return;
-    }
-
-    if (!user) {
-      toast.error('Please sign in to enable notifications');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Request notification permission
-      const permission = await Notification.requestPermission();
-      setPermission(permission);
-
-      if (permission !== 'granted') {
-        toast.error('Notification permission denied');
+    const initPush = async () => {
+      // Check if running in Capacitor native environment
+      if (!window.Capacitor || !window.PushNotifications) {
+        console.log('[Push] Not running in Capacitor environment');
         return;
       }
 
-      // Get service worker registration
-      const registration = await navigator.serviceWorker.ready;
+      setIsSupported(true);
 
-      // Subscribe to push notifications
-      // Note: VAPID key should be stored in environment variables in production
-      const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBmYRTyPB0TM8GU3QBQs';
-      
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-      });
+      try {
+        const PushNotifications = window.PushNotifications;
 
-      setSubscription(subscription);
+        // Check current permission status
+        const result = await PushNotifications.checkPermissions();
+        
+        if (result.receive === 'granted') {
+          setIsEnabled(true);
+          await PushNotifications.register();
+        } else if (result.receive === 'denied') {
+          setIsEnabled(false);
+        }
 
-      // TODO: Save subscription to backend when push_subscriptions table is created
-      // For now, store locally
-      localStorage.setItem('push-subscription', JSON.stringify(subscription.toJSON()));
+        // Handle registration
+        await PushNotifications.addListener('registration', async (token: PushNotificationToken) => {
+          console.log('[Push] FCM Token received:', token.value);
+          
+          if (user) {
+            try {
+              // Save token to database
+              const { error } = await supabase.from('user_devices').upsert({
+                user_id: user.id,
+                fcm_token: token.value,
+                platform: window.Capacitor?.getPlatform() || 'unknown',
+                push_enabled: true,
+                device_name: navigator.userAgent,
+                updated_at: new Date().toISOString()
+              }, {
+                onConflict: 'user_id,fcm_token'
+              });
 
-      toast.success('Push notifications enabled!');
-      setShowPrompt(false);
+              if (error) {
+                console.error('[Push] Failed to save token:', error);
+                toast.error('Failed to enable push notifications');
+              } else {
+                console.log('[Push] Token saved successfully');
+                toast.success('Push notifications enabled!');
+                setIsEnabled(true);
+              }
+            } catch (err) {
+              console.error('[Push] Token save error:', err);
+            }
+          }
+        });
+
+        // Handle notification received while app is in foreground
+        await PushNotifications.addListener('pushNotificationReceived', (notification: PushNotification) => {
+          console.log('[Push] Notification received:', notification);
+          toast.info(notification.title || 'New notification', {
+            description: notification.body
+          });
+        });
+
+        // Handle notification tapped
+        await PushNotifications.addListener('pushNotificationActionPerformed', (action: PushNotificationActionPerformed) => {
+          console.log('[Push] Notification action performed:', action);
+          // Could navigate to relevant screen based on action.notification.data
+          if (action.notification.data?.route) {
+            window.location.href = action.notification.data.route;
+          }
+        });
+
+        // Handle registration error
+        await PushNotifications.addListener('registrationError', (error: any) => {
+          console.error('[Push] Registration error:', error);
+          toast.error('Failed to register for push notifications');
+        });
+
+      } catch (error) {
+        console.error('[Push] Initialization error:', error);
+      }
+    };
+
+    if (user) {
+      initPush();
+    }
+
+    return () => {
+      if (window.PushNotifications) {
+        window.PushNotifications.removeAllListeners();
+      }
+    };
+  }, [user]);
+
+  const enableNotifications = async () => {
+    if (!window.PushNotifications) return;
+    
+    setLoading(true);
+    try {
+      const permission = await window.PushNotifications.requestPermissions();
+      if (permission.receive === 'granted') {
+        await window.PushNotifications.register();
+      } else {
+        toast.error('Notification permission denied');
+      }
     } catch (error) {
-      console.error('[PushNotificationManager] Subscribe error:', error);
+      console.error('[Push] Enable error:', error);
       toast.error('Failed to enable notifications');
     } finally {
       setLoading(false);
     }
   };
 
-  const unsubscribeFromPush = async () => {
-    if (!subscription || !user) return;
+  const disableNotifications = async () => {
+    if (!user) return;
 
     setLoading(true);
-
     try {
-      await subscription.unsubscribe();
-      setSubscription(null);
+      // Remove token from database
+      const { error } = await supabase
+        .from('user_devices')
+        .update({ push_enabled: false })
+        .eq('user_id', user.id);
 
-      // TODO: Remove from backend when push_subscriptions table is created
-      localStorage.removeItem('push-subscription');
-
-      toast.success('Push notifications disabled');
+      if (error) {
+        console.error('[Push] Disable error:', error);
+        toast.error('Failed to disable notifications');
+      } else {
+        setIsEnabled(false);
+        toast.success('Push notifications disabled');
+      }
     } catch (error) {
-      console.error('[PushNotificationManager] Unsubscribe error:', error);
+      console.error('[Push] Disable error:', error);
       toast.error('Failed to disable notifications');
     } finally {
       setLoading(false);
     }
   };
 
-  const dismissPrompt = () => {
-    setShowPrompt(false);
-    localStorage.setItem('push-notification-dismissed', 'true');
-  };
-
-  if (!('Notification' in window)) {
+  // Don't render anything if not in Capacitor environment
+  if (!isSupported || !user) {
     return null;
   }
 
-  if (showPrompt && permission === 'default') {
-    return (
-      <Card className="fixed bottom-4 left-4 max-w-sm p-4 shadow-lg z-50 animate-in slide-in-from-bottom">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-full bg-primary/10">
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {isEnabled ? (
             <Bell className="h-5 w-5 text-primary" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold mb-1">Enable Notifications</h3>
-            <p className="text-sm text-muted-foreground mb-3">
-              Get notified about budget alerts, spending milestones, and transaction updates.
+          ) : (
+            <BellOff className="h-5 w-5 text-muted-foreground" />
+          )}
+          <div>
+            <p className="font-medium">Push Notifications</p>
+            <p className="text-sm text-muted-foreground">
+              {isEnabled ? 'Enabled for budget alerts and updates' : 'Disabled'}
             </p>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={subscribeToPush}
-                disabled={loading}
-              >
-                <Check className="h-4 w-4 mr-1" />
-                Enable
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={dismissPrompt}
-              >
-                <X className="h-4 w-4 mr-1" />
-                Not Now
-              </Button>
-            </div>
           </div>
         </div>
-      </Card>
-    );
-  }
-
-  // Settings UI
-  if (permission === 'granted') {
-    return (
-      <Card className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {subscription ? (
-              <Bell className="h-5 w-5 text-primary" />
-            ) : (
-              <BellOff className="h-5 w-5 text-muted-foreground" />
-            )}
-            <div>
-              <p className="font-medium">Push Notifications</p>
-              <p className="text-sm text-muted-foreground">
-                {subscription ? 'Enabled' : 'Disabled'}
-              </p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            variant={subscription ? 'outline' : 'default'}
-            onClick={subscription ? unsubscribeFromPush : subscribeToPush}
-            disabled={loading}
-          >
-            {subscription ? 'Disable' : 'Enable'}
-          </Button>
-        </div>
-      </Card>
-    );
-  }
-
-  return null;
+        <Button
+          size="sm"
+          variant={isEnabled ? 'outline' : 'default'}
+          onClick={isEnabled ? disableNotifications : enableNotifications}
+          disabled={loading}
+        >
+          {isEnabled ? 'Disable' : 'Enable'}
+        </Button>
+      </div>
+    </Card>
+  );
 }
