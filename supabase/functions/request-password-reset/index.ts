@@ -149,21 +149,37 @@ Deno.serve(async (req) => {
       </html>
     `;
 
-    // Send email
-    const { error: emailError } = await resend.emails.send({
-      from: Deno.env.get('RESEND_FROM_EMAIL') || 'TrueSpend <noreply@truespend.org>',
+    // Send email with enhanced logging
+    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'TrueSpend <noreply@truespend.org>';
+    console.log(`[RESEND] ===== EMAIL SEND ATTEMPT =====`);
+    console.log(`[RESEND] From: ${fromEmail}`);
+    console.log(`[RESEND] To: ${profile.email}`);
+    console.log(`[RESEND] API Key exists: ${!!Deno.env.get('RESEND_API_KEY')}`);
+    console.log(`[RESEND] API Key first 10 chars: ${Deno.env.get('RESEND_API_KEY')?.substring(0, 10) || 'MISSING'}`);
+    console.log(`[RESEND] Reset link: ${resetLink}`);
+
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: fromEmail,
       to: [profile.email],
       subject: 'Reset your TrueSpend password',
       html: emailHtml,
     });
 
     if (emailError) {
-      console.error('❌ Password reset email failed:', {
-        error: emailError,
-        to: profile.email
+      console.error('[RESEND] ❌ Email failed with error:', {
+        errorName: emailError.name,
+        errorMessage: emailError.message,
+        fullError: JSON.stringify(emailError, null, 2),
+        to: profile.email,
+        from: fromEmail
       });
+      // Still return success message (fail securely)
     } else {
-      console.log('✅ Password reset email sent to:', profile.email);
+      console.log('[RESEND] ✅ Email sent successfully!', {
+        emailId: emailData?.id,
+        to: profile.email,
+        from: fromEmail
+      });
     }
 
     // Log security event
