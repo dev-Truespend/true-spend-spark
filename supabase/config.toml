@@ -93,3 +93,15 @@ verify_jwt = false
 
 [functions.foursquare-cache-cleanup]
 verify_jwt = false
+
+[functions.bff-dashboard]
+verify_jwt = true
+
+[functions.process-transaction]
+verify_jwt = true
+
+[functions.ai-categorize-transaction]
+verify_jwt = true
+
+[functions.ai-analyze-spending]
+verify_jwt = true
