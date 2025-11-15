@@ -72,6 +72,27 @@ export default function Auth() {
   // Get redirectTo from URL params
   const redirectTo = new URLSearchParams(location.search).get('redirectTo') || '/dashboard';
 
+  // Prevent back button after logout
+  useEffect(() => {
+    const handlePopState = () => {
+      // If user tries to go back after being on auth page, stay on auth
+      if (!user) {
+        window.history.pushState(null, '', window.location.href);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    // Push initial state
+    if (!user) {
+      window.history.pushState(null, '', window.location.href);
+    }
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [user]);
+
   // Check for OAuth errors in URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
