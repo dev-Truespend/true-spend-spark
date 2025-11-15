@@ -38,6 +38,8 @@ const PHASE_SECTIONS = [
   { id: 'phase7', label: 'Phase 7: Data Planes & DR', color: 'bg-indigo-500' },
   { id: 'phase8', label: 'Phase 8: Observability & Polish', color: 'bg-slate-500' },
   { id: 'phase9', label: 'Phase 9: Browser Extension MVP 🔌', color: 'bg-rose-500' },
+  { id: 'phase10', label: 'Phase 10: Browser Extension Production 🔌', color: 'bg-red-500' },
+  { id: 'phase11', label: 'Phase 11: Native Mobile Apps 📱', color: 'bg-indigo-600' },
   { id: 'phase12', label: 'Phase 12: Performance Optimization 🚀', color: 'bg-violet-500' },
   { id: 'phase13', label: 'Phase 13: ML Infrastructure 🤖', color: 'bg-fuchsia-500' },
   { id: 'phase14', label: 'Phase 14: Advanced ML & Layer 10B 💰', color: 'bg-pink-500' },
@@ -55,7 +57,7 @@ export function EnhancedGanttChart({ currentWeek, totalWeeks, phases }: Enhanced
     const enabledPhases = filters.filter(f => f.enabled).map(f => f.id);
     
     let chart = `gantt
-    title TrueSpend v4.2: Blueprint Implementation Timeline (48 Weeks)
+    title TrueSpend v4.2: Blueprint Implementation Timeline (51 Weeks)
     dateFormat YYYY-MM-DD
     axisFormat Week %W
     `;
@@ -197,6 +199,35 @@ export function EnhancedGanttChart({ currentWeek, totalWeeks, phases }: Enhanced
     Chrome Web Store Submission     :p9_3, after p9_2, 2d`;
       if (showMilestones) {
         chart += `\n    Browser Extension Live          :milestone, p9_m, after p9_3, 0d`;
+      }
+    }
+
+    if (enabledPhases.includes('phase10')) {
+      chart += `
+    
+    section Phase 10: Browser Extension Production 🔌
+    Ephemeral SW Architecture       :p10_1, after p9_m, 5d
+    CORS/Bearer Auth                :p10_2, after p10_1, 3d
+    Realtime Filtering              :p10_3, after p10_2, 3d
+    Telemetry & Privacy Modal       :p10_4, after p10_3, 3d`;
+      if (showMilestones) {
+        chart += `\n    Extension Production Ready      :milestone, p10_m, after p10_4, 0d`;
+      }
+    }
+
+    if (enabledPhases.includes('phase11')) {
+      chart += `
+    
+    section Phase 11: Native Mobile Apps 📱
+    Capacitor Installation          :p11_1, after p10_m, 3d
+    iOS Project Setup              :p11_2, after p11_1, 2d
+    Android Project Setup          :p11_3, after p11_1, 2d
+    Background Location Tracking   :p11_4, after p11_2, 4d
+    Push Notifications (APNS/FCM)  :p11_5, after p11_4, 5d
+    Native Geofencing             :p11_6, after p11_5, 4d
+    iOS Widget Implementation     :p11_7, after p11_6, 3d`;
+      if (showMilestones) {
+        chart += `\n    Native Apps Complete            :milestone, p11_m, after p11_7, 0d`;
       }
     }
 

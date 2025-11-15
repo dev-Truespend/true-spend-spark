@@ -81,7 +81,7 @@ export function FeaturesByPhaseView() {
       <Card className="p-4">
         <div className="flex gap-2 items-center text-sm text-muted-foreground">
           <ListTodo className="h-4 w-4" />
-          <span>Showing {totalFeatures} user-facing features across 15 phases and 3 platforms</span>
+          <span>Showing {totalFeatures} user-facing features across 16 phases and 3 platforms</span>
         </div>
       </Card>
 

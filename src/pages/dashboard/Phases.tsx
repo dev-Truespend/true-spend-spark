@@ -17,7 +17,7 @@ export default function Phases() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Phase Management</h1>
-        <p className="text-muted-foreground mt-2">Detailed view of all 15 implementation phases (Blueprint v4.2 with performance & ML optimization)</p>
+        <p className="text-muted-foreground mt-2">Detailed view of all 16 implementation phases (Blueprint v4.2 with Native Mobile Apps 📱)</p>
       </div>
 
       <Accordion type="multiple" className="space-y-4">
