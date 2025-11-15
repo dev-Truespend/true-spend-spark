@@ -99,15 +99,32 @@ export default function Auth() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const hasError = params.get('error');
+    const oauthCallback = params.has('code'); // Supabase adds 'code' param after OAuth
     
-    // Only redirect if:
-    // 1. Not loading
-    // 2. User is authenticated
-    // 3. No MFA required
-    // 4. Not currently processing another operation
-    // 5. No error parameters in URL (avoid redirecting during error handling)
-    if (!loading && user && !mfaRequired && !isLoading && !hasError) {
-      // Redirect authenticated users based on role
+    // Handle successful OAuth callback - priority redirect
+    if (oauthCallback && !loading && user && !mfaRequired && !isLoading && !hasError) {
+      const redirectUser = async () => {
+        try {
+          const { getLandingRouteForUser } = await import('@/hooks/useAuth');
+          const landingRoute = await getLandingRouteForUser(user.id);
+          
+          console.log('OAuth callback detected, redirecting to:', landingRoute);
+          
+          // Clean URL and redirect
+          window.history.replaceState({}, '', '/auth');
+          navigate(landingRoute, { replace: true });
+        } catch (error) {
+          console.error('OAuth redirect error:', error);
+          navigate('/dashboard', { replace: true });
+        }
+      };
+      
+      redirectUser();
+      return;
+    }
+    
+    // Regular redirect for already authenticated users
+    if (!loading && user && !mfaRequired && !isLoading && !hasError && !oauthCallback) {
       const redirectUser = async () => {
         const { getLandingRouteForUser } = await import('@/hooks/useAuth');
         const landingRoute = await getLandingRouteForUser(user.id);
