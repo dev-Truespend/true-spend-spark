@@ -27,11 +27,18 @@ export function MFASetup() {
   const [isGoogleUser, setIsGoogleUser] = useState(false);
 
   useEffect(() => {
-    if (profile?.auth_provider === 'google') {
-      setIsGoogleUser(true);
-      setLoading(false);
-    } else {
+    // Check ALL providers for the user
+    const providers = profile?.auth_providers || [];
+    const hasGoogle = providers.includes('google');
+    const hasLocal = providers.includes('email');
+    
+    setIsGoogleUser(hasGoogle && !hasLocal); // Only Google, no local auth
+    
+    if (hasLocal) {
+      // Has email/password auth - check MFA status
       checkMFAStatus();
+    } else {
+      setLoading(false);
     }
   }, [user, profile]);
 

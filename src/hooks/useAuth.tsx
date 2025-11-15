@@ -12,7 +12,8 @@ interface Profile {
   status: 'pending_verification' | 'active' | 'deleted';
   verification_expires_at: string | null;
   email_verified_at: string | null;
-  auth_provider: string | null;
+  auth_provider: string | null; // Keep for backward compatibility
+  auth_providers: string[]; // NEW: Array of all providers
 }
 
 interface SignUpData {
@@ -52,7 +53,7 @@ const mfaPendingRef = useRef(false);
 useEffect(() => { mfaPendingRef.current = mfaPending; }, [mfaPending]);
 const navigate = useNavigate();
 
-  // Fetch profile whenever user changes
+  // Fetch profile with all auth providers
   useEffect(() => {
     const fetchProfile = async () => {
       if (user) {
@@ -67,6 +68,14 @@ const navigate = useNavigate();
         }
         
         if (data) {
+          // Get all auth providers for this user
+          const { data: identities } = await supabase
+            .from('auth_identities')
+            .select('provider')
+            .eq('user_id', user.id);
+          
+          const providers = identities?.map(i => i.provider) || [];
+          
           // Cast to any to bypass stale TypeScript types
           const profile = data as any;
           setProfile({
@@ -79,6 +88,7 @@ const navigate = useNavigate();
             verification_expires_at: profile.verification_expires_at || null,
             email_verified_at: profile.email_verified_at || null,
             auth_provider: profile.auth_provider || null,
+            auth_providers: providers, // Add all providers
           });
         } else if (user) {
           // Fallback to auth user data if profile doesn't exist yet
@@ -92,6 +102,7 @@ const navigate = useNavigate();
             verification_expires_at: null,
             email_verified_at: user.email_confirmed_at || null,
             auth_provider: user.app_metadata?.provider || 'email',
+            auth_providers: [user.app_metadata?.provider || 'email'],
           });
 
           // Retry after 1 second in case profile is being created by trigger
@@ -104,15 +115,18 @@ const navigate = useNavigate();
     fetchProfile();
   }, [user]);
 
+  // Listen to auth state changes - NO REDIRECTS HERE
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (mfaPendingRef.current) {
+        return;
       }
-    );
+
+      // Only update state, NO redirects
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
     // Check for existing session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -125,98 +139,177 @@ const navigate = useNavigate();
   }, []);
 
   const signIn = async (email: string, password: string, mfaCode?: string) => {
-    // Step 1: Check if account is locked (BEFORE attempting login)
     try {
-      const lockCheckResponse = await supabase.functions.invoke('check-login-attempts', {
-        body: { email: email.toLowerCase(), ipAddress: 'web' }
-      });
-
-      if (lockCheckResponse.error) {
-        throw lockCheckResponse.error;
-      }
-
-      if (lockCheckResponse.data?.locked) {
-        const lockData = lockCheckResponse.data;
-        let remainingTime = '';
-        
-        if (lockData.lockExpiresAt && !lockData.isEscalated) {
-          const expiresAt = new Date(lockData.lockExpiresAt);
-          const now = new Date();
-          const diffMinutes = Math.ceil((expiresAt.getTime() - now.getTime()) / 60000);
-          if (diffMinutes > 0) {
-            remainingTime = ` Try again in about ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}.`;
+      if (!email || !password) {
+        return {
+          error: {
+            message: "Email and password are required"
           }
-        }
-
-        return { 
-          error: { 
-            message: lockData.message + remainingTime,
-            code: 'account_locked'
-          } 
         };
       }
-    } catch (lockCheckError) {
-      console.error('Lock check failed:', lockCheckError);
-      // Continue with login attempt if lock check fails (fail open for better UX)
-    }
 
-    // Step 2: Attempt login with Supabase
-    const { error, data } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+      // Step 1: Check authentication provider for this email
+      const providerCheck = await checkAuthProvider(email);
+      
+      if (!providerCheck) {
+        return {
+          error: {
+            message: "No account found with this email"
+          }
+        };
+      }
 
-    // Step 3: Record login attempt
-    const userId = data?.user?.id || null;
-    try {
-      await supabase.functions.invoke('record-login-attempt', {
-        body: {
-          email: email.toLowerCase(),
-          success: !error,
-          ipAddress: 'web',
-          userId,
-          metadata: { timestamp: new Date().toISOString() }
+      // Step 2: Check if account is locked
+      try {
+        const lockCheckResponse = await supabase.functions.invoke('check-login-attempts', {
+          body: { email: email.toLowerCase(), ipAddress: 'web' }
+        });
+
+        if (lockCheckResponse.data?.locked) {
+          const lockData = lockCheckResponse.data;
+          let remainingTime = '';
+          
+          if (lockData.lockExpiresAt && !lockData.isEscalated) {
+            const expiresAt = new Date(lockData.lockExpiresAt);
+            const now = new Date();
+            const diffMinutes = Math.ceil((expiresAt.getTime() - now.getTime()) / 60000);
+            if (diffMinutes > 0) {
+              remainingTime = ` Try again in about ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}.`;
+            }
+          }
+
+          return { 
+            error: { 
+              message: lockData.message + remainingTime,
+              code: 'account_locked'
+            } 
+          };
         }
+      } catch (lockCheckError) {
+        console.error('Lock check failed:', lockCheckError);
+      }
+
+      // Step 3: Check if user has local auth
+      if (!providerCheck.hasLocal) {
+        if (providerCheck.hasGoogle) {
+          return {
+            error: {
+              message: "This email is registered with Google. Please use 'Sign in with Google'."
+            }
+          };
+        }
+        return {
+          error: {
+            message: "No account found with this email. Please sign up first."
+          }
+        };
+      }
+
+      // Step 4: MFA is enabled for local auth - require MFA code
+      if (providerCheck.mfaEnabled) {
+        if (!mfaCode || mfaCode.trim() === '') {
+          setMfaPending(true);
+          return {
+            error: null,
+            requiresMFA: true
+          };
+        }
+
+        // Verify MFA code BEFORE password authentication
+        const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
+          'mfa-verify-totp',
+          {
+            body: { userId: providerCheck.userId, code: mfaCode }
+          }
+        );
+
+        if (verifyError || !verifyData?.valid) {
+          // Record failed MFA attempt
+          await supabase.functions.invoke('record-login-attempt', {
+            body: {
+              email: email.toLowerCase(),
+              success: false,
+              ipAddress: 'web',
+              userId: providerCheck.userId,
+              metadata: { mfaFailed: true }
+            }
+          });
+          
+          return {
+            error: {
+              message: "Invalid or expired MFA code"
+            }
+          };
+        }
+      }
+
+      // Step 5: Proceed with password authentication
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-    } catch (recordError) {
-      console.error('Failed to record login attempt:', recordError);
-      // Don't block login if recording fails
-    }
 
-    // Step 4: If login failed, return generic error
-    if (error) {
-      // NEVER reveal specific details about why login failed
-      return { 
-        error: { 
-          message: "Invalid email or password.",
-          code: 'invalid_credentials'
-        } 
-      };
-    }
+      // Step 6: Record login attempt
+      const userId = authData?.user?.id || null;
+      try {
+        await supabase.functions.invoke('record-login-attempt', {
+          body: {
+            email: email.toLowerCase(),
+            success: !authError,
+            ipAddress: 'web',
+            userId,
+            metadata: { timestamp: new Date().toISOString() }
+          }
+        });
+      } catch (recordError) {
+        console.error('Failed to record login attempt:', recordError);
+      }
 
-    // Step 5: Check account status and MFA for verified users
-    if (data.user) {
+      if (authError) {
+        return {
+          error: {
+            message: "Invalid email or password"
+          }
+        };
+      }
+
+      if (!authData.user) {
+        return {
+          error: {
+            message: "Authentication failed"
+          }
+        };
+      }
+
+      // Step 7: Check account status
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
+        .select('status, email_verified_at')
+        .eq('id', authData.user.id)
         .maybeSingle();
 
       const profile = profileData as any;
-      
-      // Block deleted accounts
-      if (profile?.status === 'deleted') {
+
+      if (!profile) {
         await supabase.auth.signOut();
-        return { 
-          error: { 
-            message: "Invalid email or password.",
-            code: 'account_not_found'
-          } 
+        return {
+          error: {
+            message: "Account not found"
+          }
         };
       }
 
-      // BLOCK unverified accounts - do NOT allow login
-      if (profile?.status === 'pending_verification') {
+      if (profile.status === 'deleted') {
+        await supabase.auth.signOut();
+        return {
+          error: {
+            message: "Account has been deleted"
+          }
+        };
+      }
+
+      // BLOCK unverified accounts
+      if (profile.status === 'pending_verification') {
         await supabase.auth.signOut();
         
         // Check if verification expired
@@ -234,71 +327,28 @@ const navigate = useNavigate();
         
         return { 
           error: { 
-            message: `Please verify your email before signing in. Check ${profile.email} for the verification link.`,
+            message: `Please verify your email before signing in. Check ${profile.email || email} for the verification link.`,
             code: 'account_not_verified'
           } 
         };
       }
 
-      // Only check MFA for email/password users (not Google OAuth)
-      if (profile.auth_provider === 'email') {
-        const { data: mfaSettings } = await supabase
-          .from('mfa_settings' as any)
-          .select('totp_enabled')
-          .eq('user_id', data.user.id)
-          .maybeSingle();
+      // Successful login
+      setMfaPending(false);
 
-        if ((mfaSettings as any)?.totp_enabled) {
-          // MFA is enabled - code is REQUIRED
-          if (!mfaCode || mfaCode.length !== 6) {
-            // Sign out immediately - don't allow partial login
-            await supabase.auth.signOut();
-            setMfaPending(true);
-            return { 
-              error: null, 
-              requiresMFA: true, 
-              userId: data.user.id 
-            };
-          }
+      return {
+        error: null,
+        user: authData.user
+      };
 
-          // Verify MFA code
-          const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
-            'mfa-verify-totp',
-            {
-              body: { code: mfaCode }
-            }
-          );
-
-          if (verifyError || !verifyData?.valid) {
-            // MFA verification failed - sign out
-            await supabase.auth.signOut();
-            
-            // Record failed MFA attempt
-            await supabase.functions.invoke('record-login-attempt', {
-              body: {
-                email: email.toLowerCase(),
-                success: false,
-                ipAddress: 'web',
-                userId: data.user.id,
-                metadata: { mfaFailed: true }
-              }
-            });
-            
-            return { 
-              error: { 
-                message: "Invalid or expired authentication code.",
-                code: 'mfa_invalid'
-              } 
-            };
-          }
+    } catch (error) {
+      console.error('Sign in error:', error);
+      return {
+        error: {
+          message: "An unexpected error occurred. Please try again."
         }
-      }
+      };
     }
-
-    // Clear MFA pending state on successful auth
-    setMfaPending(false);
-
-    return { error: null, user: data.user };
   };
 
   const signUp = async (data: SignUpData) => {
@@ -333,19 +383,17 @@ const navigate = useNavigate();
   };
 
   const signInWithGoogle = async () => {
-    // Always redirect to dashboard for Google OAuth
-    localStorage.setItem('ts_redirect_to', '/dashboard');
-    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
         queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
+          access_type: 'online',
+          prompt: 'consent'
         }
       }
     });
+
     return { error };
   };
 
