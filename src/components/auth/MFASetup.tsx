@@ -138,53 +138,67 @@ export function MFASetup() {
     console.log('[MFA] Attempting to verify code and enable MFA...');
     setLoading(true);
     setError(null);
+    
     try {
       const { data, error } = await supabase.functions.invoke('mfa-enable', {
         body: { code: verificationCode }
       });
 
       if (error) {
-        // Supabase stores the response body in error.context.body when status is non-2xx
-        let errorBody = null;
-        try {
-          if (error.context?.body) {
-            errorBody = typeof error.context.body === 'string' 
-              ? JSON.parse(error.context.body) 
-              : error.context.body;
-          }
-        } catch (e) {
-          console.error('[MFA] Failed to parse error body:', e);
-        }
-
-        const errorCode = errorBody?.code || data?.code;
-        const errorMessage = errorBody?.error || data?.error || error.message;
+        console.error('[MFA] Verification error received:', error);
+        
+        // Safely extract error details - handle various error formats
+        let errorCode = data?.code;
+        let errorMessage = data?.error;
         const statusCode = (error as any)?.status || (error as any)?.statusCode;
         
-        console.error('[MFA] Verification failed:', { error, statusCode, errorCode, errorMessage, errorBody });
-        
-        // Map specific error codes to user-friendly messages
-        if (errorCode === 'MFA_VERIFY_LOCKED') {
-          setError('Too many incorrect codes. Your account is locked for 24 hours.');
-          toast.error('Too many incorrect codes. Please try again in 24 hours.');
-        } else if (errorCode === 'MFA_VERIFY_INVALID') {
-          setError('The verification code is incorrect or expired. Please try again.');
-          toast.error('Incorrect verification code. Please check and try again.');
-        } else if (errorCode === 'NO_PENDING_SETUP') {
-          setError('MFA setup expired. Please start again.');
-          toast.error('MFA setup expired. Please click "Enable Two-Factor Authentication" again.');
-        } else if (statusCode === 404) {
-          setError('MFA service temporarily unavailable.');
-          toast.error('MFA service temporarily unavailable. Please try again.');
-        } else if (statusCode === 401) {
-          setError('Authentication failed. Please sign in again.');
-          toast.error('Session expired. Please sign in again.');
-        } else {
-          // Use the actual error message from the backend if available
-          const fallbackMessage = 'Failed to enable MFA. Please check your code and try again.';
-          setError(errorMessage || fallbackMessage);
-          toast.error(errorMessage || fallbackMessage);
+        // Try to parse error.context.body if it exists
+        try {
+          if (error.context?.body) {
+            const errorBody = typeof error.context.body === 'string' 
+              ? JSON.parse(error.context.body) 
+              : error.context.body;
+            
+            if (errorBody) {
+              errorCode = errorCode || errorBody.code;
+              errorMessage = errorMessage || errorBody.error;
+            }
+          }
+        } catch (parseError) {
+          console.warn('[MFA] Could not parse error.context.body:', parseError);
         }
         
+        // Fallback to error.message if nothing else available
+        errorMessage = errorMessage || error.message || 'Failed to verify code';
+        
+        console.error('[MFA] Processed error:', { statusCode, errorCode, errorMessage });
+        
+        // Map specific error codes to user-friendly messages
+        let userMessage = '';
+        let userError = '';
+        
+        if (errorCode === 'MFA_VERIFY_LOCKED') {
+          userError = 'Too many incorrect codes. Your account is locked for 24 hours.';
+          userMessage = 'Too many incorrect codes. Please try again in 24 hours.';
+        } else if (errorCode === 'MFA_VERIFY_INVALID') {
+          userError = 'The verification code is incorrect or expired. Please try again.';
+          userMessage = 'Incorrect verification code. Please check and try again.';
+        } else if (errorCode === 'NO_PENDING_SETUP') {
+          userError = 'MFA setup expired. Please start again.';
+          userMessage = 'MFA setup expired. Please click "Enable Two-Factor Authentication" again.';
+        } else if (statusCode === 404) {
+          userError = 'MFA service temporarily unavailable.';
+          userMessage = 'MFA service temporarily unavailable. Please try again.';
+        } else if (statusCode === 401) {
+          userError = 'Authentication failed. Please sign in again.';
+          userMessage = 'Session expired. Please sign in again.';
+        } else {
+          userError = errorMessage;
+          userMessage = errorMessage;
+        }
+        
+        setError(userError);
+        toast.error(userMessage);
         setLoading(false);
         return;
       }
@@ -208,9 +222,10 @@ export function MFASetup() {
       
       toast.success("Two-factor authentication enabled successfully!");
     } catch (error: any) {
-      console.error('[MFA] Error enabling MFA:', error);
-      setError(error.message || "Failed to enable MFA. Please check your code.");
-      toast.error(error.message || "Failed to enable MFA. Please check your code.");
+      console.error('[MFA] Unexpected error enabling MFA:', error);
+      const errorMsg = error.message || "Failed to enable MFA. Please check your code and try again.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
