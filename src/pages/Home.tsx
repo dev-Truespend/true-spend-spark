@@ -1,32 +1,11 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Receipt, TrendingUp, Shield, Smartphone } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
 
 export default function Home() {
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    // Only redirect if user is authenticated AND we're currently on the root path
-    // This prevents race conditions with the auth flow
-    if (!loading && user && location.pathname === '/') {
-      const redirectTarget = localStorage.getItem('ts_redirect_to');
-      console.log('[Home] Redirecting authenticated user:', { redirectTarget, hasUser: !!user });
-      
-      if (redirectTarget) {
-        console.log('[Home] Found redirect target, navigating to:', redirectTarget);
-        localStorage.removeItem('ts_redirect_to');
-        navigate(redirectTarget, { replace: true });
-      } else {
-        console.log('[Home] No redirect target, navigating to /dashboard');
-        navigate('/dashboard', { replace: true });
-      }
-    }
-  }, [user, loading, navigate, location.pathname]);
 
   // Show loading spinner while checking auth
   if (loading) {
@@ -37,7 +16,7 @@ export default function Home() {
     );
   }
 
-  // Will redirect if authenticated
+  // Don't show landing page to authenticated users (they'll be redirected by useAuth)
   if (user) {
     return null;
   }
