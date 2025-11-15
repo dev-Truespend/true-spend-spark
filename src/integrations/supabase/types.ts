@@ -941,6 +941,7 @@ export type Database = {
           last_verified_at: string | null
           login_lock_until: string | null
           mfa_lock_until: string | null
+          pending_mfa_secret: string | null
           totp_enabled: boolean | null
           totp_secret: string | null
           updated_at: string | null
@@ -956,6 +957,7 @@ export type Database = {
           last_verified_at?: string | null
           login_lock_until?: string | null
           mfa_lock_until?: string | null
+          pending_mfa_secret?: string | null
           totp_enabled?: boolean | null
           totp_secret?: string | null
           updated_at?: string | null
@@ -971,6 +973,7 @@ export type Database = {
           last_verified_at?: string | null
           login_lock_until?: string | null
           mfa_lock_until?: string | null
+          pending_mfa_secret?: string | null
           totp_enabled?: boolean | null
           totp_secret?: string | null
           updated_at?: string | null

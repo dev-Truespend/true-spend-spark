@@ -92,9 +92,15 @@ export default function Auth() {
 
   useEffect(() => {
     if (!loading && user && !mfaRequired && !isLoading) {
-      navigate(redirectTo, { replace: true });
+      // Redirect authenticated users based on role
+      const redirectUser = async () => {
+        const { getLandingRouteForUser } = await import('@/hooks/useAuth');
+        const landingRoute = await getLandingRouteForUser(user.id);
+        navigate(landingRoute, { replace: true });
+      };
+      redirectUser();
     }
-  }, [user, loading, navigate, redirectTo, mfaRequired, isLoading]);
+  }, [user, loading, navigate, mfaRequired, isLoading]);
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
