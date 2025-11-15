@@ -64,13 +64,18 @@ export default function Auth() {
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [mfaInlineProcessing, setMfaInlineProcessing] = useState(false);
-  const { signIn, signUp, user, loading, checkAuthProvider, verifyMFACode, verifyBackupCode, mfaPending } = useAuth();
+  const { signIn, signUp, signOut, user, loading, checkAuthProvider, verifyMFACode, verifyBackupCode, mfaPending } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   
   // Get redirectTo from URL params
-  const redirectTo = new URLSearchParams(location.search).get('redirectTo') || '/dashboard';
+  const searchParams = new URLSearchParams(location.search);
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
+  
+  // Parse intent from query string - prevents auto-redirect when user explicitly wants to login/switch
+  const intent = searchParams.get('intent');
+  const skipRedirect = intent === 'login' || intent === 'switch';
 
   // Prevent back button after logout
   useEffect(() => {
@@ -122,12 +127,12 @@ export default function Auth() {
     }
   }, [location.search, location.hash, toast]);
 
-  // Auto-redirect if user is already logged in (but not during MFA processing)
+  // Auto-redirect if user is already logged in (but not during MFA processing or explicit intent to login/switch)
   useEffect(() => {
-    if (!loading && user && !showMFAModal && !mfaInlineProcessing && !mfaPending && !isLoading && !mfaRequired) {
+    if (!loading && user && !showMFAModal && !mfaInlineProcessing && !mfaPending && !isLoading && !mfaRequired && !skipRedirect) {
       navigate(redirectTo, { replace: true });
     }
-  }, [user, loading, navigate, redirectTo, showMFAModal, mfaInlineProcessing, mfaPending, isLoading, mfaRequired]);
+  }, [user, loading, navigate, redirectTo, showMFAModal, mfaInlineProcessing, mfaPending, isLoading, mfaRequired, skipRedirect]);
 
   // Pre-fill email from password reset redirect
   useEffect(() => {
@@ -511,6 +516,57 @@ export default function Auth() {
       });
     }
   };
+
+  // Show "Already signed in" card when user is authenticated and wants to login/switch
+  if (user && skipRedirect && !mfaPending && !loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <div className="w-full max-w-md space-y-4">
+          {/* Back to Home Button */}
+          <Link to="/">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </Button>
+          </Link>
+
+          <Card>
+            <CardHeader className="text-center space-y-2">
+              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                <span className="text-2xl">✓</span>
+              </div>
+              <CardTitle className="text-2xl">Already Signed In</CardTitle>
+              <CardDescription>
+                You are currently signed in as <strong className="text-foreground">{user.email}</strong>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                onClick={() => navigate(redirectTo)}
+                className="w-full"
+                size="lg"
+              >
+                Continue to Dashboard
+              </Button>
+              <Button 
+                onClick={async () => {
+                  setIsLoading(true);
+                  await signOut();
+                  // signOut already handles navigation to /auth
+                }}
+                variant="outline"
+                className="w-full"
+                size="lg"
+                disabled={isLoading}
+              >
+                Switch Account
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">

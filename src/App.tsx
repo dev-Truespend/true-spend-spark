@@ -71,15 +71,15 @@ function App() {
               {/* Root shows Home page */}
               <Route path="/" element={<Home />} />
               
-              {/* Legacy Login Route Redirects - Force consistency to /auth */}
-              <Route path="/login" element={<Navigate to="/auth" replace />} />
-              <Route path="/signin" element={<Navigate to="/auth" replace />} />
-              <Route path="/sign-in" element={<Navigate to="/auth" replace />} />
-              <Route path="/account/login" element={<Navigate to="/auth" replace />} />
-              <Route path="/v3" element={<Navigate to="/auth" replace />} />
-              <Route path="/v3/*" element={<Navigate to="/auth" replace />} />
-              <Route path="/old-auth" element={<Navigate to="/auth" replace />} />
-              <Route path="/project-management-dashboard" element={<Navigate to="/auth" replace />} />
+              {/* Legacy Login Route Redirects - Force consistency to /auth with intent=login */}
+              <Route path="/login" element={<Navigate to="/auth?intent=login" replace />} />
+              <Route path="/signin" element={<Navigate to="/auth?intent=login" replace />} />
+              <Route path="/sign-in" element={<Navigate to="/auth?intent=login" replace />} />
+              <Route path="/account/login" element={<Navigate to="/auth?intent=login" replace />} />
+              <Route path="/v3" element={<Navigate to="/auth?intent=login" replace />} />
+              <Route path="/v3/*" element={<Navigate to="/auth?intent=login" replace />} />
+              <Route path="/old-auth" element={<Navigate to="/auth?intent=login" replace />} />
+              <Route path="/project-management-dashboard" element={<Navigate to="/auth?intent=login" replace />} />
               
               {/* Main Auth Route */}
               <Route path="/auth" element={<Auth />} />

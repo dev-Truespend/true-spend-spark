@@ -33,7 +33,7 @@ export default function Home() {
             Smart expense tracking that works everywhere. Capture receipts, track spending, and manage budgets with ease.
           </p>
           <div className="flex justify-center">
-            <Link to="/auth">
+            <Link to="/auth?intent=login">
               <Button size="lg">
                 Login/Create Account
               </Button>
