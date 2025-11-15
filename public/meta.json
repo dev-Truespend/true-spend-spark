@@ -1,9 +1,16 @@
 {
-  "version": "2.5.0",
-  "buildId": "20251115T011500",
-  "commit": "phase11-native-mobile-apps-v2.5.0",
-  "timestamp": 1731637500000,
+  "version": "3.0.0",
+  "buildId": "20251115T063800",
+  "commit": "critical-auth-fixes-v3.0.0",
+  "timestamp": 1763188680000,
   "changelog": {
+    "3.0.0": [
+      "CRITICAL FIX: Resolved MFA TOTP verification failure (ambiguous column reference in decrypt_totp_secret)",
+      "CRITICAL FIX: Google OAuth now properly preserves redirect targets across authentication flow",
+      "Enhanced auth state management to handle localStorage-based redirect fallback",
+      "Updated Phase 4 dashboard accuracy to 95% (Gate: Conditional Pass - testing pending)",
+      "Fixed login redirect issues affecting production users"
+    ],
     "2.5.0": [
       "Added Phase 11: Native Mobile Apps (Weeks 38-40, 45 SP)",
       "Updated project timeline to 51 weeks with 16 phases (632 SP total)",
