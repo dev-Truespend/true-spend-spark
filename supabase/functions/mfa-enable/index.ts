@@ -216,13 +216,16 @@ Deno.serve(async (req) => {
       .from('mfa_backup_codes')
       .insert(backupCodeRecords);
 
-    // Move pending_mfa_secret to totp_secret and enable MFA
+    // CRITICAL: Move pending_mfa_secret to totp_secret and enable MFA
+    // This is the ONLY place where totp_enabled is set to true
+    console.log('[MFA-ENABLE] Setting totp_enabled=true for user:', user.id);
+    
     await adminClient
       .from('mfa_settings')
       .update({
         totp_secret: mfaSettings.pending_mfa_secret, // Move pending to active
         pending_mfa_secret: null, // Clear pending
-        totp_enabled: true, // ENABLE MFA
+        totp_enabled: true, // ENABLE MFA - only after valid code verification
         backup_codes_generated: true,
         failed_mfa_attempts: 0, // Reset counter
         mfa_lock_until: null, // Clear any lock
@@ -231,18 +234,20 @@ Deno.serve(async (req) => {
       })
       .eq('user_id', user.id);
 
-    // Log success
+    // Log success with explicit totp_enabled flag
     await adminClient.from('security_logs').insert({
       user_id: user.id,
       event_type: 'mfa_enabled',
       severity: 'info',
       details: { 
         method: 'totp',
+        totp_enabled: true,
+        verification_successful: true,
         timestamp: now.toISOString(),
       },
     });
 
-    console.log('MFA enabled successfully for user:', user.id);
+    console.log('[MFA-ENABLE] SUCCESS - totp_enabled=true written to DB for user:', user.id);
 
     return new Response(
       JSON.stringify({
