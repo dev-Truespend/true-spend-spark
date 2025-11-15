@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Receipt, TrendingUp, Shield, Smartphone } from "lucide-react";
@@ -8,10 +8,12 @@ import { useEffect } from "react";
 export default function Home() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    if (!loading && user) {
-      // Check for stored redirect target from OAuth flow first
+    // Only redirect if user is authenticated AND we're currently on the root path
+    // This prevents race conditions with the auth flow
+    if (!loading && user && location.pathname === '/') {
       const redirectTarget = localStorage.getItem('ts_redirect_to');
       console.log('[Home] Redirecting authenticated user:', { redirectTarget, hasUser: !!user });
       
@@ -24,7 +26,7 @@ export default function Home() {
         navigate('/dashboard', { replace: true });
       }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, location.pathname]);
 
   // Show loading spinner while checking auth
   if (loading) {
