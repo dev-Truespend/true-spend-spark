@@ -1,9 +1,19 @@
 {
-  "version": "3.1.2",
-  "buildId": "20251115T074200",
-  "commit": "hotfix-complete-auth-flow-v3.1.2",
-  "timestamp": 1763192520000,
+  "version": "3.2.0",
+  "buildId": "20251115T080000",
+  "commit": "enterprise-google-oauth-v3.2.0",
+  "timestamp": 1763193600000,
   "changelog": {
+    "3.2.0": [
+      "ENTERPRISE: Implemented enterprise-ready Google OAuth sign-in flow",
+      "SECURITY: Added comprehensive audit logging for all Google authentication events",
+      "SECURITY: Enhanced email verification checks - reject unverified Google emails",
+      "FEATURE: Unified account model - single user per email across multiple providers",
+      "IMPROVEMENT: Dynamic MFA UI based on auth provider (Google 2FA vs local TOTP)",
+      "IMPROVEMENT: Enhanced error handling for OAuth failures, cancellations, and edge cases",
+      "IMPROVEMENT: Robust session handling and logout across multiple tabs",
+      "IMPROVEMENT: Fixed MFA enable button to work inline without navigation/404 errors"
+    ],
     "3.1.2": [
       "HOTFIX: Added missing /settings route - resolved 404 error",
       "HOTFIX: Deployed MFA backend functions - fixed 404 on MFA enable",
