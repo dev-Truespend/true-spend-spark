@@ -205,7 +205,22 @@ export default function Auth() {
         return;
       }
       
-      // Step 2: Proceed with normal email/password login
+      // Step 2: Check if MFA is required and block if code is missing
+      if (providerData.mfaEnabled) {
+        // MFA is REQUIRED - must have 6-digit code
+        if (!mfaCode || mfaCode.length !== 6) {
+          setMfaError('Two-factor authentication code is required');
+          toast({
+            title: "MFA Code Required",
+            description: "Please enter your 6-digit authentication code to continue.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      // Step 3: Proceed with login
       const { error, requiresMFA, userId } = await signIn(values.email, values.password);
       
       // Handle MFA requirement
@@ -213,7 +228,7 @@ export default function Auth() {
         setMfaUserId(userId);
         setMfaCredentials({ email: values.email, password: values.password });
         
-        // If user already entered MFA code inline, verify it now
+        // Verify MFA code (must exist at this point due to check above)
         if (mfaCode && mfaCode.length === 6) {
           setMfaInlineProcessing(true);
           try {
