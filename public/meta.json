@@ -1,9 +1,19 @@
 {
-  "version": "5.1.0",
-  "buildId": "20251115T113000",
-  "commit": "google-oauth-no-verification-v5.1.0",
-  "timestamp": 1763197800000,
+  "version": "5.2.0",
+  "buildId": "20251115T190000",
+  "commit": "google-mfa-complete-fix-v5.2.0",
+  "timestamp": 1731697200000,
   "changelog": {
+    "5.2.0": [
+      "CRITICAL FIX: Google OAuth error mapping now only shows 'Email Verification Required' when Google explicitly reports unverified email",
+      "CRITICAL FIX: Google OAuth success now always redirects to /dashboard - eliminated getting stuck on /auth",
+      "CRITICAL FIX: Added secondary deferred redirect mechanism for Google sign-ins as failsafe",
+      "SECURITY: MFA UI state now strictly derived from database totp_enabled field - no optimistic updates",
+      "SECURITY: MFA cancel operation now clears all stale QR code UI when database shows not pending",
+      "IMPROVEMENT: Enhanced MFA status logging to track enabled/pending/QR state transitions",
+      "IMPROVEMENT: Proper error differentiation - access_denied vs server_error vs email issues",
+      "FIX: Eliminated MFA 'auto-enable' appearance by clearing local state when DB shows disabled"
+    ],
     "5.1.0": [
       "SECURITY: Google OAuth users no longer require email verification",
       "SECURITY: Database trigger now sets Google users to 'active' status immediately on signup",
