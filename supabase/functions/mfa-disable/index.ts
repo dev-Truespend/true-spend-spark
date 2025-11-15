@@ -33,7 +33,13 @@ Deno.serve(async (req) => {
 
     if (!password) {
       return new Response(
-        JSON.stringify({ error: 'Password confirmation required' }),
+        JSON.stringify({ 
+          error: {
+            code: 'INVALID_PASSWORD',
+            message: 'Password required',
+            userMessage: 'Please enter your password to confirm'
+          }
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -52,8 +58,22 @@ Deno.serve(async (req) => {
     });
 
     if (signInError) {
+      // Log failed password verification
+      await supabaseClient.from('security_logs').insert({
+        user_id: user.id,
+        event_type: 'mfa_disable_failed',
+        severity: 'warn',
+        details: { reason: 'invalid_password' },
+      });
+      
       return new Response(
-        JSON.stringify({ error: 'Invalid password' }),
+        JSON.stringify({ 
+          error: {
+            code: 'INVALID_PASSWORD',
+            message: 'Invalid password',
+            userMessage: 'The password you entered is incorrect'
+          }
+        }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

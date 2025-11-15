@@ -16,7 +16,7 @@ import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, KeyRound, Smartphone } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const passwordValidation = z
@@ -28,11 +28,12 @@ const passwordValidation = z
   .regex(/[0-9]/, { message: "Password must contain at least one number" })
   .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one special character (!@#$%^&*)" });
 
-const loginSchema = z.object({
-  email: z.string().trim().email({ message: "Invalid email address" }).max(255),
-  password: z.string().min(1, { message: "Password is required" }),
-  mfaCode: z.string().optional(),
-});
+  const loginSchema = z.object({
+    email: z.string().trim().email({ message: "Invalid email address" }).max(255),
+    password: z.string().min(1, { message: "Password is required" }),
+    mfaCode: z.string().optional(),
+    backupCode: z.string().optional(),
+  });
 
 const signupSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255),
@@ -50,7 +51,8 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [mfaRequired, setMfaRequired] = useState(false);
   const [checkingMfa, setCheckingMfa] = useState(false);
-  const { signIn, signUp, user, loading, checkAuthProvider, checkMfaStatus } = useAuth();
+  const [mfaMethod, setMfaMethod] = useState<'totp' | 'backup'>('totp');
+  const { signIn, signUp, user, loading, checkAuthProvider, checkMfaStatus, verifyBackupCode } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -82,6 +84,7 @@ export default function Auth() {
       email: searchParams.get("email") || "",
       password: "",
       mfaCode: "",
+      backupCode: "",
     },
   });
 
@@ -122,12 +125,21 @@ export default function Auth() {
         return;
       }
 
-      const mfaCode = loginForm.getValues('mfaCode');
-      const result = await signIn(values.email, values.password, mfaCode);
+      const mfaCode = mfaMethod === 'totp' ? loginForm.getValues('mfaCode') : undefined;
+      const backupCode = mfaMethod === 'backup' ? loginForm.getValues('backupCode') : undefined;
+      
+      let result;
+      if (mfaMethod === 'backup' && backupCode) {
+        // Use backup code verification
+        result = await signIn(values.email, values.password, undefined, backupCode);
+      } else {
+        // Use regular TOTP code
+        result = await signIn(values.email, values.password, mfaCode);
+      }
 
       if (result?.requiresMFA) {
         setMfaRequired(true);
-        toast({ title: "MFA Required", description: "Enter your 6-digit code." });
+        toast({ title: "MFA Required", description: "Enter your 6-digit code or use a backup code." });
         setIsLoading(false);
         return;
       }
@@ -138,7 +150,13 @@ export default function Auth() {
           description: result.error.message || "Invalid credentials.",
           variant: "destructive",
         });
-        if (result.error.code === 'mfa_invalid') loginForm.setValue('mfaCode', '');
+        if (result.error.code === 'mfa_invalid') {
+          if (mfaMethod === 'totp') {
+            loginForm.setValue('mfaCode', '');
+          } else {
+            loginForm.setValue('backupCode', '');
+          }
+        }
         setIsLoading(false);
         return;
       }
@@ -272,22 +290,67 @@ export default function Auth() {
                     </FormItem>
                   )} />
                   {mfaRequired && (
-                    <FormField control={loginForm.control} name="mfaCode" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Authentication Code</FormLabel>
-                        <FormControl>
-                          <InputOTP {...field} maxLength={6}>
-                            <InputOTPGroup className="w-full justify-center">
-                              {[0,1,2,3,4,5].map(i => <InputOTPSlot key={i} index={i} />)}
-                            </InputOTPGroup>
-                          </InputOTP>
-                        </FormControl>
-                        <FormDescription className="text-xs text-center">Enter code from authenticator</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
+                    <div className="space-y-4">
+                      <Tabs value={mfaMethod} onValueChange={(v) => setMfaMethod(v as 'totp' | 'backup')} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="totp" className="flex items-center gap-2">
+                            <Smartphone className="h-4 w-4" />
+                            <span>Authenticator App</span>
+                          </TabsTrigger>
+                          <TabsTrigger value="backup" className="flex items-center gap-2">
+                            <KeyRound className="h-4 w-4" />
+                            <span>Backup Code</span>
+                          </TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="totp" className="mt-4">
+                          <FormField control={loginForm.control} name="mfaCode" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>6-Digit Authentication Code</FormLabel>
+                              <FormControl>
+                                <InputOTP {...field} maxLength={6}>
+                                  <InputOTPGroup className="w-full justify-center">
+                                    {[0,1,2,3,4,5].map(i => <InputOTPSlot key={i} index={i} />)}
+                                  </InputOTPGroup>
+                                </InputOTP>
+                              </FormControl>
+                              <FormDescription className="text-xs text-center">
+                                Enter the code from your authenticator app
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                        </TabsContent>
+                        
+                        <TabsContent value="backup" className="mt-4">
+                          <FormField control={loginForm.control} name="backupCode" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>8-Character Backup Code</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  {...field} 
+                                  type="text" 
+                                  placeholder="ABCD1234"
+                                  maxLength={8}
+                                  className="text-center uppercase font-mono text-lg tracking-wider"
+                                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs text-center">
+                                Use one of your backup codes (one-time use only)
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                        </TabsContent>
+                      </Tabs>
+                    </div>
                   )}
-                  <Button type="submit" className="w-full" disabled={isLoading || (mfaRequired && loginForm.watch('mfaCode')?.length !== 6)}>
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isLoading || (mfaRequired && mfaMethod === 'totp' && loginForm.watch('mfaCode')?.length !== 6) || (mfaRequired && mfaMethod === 'backup' && (!loginForm.watch('backupCode') || loginForm.watch('backupCode')?.length !== 8))}
+                  >
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {mfaRequired ? 'Verify & Sign In' : 'Sign In'}
                   </Button>

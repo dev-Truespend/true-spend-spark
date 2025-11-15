@@ -16,8 +16,8 @@ import QRCodeLib from "qrcode";
 export function MFASetup() {
   const { user, profile } = useAuth();
   const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaPending, setMfaPending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [setupMode, setSetupMode] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [secret, setSecret] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
@@ -25,6 +25,7 @@ export function MFASetup() {
   const [showBackupCodes, setShowBackupCodes] = useState(false);
   const [password, setPassword] = useState("");
   const [isGoogleUser, setIsGoogleUser] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check ALL providers for the user
@@ -46,18 +47,27 @@ export function MFASetup() {
     if (!user) return;
     
     setLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase
         .from('mfa_settings' as any)
-        .select('totp_enabled')
+        .select('totp_enabled, totp_secret')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error checking MFA status:', error);
       }
       
-      setMfaEnabled((data as any)?.totp_enabled || false);
+      // Three-state detection:
+      // 1. No data = never configured
+      // 2. Has totp_secret but totp_enabled = false = pending verification
+      // 3. totp_enabled = true = fully enabled
+      const enabled = (data as any)?.totp_enabled || false;
+      const hasSecret = !!(data as any)?.totp_secret;
+      
+      setMfaEnabled(enabled);
+      setMfaPending(!enabled && hasSecret); // Pending if secret exists but not enabled
     } catch (error) {
       console.error('Error checking MFA status:', error);
     } finally {
@@ -67,25 +77,25 @@ export function MFASetup() {
 
   const generateSecret = async () => {
     setLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase.functions.invoke('mfa-generate-secret');
 
       if (error) {
-        // Surface HTTP status for clarity
         const statusCode = (error as any)?.status || (error as any)?.statusCode;
         console.error('Error generating MFA secret:', { error, statusCode });
         throw new Error(statusCode === 500 ? 'Security service unavailable. Please try again.' : (error as any)?.message || 'Failed to generate MFA secret');
       }
 
       setSecret(data.secret);
-      // Generate QR code
       const qrDataUrl = await QRCodeLib.toDataURL(data.qrCodeUrl);
       setQrCodeUrl(qrDataUrl);
-
-      setSetupMode(true);
+      
+      // QR screen shows immediately - no intermediate screen
       toast.success('Scan the QR code with your authenticator app');
     } catch (error: any) {
       console.error('Error generating MFA secret:', error);
+      setError(error.message || 'Failed to generate MFA secret');
       toast.error(error.message || 'Failed to generate MFA secret');
     } finally {
       setLoading(false);
@@ -94,18 +104,18 @@ export function MFASetup() {
 
   const enableMFA = async () => {
     if (verificationCode.length !== 6) {
-      toast.error("Please enter a 6-digit code");
+      setError("Please enter a 6-digit code");
       return;
     }
 
     setLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase.functions.invoke('mfa-enable', {
         body: { code: verificationCode }
       });
 
       if (error) {
-        // Enhanced error logging with HTTP status
         const statusCode = (error as any)?.status || (error as any)?.statusCode;
         console.error('MFA enable error:', { error, statusCode, message: error.message });
         
@@ -121,10 +131,16 @@ export function MFASetup() {
       setBackupCodes(data.backupCodes);
       setShowBackupCodes(true);
       setMfaEnabled(true);
-      setSetupMode(false);
+      // Clear QR setup state
+      setQrCodeUrl("");
+      setSecret("");
+      setVerificationCode("");
+      // Refetch to ensure DB is source of truth
+      await checkMFAStatus();
       toast.success("Two-factor authentication enabled successfully!");
     } catch (error: any) {
       console.error('Error enabling MFA:', error);
+      setError(error.message || "Failed to enable MFA. Please check your code.");
       toast.error(error.message || "Failed to enable MFA. Please check your code.");
     } finally {
       setLoading(false);
@@ -133,11 +149,12 @@ export function MFASetup() {
 
   const disableMFA = async () => {
     if (!password) {
-      toast.error("Please enter your password to confirm");
+      setError("Please enter your password to confirm");
       return;
     }
 
     setLoading(true);
+    setError(null);
     try {
       const { error } = await supabase.functions.invoke('mfa-disable', {
         body: { password }
@@ -146,17 +163,31 @@ export function MFASetup() {
       if (error) throw error;
 
       setMfaEnabled(false);
+      setMfaPending(false);
       setPassword("");
+      // Refetch to ensure DB is source of truth
+      await checkMFAStatus();
       toast.success("Two-factor authentication disabled");
     } catch (error: any) {
       console.error('Error disabling MFA:', error);
+      setError(error.message || "Failed to disable MFA");
       toast.error(error.message || "Failed to disable MFA");
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading && !setupMode) {
+  // Handler for canceling MFA setup
+  const handleCancelSetup = async () => {
+    setQrCodeUrl("");
+    setSecret("");
+    setVerificationCode("");
+    setError(null);
+    // Refetch DB status to ensure UI reflects reality
+    await checkMFAStatus();
+  };
+
+  if (loading && !qrCodeUrl) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-8">
@@ -236,11 +267,18 @@ export function MFASetup() {
               Add an extra layer of security to your account
             </CardDescription>
           </div>
-          <MFAStatusBadge enabled={mfaEnabled} />
+          <MFAStatusBadge enabled={mfaEnabled} pending={mfaPending} />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!mfaEnabled && !setupMode && (
+        {error && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        {!mfaEnabled && !qrCodeUrl && !mfaPending && (
           <>
             <Alert>
               <AlertTriangle className="h-4 w-4" />
@@ -255,7 +293,22 @@ export function MFASetup() {
           </>
         )}
 
-        {setupMode && (
+        {mfaPending && !qrCodeUrl && (
+          <>
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                You started setting up 2FA but didn't complete it. Click below to continue.
+              </AlertDescription>
+            </Alert>
+            <Button onClick={generateSecret} disabled={loading} className="w-full">
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Continue 2FA Setup
+            </Button>
+          </>
+        )}
+
+        {qrCodeUrl && (
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Step 1: Scan QR Code</Label>
@@ -294,14 +347,12 @@ export function MFASetup() {
 
             <div className="flex gap-2">
               <Button
-                onClick={() => {
-                  setSetupMode(false);
-                  setVerificationCode("");
-                }}
+                onClick={handleCancelSetup}
                 variant="outline"
                 className="flex-1"
+                disabled={loading}
               >
-                Cancel
+                Cancel Setup
               </Button>
               <Button
                 onClick={enableMFA}

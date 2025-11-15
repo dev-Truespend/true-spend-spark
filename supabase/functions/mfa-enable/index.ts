@@ -46,7 +46,13 @@ Deno.serve(async (req) => {
 
     if (!code || code.length !== 6) {
       return new Response(
-        JSON.stringify({ error: 'Invalid verification code' }),
+        JSON.stringify({ 
+          error: {
+            code: 'INVALID_VERIFICATION_CODE',
+            message: 'Invalid verification code format',
+            userMessage: 'Please enter a valid 6-digit code'
+          }
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -59,8 +65,21 @@ Deno.serve(async (req) => {
       .single();
 
     if (mfaError || !mfaSettings) {
+      await supabaseClient.from('security_logs').insert({
+        user_id: user.id,
+        event_type: 'mfa_verify_failed',
+        severity: 'warn',
+        details: { method: 'totp', reason: 'not_setup' },
+      });
+      
       return new Response(
-        JSON.stringify({ error: 'MFA not set up. Please generate a secret first.' }),
+        JSON.stringify({ 
+          error: {
+            code: 'MFA_NOT_SETUP',
+            message: 'MFA not set up',
+            userMessage: 'Please generate a secret first before enabling MFA'
+          }
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -89,8 +108,23 @@ Deno.serve(async (req) => {
 
     if (!isValid) {
       console.log('Invalid TOTP code for user:', user.id);
+      
+      // Log verification failed
+      await supabaseClient.from('security_logs').insert({
+        user_id: user.id,
+        event_type: 'mfa_verify_failed',
+        severity: 'warn',
+        details: { method: 'totp', reason: 'invalid_code' },
+      });
+      
       return new Response(
-        JSON.stringify({ error: 'Invalid verification code. Please try again.' }),
+        JSON.stringify({ 
+          error: {
+            code: 'INVALID_VERIFICATION_CODE',
+            message: 'Invalid verification code',
+            userMessage: 'The code you entered is incorrect or expired. Please try again'
+          }
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -146,12 +180,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Log security event
+    // Log MFA enabled event
     await supabaseClient.from('security_logs').insert({
       user_id: user.id,
       event_type: 'mfa_enabled',
       severity: 'info',
-      details: { method: 'totp' },
+      details: { method: 'totp', backup_codes_count: 10 },
     });
 
     console.log('MFA enabled successfully for user:', user.id);

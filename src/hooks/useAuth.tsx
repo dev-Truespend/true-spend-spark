@@ -29,7 +29,7 @@ interface AuthContextType {
   loading: boolean;
   profile: Profile | null;
   mfaPending: boolean;
-  signIn: (email: string, password: string, mfaCode?: string) => Promise<{ error: any; requiresMFA?: boolean; userId?: string; user?: User }>;
+  signIn: (email: string, password: string, mfaCode?: string, backupCode?: string) => Promise<{ error: any; requiresMFA?: boolean; userId?: string; user?: User }>;
   signUp: (data: SignUpData) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -139,7 +139,7 @@ const navigate = useNavigate();
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string, mfaCode?: string) => {
+  const signIn = async (email: string, password: string, mfaCode?: string, backupCode?: string) => {
     try {
       if (!email || !password) {
         return {
@@ -206,9 +206,9 @@ const navigate = useNavigate();
         };
       }
 
-      // Step 4: MFA is enabled for local auth - require MFA code
+      // Step 4: MFA is enabled for local auth - require MFA code or backup code
       if (providerCheck.mfaEnabled) {
-        if (!mfaCode || mfaCode.trim() === '') {
+        if ((!mfaCode || mfaCode.trim() === '') && (!backupCode || backupCode.trim() === '')) {
           setMfaPending(true);
           return {
             error: null,
@@ -216,31 +216,62 @@ const navigate = useNavigate();
           };
         }
 
-        // Verify MFA code BEFORE password authentication
-        const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
-          'mfa-verify-totp',
-          {
-            body: { userId: providerCheck.userId, code: mfaCode }
-          }
-        );
+        // Handle backup code verification
+        if (backupCode && backupCode.trim()) {
+          const { data: backupVerifyData, error: backupVerifyError } = await supabase.functions.invoke(
+            'mfa-verify-backup-code',
+            {
+              body: { userId: providerCheck.userId, code: backupCode.trim().toUpperCase() }
+            }
+          );
 
-        if (verifyError || !verifyData?.valid) {
-          // Record failed MFA attempt
-          await supabase.functions.invoke('record-login-attempt', {
-            body: {
-              email: email.toLowerCase(),
-              success: false,
-              ipAddress: 'web',
-              userId: providerCheck.userId,
-              metadata: { mfaFailed: true }
+          if (backupVerifyError || !backupVerifyData?.valid) {
+            // Record failed backup code attempt
+            await supabase.functions.invoke('record-login-attempt', {
+              body: {
+                email: email.toLowerCase(),
+                success: false,
+                ipAddress: 'web',
+                userId: providerCheck.userId,
+                metadata: { backupCodeFailed: true }
+              }
+            });
+            
+            return {
+              error: {
+                message: backupVerifyData?.error || "Invalid or used backup code",
+                code: 'mfa_invalid'
+              }
+            };
+          }
+        } else if (mfaCode && mfaCode.trim()) {
+          // Verify TOTP code BEFORE password authentication
+          const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
+            'mfa-verify-totp',
+            {
+              body: { userId: providerCheck.userId, code: mfaCode }
             }
-          });
-          
-          return {
-            error: {
-              message: "Invalid or expired MFA code"
-            }
-          };
+          );
+
+          if (verifyError || !verifyData?.valid) {
+            // Record failed MFA attempt
+            await supabase.functions.invoke('record-login-attempt', {
+              body: {
+                email: email.toLowerCase(),
+                success: false,
+                ipAddress: 'web',
+                userId: providerCheck.userId,
+                metadata: { mfaFailed: true }
+              }
+            });
+            
+            return {
+              error: {
+                message: "Invalid or expired MFA code",
+                code: 'mfa_invalid'
+              }
+            };
+          }
         }
       }
 
