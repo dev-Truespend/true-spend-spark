@@ -45,6 +45,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper: Get landing route based on user role
+export async function getLandingRouteForUser(userId: string): Promise<string> {
+  try {
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+    
+    const userRoles = roles?.map(r => r.role) || [];
+    
+    if (userRoles.includes('admin')) {
+      return '/admin/dashboard';
+    }
+    
+    return '/dashboard';
+  } catch (error) {
+    console.error('Error fetching user roles:', error);
+    return '/dashboard';
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -128,25 +149,14 @@ const { toast } = useToast();
       // Handle Google OAuth events with verification logic
       if (event === 'SIGNED_IN' && session?.user) {
         const authUser = session.user;
+        const provider = authUser.app_metadata?.provider;
         
-        // Check if this is a Google sign-in
-        const isGoogleSignIn = authUser.app_metadata?.provider === 'google' || 
-                               authUser.identities?.some(id => id.provider === 'google');
-        
-        if (isGoogleSignIn) {
-          // Log Google claims for debugging
-          console.log('Google sign-in claims:', {
-            email: authUser.email,
-            email_verified: authUser.email_confirmed_at,
-            user_metadata: authUser.user_metadata,
-            app_metadata: authUser.app_metadata
-          });
-
-          // Check email verification from Google
-          const hasEmail = !!authUser.email;
+        // Only apply strict checks for Google OAuth
+        if (provider === 'google') {
+          console.log('Google sign-in detected, checking email verification');
           
-          if (!hasEmail) {
-            // No email provided by Google - reject
+          // Check for email presence
+          if (!authUser.email) {
             await supabase.auth.signOut();
             setTimeout(() => {
               toast({
@@ -157,14 +167,14 @@ const { toast } = useToast();
             }, 100);
             return;
           }
-
-          // For Google OAuth, email_confirmed_at being set means Google verified it
-          // Supabase automatically sets this to the current time for OAuth providers
-          // Only block if we can explicitly determine the email is unverified
-          const isEmailVerified = authUser.email_confirmed_at !== null;
           
-          if (!isEmailVerified) {
-            // Explicitly unverified - reject
+          // For Google OAuth: email_confirmed_at is automatically set by Supabase on successful OAuth
+          // Only block if email_confirmed_at is explicitly NULL (which would be unusual for Google)
+          // Check user_metadata.email_verified as backup indicator
+          const emailVerified = authUser.user_metadata?.email_verified;
+          
+          // Only reject if explicitly false (not undefined or missing)
+          if (emailVerified === false) {
             await supabase.auth.signOut();
             setTimeout(() => {
               toast({
@@ -175,20 +185,19 @@ const { toast } = useToast();
             }, 100);
             return;
           }
-
-          // Email is verified - ensure profile is active
+          
+          // Email present and not explicitly unverified = ALLOW
+          // Update profile to active status
           setTimeout(async () => {
             try {
-              // Update profile to active status with verified email
               await supabase
                 .from('profiles')
-                .update({
-                  status: 'active',
-                  email_verified_at: new Date().toISOString()
+                .update({ 
+                  status: 'active', 
+                  email_verified_at: new Date().toISOString() 
                 })
                 .eq('id', authUser.id);
-
-              // Audit log for successful Google login
+                
               await supabase.functions.invoke('audit-google-login', {
                 body: {
                   eventType: 'google_login_success',
@@ -198,8 +207,8 @@ const { toast } = useToast();
                   userAgent: navigator.userAgent,
                 },
               });
-            } catch (err) {
-              console.error('Failed to update profile or log Google login:', err);
+            } catch (error) {
+              console.error('Error updating profile after Google login:', error);
             }
           }, 0);
         }

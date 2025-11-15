@@ -83,12 +83,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Store encrypted secret ID in database
+    // Store encrypted secret ID as PENDING (not active yet)
     const { error: insertError } = await adminClient
       .from('mfa_settings')
       .upsert({
         user_id: user.id,
-        totp_secret: encryptedSecretId,
+        pending_mfa_secret: encryptedSecretId, // Store as pending, not active
         totp_enabled: false,
         backup_codes_generated: false,
       }, {

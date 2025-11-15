@@ -51,7 +51,7 @@ export function MFASetup() {
     try {
       const { data, error } = await supabase
         .from('mfa_settings' as any)
-        .select('totp_enabled, totp_secret')
+        .select('totp_enabled, totp_secret, pending_mfa_secret')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -59,15 +59,16 @@ export function MFASetup() {
         console.error('Error checking MFA status:', error);
       }
       
-      // Three-state detection:
-      // 1. No data = never configured
-      // 2. Has totp_secret but totp_enabled = false = pending verification
-      // 3. totp_enabled = true = fully enabled
-      const enabled = (data as any)?.totp_enabled || false;
-      const hasSecret = !!(data as any)?.totp_secret;
+      // STRICT three-state detection:
+      // 1. totp_enabled = true → ENABLED
+      // 2. pending_mfa_secret exists → PENDING (setup in progress)
+      // 3. Neither → DISABLED (never configured or cancelled)
+      
+      const enabled = (data as any)?.totp_enabled === true; // STRICT
+      const hasPendingSecret = !!(data as any)?.pending_mfa_secret;
       
       setMfaEnabled(enabled);
-      setMfaPending(!enabled && hasSecret); // Pending if secret exists but not enabled
+      setMfaPending(!enabled && hasPendingSecret); // Pending only if secret but not enabled
     } catch (error) {
       console.error('Error checking MFA status:', error);
     } finally {
@@ -186,12 +187,27 @@ export function MFASetup() {
 
   // Handler for canceling MFA setup
   const handleCancelSetup = async () => {
-    setQrCodeUrl("");
-    setSecret("");
-    setVerificationCode("");
-    setError(null);
-    // Refetch DB status to ensure UI reflects reality
-    await checkMFAStatus();
+    setLoading(true);
+    try {
+      // Call backend to clean up pending secret
+      await supabase.functions.invoke('mfa-cancel-setup');
+      
+      // Clear frontend state
+      setQrCodeUrl("");
+      setSecret("");
+      setVerificationCode("");
+      setError(null);
+      
+      // Refetch DB status
+      await checkMFAStatus();
+      
+      toast.success('MFA setup cancelled');
+    } catch (error) {
+      console.error('Error cancelling setup:', error);
+      toast.error('Failed to cancel setup');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading && !qrCodeUrl) {
