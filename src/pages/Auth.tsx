@@ -252,7 +252,7 @@ export default function Auth() {
         <Button
           variant="ghost"
           className="mb-4"
-          onClick={() => window.location.href = 'https://truespend.org'}
+          onClick={() => navigate('/')}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Home
