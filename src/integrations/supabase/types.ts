@@ -871,6 +871,147 @@ export type Database = {
           },
         ]
       }
+      notification_categories: {
+        Row: {
+          category_description: string | null
+          category_name: string
+          color: string | null
+          created_at: string | null
+          default_enabled: boolean | null
+          default_sound: boolean | null
+          default_vibrate: boolean | null
+          icon: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_description?: string | null
+          category_name: string
+          color?: string | null
+          created_at?: string | null
+          default_enabled?: boolean | null
+          default_sound?: boolean | null
+          default_vibrate?: boolean | null
+          icon?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_description?: string | null
+          category_name?: string
+          color?: string | null
+          created_at?: string | null
+          default_enabled?: boolean | null
+          default_sound?: boolean | null
+          default_vibrate?: boolean | null
+          icon?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      notification_delivery_status: {
+        Row: {
+          body: string
+          category: string | null
+          created_at: string | null
+          data: Json | null
+          delivered_at: string | null
+          error_code: string | null
+          error_message: string | null
+          fcm_message_id: string | null
+          id: string
+          notification_id: string | null
+          opened_at: string | null
+          platform: string | null
+          sent_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          category?: string | null
+          created_at?: string | null
+          data?: Json | null
+          delivered_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          fcm_message_id?: string | null
+          id?: string
+          notification_id?: string | null
+          opened_at?: string | null
+          platform?: string | null
+          sent_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          category?: string | null
+          created_at?: string | null
+          data?: Json | null
+          delivered_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          fcm_message_id?: string | null
+          id?: string
+          notification_id?: string | null
+          opened_at?: string | null
+          platform?: string | null
+          sent_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_queue: {
+        Row: {
+          attempts: number | null
+          body: string
+          category: string
+          created_at: string | null
+          data: Json | null
+          error_message: string | null
+          id: string
+          last_attempt_at: string | null
+          scheduled_for: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number | null
+          body: string
+          category: string
+          created_at?: string | null
+          data?: Json | null
+          error_message?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          scheduled_for?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number | null
+          body?: string
+          category?: string
+          created_at?: string | null
+          data?: Json | null
+          error_message?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          scheduled_for?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       password_history: {
         Row: {
           created_at: string | null
@@ -1657,32 +1798,44 @@ export type Database = {
       }
       user_devices: {
         Row: {
+          badge_count: number | null
           created_at: string | null
           device_name: string | null
           fcm_token: string
           id: string
+          notification_preferences: Json | null
           platform: string
           push_enabled: boolean | null
+          token_expired: boolean | null
+          token_last_verified: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          badge_count?: number | null
           created_at?: string | null
           device_name?: string | null
           fcm_token: string
           id?: string
+          notification_preferences?: Json | null
           platform: string
           push_enabled?: boolean | null
+          token_expired?: boolean | null
+          token_last_verified?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          badge_count?: number | null
           created_at?: string | null
           device_name?: string | null
           fcm_token?: string
           id?: string
+          notification_preferences?: Json | null
           platform?: string
           push_enabled?: boolean | null
+          token_expired?: boolean | null
+          token_last_verified?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -1732,10 +1885,12 @@ export type Database = {
       cleanup_expired_foursquare_cache: { Args: never; Returns: number }
       cleanup_expired_google_maps_cache: { Args: never; Returns: number }
       cleanup_expired_mfa_codes: { Args: never; Returns: number }
+      cleanup_expired_push_tokens: { Args: never; Returns: number }
       cleanup_old_auth_attempts: { Args: never; Returns: number }
       cleanup_old_csp_violations: { Args: never; Returns: number }
       cleanup_old_foursquare_logs: { Args: never; Returns: number }
       cleanup_old_google_maps_logs: { Args: never; Returns: number }
+      cleanup_old_notification_logs: { Args: never; Returns: number }
       cleanup_old_rate_limits: { Args: never; Returns: number }
       cleanup_old_security_logs: { Args: never; Returns: number }
       cleanup_unverified_accounts: { Args: never; Returns: number }
