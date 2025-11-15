@@ -1,9 +1,20 @@
 {
-  "version": "2.3.0",
-  "buildId": "20251114T150000",
-  "commit": "totp-vault-encryption-v2.3.0",
-  "timestamp": 1731596400000,
+  "version": "2.5.0",
+  "buildId": "20251115T011500",
+  "commit": "phase11-native-mobile-apps-v2.5.0",
+  "timestamp": 1731637500000,
   "changelog": {
+    "2.5.0": [
+      "Added Phase 11: Native Mobile Apps (Weeks 38-40, 45 SP)",
+      "Updated project timeline to 51 weeks with 16 phases (632 SP total)",
+      "Added Capacitor native app implementation plan with iOS/Android support",
+      "Added background location tracking and push notifications (APNS/FCM)",
+      "Added native geofencing and iOS widget implementation",
+      "Updated all dashboard components to reflect Phase 11 and new timeline",
+      "Updated Gantt chart with Phase 11 tasks and milestones",
+      "Updated hierarchical project diagram with native mobile app sections",
+      "Shifted Phases 12-15 to accommodate native mobile development"
+    ],
     "2.3.0": [
       "Enabled Supabase Vault for encrypted secret storage",
       "Implemented TOTP secret encryption using AES-256-GCM",
