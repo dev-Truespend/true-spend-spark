@@ -77,6 +77,7 @@ export function PushNotificationManager() {
           if (user) {
             try {
               // Save token to database using direct insert/update
+              // @ts-ignore - Table types will regenerate after migration
               const { error } = await supabase.from('user_devices').upsert({
                 user_id: user.id,
                 fcm_token: token.value,
@@ -164,6 +165,7 @@ export function PushNotificationManager() {
     setLoading(true);
     try {
       // Update push_enabled to false in database
+      // @ts-ignore - Table types will regenerate after migration
       const { error } = await supabase
         .from('user_devices')
         .update({ push_enabled: false })
