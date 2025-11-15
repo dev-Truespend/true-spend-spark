@@ -149,11 +149,8 @@ export default function Auth() {
     setMfaError(null);
     
     try {
-      // Step 1: Check auth provider and account status
+      // Step 1: Check auth provider and MFA status FIRST
       const providerData = await checkAuthProvider(values.email);
-      
-      // Store MFA requirement state
-      setMfaRequired(providerData?.mfaEnabled || false);
       
       if (!providerData) {
         toast({
@@ -205,11 +202,12 @@ export default function Auth() {
         return;
       }
       
-      // Step 2: Check if MFA is required and block if code is missing
-      if (providerData.mfaEnabled) {
-        // MFA is REQUIRED - must have 6-digit code
+      // Step 2: If MFA is enabled, REQUIRE the code before attempting sign-in
+      const isMfaEnabled = providerData.mfaEnabled === true;
+      if (isMfaEnabled) {
+        setMfaRequired(true);
         if (!mfaCode || mfaCode.length !== 6) {
-          setMfaError('Two-factor authentication code is required');
+          setMfaError('Two-factor authentication is enabled. Please enter your 6-digit code.');
           toast({
             title: "MFA Code Required",
             description: "Please enter your 6-digit authentication code to continue.",
@@ -220,102 +218,73 @@ export default function Auth() {
         }
       }
       
-      // Step 3: Proceed with login
+      // Step 3: Attempt sign-in with password
       const { error, requiresMFA, userId } = await signIn(values.email, values.password);
       
-      // Handle MFA requirement
-      if (requiresMFA && userId) {
-        setMfaUserId(userId);
-        setMfaCredentials({ email: values.email, password: values.password });
-        
-        // Verify MFA code (must exist at this point due to check above)
-        if (mfaCode && mfaCode.length === 6) {
-          setMfaInlineProcessing(true);
-          try {
-            const { error: mfaError } = await verifyMFACode(userId, mfaCode);
-            
-            if (mfaError) {
-              const errorMessage = mfaError.message || 'Incorrect code. Please try again.';
-              if (errorMessage.includes('Too many')) {
-                setMfaError('Too many verification attempts. Please try again in 15 minutes.');
-                toast({
-                  title: "Rate Limit Exceeded",
-                  description: "Too many verification attempts. Please try again in 15 minutes.",
-                  variant: "destructive",
-                });
-              } else {
-                setMfaError(errorMessage);
-              }
-              setIsLoading(false);
-              setMfaInlineProcessing(false);
-              return;
-            }
-            
-            // Success - navigate to redirectTo
-            toast({
-              title: "Success",
-              description: "Login successful!",
-            });
-            navigate(redirectTo, { replace: true });
-            return;
-          } catch (err) {
-            setMfaError('Verification failed. Please try again.');
-            setIsLoading(false);
-            setMfaInlineProcessing(false);
-            return;
-          }
+      if (error) {
+        if (error.code === 'account_locked') {
+          toast({
+            title: "Account Locked",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else if (error.code === 'account_not_verified') {
+          toast({
+            title: "Email Not Verified",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else if (error.code === 'verification_expired') {
+          toast({
+            title: "Verification Expired",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else if (error.code === 'account_not_found') {
+          toast({
+            title: "Account Not Found",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          // Generic error for all other cases (including invalid credentials)
+          toast({
+            title: "Sign In Failed",
+            description: error.message || "We couldn't sign you in with those details. Check your email and password and try again.",
+            variant: "destructive",
+          });
         }
-        
-        // No inline code entered - show modal
-        setShowMFAModal(true);
         setIsLoading(false);
         return;
       }
       
-      // No MFA required - check for errors
-      // No MFA required and no error - success!
-      if (!error) {
-        toast({
-          title: "Success",
-          description: "Login successful!",
-        });
-        navigate(redirectTo, { replace: true });
-        return;
+      // Step 4: If MFA is required, verify the code immediately
+      if (requiresMFA && userId && mfaCode) {
+        const { error: verifyError } = await verifyMFACode(userId, mfaCode);
+        if (verifyError) {
+          const errorMessage = verifyError.message || 'Invalid authentication code. Please check your code and try again.';
+          setMfaError(errorMessage);
+          toast({
+            title: "Invalid Code",
+            description: errorMessage,
+            variant: "destructive",
+          });
+          setMfaCode('');
+          setIsLoading(false);
+          return;
+        }
+
+        // Mark MFA as verified
+        sessionStorage.setItem('mfa_verified', 'true');
       }
+
+      // Step 5: Success - navigate to destination (single navigation point)
+      toast({
+        title: "Success",
+        description: "Login successful!",
+      });
+      navigate(redirectTo, { replace: true });
       
-      // Handle errors
-      if (error.code === 'account_locked') {
-        toast({
-          title: "Account Locked",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else if (error.code === 'account_not_verified') {
-        toast({
-          title: "Email Not Verified",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else if (error.code === 'verification_expired') {
-        toast({
-          title: "Verification Expired",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else if (error.code === 'account_not_found') {
-        toast({
-          title: "Account Not Found",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        // Generic error for all other cases (including invalid credentials)
-        toast({
-          title: "Sign In Failed",
-          description: error.message || "We couldn't sign you in with those details. Check your email and password and try again.",
-          variant: "destructive",
-        });
-      }
     } catch (error) {
       console.error('Login error:', error);
       toast({
