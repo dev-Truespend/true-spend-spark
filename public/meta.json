@@ -1,9 +1,15 @@
 {
-  "version": "4.0.0",
-  "buildId": "20251115T104500",
-  "commit": "advanced-rate-limiting-v4.0.0",
-  "timestamp": 1763195100000,
+  "version": "5.0.0",
+  "buildId": "20251115T112600",
+  "commit": "mfa-strict-verification-v5.0.0",
+  "timestamp": 1763197560000,
   "changelog": {
+    "5.0.0": [
+      "CRITICAL FIX: MFA never auto-enables - only activates after successful TOTP code verification",
+      "SECURITY: Cancel or close MFA setup always keeps 2FA disabled",
+      "SECURITY: Removed all optimistic MFA state updates - database is single source of truth",
+      "SECURITY: Fixed race condition where MFA status could show enabled without code verification"
+    ],
     "4.0.0": [
       "SECURITY: Enhanced rate limiting - 5 failed attempts trigger 24-hour account lock",
       "SECURITY: Fixed Google OAuth email verification logic - verified Gmail accounts no longer blocked",
