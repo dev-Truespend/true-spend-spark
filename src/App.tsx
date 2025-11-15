@@ -31,6 +31,7 @@ import ConfirmEmailChange from "./pages/ConfirmEmailChange";
 import Transactions from "./pages/Transactions";
 import Budgets from "./pages/Budgets";
 import Insights from "./pages/Insights";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
@@ -131,6 +132,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Insights />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <ProtectedRoute>
+                    <Settings />
                   </ProtectedRoute>
                 } 
               />

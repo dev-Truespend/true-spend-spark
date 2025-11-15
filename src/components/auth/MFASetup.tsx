@@ -87,7 +87,19 @@ export function MFASetup() {
         body: { code: verificationCode }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Enhanced error logging with HTTP status
+        const statusCode = (error as any)?.status || (error as any)?.statusCode;
+        console.error('MFA enable error:', { error, statusCode, message: error.message });
+        
+        if (statusCode === 404) {
+          throw new Error('MFA service temporarily unavailable. Please try again.');
+        } else if (statusCode === 401) {
+          throw new Error('Authentication failed. Please sign in again.');
+        } else {
+          throw error;
+        }
+      }
 
       setBackupCodes(data.backupCodes);
       setShowBackupCodes(true);

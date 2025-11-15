@@ -114,22 +114,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         // Add small delay to let the page mount before checking localStorage
         setTimeout(() => {
-          const redirectTarget = localStorage.getItem('ts_redirect_to');
+          const redirectTarget = localStorage.getItem('ts_redirect_to') || '/dashboard';
           console.log('[useAuth] Auth state changed with session:', { 
             redirectTarget, 
             currentPath: window.location.pathname 
           });
           
-          if (redirectTarget) {
+          // For Google OAuth users landing on root, always redirect to dashboard
+          if (window.location.pathname === '/' && redirectTarget) {
+            console.log('[useAuth] Navigating to redirect target:', redirectTarget);
+            localStorage.removeItem('ts_redirect_to');
+            navigate(redirectTarget);
+          } else if (redirectTarget && window.location.pathname !== redirectTarget) {
             // Only navigate if not already on the target page
-            if (window.location.pathname !== redirectTarget) {
-              console.log('[useAuth] Navigating to redirect target:', redirectTarget);
-              localStorage.removeItem('ts_redirect_to');
-              navigate(redirectTarget);
-            } else {
-              console.log('[useAuth] Already on target page, clearing localStorage');
-              localStorage.removeItem('ts_redirect_to');
-            }
+            console.log('[useAuth] Navigating to redirect target:', redirectTarget);
+            localStorage.removeItem('ts_redirect_to');
+            navigate(redirectTarget);
+          } else {
+            console.log('[useAuth] Already on target page, clearing localStorage');
+            localStorage.removeItem('ts_redirect_to');
           }
         }, 100);
       }
@@ -319,16 +322,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    // Read redirect target from URL query params
-    const redirectParam = new URLSearchParams(window.location.search).get('redirectTo') || '/dashboard';
-    
-    // Store in localStorage as fallback (in case OAuth provider ignores redirectTo)
-    localStorage.setItem('ts_redirect_to', redirectParam);
+    // Always redirect to dashboard for Google OAuth
+    localStorage.setItem('ts_redirect_to', '/dashboard');
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}${redirectParam}`,
+        redirectTo: `${window.location.origin}/dashboard`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
