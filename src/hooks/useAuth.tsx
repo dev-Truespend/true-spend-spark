@@ -105,44 +105,46 @@ const navigate = useNavigate();
   }, [user]);
 
   useEffect(() => {
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth event:', event);
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
         
-        // Handle explicit signout
-        if (event === 'SIGNED_OUT') {
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-          setMfaPending(false);
-          setLoading(false);
-          return;
-        }
-        
-        // Handle sign in events
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setLoading(false);
-          
-          // Only auto-redirect for OAuth (Google) sign-ins
-          if (session?.user) {
-            setTimeout(() => {
-              const isOAuthSignIn = localStorage.getItem('oauth_signin') === 'true';
-              
-              if (isOAuthSignIn && !mfaPendingRef.current) {
-                localStorage.removeItem('oauth_signin');
-                const redirectTarget = localStorage.getItem('ts_redirect_to') || '/dashboard';
-                localStorage.removeItem('ts_redirect_to');
-                navigate(redirectTarget);
-              }
-            }, 100);
-          }
-        } else {
-          // For any other event, just update state
-          setSession(session);
-          setUser(session?.user ?? null);
-          setLoading(false);
+        // Handle redirect after successful OAuth login or session changes
+        if (session?.user) {
+          // Add small delay to let the page mount before checking localStorage
+          setTimeout(() => {
+            const currentPath = window.location.pathname;
+            const redirectTarget = localStorage.getItem('ts_redirect_to') || '/dashboard';
+            console.log('[useAuth] Auth state changed with session:', {
+              redirectTarget,
+              currentPath,
+              mfaPending,
+            });
+
+            // If MFA verification is pending, never auto-redirect
+            if (mfaPendingRef.current) {
+              console.log('[useAuth] MFA pending, skipping auto-redirect');
+              return;
+            }
+
+            // Redirect only when appropriate
+            if (currentPath === '/' && redirectTarget) {
+              localStorage.removeItem('ts_redirect_to');
+              navigate(redirectTarget);
+            } else if (currentPath === '/auth' && redirectTarget && currentPath !== redirectTarget) {
+              localStorage.removeItem('ts_redirect_to');
+              navigate(redirectTarget);
+            } else if (redirectTarget && currentPath !== redirectTarget && currentPath === '/') {
+              localStorage.removeItem('ts_redirect_to');
+              navigate(redirectTarget);
+            } else {
+              // Already on target or not required
+              localStorage.removeItem('ts_redirect_to');
+            }
+          }, 100);
         }
       }
     );
@@ -330,8 +332,7 @@ const navigate = useNavigate();
   };
 
   const signInWithGoogle = async () => {
-    // Mark this as an OAuth signin for auto-redirect in onAuthStateChange
-    localStorage.setItem('oauth_signin', 'true');
+    // Always redirect to dashboard for Google OAuth
     localStorage.setItem('ts_redirect_to', '/dashboard');
     
     const { error } = await supabase.auth.signInWithOAuth({
@@ -348,35 +349,8 @@ const navigate = useNavigate();
   };
 
   const signOut = async () => {
-    try {
-      // Clear MFA pending state first
-      setMfaPending(false);
-      
-      // Sign out from Supabase
-      await supabase.auth.signOut();
-      
-      // Clear all auth-related localStorage items
-      localStorage.removeItem('oauth_signin');
-      localStorage.removeItem('ts_redirect_to');
-      
-      // Clear session and user state immediately
-      setSession(null);
-      setUser(null);
-      setProfile(null);
-      
-      // Navigate using replace to prevent back button
-      navigate("/auth", { replace: true });
-      
-      // Force reload to clear all cached state
-      setTimeout(() => {
-        window.location.href = '/auth';
-      }, 100);
-      
-    } catch (error) {
-      console.error('Sign out error:', error);
-      // Still navigate away even if error occurs
-      navigate("/auth", { replace: true });
-    }
+    await supabase.auth.signOut();
+    navigate("/auth");
   };
 
   const sendVerificationEmail = async () => {

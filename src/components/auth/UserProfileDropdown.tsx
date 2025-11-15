@@ -157,23 +157,14 @@ export function UserProfileDropdown() {
   };
 
   const handleSignOut = async () => {
-    setLoading(true);
     try {
       await signOut();
-      
-      toast({
-        title: "Signed out successfully",
-        description: "You've been logged out. Please sign in again to access your account.",
-      });
     } catch (error) {
-      console.error('Sign out error:', error);
       toast({
         title: "Sign out failed",
         description: "There was an error signing out. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 

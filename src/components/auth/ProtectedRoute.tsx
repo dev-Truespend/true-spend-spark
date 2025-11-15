@@ -2,7 +2,6 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 type AppRole = 'admin' | 'developer' | 'user';
 
@@ -17,21 +16,14 @@ export function ProtectedRoute({ children, requireRole, redirectTo }: ProtectedR
   const { hasRole, loading: roleLoading } = useUserRole();
   const location = useLocation();
 
-  // Validate active session
+  // Fallback: ensure authenticated users on root path go to dashboard
   useEffect(() => {
-    const validateSession = async () => {
-      if (user) {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error || !session) {
-          // Session is invalid, force logout
-          await supabase.auth.signOut();
-          window.location.href = '/auth';
-        }
-      }
-    };
-    
-    validateSession();
-  }, [user, location.pathname]);
+    if (!authLoading && user && location.pathname === '/') {
+      const target = localStorage.getItem('ts_redirect_to') || '/dashboard';
+      localStorage.removeItem('ts_redirect_to');
+      window.location.href = target;
+    }
+  }, [user, authLoading, location.pathname]);
 
   if (authLoading || roleLoading) {
     return (
