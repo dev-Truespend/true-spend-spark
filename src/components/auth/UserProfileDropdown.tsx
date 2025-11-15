@@ -45,6 +45,29 @@ export function UserProfileDropdown() {
     }
   }, [user]);
 
+  // Auto-cancel pending MFA setup if not completed within 60 seconds or when component unmounts
+  useEffect(() => {
+    if (!mfaSetupInProgress) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const { error } = await supabase.functions.invoke('mfa-cancel-setup');
+        if (!error) {
+          setMfaSetupInProgress(false);
+          setQrCodeUrl("");
+          setMfaSecret("");
+          setVerificationCode("");
+          await fetchData();
+          toast({ title: 'MFA setup timed out', description: 'Two-factor authentication remains disabled.' });
+        }
+      } catch (e) {
+        // Silent fail - next fetch will reflect true state
+      }
+    }, 60000);
+
+    return () => clearTimeout(timer);
+  }, [mfaSetupInProgress]);
+
   const fetchData = async () => {
     if (!user) return;
     
@@ -89,14 +112,17 @@ export function UserProfileDropdown() {
         setTimeout(() => fetchData(), 1000);
       }
 
-      // Fetch MFA status - if row exists, MFA is enabled
+      // Fetch MFA status - STRICTLY derive from totp_enabled and pending_mfa_secret
       const { data: mfaData } = await supabase
         .from('mfa_settings' as any)
-        .select('user_id')
+        .select('totp_enabled, pending_mfa_secret')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      setMfaEnabled(!!mfaData);
+      const enabled = (mfaData as any)?.totp_enabled === true;
+      const pending = !enabled && !!(mfaData as any)?.pending_mfa_secret;
+      setMfaEnabled(enabled);
+      setMfaSetupInProgress(pending);
     } catch (error) {
       console.error('Failed to fetch profile data:', error);
     }
