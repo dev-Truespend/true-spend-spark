@@ -83,11 +83,13 @@ Deno.serve(async (req) => {
       rateLimitCache.set(limitKey, { count: 1, resetAt: now + 60000, attempts: 0 });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Query profiles table for auth provider and status
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id, auth_provider, status, email_verified_at')
-      .eq('email', email.toLowerCase().trim())
+      .eq('email', normalizedEmail)
       .maybeSingle();
 
     if (profileError) {
@@ -97,7 +99,8 @@ Deno.serve(async (req) => {
           provider: 'none',
           accountStatus: 'none',
           verified: false,
-          requiresVerification: false
+          requiresVerification: false,
+          mfaEnabled: false
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -110,7 +113,8 @@ Deno.serve(async (req) => {
           provider: 'none',
           accountStatus: 'none',
           verified: false,
-          requiresVerification: false
+          requiresVerification: false,
+          mfaEnabled: false
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -123,29 +127,35 @@ Deno.serve(async (req) => {
       .eq('user_id', profile.id)
       .maybeSingle();
 
-    // Profile found - return details
-    const response = {
-      provider: profile.auth_provider || 'email',
-      accountStatus: profile.status || 'active',
-      verified: !!profile.email_verified_at,
-      requiresVerification: profile.status === 'pending_verification',
-      mfaEnabled: mfaSettings?.totp_enabled || false
-    };
+    const mfaEnabled = mfaSettings?.totp_enabled || false;
 
-    // Log the check (for analytics, not security)
-    await supabase.from('security_logs').insert({
-      event_type: 'auth_provider_checked',
-      severity: 'info',
-      ip_address: ipAddress,
-      details: {
-        email,
-        provider: response.provider,
-        status: response.accountStatus
-      }
-    });
+    // Check for multiple auth identities (email + google for same user)
+    const { data: identities } = await supabase
+      .from('auth_identities')
+      .select('provider')
+      .eq('user_id', profile.id);
+
+    const hasGoogleAuth = identities?.some(i => i.provider === 'google') || false;
+    const hasEmailAuth = identities?.some(i => i.provider === 'email') || false;
+
+    // Determine primary provider
+    let primaryProvider = profile.auth_provider || 'email';
+    
+    // If user has both Google and email, prefer Google
+    if (hasGoogleAuth && hasEmailAuth) {
+      primaryProvider = 'google';
+    }
 
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify({
+        provider: primaryProvider,
+        accountStatus: profile.status,
+        verified: !!profile.email_verified_at,
+        requiresVerification: profile.status === 'pending_verification',
+        mfaEnabled,
+        hasMultipleProviders: hasGoogleAuth && hasEmailAuth,
+        availableProviders: identities?.map(i => i.provider) || []
+      }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
@@ -157,7 +167,8 @@ Deno.serve(async (req) => {
         provider: 'none',
         accountStatus: 'none',
         verified: false,
-        requiresVerification: false
+        requiresVerification: false,
+        mfaEnabled: false
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

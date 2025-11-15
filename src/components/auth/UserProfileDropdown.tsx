@@ -16,7 +16,6 @@ import { PasswordChangeDialog } from "./PasswordChangeDialog";
 import { EmailChangeDialog } from "./EmailChangeDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MFASetup } from "./MFASetup";
 
 export function UserProfileDropdown() {
@@ -26,9 +25,9 @@ export function UserProfileDropdown() {
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [mfaDisablePassword, setMfaDisablePassword] = useState("");
   const [loading, setLoading] = useState(false);
-const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-const [showEmailDialog, setShowEmailDialog] = useState(false);
-const [showMfaDialog, setShowMfaDialog] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [showMfaSetup, setShowMfaSetup] = useState(false);
 
   // Edit states - null means not editing, string means editing with that value
   const [editingFirstName, setEditingFirstName] = useState<string | null>(null);
@@ -381,14 +380,31 @@ const [showMfaDialog, setShowMfaDialog] = useState(false);
                       </div>
                       
                       {!mfaEnabled ? (
-                        <Button 
-                          variant="default" 
-                          className="w-full"
-onClick={() => setShowMfaDialog(true)}
-                        >
-                          <Shield className="mr-2 h-4 w-4" />
-                          Enable Two-Factor Authentication
-                        </Button>
+                        showMfaSetup ? (
+                          <div className="space-y-4">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                setShowMfaSetup(false);
+                                fetchData();
+                              }}
+                              className="mb-2"
+                            >
+                              ← Back
+                            </Button>
+                            <MFASetup />
+                          </div>
+                        ) : (
+                          <Button 
+                            variant="default" 
+                            className="w-full"
+                            onClick={() => setShowMfaSetup(true)}
+                          >
+                            <Shield className="mr-2 h-4 w-4" />
+                            Enable Two-Factor Authentication
+                          </Button>
+                        )
                       ) : (
                         <div className="space-y-3 pt-2 border-t">
                           <Label htmlFor="mfa-disable-password" className="text-sm text-muted-foreground">
@@ -432,19 +448,10 @@ onClick={() => setShowMfaDialog(true)}
         onOpenChange={setShowPasswordDialog}
       />
       
-<EmailChangeDialog 
+      <EmailChangeDialog 
         open={showEmailDialog} 
         onOpenChange={setShowEmailDialog}
       />
-
-      <Dialog open={showMfaDialog} onOpenChange={setShowMfaDialog}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Enable Two-Factor Authentication</DialogTitle>
-          </DialogHeader>
-          <MFASetup />
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
