@@ -146,50 +146,32 @@ const { toast } = useToast();
         return;
       }
 
-      // Handle Google OAuth events with verification logic
+      // Handle successful sign-in
       if (event === 'SIGNED_IN' && session?.user) {
         const authUser = session.user;
         const provider = authUser.app_metadata?.provider;
         
-        // Only apply strict checks for Google OAuth
+        // Set session and user immediately
+        setSession(session);
+        setUser(authUser);
+        
+        // Google-specific validation
         if (provider === 'google') {
-          console.log('Google sign-in detected, verifying email presence');
+          console.log('Google sign-in detected, validating email');
           
-          // For Google OAuth: Only check that email is present
-          // Google has already verified the email on their end
-          // DO NOT check user_metadata.email_verified - that flag may be stale
-          // from a previous email/password signup attempt
           if (!authUser.email) {
             await supabase.auth.signOut();
-            setTimeout(() => {
-              toast({
-                title: "Sign-In Failed",
-                description: "We couldn't retrieve an email from Google. Please try again or contact support.",
-                variant: "destructive",
-              });
-            }, 100);
+            toast({
+              title: "Sign-In Failed",
+              description: "No email found from Google. Please try again.",
+              variant: "destructive",
+            });
             return;
           }
           
-          // Email is present = ALLOW LOGIN
-          // The database trigger already sets status='active' for Google users
-          console.log('Google sign-in successful, user will be redirected to dashboard');
+          console.log('Google sign-in successful - Auth page will handle redirect');
           
-          // Add deferred redirect as secondary safety path (if Auth.tsx redirect doesn't fire)
-          setTimeout(() => {
-            try {
-              // Do NOT call any Supabase methods here to avoid deadlocks
-              // Only route-level navigation if we're stuck on /auth
-              if (window.location.pathname === '/auth') {
-                window.history.replaceState(null, '', '/dashboard');
-                window.location.reload(); // Force reload to trigger route change
-              }
-            } catch (_) {
-              // Silently fail - Auth.tsx redirect is the primary path
-            }
-          }, 0);
-          
-          // Log the successful Google login (non-blocking)
+          // Log successful Google login (non-blocking)
           supabase.functions.invoke('audit-google-login', {
             body: {
               eventType: 'google_login_success',
