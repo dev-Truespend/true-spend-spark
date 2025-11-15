@@ -1,0 +1,76 @@
+name: Lockfile Integrity
+
+# Phase 3: Supply Chain Security - Layer 6
+# Verify package-lock.json integrity to prevent supply chain attacks
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+jobs:
+  verify-lockfile:
+    name: Verify Lockfile Integrity
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Verify lockfile matches package.json
+        run: |
+          echo "🔐 Verifying lockfile integrity..."
+          
+          # Remove existing node_modules and package-lock to ensure clean state
+          rm -rf node_modules package-lock.json
+          
+          # Generate fresh lockfile
+          npm install --package-lock-only
+          
+          # Check if lockfile changed
+          if git diff --exit-code package-lock.json; then
+            echo "✅ Lockfile integrity verified"
+          else
+            echo "❌ Lockfile does not match package.json"
+            echo "Please run 'npm install' and commit the updated package-lock.json"
+            exit 1
+          fi
+          
+      - name: Check for malicious packages
+        run: |
+          echo "🛡️ Scanning for known malicious packages..."
+          
+          # Extract all package names from package-lock.json
+          PACKAGES=$(jq -r '.packages | keys[]' package-lock.json)
+          
+          echo "Total packages: $(echo "$PACKAGES" | wc -l)"
+          
+          # Basic check for suspicious package names (typosquatting patterns)
+          SUSPICIOUS=0
+          for pkg in $PACKAGES; do
+            if [[ "$pkg" =~ (crossenv|electron-native-notify|fabric-js|ffmpeg-windows) ]]; then
+              echo "⚠️  Suspicious package detected: $pkg"
+              SUSPICIOUS=$((SUSPICIOUS + 1))
+            fi
+          done
+          
+          if [ $SUSPICIOUS -gt 0 ]; then
+            echo "❌ Found $SUSPICIOUS suspicious package(s)"
+            exit 1
+          fi
+          
+          echo "✅ No known malicious packages detected"
+          
+      - name: Validate package integrity
+        run: |
+          echo "🔍 Validating package integrity..."
+          npm ci --ignore-scripts
+          echo "✅ All packages installed successfully with integrity verification"

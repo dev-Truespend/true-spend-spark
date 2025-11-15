@@ -1,0 +1,75 @@
+# Snyk (https://snyk.io) policy file for TrueSpend v4.2
+# Phase 3: Supply Chain Security - Layer 6
+
+# Specifies Snyk policies for vulnerability management
+version: v1.25.0
+
+# Language settings
+language-settings:
+  javascript:
+    # Scan dev dependencies
+    includeDev: true
+
+# Ignore specific vulnerabilities (with justification)
+ignore:
+  # Example: Ignore prototype pollution in lodash until fix available
+  # 'SNYK-JS-LODASH-567746':
+  #   - '*':
+  #       reason: 'No fix available yet, risk accepted for non-user input'
+  #       expires: '2025-12-31T00:00:00.000Z'
+
+# Patch settings
+patch: {}
+
+# Exclude paths from scanning
+exclude:
+  # Exclude build outputs
+  - dist/
+  - build/
+  # Exclude documentation
+  - docs/
+  # Exclude test fixtures
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  # Exclude generated files
+  - src/integrations/supabase/types.ts
+
+# Severity threshold
+# Only report medium and above
+failThreshold: medium
+
+# License policy
+license-policy:
+  # Allowed licenses
+  allowed:
+    - MIT
+    - Apache-2.0
+    - BSD-2-Clause
+    - BSD-3-Clause
+    - ISC
+    - CC0-1.0
+    - Unlicense
+  
+  # Disallowed licenses
+  disallowed:
+    - GPL-2.0
+    - GPL-3.0
+    - AGPL-1.0
+    - AGPL-3.0
+    - LGPL-2.0
+    - LGPL-2.1
+    - LGPL-3.0
+
+# Notification settings
+notifications:
+  # Notify on new vulnerabilities
+  new-issues:
+    enabled: true
+    severity-threshold: high
+  
+  # Notify on fixed vulnerabilities
+  resolved-issues:
+    enabled: true
+
+# Organization settings (configure after signup)
+# org: truespend
