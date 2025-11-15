@@ -138,12 +138,12 @@ export function MFASetup() {
 
       setBackupCodes(data.backupCodes);
       setShowBackupCodes(true);
-      setMfaEnabled(true);
       // Clear QR setup state
       setQrCodeUrl("");
       setSecret("");
       setVerificationCode("");
-      // Refetch to ensure DB is source of truth
+      // CRITICAL: Let DB be the ONLY source of truth - do NOT set local state
+      // Only checkMFAStatus() can update mfaEnabled based on actual DB value
       await checkMFAStatus();
       toast.success("Two-factor authentication enabled successfully!");
     } catch (error: any) {
