@@ -76,16 +76,12 @@ export function PushNotificationManager() {
           
           if (user) {
             try {
-              // Save token to database
-              const { error } = await supabase.from('user_devices').upsert({
-                user_id: user.id,
-                fcm_token: token.value,
-                platform: window.Capacitor?.getPlatform() || 'unknown',
-                push_enabled: true,
-                device_name: navigator.userAgent,
-                updated_at: new Date().toISOString()
-              }, {
-                onConflict: 'user_id,fcm_token'
+              // Save token to database - using raw SQL to avoid type issues
+              const { error } = await supabase.rpc('upsert_user_device', {
+                p_user_id: user.id,
+                p_fcm_token: token.value,
+                p_platform: window.Capacitor?.getPlatform() || 'unknown',
+                p_device_name: navigator.userAgent
               });
 
               if (error) {
@@ -165,11 +161,10 @@ export function PushNotificationManager() {
 
     setLoading(true);
     try {
-      // Remove token from database
-      const { error } = await supabase
-        .from('user_devices')
-        .update({ push_enabled: false })
-        .eq('user_id', user.id);
+      // Disable notifications via RPC function
+      const { error } = await supabase.rpc('disable_user_push_notifications', {
+        p_user_id: user.id
+      });
 
       if (error) {
         console.error('[Push] Disable error:', error);
