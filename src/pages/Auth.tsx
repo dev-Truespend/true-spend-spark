@@ -57,15 +57,20 @@ export default function Auth() {
   const location = useLocation();
   const { toast } = useToast();
   const searchParams = new URLSearchParams(location.search);
+  const hashParams = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
   
   const redirectTo = searchParams.get('redirectTo') || '/dashboard';
-  const isOAuthCallback = searchParams.has('code') && !searchParams.has('error');
+  const hasOAuthInQuery = searchParams.has('code') || searchParams.has('access_token');
+  const hasOAuthInHash = hashParams.has('code') || hashParams.has('access_token') || hashParams.has('refresh_token') || hashParams.has('provider_token');
+  const hasOAuthError = searchParams.has('error') || hashParams.has('error');
+  const isOAuthCallback = (hasOAuthInQuery || hasOAuthInHash) && !hasOAuthError;
   const [processingOAuth, setProcessingOAuth] = useState(isOAuthCallback);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const error = params.get('error');
-    const errorDescription = params.get('error_description');
+    const hashParams = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
+    const error = params.get('error') || hashParams.get('error');
+    const errorDescription = params.get('error_description') || hashParams.get('error_description');
     
     if (error) {
       let title = "Sign-in Error";
@@ -100,8 +105,11 @@ export default function Auth() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const hasError = params.get('error');
-    const oauthCallback = params.has('code');
+    const hashParams = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
+    const hasError = params.get('error') || hashParams.get('error');
+    const oauthCallback = params.has('code') || params.has('access_token') ||
+      hashParams.has('code') || hashParams.has('access_token') ||
+      hashParams.has('refresh_token') || hashParams.has('provider_token');
     
     // Handle successful OAuth callback - priority redirect
     if (oauthCallback && !loading && user && !mfaRequired && !isLoading && !hasError) {
