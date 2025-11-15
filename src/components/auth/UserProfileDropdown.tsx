@@ -230,24 +230,41 @@ export function UserProfileDropdown() {
       });
 
       if (error) {
-        console.error('[ProfileDropdown] MFA enable error:', error);
-        let errorCode = data?.code;
-        let errorMessage = data?.error;
-        const statusCode = (error as any)?.status || (error as any)?.statusCode;
+        console.error('[ProfileDropdown] MFA enable error:', JSON.stringify(error, null, 2));
+        
+        let errorCode = null;
+        let errorMessage = null;
+        let statusCode = null;
 
         try {
-          if ((error as any)?.context?.body) {
-            const body = typeof (error as any).context.body === 'string'
-              ? JSON.parse((error as any).context.body)
-              : (error as any).context.body;
-            errorCode = errorCode || body?.code;
-            errorMessage = errorMessage || body?.error;
+          errorCode = data?.code || null;
+          errorMessage = data?.error || null;
+          statusCode = (error as any)?.status || (error as any)?.statusCode || null;
+
+          if (error && typeof error === 'object' && 'context' in error) {
+            const ctx = (error as any).context;
+            if (ctx?.body) {
+              try {
+                const body = typeof ctx.body === 'string' ? JSON.parse(ctx.body) : ctx.body;
+                if (body && typeof body === 'object') {
+                  errorCode = errorCode || body.code || null;
+                  errorMessage = errorMessage || body.error || null;
+                }
+              } catch (e) {
+                console.warn('[ProfileDropdown] body parse failed');
+              }
+            }
+          }
+
+          if (!errorMessage && error && typeof error === 'object' && 'message' in error) {
+            errorMessage = (error as any).message;
           }
         } catch (e) {
-          console.warn('[ProfileDropdown] parse error body failed', e);
+          console.error('[ProfileDropdown] error parse exception:', e);
+          errorMessage = 'Failed to verify code';
         }
 
-        let userMsg = '';
+        let userMsg = errorMessage || 'Failed to enable MFA';
         if (errorCode === 'MFA_VERIFY_LOCKED') {
           userMsg = 'Too many incorrect codes. Please try again in 24 hours.';
         } else if (errorCode === 'MFA_VERIFY_INVALID') {
@@ -258,8 +275,6 @@ export function UserProfileDropdown() {
           userMsg = 'Session expired. Please sign in again.';
         } else if (statusCode === 404) {
           userMsg = 'MFA service temporarily unavailable. Please try again.';
-        } else {
-          userMsg = errorMessage || 'Failed to enable MFA. Please try again.';
         }
 
         setMfaError(userMsg);
