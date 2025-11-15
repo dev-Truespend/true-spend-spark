@@ -105,26 +105,44 @@ const navigate = useNavigate();
   }, [user]);
 
   useEffect(() => {
-    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+      (event, session) => {
+        console.log('Auth event:', event);
         
-        // Only auto-redirect for OAuth (Google) sign-ins, not email/password
-        if (session?.user) {
-          setTimeout(() => {
-            const isOAuthSignIn = localStorage.getItem('oauth_signin') === 'true';
-            
-            // Only auto-redirect if this was an OAuth sign-in and MFA is not pending
-            if (isOAuthSignIn && !mfaPendingRef.current) {
-              localStorage.removeItem('oauth_signin');
-              const redirectTarget = localStorage.getItem('ts_redirect_to') || '/dashboard';
-              localStorage.removeItem('ts_redirect_to');
-              navigate(redirectTarget);
-            }
-          }, 100);
+        // Handle explicit signout
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setMfaPending(false);
+          setLoading(false);
+          return;
+        }
+        
+        // Handle sign in events
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+          
+          // Only auto-redirect for OAuth (Google) sign-ins
+          if (session?.user) {
+            setTimeout(() => {
+              const isOAuthSignIn = localStorage.getItem('oauth_signin') === 'true';
+              
+              if (isOAuthSignIn && !mfaPendingRef.current) {
+                localStorage.removeItem('oauth_signin');
+                const redirectTarget = localStorage.getItem('ts_redirect_to') || '/dashboard';
+                localStorage.removeItem('ts_redirect_to');
+                navigate(redirectTarget);
+              }
+            }, 100);
+          }
+        } else {
+          // For any other event, just update state
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
         }
       }
     );
@@ -330,8 +348,35 @@ const navigate = useNavigate();
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
+    try {
+      // Clear MFA pending state first
+      setMfaPending(false);
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Clear all auth-related localStorage items
+      localStorage.removeItem('oauth_signin');
+      localStorage.removeItem('ts_redirect_to');
+      
+      // Clear session and user state immediately
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      
+      // Navigate using replace to prevent back button
+      navigate("/auth", { replace: true });
+      
+      // Force reload to clear all cached state
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 100);
+      
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Still navigate away even if error occurs
+      navigate("/auth", { replace: true });
+    }
   };
 
   const sendVerificationEmail = async () => {
