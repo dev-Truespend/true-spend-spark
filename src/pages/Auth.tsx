@@ -59,6 +59,8 @@ export default function Auth() {
   const searchParams = new URLSearchParams(location.search);
   
   const redirectTo = searchParams.get('redirectTo') || '/dashboard';
+  const isOAuthCallback = searchParams.has('code') && !searchParams.has('error');
+  const [processingOAuth, setProcessingOAuth] = useState(isOAuthCallback);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -99,10 +101,11 @@ export default function Auth() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const hasError = params.get('error');
-    const oauthCallback = params.has('code'); // Supabase adds 'code' param after OAuth
+    const oauthCallback = params.has('code');
     
     // Handle successful OAuth callback - priority redirect
     if (oauthCallback && !loading && user && !mfaRequired && !isLoading && !hasError) {
+      setProcessingOAuth(true); // Keep loading state
       const redirectUser = async () => {
         try {
           const { getLandingRouteForUser } = await import('@/hooks/useAuth');
@@ -121,6 +124,17 @@ export default function Auth() {
       
       redirectUser();
       return;
+    }
+    
+    // If OAuth callback but still waiting for user data
+    if (oauthCallback && !user && !hasError) {
+      setProcessingOAuth(true);
+      return;
+    }
+    
+    // If OAuth had an error, stop showing loading
+    if (oauthCallback && hasError) {
+      setProcessingOAuth(false);
     }
     
     // Regular redirect for already authenticated users
@@ -279,6 +293,27 @@ export default function Auth() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  // Show loading screen during OAuth processing
+  if (processingOAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="w-full max-w-md mx-auto">
+          <CardContent className="pt-6 pb-6">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <div className="text-center space-y-2">
+                <h2 className="text-xl font-semibold">Completing sign-in...</h2>
+                <p className="text-sm text-muted-foreground">
+                  Please wait while we redirect you
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
