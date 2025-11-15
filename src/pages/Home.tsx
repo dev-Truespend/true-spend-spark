@@ -1,11 +1,20 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Receipt, TrendingUp, Shield, Smartphone } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 export default function Home() {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   // Show loading spinner while checking auth
   if (loading) {
@@ -16,7 +25,7 @@ export default function Home() {
     );
   }
 
-  // Don't show landing page to authenticated users (they'll be redirected by useAuth)
+  // Redirecting authenticated users
   if (user) {
     return null;
   }
