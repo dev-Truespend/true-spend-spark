@@ -10,7 +10,7 @@ export function VersionDisplay() {
   const [version, setVersion] = useState<string>("");
 
   useEffect(() => {
-    const PREVIEW_FORCE_VERSION = "5.1.0";
+    const PREVIEW_FORCE_VERSION = "5.2.0";
     const isPreviewEnv = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV;
 
     // In Lovable preview/dev, force show the target version to avoid any caching mismatch
