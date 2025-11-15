@@ -145,7 +145,7 @@ export function MFASetup() {
       });
 
       if (error) {
-        console.error('[MFA] Verification error received:', JSON.stringify(error, null, 2));
+        console.error('[MFA] Verification error received:', error);
         
         // Safely extract error details - handle various error formats
         let errorCode = null;

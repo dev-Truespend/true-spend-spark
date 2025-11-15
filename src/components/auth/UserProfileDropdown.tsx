@@ -230,7 +230,7 @@ export function UserProfileDropdown() {
       });
 
       if (error) {
-        console.error('[ProfileDropdown] MFA enable error:', JSON.stringify(error, null, 2));
+        console.error('[ProfileDropdown] MFA enable error:', error);
         
         let errorCode = null;
         let errorMessage = null;
