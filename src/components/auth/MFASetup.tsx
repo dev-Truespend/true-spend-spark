@@ -253,8 +253,8 @@ export function MFASetup() {
     return <BackupCodesDisplay codes={backupCodes} onClose={() => setShowBackupCodes(false)} />;
   }
 
-  // Show Google 2FA instructions for Google OAuth users
-  if (profile?.auth_provider === 'google') {
+  // Show Google 2FA instructions ONLY for Google-only users (no email/password auth)
+  if (isGoogleUser) {
     return (
       <Card>
         <CardHeader>

@@ -173,6 +173,8 @@ const { toast } = useToast();
           
           // Email is present = ALLOW LOGIN
           // The database trigger already sets status='active' for Google users
+          console.log('Google sign-in successful, user will be redirected to dashboard');
+          
           // Log the successful Google login (non-blocking)
           supabase.functions.invoke('audit-google-login', {
             body: {
