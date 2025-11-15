@@ -26,7 +26,7 @@ export default function Settings() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -34,14 +34,6 @@ export default function Settings() {
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Security
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Notifications
-            </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center gap-2">
-              <SettingsIcon className="h-4 w-4" />
-              Preferences
             </TabsTrigger>
           </TabsList>
 
@@ -59,6 +51,7 @@ export default function Settings() {
                     type="email" 
                     value={profile?.email || ''} 
                     disabled 
+                    readOnly
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -68,6 +61,7 @@ export default function Settings() {
                       id="firstName" 
                       value={profile?.first_name || ''} 
                       placeholder="John"
+                      readOnly
                     />
                   </div>
                   <div className="space-y-2">
@@ -76,6 +70,7 @@ export default function Settings() {
                       id="lastName" 
                       value={profile?.last_name || ''} 
                       placeholder="Doe"
+                      readOnly
                     />
                   </div>
                 </div>
@@ -110,31 +105,7 @@ export default function Settings() {
             <MFASetup />
           </TabsContent>
 
-          <TabsContent value="notifications" className="space-y-6">
-            <PushNotificationManager />
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Test Notifications</CardTitle>
-                <CardDescription>Send test push notifications to verify your setup</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <NotificationTestPanel />
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          <TabsContent value="preferences" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>App Preferences</CardTitle>
-                <CardDescription>Customize your app experience</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">App preferences coming soon...</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </div>
     </div>
