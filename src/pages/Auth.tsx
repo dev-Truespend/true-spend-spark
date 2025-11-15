@@ -69,20 +69,26 @@ export default function Auth() {
       let title = "Sign-in Error";
       let description = "Authentication failed.";
       
-      if (error === 'access_denied') {
-        title = "Sign-in Cancelled";
-        description = "Google sign-in was cancelled. You can try again.";
-      } else if (error === 'server_error' || errorDescription?.includes('email')) {
+      // ONLY show "Email Verification Required" if Google explicitly says email is unverified
+      if (errorDescription?.toLowerCase().includes('email_not_verified') ||
+          errorDescription?.toLowerCase().includes('unverified_email')) {
         title = "Email Verification Required";
         description = "Your Google email is not verified. Please verify it in Google and try again.";
-      } else if (errorDescription) {
-        description = errorDescription;
+      } else if (error === 'access_denied') {
+        title = "Google Sign-In Cancelled";
+        description = "You cancelled the Google sign-in. Please try again if you want to sign in with Google.";
+      } else if (error === 'server_error') {
+        title = "Google Sign-In Failed";
+        description = errorDescription || "Something went wrong while connecting to Google. Please try again.";
+      } else if (error) {
+        title = "Sign-In Failed";
+        description = errorDescription || "We couldn't sign you in. Please try again.";
       }
       
       toast({
         title,
         description,
-        variant: error === 'access_denied' ? "default" : "destructive",
+        variant: "destructive",
       });
       
       // Clean up URL
@@ -91,7 +97,16 @@ export default function Auth() {
   }, [location.search, toast, navigate]);
 
   useEffect(() => {
-    if (!loading && user && !mfaRequired && !isLoading) {
+    const params = new URLSearchParams(location.search);
+    const hasError = params.get('error');
+    
+    // Only redirect if:
+    // 1. Not loading
+    // 2. User is authenticated
+    // 3. No MFA required
+    // 4. Not currently processing another operation
+    // 5. No error parameters in URL (avoid redirecting during error handling)
+    if (!loading && user && !mfaRequired && !isLoading && !hasError) {
       // Redirect authenticated users based on role
       const redirectUser = async () => {
         const { getLandingRouteForUser } = await import('@/hooks/useAuth');
@@ -100,7 +115,7 @@ export default function Auth() {
       };
       redirectUser();
     }
-  }, [user, loading, navigate, mfaRequired, isLoading]);
+  }, [user, loading, navigate, mfaRequired, isLoading, location.search]);
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
