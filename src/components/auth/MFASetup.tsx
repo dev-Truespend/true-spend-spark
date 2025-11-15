@@ -57,19 +57,23 @@ export function MFASetup() {
     try {
       const { data, error } = await supabase.functions.invoke('mfa-generate-secret');
 
-      if (error) throw error;
+      if (error) {
+        // Surface HTTP status for clarity
+        const statusCode = (error as any)?.status || (error as any)?.statusCode;
+        console.error('Error generating MFA secret:', { error, statusCode });
+        throw new Error(statusCode === 500 ? 'Security service unavailable. Please try again.' : (error as any)?.message || 'Failed to generate MFA secret');
+      }
 
       setSecret(data.secret);
-      
       // Generate QR code
       const qrDataUrl = await QRCodeLib.toDataURL(data.qrCodeUrl);
       setQrCodeUrl(qrDataUrl);
-      
+
       setSetupMode(true);
-      toast.success("Scan the QR code with your authenticator app");
+      toast.success('Scan the QR code with your authenticator app');
     } catch (error: any) {
       console.error('Error generating MFA secret:', error);
-      toast.error(error.message || "Failed to generate MFA secret");
+      toast.error(error.message || 'Failed to generate MFA secret');
     } finally {
       setLoading(false);
     }

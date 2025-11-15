@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
+    const userClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
@@ -22,7 +22,13 @@ Deno.serve(async (req) => {
       }
     );
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    // Admin client for secure RPC and writes (vault, upserts)
+    const adminClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
+
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
@@ -30,8 +36,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get user profile for email
-    const { data: profile } = await supabaseClient
+    const { data: profile } = await userClient
       .from('profiles')
       .select('email, full_name')
       .eq('id', user.id)
@@ -51,8 +56,7 @@ Deno.serve(async (req) => {
     // Generate OTPAuth URL for QR code
     const otpauthUrl = totp.toString();
 
-    // Encrypt the secret using Vault
-    const { data: encryptedSecretId, error: encryptError } = await supabaseClient
+    const { data: encryptedSecretId, error: encryptError } = await adminClient
       .rpc('encrypt_totp_secret', { secret });
 
     if (encryptError || !encryptedSecretId) {
@@ -64,7 +68,7 @@ Deno.serve(async (req) => {
     }
 
     // Store encrypted secret ID in database
-    const { error: insertError } = await supabaseClient
+    const { error: insertError } = await adminClient
       .from('mfa_settings')
       .upsert({
         user_id: user.id,
