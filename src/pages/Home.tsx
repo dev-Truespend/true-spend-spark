@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Receipt, TrendingUp, Shield, Smartphone } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Receipt, TrendingUp, Shield, Smartphone, KeyRound, Lock, ScanFace, UserCheck, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 
@@ -35,16 +36,19 @@ export default function Home() {
       {/* Hero Section */}
       <div className="container mx-auto px-6 py-20">
         <div className="text-center max-w-3xl mx-auto">
-          <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            TrueSpend
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              TrueSpend
+            </h1>
+            <Badge variant="secondary" className="text-xs">v5.5.5</Badge>
+          </div>
           <p className="text-xl text-muted-foreground mb-8">
-            Smart expense tracking that works everywhere. Capture receipts, track spending, and manage budgets with ease.
+            Smart expense tracking with secure sign-in. Use Google or Email to get started.
           </p>
           <div className="flex justify-center">
             <Link to="/auth">
               <Button size="lg">
-                Login/Create Account
+                Get Started with Google or Email
               </Button>
             </Link>
           </div>
@@ -104,6 +108,78 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Authentication Features Section */}
+      <div className="container mx-auto px-6 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Enterprise-Grade Security</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Sign in with Google or Email, protected by industry-standard security features
+          </p>
+        </div>
+        
+        <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6 max-w-6xl mx-auto">
+          <Card className="border-2 hover:border-primary/50 transition-colors">
+            <CardContent className="pt-6">
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <ScanFace className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="font-semibold mb-2">Google OAuth</h3>
+              <p className="text-sm text-muted-foreground">
+                One-click authentication with your Google account
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 hover:border-primary/50 transition-colors">
+            <CardContent className="pt-6">
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <KeyRound className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="font-semibold mb-2">Email/Password</h3>
+              <p className="text-sm text-muted-foreground">
+                Secure authentication with strong password requirements
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 hover:border-primary/50 transition-colors">
+            <CardContent className="pt-6">
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Lock className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="font-semibold mb-2">Two-Factor Auth</h3>
+              <p className="text-sm text-muted-foreground">
+                Optional TOTP-based 2FA with backup codes for extra security
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 hover:border-primary/50 transition-colors">
+            <CardContent className="pt-6">
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <UserCheck className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="font-semibold mb-2">Account Protection</h3>
+              <p className="text-sm text-muted-foreground">
+                Rate limiting and automatic lockout after failed attempts
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 hover:border-primary/50 transition-colors">
+            <CardContent className="pt-6">
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <FileText className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="font-semibold mb-2">Audit Logging</h3>
+              <p className="text-sm text-muted-foreground">
+                Complete security event tracking for your account
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
       {/* CTA Section */}
       <div className="container mx-auto px-6 py-16">
         <Card className="bg-primary/5 border-primary/20">
@@ -112,7 +188,7 @@ export default function Home() {
             <p className="text-muted-foreground mb-6">Join TrueSpend today and start tracking smarter.</p>
             <Link to="/auth">
               <Button size="lg">
-                Login/Create Account
+                Get Started with Google or Email
               </Button>
             </Link>
           </CardContent>
