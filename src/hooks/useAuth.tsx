@@ -112,37 +112,17 @@ const navigate = useNavigate();
         setUser(session?.user ?? null);
         setLoading(false);
         
-        // Handle redirect after successful OAuth login or session changes
+        // Only auto-redirect for OAuth (Google) sign-ins, not email/password
         if (session?.user) {
-          // Add small delay to let the page mount before checking localStorage
           setTimeout(() => {
-            const currentPath = window.location.pathname;
-            const redirectTarget = localStorage.getItem('ts_redirect_to') || '/dashboard';
-            console.log('[useAuth] Auth state changed with session:', {
-              redirectTarget,
-              currentPath,
-              mfaPending,
-            });
-
-            // If MFA verification is pending, never auto-redirect
-            if (mfaPendingRef.current) {
-              console.log('[useAuth] MFA pending, skipping auto-redirect');
-              return;
-            }
-
-            // Redirect only when appropriate
-            if (currentPath === '/' && redirectTarget) {
+            const isOAuthSignIn = localStorage.getItem('oauth_signin') === 'true';
+            
+            // Only auto-redirect if this was an OAuth sign-in and MFA is not pending
+            if (isOAuthSignIn && !mfaPendingRef.current) {
+              localStorage.removeItem('oauth_signin');
+              const redirectTarget = localStorage.getItem('ts_redirect_to') || '/dashboard';
               localStorage.removeItem('ts_redirect_to');
               navigate(redirectTarget);
-            } else if (currentPath === '/auth' && redirectTarget && currentPath !== redirectTarget) {
-              localStorage.removeItem('ts_redirect_to');
-              navigate(redirectTarget);
-            } else if (redirectTarget && currentPath !== redirectTarget && currentPath === '/') {
-              localStorage.removeItem('ts_redirect_to');
-              navigate(redirectTarget);
-            } else {
-              // Already on target or not required
-              localStorage.removeItem('ts_redirect_to');
             }
           }, 100);
         }
@@ -332,7 +312,8 @@ const navigate = useNavigate();
   };
 
   const signInWithGoogle = async () => {
-    // Always redirect to dashboard for Google OAuth
+    // Mark this as an OAuth signin for auto-redirect in onAuthStateChange
+    localStorage.setItem('oauth_signin', 'true');
     localStorage.setItem('ts_redirect_to', '/dashboard');
     
     const { error } = await supabase.auth.signInWithOAuth({

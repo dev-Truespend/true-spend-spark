@@ -16,15 +16,6 @@ export function ProtectedRoute({ children, requireRole, redirectTo }: ProtectedR
   const { hasRole, loading: roleLoading } = useUserRole();
   const location = useLocation();
 
-  // Fallback: ensure authenticated users on root path go to dashboard
-  useEffect(() => {
-    if (!authLoading && user && location.pathname === '/') {
-      const target = localStorage.getItem('ts_redirect_to') || '/dashboard';
-      localStorage.removeItem('ts_redirect_to');
-      window.location.href = target;
-    }
-  }, [user, authLoading, location.pathname]);
-
   if (authLoading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
