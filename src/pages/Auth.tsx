@@ -172,8 +172,8 @@ export default function Auth() {
       const { error } = await signUp({
         email: values.email,
         password: values.password,
-        firstName: "",
-        lastName: ""
+        firstName: null,
+        lastName: null
       });
 
       if (error) {
