@@ -28,10 +28,8 @@ import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ConfirmEmailChange from "./pages/ConfirmEmailChange";
 import NotFound from "./pages/NotFound";
-import { PWAInstallPrompt } from "./components/pwa/PWAInstallPrompt";
 import { OfflineIndicator } from "./components/pwa/OfflineIndicator";
 import { SyncIndicator } from "./components/pwa/SyncIndicator";
-import { ServiceWorkerUpdatePrompt } from "./components/pwa/ServiceWorkerUpdatePrompt";
 import { ForceRefreshBanner } from "./components/pwa/ForceRefreshBanner";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
@@ -60,8 +58,6 @@ function App() {
               <Sonner />
               <CSPViolationReporter />
               <ForceRefreshBanner />
-              {PWA_ENABLED && <ServiceWorkerUpdatePrompt />}
-              {PWA_ENABLED && <PWAInstallPrompt />}
               {PWA_ENABLED && <OfflineIndicator />}
               {PWA_ENABLED && <SyncIndicator />}
               <GlobalNav />
