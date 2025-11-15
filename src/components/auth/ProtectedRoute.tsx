@@ -1,6 +1,7 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useEffect } from "react";
 
 type AppRole = 'admin' | 'developer' | 'user';
 
@@ -13,6 +14,16 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, requireRole, redirectTo }: ProtectedRouteProps) {
   const { user, loading: authLoading, profile, mfaPending } = useAuth();
   const { hasRole, loading: roleLoading } = useUserRole();
+  const location = useLocation();
+
+  // Fallback: ensure authenticated users on root path go to dashboard
+  useEffect(() => {
+    if (!authLoading && user && location.pathname === '/') {
+      const target = localStorage.getItem('ts_redirect_to') || '/dashboard';
+      localStorage.removeItem('ts_redirect_to');
+      window.location.href = target;
+    }
+  }, [user, authLoading, location.pathname]);
 
   if (authLoading || roleLoading) {
     return (
