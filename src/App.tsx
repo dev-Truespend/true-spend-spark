@@ -28,6 +28,9 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ConfirmEmailChange from "./pages/ConfirmEmailChange";
+import Transactions from "./pages/Transactions";
+import Budgets from "./pages/Budgets";
+import Insights from "./pages/Insights";
 import NotFound from "./pages/NotFound";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
@@ -102,6 +105,32 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <DashboardLauncher />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Phase 4: User Features */}
+              <Route 
+                path="/transactions" 
+                element={
+                  <ProtectedRoute>
+                    <Transactions />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/budgets" 
+                element={
+                  <ProtectedRoute>
+                    <Budgets />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/insights" 
+                element={
+                  <ProtectedRoute>
+                    <Insights />
                   </ProtectedRoute>
                 } 
               />
