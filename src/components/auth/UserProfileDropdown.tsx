@@ -468,142 +468,165 @@ export function UserProfileDropdown() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {profile.auth_provider === 'google' ? (
-                    <>
-                      <Alert>
-                        <Shield className="h-4 w-4" />
-                        <AlertDescription>
-                          You're signed in with Google. Manage 2-Step Verification in your Google Account settings.
-                        </AlertDescription>
-                      </Alert>
-                      <Button 
-                        variant="outline" 
-                        className="w-full"
-                        onClick={() => window.open('https://myaccount.google.com/signinoptions/two-step-verification', '_blank')}
-                      >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Manage Google 2FA
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Status</span>
-                        <MFAStatusBadge enabled={mfaEnabled} />
-                      </div>
-                      
-                      {!mfaEnabled ? (
+                  {(() => {
+                    // Check if user has multiple providers
+                    const providers = profile.auth_providers || [];
+                    const hasGoogle = providers.includes('google');
+                    const hasLocal = providers.includes('email');
+                    const isGoogleOnly = hasGoogle && !hasLocal;
+                    
+                    if (isGoogleOnly) {
+                      // Google-only user: show Google 2FA instructions
+                      return (
                         <>
-                          {!mfaSetupInProgress ? (
-                            <Button 
-                              type="button"
-                              variant="default" 
-                              className="w-full"
-                              onClick={handleStartMfaSetup}
-                              disabled={loading}
-                            >
-                              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Shield className="mr-2 h-4 w-4" />}
-                              Enable Two-Factor Authentication
-                            </Button>
-                          ) : (
-                            <div className="space-y-4 pt-2">
-                              {/* QR Code Display */}
-                              <div className="space-y-2">
-                                <Label className="text-sm font-medium">Step 1: Scan QR Code</Label>
-                                <div className="flex justify-center p-4 bg-background rounded-lg border">
-                                  {qrCodeUrl && <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />}
-                                </div>
-                                <p className="text-xs text-muted-foreground text-center">
-                                  Scan with Google Authenticator, Authy, or any TOTP app
-                                </p>
-                              </div>
-
-                              {/* Manual Key */}
-                              <div className="space-y-2">
-                                <Label className="text-sm font-medium">Manual Entry Key</Label>
-                                <Input value={mfaSecret} readOnly className="font-mono text-sm" />
-                                <p className="text-xs text-muted-foreground">
-                                  Enter this key manually if you can't scan the QR code
-                                </p>
-                              </div>
-
-                              {/* Verification Input */}
-                              <div className="space-y-2">
-                                <Label className="text-sm font-medium">Step 2: Enter Verification Code</Label>
-                                <div className="flex justify-center">
-                                  <InputOTP value={verificationCode} onChange={setVerificationCode} maxLength={6}>
-                                    <InputOTPGroup>
-                                      <InputOTPSlot index={0} />
-                                      <InputOTPSlot index={1} />
-                                      <InputOTPSlot index={2} />
-                                      <InputOTPSlot index={3} />
-                                      <InputOTPSlot index={4} />
-                                      <InputOTPSlot index={5} />
-                                    </InputOTPGroup>
-                                  </InputOTP>
-                                </div>
-                                <p className="text-xs text-muted-foreground text-center">
-                                  Enter the 6-digit code from your authenticator app
-                                </p>
-                              </div>
-
-                              {/* Error Display */}
-                              {mfaError && (
-                                <Alert variant="destructive">
-                                  <AlertTriangle className="h-4 w-4" />
-                                  <AlertDescription>{mfaError}</AlertDescription>
-                                </Alert>
-                              )}
-
-                              {/* Action Buttons */}
-                              <div className="flex gap-2 pt-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className="flex-1"
-                                  onClick={handleCancelMfaSetup}
-                                  disabled={loading}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  type="button"
-                                  className="flex-1"
-                                  onClick={handleVerifyAndEnable}
-                                  disabled={loading || verificationCode.length !== 6}
-                                >
-                                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                  Verify & Enable
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="space-y-3 pt-2 border-t">
-                          <Label htmlFor="mfa-disable-password" className="text-sm text-muted-foreground">
-                            Enter password to disable MFA
-                          </Label>
-                          <Input
-                            id="mfa-disable-password"
-                            type="password"
-                            value={mfaDisablePassword}
-                            onChange={(e) => setMfaDisablePassword(e.target.value)}
-                            placeholder="Enter your password"
-                          />
-                          <Button
-                            variant="destructive"
+                          <Alert>
+                            <Shield className="h-4 w-4" />
+                            <AlertDescription>
+                              You sign in with Google. To protect your account with MFA, please enable 2-Step Verification in your Google Account security settings.
+                            </AlertDescription>
+                          </Alert>
+                          <Button 
+                            variant="outline" 
                             className="w-full"
-                            onClick={handleDisableMFA}
-                            disabled={!mfaDisablePassword || loading}
+                            onClick={() => window.open('https://myaccount.google.com/signinoptions/two-step-verification', '_blank')}
                           >
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Disable Two-Factor Authentication
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Enable Google 2-Step Verification
                           </Button>
+                        </>
+                      );
+                    }
+                    
+                    // User has local provider (with or without Google)
+                    return (
+                      <>
+                        {hasGoogle && (
+                          <Alert className="mb-4">
+                            <Shield className="h-4 w-4" />
+                            <AlertDescription>
+                              You have both Google and email/password sign-in. The 2FA below applies to email/password login only. 
+                              Manage Google 2-Step Verification separately in your Google Account settings.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Status</span>
+                          <MFAStatusBadge enabled={mfaEnabled} />
                         </div>
-                      )}
-                    </>
-                  )}
+                        
+                        {!mfaEnabled ? (
+                          <>
+                            {!mfaSetupInProgress ? (
+                              <Button 
+                                type="button"
+                                variant="default" 
+                                className="w-full"
+                                onClick={handleStartMfaSetup}
+                                disabled={loading}
+                              >
+                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Shield className="mr-2 h-4 w-4" />}
+                                Enable Two-Factor Authentication
+                              </Button>
+                            ) : (
+                              <div className="space-y-4 pt-2">
+                                {/* QR Code Display */}
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium">Step 1: Scan QR Code</Label>
+                                  <div className="flex justify-center p-4 bg-background rounded-lg border">
+                                    {qrCodeUrl && <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground text-center">
+                                    Scan with Google Authenticator, Authy, or any TOTP app
+                                  </p>
+                                </div>
+
+                                {/* Manual Key */}
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium">Manual Entry Key</Label>
+                                  <Input value={mfaSecret} readOnly className="font-mono text-sm" />
+                                  <p className="text-xs text-muted-foreground">
+                                    Enter this key manually if you can't scan the QR code
+                                  </p>
+                                </div>
+
+                                {/* Verification Input */}
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium">Step 2: Enter Verification Code</Label>
+                                  <div className="flex justify-center">
+                                    <InputOTP value={verificationCode} onChange={setVerificationCode} maxLength={6}>
+                                      <InputOTPGroup>
+                                        <InputOTPSlot index={0} />
+                                        <InputOTPSlot index={1} />
+                                        <InputOTPSlot index={2} />
+                                        <InputOTPSlot index={3} />
+                                        <InputOTPSlot index={4} />
+                                        <InputOTPSlot index={5} />
+                                      </InputOTPGroup>
+                                    </InputOTP>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground text-center">
+                                    Enter the 6-digit code from your authenticator app
+                                  </p>
+                                </div>
+
+                                {/* Error Display */}
+                                {mfaError && (
+                                  <Alert variant="destructive">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertDescription>{mfaError}</AlertDescription>
+                                  </Alert>
+                                )}
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-2 pt-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={handleCancelMfaSetup}
+                                    disabled={loading}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    className="flex-1"
+                                    onClick={handleVerifyAndEnable}
+                                    disabled={loading || verificationCode.length !== 6}
+                                  >
+                                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Verify & Enable
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="space-y-3 pt-2 border-t">
+                            <Label htmlFor="mfa-disable-password" className="text-sm text-muted-foreground">
+                              Enter password to disable MFA
+                            </Label>
+                            <Input
+                              id="mfa-disable-password"
+                              type="password"
+                              value={mfaDisablePassword}
+                              onChange={(e) => setMfaDisablePassword(e.target.value)}
+                              placeholder="Enter your password"
+                            />
+                            <Button
+                              variant="destructive"
+                              className="w-full"
+                              onClick={handleDisableMFA}
+                              disabled={!mfaDisablePassword || loading}
+                            >
+                              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                              Disable Two-Factor Authentication
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </CardContent>
               </Card>
 

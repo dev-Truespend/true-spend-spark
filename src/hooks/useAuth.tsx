@@ -118,9 +118,55 @@ const navigate = useNavigate();
 
   // Listen to auth state changes - NO REDIRECTS HERE
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (mfaPendingRef.current) {
         return;
+      }
+
+      // Handle Google OAuth events with audit logging
+      if (event === 'SIGNED_IN' && session?.user) {
+        const authUser = session.user;
+        
+        // Check if this is a Google sign-in
+        const isGoogleSignIn = authUser.app_metadata?.provider === 'google' || 
+                               authUser.identities?.some(id => id.provider === 'google');
+        
+        if (isGoogleSignIn) {
+          // Audit log for successful Google login (non-blocking)
+          setTimeout(async () => {
+            try {
+              await supabase.functions.invoke('audit-google-login', {
+                body: {
+                  eventType: 'google_login_success',
+                  success: true,
+                  reason: null,
+                  ipAddress: null,
+                  userAgent: navigator.userAgent,
+                },
+              });
+            } catch (err) {
+              console.error('Failed to log Google login:', err);
+            }
+          }, 0);
+        }
+      }
+      
+      if (event === 'SIGNED_OUT') {
+        // Log logout event (non-blocking)
+        setTimeout(async () => {
+          try {
+            await supabase.from('security_logs').insert({
+              event_type: 'logout',
+              severity: 'info',
+              details: {
+                timestamp: new Date().toISOString(),
+                user_agent: navigator.userAgent,
+              },
+            });
+          } catch (err) {
+            console.error('Failed to log logout:', err);
+          }
+        }, 0);
       }
 
       // Only update state, NO redirects
@@ -415,18 +461,31 @@ const navigate = useNavigate();
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-        queryParams: {
-          access_type: 'online',
-          prompt: 'consent'
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth`,
+          queryParams: {
+            access_type: 'online',
+            prompt: 'select_account', // Let user choose account each time
+            hd: undefined, // Allow any domain (remove if you want to restrict to specific domain)
+          },
+          skipBrowserRedirect: false,
         }
-      }
-    });
+      });
 
-    return { error };
+      if (error) {
+        console.error('Google OAuth initiation error:', error);
+        return { error };
+      }
+
+      // Supabase will redirect to Google, no further action needed here
+      return { error: null };
+    } catch (err: any) {
+      console.error('Unexpected Google sign-in error:', err);
+      return { error: err };
+    }
   };
 
   const signOut = async () => {

@@ -63,14 +63,32 @@ export default function Auth() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const error = params.get('error');
+    const errorDescription = params.get('error_description');
+    
     if (error) {
+      let title = "Sign-in Error";
+      let description = "Authentication failed.";
+      
+      if (error === 'access_denied') {
+        title = "Sign-in Cancelled";
+        description = "Google sign-in was cancelled. You can try again.";
+      } else if (error === 'server_error' || errorDescription?.includes('email')) {
+        title = "Email Verification Required";
+        description = "Your Google email is not verified. Please verify it in Google and try again.";
+      } else if (errorDescription) {
+        description = errorDescription;
+      }
+      
       toast({
-        title: "Sign-in Error",
-        description: error === 'access_denied' ? "Sign-in was cancelled." : "Authentication failed.",
-        variant: "destructive",
+        title,
+        description,
+        variant: error === 'access_denied' ? "default" : "destructive",
       });
+      
+      // Clean up URL
+      navigate('/auth', { replace: true });
     }
-  }, [location.search, toast]);
+  }, [location.search, toast, navigate]);
 
   useEffect(() => {
     if (!loading && user && !mfaRequired && !isLoading) {

@@ -21,20 +21,45 @@ export function GoogleSignInButton({
   const [isLoading, setIsLoading] = useState(false);
   const { signInWithGoogle } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    const { error } = await signInWithGoogle();
     
-    if (error) {
+    try {
+      const { error } = await signInWithGoogle();
+      
+      if (error) {
+        console.error('Google sign-in error:', error);
+        
+        // Handle specific error cases
+        if (error.message?.includes('popup_closed') || error.message?.includes('cancelled')) {
+          toast({
+            title: "Sign-in Cancelled",
+            description: "Google sign-in was cancelled. You can try again.",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Google Sign-In Failed",
+            description: "We couldn't sign you in with Google right now. Please try again or use email/password.",
+            variant: "destructive",
+          });
+        }
+        
+        setIsLoading(false);
+      }
+      // If successful, Google will redirect and Supabase will handle the session
+      // The redirect is handled by Supabase OAuth, no need to manually navigate
+    } catch (err: any) {
+      console.error('Unexpected error during Google sign-in:', err);
       toast({
-        title: "Google Sign-In failed",
-        description: error.message || "Could not sign in with Google",
+        title: "Sign-In Error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
       setIsLoading(false);
     }
-    // If successful, Google will redirect and Supabase will handle the session
   };
 
 
