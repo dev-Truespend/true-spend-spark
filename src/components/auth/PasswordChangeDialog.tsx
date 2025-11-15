@@ -56,37 +56,58 @@ export function PasswordChangeDialog({ open, onOpenChange }: PasswordChangeDialo
 
     setIsLoading(true);
     try {
-      // First verify current password by attempting to sign in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user?.email || "",
-        password: currentPassword,
-      });
+      // Verify current password using dedicated backend function
+      const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
+        'verify-current-password',
+        {
+          body: { password: currentPassword },
+        }
+      );
 
-      if (signInError) {
+      if (verifyError || !verifyResult?.valid) {
         toast({
           title: "Invalid Current Password",
-          description: "The current password you entered is incorrect.",
+          description: verifyResult?.error || "The current password you entered is incorrect.",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
 
       // Update password
-      const { error } = await supabase.auth.updateUser({
+      const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       });
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Send security alert email
+      await supabase.functions.invoke('send-security-alert', {
+        body: {
+          email: user?.email,
+          alertType: 'password_changed',
+          details: {
+            timestamp: new Date().toISOString(),
+            action: 'Password was successfully changed',
+          },
+        },
+      });
 
       toast({
         title: "Password Updated",
-        description: "Your password has been changed successfully.",
+        description: "Your password has been changed successfully. All other sessions have been logged out.",
       });
 
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       onOpenChange(false);
+
+      // Force re-authentication after password change
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+
     } catch (error: any) {
       toast({
         title: "Password Change Failed",

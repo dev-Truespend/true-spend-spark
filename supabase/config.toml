@@ -60,6 +60,10 @@ verify_jwt = false
 
 [functions.cleanup-unverified-accounts]
 verify_jwt = false
+schedule = "0 */6 * * *"
+
+[functions.verify-current-password]
+verify_jwt = true
 
 [functions.check-login-attempts]
 verify_jwt = false
