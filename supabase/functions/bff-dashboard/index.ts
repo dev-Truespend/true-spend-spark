@@ -134,7 +134,12 @@ serve(async (req) => {
         },
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'private, max-age=60',
+          'X-Response-Time': `${Math.round(responseTime)}ms`,
+        },
       }
     );
   } catch (error) {
