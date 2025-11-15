@@ -1,9 +1,15 @@
 {
-  "version": "5.0.0",
-  "buildId": "20251115T112600",
-  "commit": "mfa-strict-verification-v5.0.0",
-  "timestamp": 1763197560000,
+  "version": "5.1.0",
+  "buildId": "20251115T113000",
+  "commit": "google-oauth-no-verification-v5.1.0",
+  "timestamp": 1763197800000,
   "changelog": {
+    "5.1.0": [
+      "SECURITY: Google OAuth users no longer require email verification",
+      "SECURITY: Database trigger now sets Google users to 'active' status immediately on signup",
+      "PERFORMANCE: Removed redundant profile update after Google login",
+      "FIX: Eliminated race condition where Google users briefly saw verification banner"
+    ],
     "5.0.0": [
       "CRITICAL FIX: MFA never auto-enables - only activates after successful TOTP code verification",
       "SECURITY: Cancel or close MFA setup always keeps 2FA disabled",

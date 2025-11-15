@@ -187,30 +187,19 @@ const { toast } = useToast();
           }
           
           // Email present and not explicitly unverified = ALLOW
-          // Update profile to active status
-          setTimeout(async () => {
-            try {
-              await supabase
-                .from('profiles')
-                .update({ 
-                  status: 'active', 
-                  email_verified_at: new Date().toISOString() 
-                })
-                .eq('id', authUser.id);
-                
-              await supabase.functions.invoke('audit-google-login', {
-                body: {
-                  eventType: 'google_login_success',
-                  success: true,
-                  reason: null,
-                  ipAddress: null,
-                  userAgent: navigator.userAgent,
-                },
-              });
-            } catch (error) {
-              console.error('Error updating profile after Google login:', error);
-            }
-          }, 0);
+          // Database trigger already set status to 'active' for Google users
+          // Just log the successful login
+          supabase.functions.invoke('audit-google-login', {
+            body: {
+              eventType: 'google_login_success',
+              success: true,
+              reason: null,
+              ipAddress: null,
+              userAgent: navigator.userAgent,
+            },
+          }).catch(error => {
+            console.error('Error logging Google login:', error);
+          });
         }
       }
       
