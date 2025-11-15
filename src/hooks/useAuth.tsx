@@ -110,32 +110,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         setLoading(false);
         
-        // Handle redirect after successful OAuth login
-      if (session?.user) {
-        // Add small delay to let the page mount before checking localStorage
-        setTimeout(() => {
-          const redirectTarget = localStorage.getItem('ts_redirect_to') || '/dashboard';
-          console.log('[useAuth] Auth state changed with session:', { 
-            redirectTarget, 
-            currentPath: window.location.pathname 
-          });
-          
-          // For Google OAuth users landing on root, always redirect to dashboard
-          if (window.location.pathname === '/' && redirectTarget) {
-            console.log('[useAuth] Navigating to redirect target:', redirectTarget);
-            localStorage.removeItem('ts_redirect_to');
-            navigate(redirectTarget);
-          } else if (redirectTarget && window.location.pathname !== redirectTarget) {
-            // Only navigate if not already on the target page
-            console.log('[useAuth] Navigating to redirect target:', redirectTarget);
-            localStorage.removeItem('ts_redirect_to');
-            navigate(redirectTarget);
-          } else {
-            console.log('[useAuth] Already on target page, clearing localStorage');
-            localStorage.removeItem('ts_redirect_to');
-          }
-        }, 100);
-      }
+        // Handle redirect after successful OAuth login or session changes
+        if (session?.user) {
+          // Add small delay to let the page mount before checking localStorage
+          setTimeout(() => {
+            const currentPath = window.location.pathname;
+            const redirectTarget = localStorage.getItem('ts_redirect_to') || '/dashboard';
+            console.log('[useAuth] Auth state changed with session:', {
+              redirectTarget,
+              currentPath,
+              mfaPending,
+            });
+
+            // If MFA verification is pending, never auto-redirect
+            if (mfaPending) {
+              console.log('[useAuth] MFA pending, skipping auto-redirect');
+              return;
+            }
+
+            // Redirect only when appropriate
+            if (currentPath === '/' && redirectTarget) {
+              localStorage.removeItem('ts_redirect_to');
+              navigate(redirectTarget);
+            } else if (currentPath === '/auth' && redirectTarget && currentPath !== redirectTarget) {
+              localStorage.removeItem('ts_redirect_to');
+              navigate(redirectTarget);
+            } else if (redirectTarget && currentPath !== redirectTarget && currentPath === '/') {
+              localStorage.removeItem('ts_redirect_to');
+              navigate(redirectTarget);
+            } else {
+              // Already on target or not required
+              localStorage.removeItem('ts_redirect_to');
+            }
+          }, 100);
+        }
       }
     );
 
