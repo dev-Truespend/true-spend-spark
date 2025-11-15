@@ -117,14 +117,21 @@ export function MFASetup() {
 
       if (error) {
         const statusCode = (error as any)?.status || (error as any)?.statusCode;
-        console.error('MFA enable error:', { error, statusCode, message: error.message });
+        const errorCode = (error as any)?.code || data?.code;
+        const errorMessage = data?.error || error.message;
         
-        if (statusCode === 404) {
+        console.error('MFA enable error:', { error, statusCode, errorCode, errorMessage });
+        
+        if (errorCode === 'MFA_VERIFY_LOCKED') {
+          throw new Error('Too many incorrect codes. Please try again in 24 hours.');
+        } else if (errorCode === 'MFA_VERIFY_INVALID') {
+          throw new Error('The verification code is incorrect or expired.');
+        } else if (statusCode === 404) {
           throw new Error('MFA service temporarily unavailable. Please try again.');
         } else if (statusCode === 401) {
           throw new Error('Authentication failed. Please sign in again.');
         } else {
-          throw error;
+          throw new Error(errorMessage || 'Failed to enable MFA. Please try again.');
         }
       }
 

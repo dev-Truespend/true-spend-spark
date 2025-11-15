@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { email, ipAddress } = await req.json();
+    const { email } = await req.json();
 
     if (!email) {
       return new Response(
@@ -25,33 +25,40 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if account is locked
-    const { data: lockStatus, error: lockError } = await supabase
-      .rpc('is_account_locked', { p_identifier: email.toLowerCase() });
+    // Look up user by email
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .ilike('email', email.trim())
+      .eq('status', 'active')
+      .maybeSingle();
 
-    if (lockError) {
-      console.error('Lock check error:', lockError);
+    if (!profile) {
+      // Don't reveal that user doesn't exist
       return new Response(
-        JSON.stringify({ error: 'Failed to check account status' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ locked: false }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (lockStatus && lockStatus.length > 0) {
-      const lock = lockStatus[0];
-      
-      if (lock.is_locked) {
-        const response = {
-          locked: true,
-          isEscalated: lock.is_escalated,
-          lockExpiresAt: lock.lock_expires_at,
-          message: lock.is_escalated
-            ? 'For your security, this account is temporarily locked. Please reset your password to unlock your account.'
-            : 'Too many sign-in attempts. Your account is locked for 15 minutes. Please try again later or reset your password.',
-        };
+    // Check MFA settings for login lock
+    const { data: mfaSettings } = await supabase
+      .from('mfa_settings')
+      .select('login_lock_until')
+      .eq('user_id', profile.id)
+      .maybeSingle();
 
+    if (mfaSettings?.login_lock_until) {
+      const lockUntil = new Date(mfaSettings.login_lock_until);
+      const now = new Date();
+      
+      if (now < lockUntil) {
         return new Response(
-          JSON.stringify(response),
+          JSON.stringify({
+            locked: true,
+            lockExpiresAt: mfaSettings.login_lock_until,
+            message: 'Too many failed attempts. Please try again later.',
+          }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

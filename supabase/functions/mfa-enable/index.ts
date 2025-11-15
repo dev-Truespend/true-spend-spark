@@ -6,6 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const MAX_MFA_FAILS = 5;
+const MFA_LOCK_HOURS = 24;
+
 // Generate secure random backup code
 function generateBackupCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -57,10 +60,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get user's encrypted TOTP secret
+    // Get user's encrypted TOTP secret and rate limit data
     const { data: mfaSettings, error: mfaError } = await supabaseClient
       .from('mfa_settings')
-      .select('totp_secret')
+      .select('totp_secret, failed_mfa_attempts, mfa_lock_until')
       .eq('user_id', user.id)
       .single();
 
@@ -82,6 +85,33 @@ Deno.serve(async (req) => {
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Check if user is locked due to too many failed attempts
+    const now = new Date();
+    if (mfaSettings.mfa_lock_until) {
+      const lockUntil = new Date(mfaSettings.mfa_lock_until);
+      if (now < lockUntil) {
+        console.log('MFA verification locked for user:', user.id);
+        
+        await supabaseClient.from('security_logs').insert({
+          user_id: user.id,
+          event_type: 'mfa_verify_locked',
+          severity: 'warning',
+          details: {
+            locked_until: mfaSettings.mfa_lock_until,
+            timestamp: now.toISOString(),
+          },
+        });
+
+        return new Response(
+          JSON.stringify({ 
+            code: 'MFA_VERIFY_LOCKED',
+            error: 'Too many incorrect codes. Please try again in 24 hours.' 
+          }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Decrypt the TOTP secret from Vault
@@ -109,21 +139,68 @@ Deno.serve(async (req) => {
     if (!isValid) {
       console.log('Invalid TOTP code for user:', user.id);
       
-      // Log verification failed
+      // Increment failed attempts
+      const newFailedAttempts = (mfaSettings.failed_mfa_attempts || 0) + 1;
+      const updateData: any = {
+        failed_mfa_attempts: newFailedAttempts,
+      };
+
+      // If reached max failures, lock the account
+      if (newFailedAttempts >= MAX_MFA_FAILS) {
+        const lockUntil = new Date();
+        lockUntil.setHours(lockUntil.getHours() + MFA_LOCK_HOURS);
+        updateData.mfa_lock_until = lockUntil.toISOString();
+
+        console.log('MFA verification locked for user:', user.id, 'until:', lockUntil);
+
+        await supabaseClient
+          .from('mfa_settings')
+          .update(updateData)
+          .eq('user_id', user.id);
+
+        await supabaseClient.from('security_logs').insert({
+          user_id: user.id,
+          event_type: 'mfa_verify_locked',
+          severity: 'error',
+          details: {
+            failed_attempts: newFailedAttempts,
+            locked_until: lockUntil.toISOString(),
+            timestamp: new Date().toISOString(),
+          },
+        });
+
+        return new Response(
+          JSON.stringify({ 
+            code: 'MFA_VERIFY_LOCKED',
+            error: 'Too many incorrect codes. Please try again in 24 hours.' 
+          }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Not locked yet, just increment counter
+      await supabaseClient
+        .from('mfa_settings')
+        .update(updateData)
+        .eq('user_id', user.id);
+      
+      // Log failed verification attempt
       await supabaseClient.from('security_logs').insert({
         user_id: user.id,
         event_type: 'mfa_verify_failed',
         severity: 'warn',
-        details: { method: 'totp', reason: 'invalid_code' },
+        details: {
+          method: 'totp',
+          reason: 'invalid_code',
+          failed_attempts: newFailedAttempts,
+          timestamp: new Date().toISOString(),
+        },
       });
-      
+
       return new Response(
         JSON.stringify({ 
-          error: {
-            code: 'INVALID_VERIFICATION_CODE',
-            message: 'Invalid verification code',
-            userMessage: 'The code you entered is incorrect or expired. Please try again'
-          }
+          code: 'MFA_VERIFY_INVALID',
+          error: 'The verification code is incorrect or expired.' 
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -143,7 +220,7 @@ Deno.serve(async (req) => {
       })
     );
 
-    // Enable MFA
+    // Enable MFA and reset rate limit counters
     const { error: updateError } = await supabaseClient
       .from('mfa_settings')
       .update({
@@ -151,6 +228,8 @@ Deno.serve(async (req) => {
         backup_codes_generated: true,
         enabled_at: new Date().toISOString(),
         last_verified_at: new Date().toISOString(),
+        failed_mfa_attempts: 0,
+        mfa_lock_until: null,
       })
       .eq('user_id', user.id);
 
