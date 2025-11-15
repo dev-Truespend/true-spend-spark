@@ -206,7 +206,7 @@ export function UserProfileDropdown() {
       setQrCodeUrl(qrDataUrl);
       setMfaSetupInProgress(true);
       
-      toast({ title: "Success", description: "Scan the QR code with your authenticator app" });
+      toast({ title: "MFA Setup Started", description: "Scan the QR code with your authenticator app" });
     } catch (error: any) {
       console.error('Error starting MFA setup:', error);
       setMfaError(error.message || 'Failed to start MFA setup');
@@ -230,16 +230,42 @@ export function UserProfileDropdown() {
       });
 
       if (error) {
-        const errorCode = (error as any)?.code || data?.code;
-        const errorMessage = data?.error || error.message;
-        
-        if (errorCode === 'MFA_VERIFY_LOCKED') {
-          throw new Error('Too many incorrect codes. Please try again in 24 hours.');
-        } else if (errorCode === 'MFA_VERIFY_INVALID') {
-          throw new Error('The verification code is incorrect or expired.');
-        } else {
-          throw new Error(errorMessage || 'Failed to enable MFA. Please try again.');
+        console.error('[ProfileDropdown] MFA enable error:', error);
+        let errorCode = data?.code;
+        let errorMessage = data?.error;
+        const statusCode = (error as any)?.status || (error as any)?.statusCode;
+
+        try {
+          if ((error as any)?.context?.body) {
+            const body = typeof (error as any).context.body === 'string'
+              ? JSON.parse((error as any).context.body)
+              : (error as any).context.body;
+            errorCode = errorCode || body?.code;
+            errorMessage = errorMessage || body?.error;
+          }
+        } catch (e) {
+          console.warn('[ProfileDropdown] parse error body failed', e);
         }
+
+        let userMsg = '';
+        if (errorCode === 'MFA_VERIFY_LOCKED') {
+          userMsg = 'Too many incorrect codes. Please try again in 24 hours.';
+        } else if (errorCode === 'MFA_VERIFY_INVALID') {
+          userMsg = 'Incorrect verification code. Please check and try again.';
+        } else if (errorCode === 'NO_PENDING_SETUP') {
+          userMsg = 'MFA setup expired. Please start again.';
+        } else if (statusCode === 401) {
+          userMsg = 'Session expired. Please sign in again.';
+        } else if (statusCode === 404) {
+          userMsg = 'MFA service temporarily unavailable. Please try again.';
+        } else {
+          userMsg = errorMessage || 'Failed to enable MFA. Please try again.';
+        }
+
+        setMfaError(userMsg);
+        toast({ title: 'Error', description: userMsg, variant: 'destructive' });
+        setLoading(false);
+        return;
       }
 
       toast({ 
@@ -280,14 +306,27 @@ export function UserProfileDropdown() {
   };
 
   const handleCancelMfaSetup = async () => {
-    setQrCodeUrl("");
-    setMfaSecret("");
-    setVerificationCode("");
-    setMfaError(null);
-    setMfaSetupInProgress(false);
-    
-    // Refetch to ensure DB reflects reality
-    await fetchData();
+    setLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('mfa-cancel-setup');
+      if (error) {
+        console.error('[ProfileDropdown] Cancel setup failed:', error);
+        toast({ title: 'Error', description: 'Failed to cancel setup. Please try again.', variant: 'destructive' });
+      } else {
+        setQrCodeUrl("");
+        setMfaSecret("");
+        setVerificationCode("");
+        setMfaError(null);
+        setMfaSetupInProgress(false);
+        await fetchData();
+        toast({ title: 'MFA setup cancelled', description: 'Two-factor authentication remains disabled.' });
+      }
+    } catch (e: any) {
+      console.error('[ProfileDropdown] Cancel setup exception:', e);
+      toast({ title: 'Error', description: e?.message || 'Failed to cancel setup', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!user || !profile) {
