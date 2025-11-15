@@ -1,9 +1,16 @@
 {
-  "version": "3.1.0",
-  "buildId": "20251115T070000",
-  "commit": "production-security-hardening-v3.1.0",
-  "timestamp": 1763189600000,
+  "version": "3.1.1",
+  "buildId": "20251115T072400",
+  "commit": "hotfix-auth-routing-v3.1.1",
+  "timestamp": 1763190840000,
   "changelog": {
+    "3.1.1": [
+      "HOTFIX: Fixed hash_pii and hash_ip functions to gracefully fallback to md5 if pgcrypto unavailable",
+      "HOTFIX: Resolved signup failures due to missing database extensions",
+      "HOTFIX: Fixed Home.tsx redirect race condition preventing proper dashboard access",
+      "HOTFIX: Updated authentication routing to prevent Google OAuth redirect loops",
+      "SECURITY: Maintained PII hashing security with graceful degradation"
+    ],
     "3.1.0": [
       "SECURITY: Fixed password change dialog MFA bypass vulnerability - now uses dedicated verification endpoint",
       "SECURITY: Added search_path protection to 5 database functions to prevent SQL injection",
