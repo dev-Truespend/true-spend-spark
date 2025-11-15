@@ -10,6 +10,9 @@ import { toast } from 'sonner';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', route: '/dashboard', icon: LayoutDashboard, roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'transactions', label: 'Transactions', route: '/transactions', icon: BarChart3, roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'budgets', label: 'Budgets', route: '/budgets', icon: BarChart3, roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'insights', label: 'Insights', route: '/insights', icon: BarChart3, roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'monitoring', label: 'Monitoring', route: '/monitoring', icon: BarChart3, roles: ['admin', 'developer'], authRequired: true },
   { id: 'admin', label: 'Admin', route: '/admin', icon: Settings, roles: ['admin'], authRequired: true },
 ];
