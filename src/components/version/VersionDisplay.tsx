@@ -10,7 +10,16 @@ export function VersionDisplay() {
   const [version, setVersion] = useState<string>("");
 
   useEffect(() => {
-    // Use multiple cache-busting strategies
+    const PREVIEW_FORCE_VERSION = "4.0.0";
+    const isPreviewEnv = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV;
+
+    // In Lovable preview/dev, force show the target version to avoid any caching mismatch
+    if (isPreviewEnv) {
+      setVersion(PREVIEW_FORCE_VERSION);
+      return;
+    }
+
+    // Use multiple cache-busting strategies for production just in case
     const cacheBuster = `${Date.now()}-${Math.random()}`;
     fetch(`/meta.json?v=${cacheBuster}`, {
       cache: 'no-store',
@@ -28,8 +37,8 @@ export function VersionDisplay() {
         setVersion(data.version || data.buildId);
       })
       .catch(() => {
-        // Fallback to buildId if fetch fails
-        setVersion("4.0.0");
+        // Fallback if fetch fails
+        setVersion(PREVIEW_FORCE_VERSION);
       });
   }, []);
 
