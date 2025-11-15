@@ -28,7 +28,7 @@ interface AuthContextType {
   loading: boolean;
   profile: Profile | null;
   mfaPending: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any; requiresMFA?: boolean; userId?: string }>;
+  signIn: (email: string, password: string, mfaCode?: string) => Promise<{ error: any; requiresMFA?: boolean; userId?: string; user?: User }>;
   signUp: (data: SignUpData) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -105,51 +105,16 @@ const navigate = useNavigate();
   }, [user]);
 
   useEffect(() => {
-    // Set up auth state listener first
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        
-        // Handle redirect after successful OAuth login or session changes
-        if (session?.user) {
-          // Add small delay to let the page mount before checking localStorage
-          setTimeout(() => {
-            const currentPath = window.location.pathname;
-            const redirectTarget = localStorage.getItem('ts_redirect_to') || '/dashboard';
-            console.log('[useAuth] Auth state changed with session:', {
-              redirectTarget,
-              currentPath,
-              mfaPending,
-            });
-
-            // If MFA verification is pending, never auto-redirect
-            if (mfaPendingRef.current) {
-              console.log('[useAuth] MFA pending, skipping auto-redirect');
-              return;
-            }
-
-            // Redirect only when appropriate
-            if (currentPath === '/' && redirectTarget) {
-              localStorage.removeItem('ts_redirect_to');
-              navigate(redirectTarget);
-            } else if (currentPath === '/auth' && redirectTarget && currentPath !== redirectTarget) {
-              localStorage.removeItem('ts_redirect_to');
-              navigate(redirectTarget);
-            } else if (redirectTarget && currentPath !== redirectTarget && currentPath === '/') {
-              localStorage.removeItem('ts_redirect_to');
-              navigate(redirectTarget);
-            } else {
-              // Already on target or not required
-              localStorage.removeItem('ts_redirect_to');
-            }
-          }, 100);
-        }
       }
     );
 
-    // Then check for existing session
+    // Check for existing session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -157,9 +122,9 @@ const navigate = useNavigate();
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, mfaCode?: string) => {
     // Step 1: Check if account is locked (BEFORE attempting login)
     try {
       const lockCheckResponse = await supabase.functions.invoke('check-login-attempts', {
@@ -223,7 +188,7 @@ const navigate = useNavigate();
       // NEVER reveal specific details about why login failed
       return { 
         error: { 
-          message: "We couldn't sign you in with those details. Check your email and password and try again.",
+          message: "Invalid email or password.",
           code: 'invalid_credentials'
         } 
       };
@@ -244,7 +209,7 @@ const navigate = useNavigate();
         await supabase.auth.signOut();
         return { 
           error: { 
-            message: "We couldn't find an account with those details. Check your email or create a new account.",
+            message: "Invalid email or password.",
             code: 'account_not_found'
           } 
         };
@@ -260,7 +225,7 @@ const navigate = useNavigate();
           if (expiry < new Date()) {
             return { 
               error: { 
-                message: "Your verification link expired. Accounts not verified within 24 hours are automatically deleted. Please create a new account.",
+                message: "Your verification link expired. Please create a new account.",
                 code: 'verification_expired'
               } 
             };
@@ -269,14 +234,13 @@ const navigate = useNavigate();
         
         return { 
           error: { 
-            message: `Your account isn't verified yet. Please click the verification link we sent to ${profile.email}. Accounts not verified within 24 hours are deleted automatically.`,
+            message: `Please verify your email before signing in. Check ${profile.email} for the verification link.`,
             code: 'account_not_verified'
           } 
         };
       }
 
-      // Only check MFA for email/password logins, not Google OAuth
-      // Google users rely on Google's own 2FA
+      // Only check MFA for email/password users (not Google OAuth)
       if (profile.auth_provider === 'email') {
         const { data: mfaSettings } = await supabase
           .from('mfa_settings' as any)
@@ -285,19 +249,56 @@ const navigate = useNavigate();
           .maybeSingle();
 
         if ((mfaSettings as any)?.totp_enabled) {
-          // Keep session active but mark MFA as pending
-          // This prevents access to protected routes until MFA is verified
-          setMfaPending(true);
-          return { 
-            error: null, 
-            requiresMFA: true, 
-            userId: data.user.id 
-          };
+          // MFA is enabled - code is REQUIRED
+          if (!mfaCode || mfaCode.length !== 6) {
+            // Sign out immediately - don't allow partial login
+            await supabase.auth.signOut();
+            setMfaPending(true);
+            return { 
+              error: null, 
+              requiresMFA: true, 
+              userId: data.user.id 
+            };
+          }
+
+          // Verify MFA code
+          const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
+            'mfa-verify-totp',
+            {
+              body: { code: mfaCode }
+            }
+          );
+
+          if (verifyError || !verifyData?.valid) {
+            // MFA verification failed - sign out
+            await supabase.auth.signOut();
+            
+            // Record failed MFA attempt
+            await supabase.functions.invoke('record-login-attempt', {
+              body: {
+                email: email.toLowerCase(),
+                success: false,
+                ipAddress: 'web',
+                userId: data.user.id,
+                metadata: { mfaFailed: true }
+              }
+            });
+            
+            return { 
+              error: { 
+                message: "Invalid or expired authentication code.",
+                code: 'mfa_invalid'
+              } 
+            };
+          }
         }
       }
     }
 
-    return { error: null };
+    // Clear MFA pending state on successful auth
+    setMfaPending(false);
+
+    return { error: null, user: data.user };
   };
 
   const signUp = async (data: SignUpData) => {
@@ -349,8 +350,26 @@ const navigate = useNavigate();
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
+    try {
+      // Clear all local state first
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      setMfaPending(false);
+      
+      // Clear any localStorage items
+      localStorage.removeItem('ts_redirect_to');
+      
+      // Sign out from Supabase (clears session)
+      await supabase.auth.signOut();
+      
+      // Force navigate to auth page
+      navigate("/auth", { replace: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even on error, force redirect
+      window.location.href = '/auth';
+    }
   };
 
   const sendVerificationEmail = async () => {

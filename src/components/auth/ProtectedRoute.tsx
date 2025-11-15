@@ -16,15 +16,7 @@ export function ProtectedRoute({ children, requireRole, redirectTo }: ProtectedR
   const { hasRole, loading: roleLoading } = useUserRole();
   const location = useLocation();
 
-  // Fallback: ensure authenticated users on root path go to dashboard
-  useEffect(() => {
-    if (!authLoading && user && location.pathname === '/') {
-      const target = localStorage.getItem('ts_redirect_to') || '/dashboard';
-      localStorage.removeItem('ts_redirect_to');
-      window.location.href = target;
-    }
-  }, [user, authLoading, location.pathname]);
-
+  // Show loading state while checking authentication
   if (authLoading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -36,32 +28,31 @@ export function ProtectedRoute({ children, requireRole, redirectTo }: ProtectedR
     );
   }
 
+  // Not authenticated - redirect to auth page
   if (!user) {
-    const destination = redirectTo || window.location.pathname;
-    return <Navigate to={`/auth?redirectTo=${encodeURIComponent(destination)}`} replace />;
+    return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
 
-  // Block access if MFA verification is pending
+  // MFA verification is pending - redirect back to auth
   if (mfaPending) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Check account status
+  // Account is deleted - redirect to auth
   if (profile?.status === 'deleted') {
     return <Navigate to="/auth" replace />;
   }
 
-  // Allow access for pending_verification (restricted mode in dashboard)
-  // Allow access for active accounts
-
+  // Check role requirements
   if (requireRole) {
     const requiredRoles = Array.isArray(requireRole) ? requireRole : [requireRole];
     const hasRequiredRole = requiredRoles.some(role => hasRole(role));
     
     if (!hasRequiredRole) {
-      return <Navigate to="/" replace />;
+      return <Navigate to="/dashboard" replace />;
     }
   }
 
+  // All checks passed - render protected content
   return <>{children}</>;
 }

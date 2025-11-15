@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { BackupCodesDisplay } from "./BackupCodesDisplay";
 import { MFAStatusBadge } from "./MFAStatusBadge";
@@ -24,10 +24,16 @@ export function MFASetup() {
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [showBackupCodes, setShowBackupCodes] = useState(false);
   const [password, setPassword] = useState("");
+  const [isGoogleUser, setIsGoogleUser] = useState(false);
 
   useEffect(() => {
-    checkMFAStatus();
-  }, [user]);
+    if (profile?.auth_provider === 'google') {
+      setIsGoogleUser(true);
+      setLoading(false);
+    } else {
+      checkMFAStatus();
+    }
+  }, [user, profile]);
 
   const checkMFAStatus = async () => {
     if (!user) return;

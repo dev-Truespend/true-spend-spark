@@ -22,7 +22,7 @@ export default function UserDashboard() {
       title: "Signed out",
       description: "You've been successfully logged out.",
     });
-    navigate("/");
+    // Navigation is handled by signOut function
   };
 
   return (
