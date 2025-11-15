@@ -416,7 +416,7 @@ export default function Auth() {
       });
 
       // MANDATORY: Auto-login and redirect to dashboard
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error('Signup error:', error);
       toast({
