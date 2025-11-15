@@ -41,9 +41,9 @@ Deno.serve(async (req) => {
       
       await supabaseClient.from('security_logs').insert({
         user_id: userId,
-        event_type: 'mfa_rate_limit_exceeded',
+        event_type: 'login_with_mfa_failed',
         severity: 'warn',
-        details: { method: 'totp', attempts: rateLimitData.request_count },
+        details: { method: 'totp', reason: 'rate_limit_exceeded', attempts: rateLimitData.request_count },
       });
 
       console.log('MFA rate limit exceeded for user:', userId);
@@ -86,8 +86,22 @@ Deno.serve(async (req) => {
       .single();
 
     if (mfaError || !mfaSettings || !mfaSettings.totp_enabled) {
+      await supabaseClient.from('security_logs').insert({
+        user_id: userId,
+        event_type: 'login_with_mfa_failed',
+        severity: 'warn',
+        details: { method: 'totp', reason: 'mfa_not_enabled' },
+      });
+      
       return new Response(
-        JSON.stringify({ valid: false, error: 'MFA not enabled' }),
+        JSON.stringify({ 
+          valid: false, 
+          error: {
+            code: 'MFA_NOT_SETUP',
+            message: 'MFA not enabled',
+            userMessage: 'Two-factor authentication is not enabled for this account'
+          }
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -131,9 +145,9 @@ Deno.serve(async (req) => {
       // Log successful verification
       await supabaseClient.from('security_logs').insert({
         user_id: userId,
-        event_type: 'mfa_verified',
+        event_type: 'login_with_mfa_success',
         severity: 'info',
-        details: { method: 'totp', success: true },
+        details: { method: 'totp' },
       });
 
       console.log('MFA verification successful for user:', userId);
@@ -141,9 +155,9 @@ Deno.serve(async (req) => {
       // Log failed attempt
       await supabaseClient.from('security_logs').insert({
         user_id: userId,
-        event_type: 'mfa_verification_failed',
+        event_type: 'login_with_mfa_failed',
         severity: 'warn',
-        details: { method: 'totp', success: false },
+        details: { method: 'totp', reason: 'invalid_code' },
       });
 
       console.log('MFA verification failed for user:', userId);

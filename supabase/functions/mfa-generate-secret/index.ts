@@ -104,6 +104,14 @@ Deno.serve(async (req) => {
     }
 
     console.log('MFA secret generated for user:', user.id);
+    
+    // Log setup started event
+    await adminClient.from('security_logs').insert({
+      user_id: user.id,
+      event_type: 'mfa_setup_started',
+      severity: 'info',
+      details: { method: 'totp' },
+    });
 
     return new Response(
       JSON.stringify({
