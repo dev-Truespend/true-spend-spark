@@ -111,13 +111,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
         
         // Handle redirect after successful OAuth login
-        if (session?.user) {
+      if (session?.user) {
+        // Add small delay to let the page mount before checking localStorage
+        setTimeout(() => {
           const redirectTarget = localStorage.getItem('ts_redirect_to');
+          console.log('[useAuth] Auth state changed with session:', { 
+            redirectTarget, 
+            currentPath: window.location.pathname 
+          });
+          
           if (redirectTarget) {
-            localStorage.removeItem('ts_redirect_to');
-            navigate(redirectTarget);
+            // Only navigate if not already on the target page
+            if (window.location.pathname !== redirectTarget) {
+              console.log('[useAuth] Navigating to redirect target:', redirectTarget);
+              localStorage.removeItem('ts_redirect_to');
+              navigate(redirectTarget);
+            } else {
+              console.log('[useAuth] Already on target page, clearing localStorage');
+              localStorage.removeItem('ts_redirect_to');
+            }
           }
-        }
+        }, 100);
+      }
       }
     );
 
