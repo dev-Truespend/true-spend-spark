@@ -75,6 +75,20 @@ export default function Timeline() {
             </div>
           </div>
         </div>
+
+        <div className="mt-2 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950 dark:to-indigo-950 border border-purple-200 dark:border-purple-800 rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-full">
+              <Sparkles className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-purple-900 dark:text-purple-100">Phase 4 In Progress! 🚀</h3>
+              <p className="text-sm text-purple-700 dark:text-purple-300">
+                Core Services: BFF, Business Logic, and AI - 58% Complete (7/12 tasks done)
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Timeline Image Generator */}

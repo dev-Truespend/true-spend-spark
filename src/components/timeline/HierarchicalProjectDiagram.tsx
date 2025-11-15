@@ -100,20 +100,35 @@ const BLUEPRINT_PHASES: Phase[] = [
     name: "Phase 4: Core Services",
     sections: [
       {
-        name: "Transaction Engine",
+        name: "BFF Layer",
         tasks: [
-          { name: "Transaction Processing", status: "pending" },
-          { name: "Categorization Engine", status: "pending" },
-          { name: "Duplicate Detection", status: "pending" },
+          { name: "BFF Dashboard Endpoint", status: "completed" },
+          { name: "Response Caching", status: "active" },
+          { name: "Performance Testing", status: "pending" },
         ]
       },
       {
-        name: "Budget & Analytics",
+        name: "Business Logic",
         tasks: [
-          { name: "Budget Management", status: "pending" },
-          { name: "Budget Alerts", status: "pending" },
-          { name: "Analytics Engine", status: "pending" },
-          { name: "Notification System", status: "pending" },
+          { name: "Transaction Processing", status: "completed" },
+          { name: "Rules Engine", status: "pending" },
+          { name: "Budget Management", status: "active" },
+          { name: "Alert Threshold Logic", status: "pending" },
+        ]
+      },
+      {
+        name: "AI Services",
+        tasks: [
+          { name: "AI Categorization", status: "completed" },
+          { name: "Spending Analysis", status: "completed" },
+          { name: "Anomaly Detection", status: "pending" },
+        ]
+      },
+      {
+        name: "Frontend Integration",
+        tasks: [
+          { name: "Transactions Page", status: "completed" },
+          { name: "Budgets & Insights", status: "completed" },
           { name: "Core Features Integration", status: "milestone" },
         ]
       }

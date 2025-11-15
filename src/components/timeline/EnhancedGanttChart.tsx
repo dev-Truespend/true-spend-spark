@@ -119,12 +119,18 @@ export function EnhancedGanttChart({ currentWeek, totalWeeks, phases }: Enhanced
       chart += `
     
     section Phase 4: Core Services
-    Transaction Processing          :p4_1, after p3_m, 7d
-    Budget Management               :p4_2, after p4_1, 5d
-    Analytics Engine                :p4_3, after p4_2, 6d
-    Notification System             :p4_4, after p4_3, 4d`;
+    BFF Dashboard Endpoint          :done, p4_1, after p3_m, 5d
+    Response Caching Layer          :active, p4_2, after p4_1, 4d
+    Transaction Processing          :done, p4_3, after p3_m, 5d
+    AI Categorization               :done, p4_4, after p4_3, 4d
+    Budget Management               :active, p4_5, after p4_4, 5d
+    AI Spending Analysis            :done, p4_6, after p4_5, 4d
+    Transactions Page               :done, p4_7, after p4_6, 3d
+    Budgets & Insights Pages        :done, p4_8, after p4_7, 3d
+    Anomaly Detection               :p4_9, after p4_8, 4d
+    Rules Engine                    :p4_10, after p4_9, 5d`;
       if (showMilestones) {
-        chart += `\n    Core Features Integration       :milestone, p4_m, after p4_4, 0d`;
+        chart += `\n    Core Features Integration       :milestone, p4_m, after p4_10, 0d`;
       }
     }
 
