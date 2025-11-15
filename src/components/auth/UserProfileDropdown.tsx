@@ -496,6 +496,7 @@ export function UserProfileDropdown() {
                         <>
                           {!mfaSetupInProgress ? (
                             <Button 
+                              type="button"
                               variant="default" 
                               className="w-full"
                               onClick={handleStartMfaSetup}
@@ -557,6 +558,7 @@ export function UserProfileDropdown() {
                               {/* Action Buttons */}
                               <div className="flex gap-2 pt-2">
                                 <Button
+                                  type="button"
                                   variant="outline"
                                   className="flex-1"
                                   onClick={handleCancelMfaSetup}
@@ -565,6 +567,7 @@ export function UserProfileDropdown() {
                                   Cancel
                                 </Button>
                                 <Button
+                                  type="button"
                                   className="flex-1"
                                   onClick={handleVerifyAndEnable}
                                   disabled={loading || verificationCode.length !== 6}
