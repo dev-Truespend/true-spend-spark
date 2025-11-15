@@ -272,16 +272,14 @@ const navigate = useNavigate();
           );
 
           if (backupVerifyError || !backupVerifyData?.valid) {
-            // Record failed backup code attempt
-            await supabase.functions.invoke('record-login-attempt', {
-              body: {
-                email: email.toLowerCase(),
-                success: false,
-                ipAddress: 'web',
-                userId: providerCheck.userId,
-                metadata: { backupCodeFailed: true }
-              }
-            });
+            // Increment login failure counter
+            try {
+              await supabase.functions.invoke('increment-login-failures', {
+                body: { userId: providerCheck.userId }
+              });
+            } catch (incrementError) {
+              console.error('Failed to increment login failures:', incrementError);
+            }
             
             return {
               error: {
@@ -300,20 +298,18 @@ const navigate = useNavigate();
           );
 
           if (verifyError || !verifyData?.valid) {
-            // Record failed MFA attempt
-            await supabase.functions.invoke('record-login-attempt', {
-              body: {
-                email: email.toLowerCase(),
-                success: false,
-                ipAddress: 'web',
-                userId: providerCheck.userId,
-                metadata: { mfaFailed: true }
-              }
-            });
+            // Increment login failure counter
+            try {
+              await supabase.functions.invoke('increment-login-failures', {
+                body: { userId: providerCheck.userId }
+              });
+            } catch (incrementError) {
+              console.error('Failed to increment login failures:', incrementError);
+            }
             
             return {
               error: {
-                message: "Invalid or expired MFA code",
+                message: "Invalid credentials or verification code",
                 code: 'mfa_invalid'
               }
             };
@@ -343,10 +339,22 @@ const navigate = useNavigate();
         console.error('Failed to record login attempt:', recordError);
       }
 
+      // Step 6: Handle authentication failure
       if (authError) {
+        // Increment login failure counter
+        if (providerCheck.userId) {
+          try {
+            await supabase.functions.invoke('increment-login-failures', {
+              body: { userId: providerCheck.userId }
+            });
+          } catch (incrementError) {
+            console.error('Failed to increment login failures:', incrementError);
+          }
+        }
+
         return {
           error: {
-            message: "Invalid email or password"
+            message: "Invalid credentials or verification code"
           }
         };
       }
@@ -411,8 +419,23 @@ const navigate = useNavigate();
         };
       }
 
-      // Successful login
+      // Successful login - reset rate limit counters
       setMfaPending(false);
+
+      // Reset login rate limit counters
+      if (authData.user) {
+        try {
+          await supabase
+            .from('mfa_settings')
+            .update({
+              failed_login_attempts: 0,
+              login_lock_until: null,
+            })
+            .eq('user_id', authData.user.id);
+        } catch (resetError) {
+          console.error('Failed to reset login counters:', resetError);
+        }
+      }
 
       return {
         error: null,

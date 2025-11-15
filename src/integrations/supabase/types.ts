@@ -935,8 +935,12 @@ export type Database = {
           backup_codes_generated: boolean | null
           created_at: string | null
           enabled_at: string | null
+          failed_login_attempts: number | null
+          failed_mfa_attempts: number | null
           id: string
           last_verified_at: string | null
+          login_lock_until: string | null
+          mfa_lock_until: string | null
           totp_enabled: boolean | null
           totp_secret: string | null
           updated_at: string | null
@@ -946,8 +950,12 @@ export type Database = {
           backup_codes_generated?: boolean | null
           created_at?: string | null
           enabled_at?: string | null
+          failed_login_attempts?: number | null
+          failed_mfa_attempts?: number | null
           id?: string
           last_verified_at?: string | null
+          login_lock_until?: string | null
+          mfa_lock_until?: string | null
           totp_enabled?: boolean | null
           totp_secret?: string | null
           updated_at?: string | null
@@ -957,8 +965,12 @@ export type Database = {
           backup_codes_generated?: boolean | null
           created_at?: string | null
           enabled_at?: string | null
+          failed_login_attempts?: number | null
+          failed_mfa_attempts?: number | null
           id?: string
           last_verified_at?: string | null
+          login_lock_until?: string | null
+          mfa_lock_until?: string | null
           totp_enabled?: boolean | null
           totp_secret?: string | null
           updated_at?: string | null

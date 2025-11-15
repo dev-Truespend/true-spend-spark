@@ -230,7 +230,16 @@ export function UserProfileDropdown() {
       });
 
       if (error) {
-        throw error;
+        const errorCode = (error as any)?.code || data?.code;
+        const errorMessage = data?.error || error.message;
+        
+        if (errorCode === 'MFA_VERIFY_LOCKED') {
+          throw new Error('Too many incorrect codes. Please try again in 24 hours.');
+        } else if (errorCode === 'MFA_VERIFY_INVALID') {
+          throw new Error('The verification code is incorrect or expired.');
+        } else {
+          throw new Error(errorMessage || 'Failed to enable MFA. Please try again.');
+        }
       }
 
       toast({ 
