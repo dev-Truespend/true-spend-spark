@@ -1,0 +1,60 @@
+# Dependabot Configuration for TrueSpend v4.2
+# Phase 3: Supply Chain Security - Layer 6
+# Automated dependency updates and security patches
+
+version: 2
+updates:
+  # Enable security updates for npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    # Group updates to reduce PR noise
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      development-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    # Auto-merge patch updates for dev dependencies
+    open-pull-requests-limit: 10
+    # Add labels for easy filtering
+    labels:
+      - "dependencies"
+      - "security"
+      - "automated"
+    # Reviewers (configure as needed)
+    reviewers:
+      - "truespend-team"
+    # Commit message prefix
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    # Only security updates for major versions
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    # Allow specific major updates
+    allow:
+      - dependency-type: "all"
+
+  # Monitor GitHub Actions for security updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    labels:
+      - "github-actions"
+      - "security"
+      - "automated"
+    commit-message:
+      prefix: "chore(ci)"
