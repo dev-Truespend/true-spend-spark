@@ -124,39 +124,38 @@ serve(async (req) => {
     // No need to manually check budgets here
 
     // Step 5: Apply transaction rules
-    const { data: rules } = await supabase
-      .from('transaction_rules')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('active', true)
-      .order('priority', { ascending: false });
+    // Step 5: Apply transaction rules using database function
+    const { data: rulesResult, error: rulesError } = await supabase.rpc(
+      'evaluate_transaction_rules',
+      {
+        p_user_id: user.id,
+        p_transaction_data: {
+          amount: input.amount,
+          category: input.category,
+          description: input.description,
+          merchant_id,
+          geofence_id
+        }
+      }
+    );
 
-    if (rules) {
-      for (const rule of rules) {
-        const conditions = rule.conditions as any;
-        let matches = true;
-
-        if (conditions.category && !conditions.category.includes(input.category)) {
-          matches = false;
+    let rulesApplied = 0;
+    if (!rulesError && rulesResult && Array.isArray(rulesResult)) {
+      rulesApplied = rulesResult.length;
+      
+      // Apply rule actions
+      for (const appliedRule of rulesResult) {
+        const actions = appliedRule.actions as any;
+        if (actions?.add_tag) {
+          await supabase
+            .from('transactions')
+            .update({
+              description: `${transaction.description || ''} [${actions.add_tag}]`.trim()
+            })
+            .eq('id', transaction.id);
         }
-        if (conditions.amount_gt && input.amount <= conditions.amount_gt) {
-          matches = false;
-        }
-        if (conditions.amount_lt && input.amount >= conditions.amount_lt) {
-          matches = false;
-        }
-
-        if (matches) {
-          const actions = rule.actions as any;
-          if (actions.tag) {
-            await supabase
-              .from('transactions')
-              .update({
-                description: `${transaction.description || ''} [${actions.tag}]`.trim(),
-              })
-              .eq('id', transaction.id);
-          }
-        }
+        
+        console.log(`Applied rule: ${appliedRule.rule_name}`, actions);
       }
     }
 
@@ -164,7 +163,7 @@ serve(async (req) => {
       JSON.stringify({
         transaction,
         geofence_matched: !!geofence_id,
-        rules_applied: rules?.length || 0,
+        rules_applied: rulesApplied,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

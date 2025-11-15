@@ -2111,6 +2111,10 @@ export type Database = {
       }
       encrypt_pii: { Args: { data: string }; Returns: string }
       encrypt_totp_secret: { Args: { secret: string }; Returns: string }
+      evaluate_transaction_rules: {
+        Args: { p_transaction_data: Json; p_user_id: string }
+        Returns: Json
+      }
       get_decrypted_profile: {
         Args: { p_user_id: string }
         Returns: {
