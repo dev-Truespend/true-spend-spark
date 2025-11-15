@@ -175,6 +175,20 @@ const { toast } = useToast();
           // The database trigger already sets status='active' for Google users
           console.log('Google sign-in successful, user will be redirected to dashboard');
           
+          // Add deferred redirect as secondary safety path (if Auth.tsx redirect doesn't fire)
+          setTimeout(() => {
+            try {
+              // Do NOT call any Supabase methods here to avoid deadlocks
+              // Only route-level navigation if we're stuck on /auth
+              if (window.location.pathname === '/auth') {
+                window.history.replaceState(null, '', '/dashboard');
+                window.location.reload(); // Force reload to trigger route change
+              }
+            } catch (_) {
+              // Silently fail - Auth.tsx redirect is the primary path
+            }
+          }, 0);
+          
           // Log the successful Google login (non-blocking)
           supabase.functions.invoke('audit-google-login', {
             body: {

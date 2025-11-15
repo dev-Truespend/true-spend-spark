@@ -77,6 +77,16 @@ export function MFASetup() {
       
       setMfaEnabled(enabled);
       setMfaPending(!enabled && hasPendingSecret); // Pending only if secret but not enabled
+      
+      // Clear stale QR state if DB shows neither enabled nor pending
+      if (!enabled && !hasPendingSecret) {
+        setQrCodeUrl('');
+        setSecret('');
+        setVerificationCode('');
+        console.log('[MFA] Cleared stale QR state (DB shows not pending)');
+      }
+      
+      console.log('[MFA] Final UI state:', { enabled, pending: !enabled && hasPendingSecret, hasQR: !!qrCodeUrl });
     } catch (error) {
       console.error('Error checking MFA status:', error);
     } finally {
