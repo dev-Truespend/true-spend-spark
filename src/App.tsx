@@ -22,15 +22,13 @@ import Testing from "./pages/dashboard/Testing";
 import Security from "./pages/dashboard/Security";
 import SecurityDashboard from "./pages/dashboard/SecurityDashboard";
 import Geofences from "./pages/dashboard/Geofences";
+import Phase3Completion from "./pages/dashboard/Phase3Completion";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ConfirmEmailChange from "./pages/ConfirmEmailChange";
 import NotFound from "./pages/NotFound";
-import { OfflineIndicator } from "./components/pwa/OfflineIndicator";
-import { SyncIndicator } from "./components/pwa/SyncIndicator";
-import { ForceRefreshBanner } from "./components/pwa/ForceRefreshBanner";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
 import { useNotificationTriggers } from "./hooks/useNotificationTriggers";
@@ -45,8 +43,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-const PWA_ENABLED = import.meta.env.VITE_PWA_ENABLED === 'true';
 
 function NotificationTriggersWrapper() {
   // Initialize notification triggers for automatic push notifications
@@ -65,9 +61,6 @@ function App() {
               <Toaster />
               <Sonner />
               <CSPViolationReporter />
-              <ForceRefreshBanner />
-              {PWA_ENABLED && <OfflineIndicator />}
-              {PWA_ENABLED && <SyncIndicator />}
               <GlobalNav />
               <RateLimitStatus />
               <div className="pt-14">
@@ -136,6 +129,7 @@ function App() {
                   <Route path="security" element={<Security />} />
                   <Route path="security-monitor" element={<SecurityDashboard />} />
                   <Route path="geofences" element={<Geofences />} />
+                  <Route path="phase3" element={<Phase3Completion />} />
               </Route>
 
               {/* TrueSpend User App - Coming Soon */}
