@@ -13,7 +13,11 @@ let tokenExpiresAt = 0;
 const IOS_APNS_KEY = Deno.env.get('IOS_APNS_KEY');
 const IOS_APNS_KEY_ID = Deno.env.get('IOS_APNS_KEY_ID');
 const IOS_APNS_TEAM_ID = Deno.env.get('IOS_APNS_TEAM_ID');
+const IOS_BUNDLE_ID = 'ai.truespend.app'; // From capacitor.config.ts
 const APNS_HOST = 'https://api.push.apple.com'; // Production
+
+// Firebase Configuration
+const FIREBASE_PROJECT_ID = Deno.env.get('FIREBASE_PROJECT_ID');
 
 // APNS JWT token caching
 let cachedApnsToken: string | null = null;
@@ -293,7 +297,10 @@ Deno.serve(async (req) => {
 
     // Get Firebase OAuth 2.0 access token
     const accessToken = await getFirebaseAccessToken();
-    const firebaseProjectId = Deno.env.get('FIREBASE_PROJECT_ID') || 'oauth-setup-476417';
+    
+    if (!FIREBASE_PROJECT_ID) {
+      throw new Error('FIREBASE_PROJECT_ID environment variable not set');
+    }
 
     // Prepare platform-specific notification payload
     const message: any = {
@@ -310,7 +317,8 @@ Deno.serve(async (req) => {
       message.apns = {
         headers: {
           'apns-priority': '10',
-          'apns-push-type': 'alert'
+          'apns-push-type': 'alert',
+          'apns-topic': IOS_BUNDLE_ID,
         },
         payload: {
           aps: {
@@ -319,7 +327,8 @@ Deno.serve(async (req) => {
             badge: deviceData.badge_count + 1,
             'content-available': 1,
             category: category || 'default'
-          }
+          },
+          ...data,
         }
       };
     }
@@ -341,7 +350,7 @@ Deno.serve(async (req) => {
 
     // Send to FCM using OAuth 2.0 token
     const fcmResponse = await fetch(
-      `https://fcm.googleapis.com/v1/projects/${firebaseProjectId}/messages:send`,
+      `https://fcm.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/messages:send`,
       {
         method: 'POST',
         headers: {

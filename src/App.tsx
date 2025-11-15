@@ -33,6 +33,7 @@ import { SyncIndicator } from "./components/pwa/SyncIndicator";
 import { ForceRefreshBanner } from "./components/pwa/ForceRefreshBanner";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
+import { useNotificationTriggers } from "./hooks/useNotificationTriggers";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +48,12 @@ const queryClient = new QueryClient({
 
 const PWA_ENABLED = import.meta.env.VITE_PWA_ENABLED === 'true';
 
+function NotificationTriggersWrapper() {
+  // Initialize notification triggers for automatic push notifications
+  useNotificationTriggers();
+  return null;
+}
+
 function App() {
   return (
     <React.Fragment>
@@ -54,6 +61,7 @@ function App() {
         <TooltipProvider>
           <BrowserRouter>
             <AuthProvider>
+              <NotificationTriggersWrapper />
               <Toaster />
               <Sonner />
               <CSPViolationReporter />

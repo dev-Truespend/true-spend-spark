@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { MFASetup } from "@/components/auth/MFASetup";
+import { PushNotificationManager } from "@/components/pwa/PushNotificationManager";
+import { NotificationTestPanel } from "@/components/pwa/NotificationTestPanel";
 import { Shield, User, Bell, Settings as SettingsIcon } from "lucide-react";
 import { GlobalNav } from "@/components/navigation/GlobalNav";
 
@@ -109,13 +111,15 @@ export default function Settings() {
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6">
+            <PushNotificationManager />
+            
             <Card>
               <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>Choose what notifications you want to receive</CardDescription>
+                <CardTitle>Test Notifications</CardTitle>
+                <CardDescription>Send test push notifications to verify your setup</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">Notification settings coming soon...</p>
+              <CardContent>
+                <NotificationTestPanel />
               </CardContent>
             </Card>
           </TabsContent>
