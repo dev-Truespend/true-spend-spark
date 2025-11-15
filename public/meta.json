@@ -1,9 +1,18 @@
 {
-  "version": "3.0.1",
-  "buildId": "20251115T064800",
-  "commit": "google-oauth-redirect-fix-v3.0.1",
-  "timestamp": 1763188880000,
+  "version": "3.1.0",
+  "buildId": "20251115T070000",
+  "commit": "production-security-hardening-v3.1.0",
+  "timestamp": 1763189600000,
   "changelog": {
+    "3.1.0": [
+      "SECURITY: Fixed password change dialog MFA bypass vulnerability - now uses dedicated verification endpoint",
+      "SECURITY: Added search_path protection to 5 database functions to prevent SQL injection",
+      "SECURITY: Enhanced RLS policies with comprehensive DELETE/UPDATE restrictions on auth tables",
+      "SECURITY: Scheduled automatic cleanup of unverified accounts every 6 hours",
+      "SECURITY: Password changes now trigger session revocation and security alert emails",
+      "IMPROVEMENT: Added admin-only access controls for password reset tokens",
+      "IMPROVEMENT: Created verify-current-password edge function for secure password verification"
+    ],
     "3.0.1": [
       "CRITICAL FIX: Resolved Google OAuth redirect race condition causing users to land on wrong page",
       "Added defensive timing checks in auth state handler to prevent premature navigation",
