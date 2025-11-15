@@ -109,6 +109,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Handle redirect after successful OAuth login
+        if (session?.user) {
+          const redirectTarget = localStorage.getItem('ts_redirect_to');
+          if (redirectTarget) {
+            localStorage.removeItem('ts_redirect_to');
+            navigate(redirectTarget);
+          }
+        }
       }
     );
 
@@ -120,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const signIn = async (email: string, password: string) => {
     // Step 1: Check if account is locked (BEFORE attempting login)
@@ -295,10 +304,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
+    // Read redirect target from URL query params
+    const redirectParam = new URLSearchParams(window.location.search).get('redirectTo') || '/dashboard';
+    
+    // Store in localStorage as fallback (in case OAuth provider ignores redirectTo)
+    localStorage.setItem('ts_redirect_to', redirectParam);
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${window.location.origin}${redirectParam}`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
