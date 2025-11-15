@@ -365,21 +365,24 @@ export type Database = {
         Row: {
           attempt_count: number
           created_at: string
-          email: string
+          email: string | null
+          email_hash: string | null
           last_attempt_at: string
           window_start: string
         }
         Insert: {
           attempt_count?: number
           created_at?: string
-          email: string
+          email?: string | null
+          email_hash?: string | null
           last_attempt_at?: string
           window_start?: string
         }
         Update: {
           attempt_count?: number
           created_at?: string
-          email?: string
+          email?: string | null
+          email_hash?: string | null
           last_attempt_at?: string
           window_start?: string
         }

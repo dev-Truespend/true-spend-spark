@@ -50,11 +50,21 @@ serve(async (req) => {
     const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
     const MAX_ATTEMPTS_PER_HOUR = 3;
 
+    // Generate hash for rate limiting (privacy-friendly)
+    const emailToHash = user.email || '';
+    const emailHash = await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(emailToHash.toLowerCase().trim() + 'truespend_salt_2024')
+    );
+    const emailHashHex = Array.from(new Uint8Array(emailHash))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
     // Check rate limit
     const { data: rateLimit, error: rateLimitError } = await supabase
       .from('email_rate_limits')
       .select('*')
-      .eq('email', user.email)
+      .eq('email_hash', emailHashHex)
       .single();
 
     const now = new Date();
@@ -83,7 +93,7 @@ serve(async (req) => {
             attempt_count: rateLimit.attempt_count + 1,
             last_attempt_at: now.toISOString()
           })
-          .eq('email', user.email);
+          .eq('email_hash', emailHashHex);
       } else {
         // Window expired, reset
         await supabase
@@ -93,7 +103,7 @@ serve(async (req) => {
             window_start: now.toISOString(),
             last_attempt_at: now.toISOString()
           })
-          .eq('email', user.email);
+          .eq('email_hash', emailHashHex);
       }
     } else {
       // First attempt, create new record
@@ -101,6 +111,7 @@ serve(async (req) => {
         .from('email_rate_limits')
         .insert({
           email: user.email,
+          email_hash: emailHashHex,
           attempt_count: 1,
           window_start: now.toISOString(),
           last_attempt_at: now.toISOString()
