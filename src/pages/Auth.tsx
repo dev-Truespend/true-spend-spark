@@ -289,15 +289,7 @@ export default function Auth() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  // Show loading screen during OAuth processing
+  // Show loading screen during OAuth processing (priority check)
   if (processingOAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -314,6 +306,14 @@ export default function Auth() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
