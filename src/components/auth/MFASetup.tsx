@@ -86,6 +86,12 @@ export function MFASetup() {
         console.log('[MFA] Cleared stale QR state (DB shows not pending)');
       }
       
+      console.log('[MFA] Status check complete:', { 
+        enabled, 
+        hasPendingSecret, 
+        mfaPending: !enabled && hasPendingSecret,
+        clearingStaleQR: !enabled && !hasPendingSecret && (qrCodeUrl || secret)
+      });
       console.log('[MFA] Final UI state:', { enabled, pending: !enabled && hasPendingSecret, hasQR: !!qrCodeUrl });
     } catch (error) {
       console.error('Error checking MFA status:', error);
@@ -113,7 +119,7 @@ export function MFASetup() {
       setQrCodeUrl(qrDataUrl);
       
       // QR screen shows immediately - no intermediate screen
-      toast.success('Scan the QR code with your authenticator app');
+      toast.info('MFA Setup Started - Scan the QR code to continue');
     } catch (error: any) {
       console.error('[MFA] Error in generateSecret:', error);
       setError(error.message || 'Failed to generate MFA secret');
@@ -138,23 +144,49 @@ export function MFASetup() {
       });
 
       if (error) {
-        const statusCode = (error as any)?.status || (error as any)?.statusCode;
-        const errorCode = (error as any)?.code || data?.code;
-        const errorMessage = data?.error || error.message;
-        
-        console.error('[MFA] Verification failed:', { error, statusCode, errorCode, errorMessage });
-        
-        if (errorCode === 'MFA_VERIFY_LOCKED') {
-          throw new Error('Too many incorrect codes. Please try again in 24 hours.');
-        } else if (errorCode === 'MFA_VERIFY_INVALID') {
-          throw new Error('The verification code is incorrect or expired.');
-        } else if (statusCode === 404) {
-          throw new Error('MFA service temporarily unavailable. Please try again.');
-        } else if (statusCode === 401) {
-          throw new Error('Authentication failed. Please sign in again.');
-        } else {
-          throw new Error(errorMessage || 'Failed to enable MFA. Please try again.');
+        // Supabase stores the response body in error.context.body when status is non-2xx
+        let errorBody = null;
+        try {
+          if (error.context?.body) {
+            errorBody = typeof error.context.body === 'string' 
+              ? JSON.parse(error.context.body) 
+              : error.context.body;
+          }
+        } catch (e) {
+          console.error('[MFA] Failed to parse error body:', e);
         }
+
+        const errorCode = errorBody?.code || data?.code;
+        const errorMessage = errorBody?.error || data?.error || error.message;
+        const statusCode = (error as any)?.status || (error as any)?.statusCode;
+        
+        console.error('[MFA] Verification failed:', { error, statusCode, errorCode, errorMessage, errorBody });
+        
+        // Map specific error codes to user-friendly messages
+        if (errorCode === 'MFA_VERIFY_LOCKED') {
+          setError('Too many incorrect codes. Your account is locked for 24 hours.');
+          toast.error('Too many incorrect codes. Please try again in 24 hours.');
+        } else if (errorCode === 'MFA_VERIFY_INVALID') {
+          setError('The verification code is incorrect or expired. Please try again.');
+          toast.error('Incorrect verification code. Please check and try again.');
+        } else if (errorCode === 'NO_PENDING_SETUP') {
+          setError('MFA setup expired. Please start again.');
+          toast.error('MFA setup expired. Please click "Enable Two-Factor Authentication" again.');
+        } else if (statusCode === 404) {
+          setError('MFA service temporarily unavailable.');
+          toast.error('MFA service temporarily unavailable. Please try again.');
+        } else if (statusCode === 401) {
+          setError('Authentication failed. Please sign in again.');
+          toast.error('Session expired. Please sign in again.');
+        } else {
+          // Use the actual error message from the backend if available
+          const fallbackMessage = 'Failed to enable MFA. Please check your code and try again.';
+          setError(errorMessage || fallbackMessage);
+          toast.error(errorMessage || fallbackMessage);
+        }
+        
+        setLoading(false);
+        return;
       }
 
       console.log('[MFA] Verification SUCCESS - MFA enabled in database by backend');
@@ -222,28 +254,38 @@ export function MFASetup() {
 
   // Handler for canceling MFA setup
   const handleCancelSetup = async () => {
-    console.log('[MFA] Cancelling MFA setup...');
+    console.log('[MFA] User clicked Cancel during setup');
     setLoading(true);
+    setError(null);
+    
     try {
-      // Call backend to clean up pending secret
-      await supabase.functions.invoke('mfa-cancel-setup');
+      const { error } = await supabase.functions.invoke('mfa-cancel-setup');
       
-      console.log('[MFA] Cancel successful, clearing frontend state');
+      if (error) {
+        console.error('[MFA] Failed to cancel setup:', error);
+        setError("Failed to cancel MFA setup. Please try again.");
+        toast.error("Failed to cancel setup. Please try again.");
+        setLoading(false);
+        return;
+      }
       
-      // Clear frontend state
-      setQrCodeUrl("");
-      setSecret("");
-      setVerificationCode("");
-      setError(null);
+      console.log('[MFA] Cancel successful - clearing all local state');
       
-      // Refetch DB status to ensure UI matches DB
-      console.log('[MFA] Refetching status after cancel...');
+      // Immediately clear ALL local state
+      setQrCodeUrl('');
+      setSecret('');
+      setVerificationCode('');
+      setShowBackupCodes(false);
+      setBackupCodes([]);
+      
+      // Refetch from database to ensure UI matches DB state
       await checkMFAStatus();
       
-      toast.success('MFA setup cancelled');
-    } catch (error) {
-      console.error('[MFA] Error cancelling setup:', error);
-      toast.error('Failed to cancel setup');
+      toast.info('MFA setup cancelled. Two-factor authentication remains disabled.');
+    } catch (error: any) {
+      console.error('[MFA] Error in cancel handler:', error);
+      setError(error.message || "Failed to cancel setup");
+      toast.error(error.message || "Failed to cancel setup");
     } finally {
       setLoading(false);
     }
