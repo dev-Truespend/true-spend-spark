@@ -14,6 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
+      anomaly_detections: {
+        Row: {
+          anomaly_type: string
+          confidence_score: number | null
+          created_at: string
+          details: Json | null
+          detected_at: string
+          id: string
+          reviewed_at: string | null
+          severity: string
+          status: string
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          anomaly_type: string
+          confidence_score?: number | null
+          created_at?: string
+          details?: Json | null
+          detected_at?: string
+          id?: string
+          reviewed_at?: string | null
+          severity: string
+          status?: string
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          anomaly_type?: string
+          confidence_score?: number | null
+          created_at?: string
+          details?: Json | null
+          detected_at?: string
+          id?: string
+          reviewed_at?: string | null
+          severity?: string
+          status?: string
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anomaly_detections_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_request_log: {
+        Row: {
+          cache_hit: boolean | null
+          created_at: string
+          endpoint: string
+          error_message: string | null
+          id: string
+          method: string
+          payload_size_bytes: number | null
+          response_time_ms: number | null
+          status_code: number | null
+          user_id: string | null
+        }
+        Insert: {
+          cache_hit?: boolean | null
+          created_at?: string
+          endpoint: string
+          error_message?: string | null
+          id?: string
+          method?: string
+          payload_size_bytes?: number | null
+          response_time_ms?: number | null
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          cache_hit?: boolean | null
+          created_at?: string
+          endpoint?: string
+          error_message?: string | null
+          id?: string
+          method?: string
+          payload_size_bytes?: number | null
+          response_time_ms?: number | null
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       architecture_components: {
         Row: {
           color_code: string | null
@@ -129,6 +218,53 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          alert_type: string
+          budget_id: string
+          budget_limit: number
+          created_at: string
+          current_spent: number
+          id: string
+          threshold_percentage: number
+          triggered_at: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          alert_type: string
+          budget_id: string
+          budget_limit: number
+          created_at?: string
+          current_spent: number
+          id?: string
+          threshold_percentage: number
+          triggered_at?: string
+          user_id: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          alert_type?: string
+          budget_id?: string
+          budget_limit?: number
+          created_at?: string
+          current_spent?: number
+          id?: string
+          threshold_percentage?: number
+          triggered_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_alerts_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
             referencedColumns: ["id"]
           },
         ]
@@ -1589,6 +1725,39 @@ export type Database = {
         }
         Relationships: []
       }
+      spending_patterns: {
+        Row: {
+          cached_at: string
+          data: Json
+          expires_at: string
+          id: string
+          pattern_type: string
+          period_end: string
+          period_start: string
+          user_id: string
+        }
+        Insert: {
+          cached_at?: string
+          data?: Json
+          expires_at?: string
+          id?: string
+          pattern_type: string
+          period_end: string
+          period_start: string
+          user_id: string
+        }
+        Update: {
+          cached_at?: string
+          data?: Json
+          expires_at?: string
+          id?: string
+          pattern_type?: string
+          period_end?: string
+          period_start?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           architecture_components: Json | null
@@ -1727,6 +1896,42 @@ export type Database = {
           test_suite?: string | null
           test_type?: string
           timestamp?: string | null
+        }
+        Relationships: []
+      }
+      transaction_rules: {
+        Row: {
+          actions: Json
+          active: boolean | null
+          conditions: Json
+          created_at: string
+          id: string
+          priority: number | null
+          rule_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actions?: Json
+          active?: boolean | null
+          conditions?: Json
+          created_at?: string
+          id?: string
+          priority?: number | null
+          rule_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actions?: Json
+          active?: boolean | null
+          conditions?: Json
+          created_at?: string
+          id?: string
+          priority?: number | null
+          rule_name?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
