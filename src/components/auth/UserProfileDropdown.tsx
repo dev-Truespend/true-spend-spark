@@ -16,7 +16,9 @@ import { PasswordChangeDialog } from "./PasswordChangeDialog";
 import { EmailChangeDialog } from "./EmailChangeDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { MFASetup } from "./MFASetup";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { AlertTriangle } from "lucide-react";
+import QRCodeLib from "qrcode";
 
 export function UserProfileDropdown() {
   const { user, signOut } = useAuth();
@@ -27,7 +29,11 @@ export function UserProfileDropdown() {
   const [loading, setLoading] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
-  const [showMfaSetup, setShowMfaSetup] = useState(false);
+  const [mfaSetupInProgress, setMfaSetupInProgress] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
+  const [mfaSecret, setMfaSecret] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [mfaError, setMfaError] = useState<string | null>(null);
 
   // Edit states - null means not editing, string means editing with that value
   const [editingFirstName, setEditingFirstName] = useState<string | null>(null);
@@ -177,6 +183,102 @@ export function UserProfileDropdown() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleStartMfaSetup = async () => {
+    setLoading(true);
+    setMfaError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('mfa-generate-secret');
+
+      if (error) {
+        const statusCode = (error as any)?.status || 500;
+        console.error('Error generating MFA secret:', { error, statusCode });
+        throw new Error(
+          statusCode === 500 
+            ? 'Security service unavailable. Please try again.' 
+            : 'Failed to generate MFA secret'
+        );
+      }
+
+      setMfaSecret(data.secret);
+      const qrDataUrl = await QRCodeLib.toDataURL(data.qrCodeUrl);
+      setQrCodeUrl(qrDataUrl);
+      setMfaSetupInProgress(true);
+      
+      toast({ title: "Success", description: "Scan the QR code with your authenticator app" });
+    } catch (error: any) {
+      console.error('Error starting MFA setup:', error);
+      setMfaError(error.message || 'Failed to start MFA setup');
+      toast({ title: "Error", description: error.message || 'Failed to start MFA setup', variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyAndEnable = async () => {
+    if (verificationCode.length !== 6) {
+      setMfaError("Please enter a 6-digit code");
+      return;
+    }
+
+    setLoading(true);
+    setMfaError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('mfa-enable', {
+        body: { code: verificationCode }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({ 
+        title: "Success!", 
+        description: "Two-factor authentication enabled successfully" 
+      });
+      
+      // Reset state
+      setMfaSetupInProgress(false);
+      setQrCodeUrl("");
+      setMfaSecret("");
+      setVerificationCode("");
+      
+      // Refresh data to show new MFA status
+      await fetchData();
+      
+      // Log backup codes for user to save
+      if (data.backupCodes) {
+        console.log('🔐 SAVE THESE BACKUP CODES:', data.backupCodes);
+        toast({
+          title: "Backup Codes Generated",
+          description: "Check the console for your backup codes. Save them in a secure location.",
+          duration: 10000
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('Error enabling MFA:', error);
+      setMfaError(error.message || "Failed to enable MFA. Please check your code.");
+      toast({ 
+        title: "Error", 
+        description: error.message || "Invalid verification code", 
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelMfaSetup = async () => {
+    setQrCodeUrl("");
+    setMfaSecret("");
+    setVerificationCode("");
+    setMfaError(null);
+    setMfaSetupInProgress(false);
+    
+    // Refetch to ensure DB reflects reality
+    await fetchData();
   };
 
   if (!user || !profile) {
@@ -391,31 +493,89 @@ export function UserProfileDropdown() {
                       </div>
                       
                       {!mfaEnabled ? (
-                        showMfaSetup ? (
-                          <div className="space-y-4">
+                        <>
+                          {!mfaSetupInProgress ? (
                             <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => {
-                                setShowMfaSetup(false);
-                                fetchData();
-                              }}
-                              className="mb-2"
+                              variant="default" 
+                              className="w-full"
+                              onClick={handleStartMfaSetup}
+                              disabled={loading}
                             >
-                              ← Back
+                              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Shield className="mr-2 h-4 w-4" />}
+                              Enable Two-Factor Authentication
                             </Button>
-                            <MFASetup />
-                          </div>
-                        ) : (
-                          <Button 
-                            variant="default" 
-                            className="w-full"
-                            onClick={() => setShowMfaSetup(true)}
-                          >
-                            <Shield className="mr-2 h-4 w-4" />
-                            Enable Two-Factor Authentication
-                          </Button>
-                        )
+                          ) : (
+                            <div className="space-y-4 pt-2">
+                              {/* QR Code Display */}
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium">Step 1: Scan QR Code</Label>
+                                <div className="flex justify-center p-4 bg-background rounded-lg border">
+                                  {qrCodeUrl && <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />}
+                                </div>
+                                <p className="text-xs text-muted-foreground text-center">
+                                  Scan with Google Authenticator, Authy, or any TOTP app
+                                </p>
+                              </div>
+
+                              {/* Manual Key */}
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium">Manual Entry Key</Label>
+                                <Input value={mfaSecret} readOnly className="font-mono text-sm" />
+                                <p className="text-xs text-muted-foreground">
+                                  Enter this key manually if you can't scan the QR code
+                                </p>
+                              </div>
+
+                              {/* Verification Input */}
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium">Step 2: Enter Verification Code</Label>
+                                <div className="flex justify-center">
+                                  <InputOTP value={verificationCode} onChange={setVerificationCode} maxLength={6}>
+                                    <InputOTPGroup>
+                                      <InputOTPSlot index={0} />
+                                      <InputOTPSlot index={1} />
+                                      <InputOTPSlot index={2} />
+                                      <InputOTPSlot index={3} />
+                                      <InputOTPSlot index={4} />
+                                      <InputOTPSlot index={5} />
+                                    </InputOTPGroup>
+                                  </InputOTP>
+                                </div>
+                                <p className="text-xs text-muted-foreground text-center">
+                                  Enter the 6-digit code from your authenticator app
+                                </p>
+                              </div>
+
+                              {/* Error Display */}
+                              {mfaError && (
+                                <Alert variant="destructive">
+                                  <AlertTriangle className="h-4 w-4" />
+                                  <AlertDescription>{mfaError}</AlertDescription>
+                                </Alert>
+                              )}
+
+                              {/* Action Buttons */}
+                              <div className="flex gap-2 pt-2">
+                                <Button
+                                  variant="outline"
+                                  className="flex-1"
+                                  onClick={handleCancelMfaSetup}
+                                  disabled={loading}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  className="flex-1"
+                                  onClick={handleVerifyAndEnable}
+                                  disabled={loading || verificationCode.length !== 6}
+                                >
+                                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                  Verify & Enable
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <div className="space-y-3 pt-2 border-t">
                           <Label htmlFor="mfa-disable-password" className="text-sm text-muted-foreground">
