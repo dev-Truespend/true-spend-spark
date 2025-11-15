@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface Profile {
   id: string;
@@ -53,6 +54,7 @@ const [mfaPending, setMfaPending] = useState(false);
 const mfaPendingRef = useRef(false);
 useEffect(() => { mfaPendingRef.current = mfaPending; }, [mfaPending]);
 const navigate = useNavigate();
+const { toast } = useToast();
 
   // Fetch profile with all auth providers
   useEffect(() => {
@@ -123,7 +125,7 @@ const navigate = useNavigate();
         return;
       }
 
-      // Handle Google OAuth events with audit logging
+      // Handle Google OAuth events with verification logic
       if (event === 'SIGNED_IN' && session?.user) {
         const authUser = session.user;
         
@@ -132,9 +134,61 @@ const navigate = useNavigate();
                                authUser.identities?.some(id => id.provider === 'google');
         
         if (isGoogleSignIn) {
-          // Audit log for successful Google login (non-blocking)
+          // Log Google claims for debugging
+          console.log('Google sign-in claims:', {
+            email: authUser.email,
+            email_verified: authUser.email_confirmed_at,
+            user_metadata: authUser.user_metadata,
+            app_metadata: authUser.app_metadata
+          });
+
+          // Check email verification from Google
+          const hasEmail = !!authUser.email;
+          
+          if (!hasEmail) {
+            // No email provided by Google - reject
+            await supabase.auth.signOut();
+            setTimeout(() => {
+              toast({
+                title: "Sign-In Failed",
+                description: "We couldn't retrieve an email from Google. Please use another account or sign in with email.",
+                variant: "destructive",
+              });
+            }, 100);
+            return;
+          }
+
+          // For Google OAuth, email_confirmed_at being set means Google verified it
+          // Supabase automatically sets this to the current time for OAuth providers
+          // Only block if we can explicitly determine the email is unverified
+          const isEmailVerified = authUser.email_confirmed_at !== null;
+          
+          if (!isEmailVerified) {
+            // Explicitly unverified - reject
+            await supabase.auth.signOut();
+            setTimeout(() => {
+              toast({
+                title: "Email Verification Required",
+                description: "Your Google email is not verified. Please verify your email with Google first.",
+                variant: "destructive",
+              });
+            }, 100);
+            return;
+          }
+
+          // Email is verified - ensure profile is active
           setTimeout(async () => {
             try {
+              // Update profile to active status with verified email
+              await supabase
+                .from('profiles')
+                .update({
+                  status: 'active',
+                  email_verified_at: new Date().toISOString()
+                })
+                .eq('id', authUser.id);
+
+              // Audit log for successful Google login
               await supabase.functions.invoke('audit-google-login', {
                 body: {
                   eventType: 'google_login_success',
@@ -145,7 +199,7 @@ const navigate = useNavigate();
                 },
               });
             } catch (err) {
-              console.error('Failed to log Google login:', err);
+              console.error('Failed to update profile or log Google login:', err);
             }
           }, 0);
         }
