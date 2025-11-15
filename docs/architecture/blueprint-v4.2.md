@@ -179,8 +179,7 @@ A unified integration layer for affiliate networks, coupon providers, and car ra
 
 **Components:**
 - React SPA with TypeScript
-- Capacitor Native App (iOS + Android)
-- Progressive Web App (PWA) capabilities
+- Capacitor Native App (iOS + Android) with background location tracking
 - Browser Extension Companion (MV3)
 - Client-side state management
 - Offline-first architecture

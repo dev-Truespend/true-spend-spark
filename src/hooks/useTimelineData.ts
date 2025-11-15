@@ -6,7 +6,7 @@ export function useTimelineData() {
   const milestones = useMilestones();
 
   const currentWeek = 5; // Current week in the timeline
-  const totalWeeks = 48; // Blueprint v4.2: 48 weeks with 15 phases including performance + ML optimization + Layer 10B (587 SP)
+  const totalWeeks = 51; // Blueprint v4.2: 51 weeks with Phase 10.5 (Native Apps) - 632 SP total
 
   const timelineData = useMemo(() => {
     if (!phases.data) return null;
