@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if user has MFA enabled
+    // Check if user has MFA enabled (only relevant for local/email auth)
     const { data: mfaSettings } = await supabase
       .from('mfa_settings')
       .select('totp_enabled')
@@ -129,32 +129,25 @@ Deno.serve(async (req) => {
 
     const mfaEnabled = mfaSettings?.totp_enabled || false;
 
-    // Check for multiple auth identities (email + google for same user)
+    // Get ALL auth providers for this user
     const { data: identities } = await supabase
       .from('auth_identities')
       .select('provider')
       .eq('user_id', profile.id);
 
-    const hasGoogleAuth = identities?.some(i => i.provider === 'google') || false;
-    const hasEmailAuth = identities?.some(i => i.provider === 'email') || false;
-
-    // Determine primary provider
-    let primaryProvider = profile.auth_provider || 'email';
-    
-    // If user has both Google and email, prefer Google
-    if (hasGoogleAuth && hasEmailAuth) {
-      primaryProvider = 'google';
-    }
+    const providers = identities?.map(i => i.provider) || [];
+    const hasLocal = providers.includes('email');
+    const hasGoogle = providers.includes('google');
 
     return new Response(
       JSON.stringify({
-        provider: primaryProvider,
-        accountStatus: profile.status,
-        verified: !!profile.email_verified_at,
-        requiresVerification: profile.status === 'pending_verification',
-        mfaEnabled,
-        hasMultipleProviders: hasGoogleAuth && hasEmailAuth,
-        availableProviders: identities?.map(i => i.provider) || []
+        providers: providers, // Return ALL providers as array
+        hasLocal: hasLocal,
+        hasGoogle: hasGoogle,
+        mfaEnabled: mfaEnabled, // Only relevant for local auth
+        status: profile.status,
+        emailVerified: !!profile.email_verified_at,
+        userId: profile.id
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

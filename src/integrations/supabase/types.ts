@@ -2118,6 +2118,15 @@ export type Database = {
         Args: { p_transaction_data: Json; p_user_id: string }
         Returns: Json
       }
+      find_user_by_email: {
+        Args: { p_email: string }
+        Returns: {
+          email: string
+          providers: string[]
+          status: string
+          user_id: string
+        }[]
+      }
       get_decrypted_profile: {
         Args: { p_user_id: string }
         Returns: {
@@ -2134,6 +2143,7 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_user_providers: { Args: { p_user_id: string }; Returns: string[] }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]

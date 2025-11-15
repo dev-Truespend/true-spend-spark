@@ -43,7 +43,7 @@ export function UserProfileDropdown() {
     if (!user) return;
     
     try {
-      // Fetch profile with error handling
+      // Fetch profile with all auth providers
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
@@ -55,7 +55,18 @@ export function UserProfileDropdown() {
       }
 
       if (profileData) {
-        setProfile(profileData);
+        // Get all auth providers for this user
+        const { data: identities } = await supabase
+          .from('auth_identities')
+          .select('provider')
+          .eq('user_id', user.id);
+        
+        const providers = identities?.map(i => i.provider) || [];
+        
+        setProfile({
+          ...profileData,
+          auth_providers: providers // Add all providers
+        });
       } else if (user) {
         // Fallback to auth user data if profile doesn't exist yet
         setProfile({

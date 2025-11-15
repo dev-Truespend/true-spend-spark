@@ -143,6 +143,32 @@ export default function Auth() {
   const handleSignup = async (values: z.infer<typeof signupSchema>) => {
     try {
       setIsLoading(true);
+      
+      // Check if email already exists with any provider
+      const providerCheck = await checkAuthProvider(values.email);
+      
+      if (providerCheck) {
+        if (providerCheck.hasGoogle && !providerCheck.hasLocal) {
+          toast({
+            title: "Account Exists",
+            description: "This email is already registered with Google. You can add a password in your profile settings after signing in with Google.",
+            variant: "default"
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        if (providerCheck.hasLocal) {
+          toast({
+            title: "Account Exists",
+            description: "An account with this email already exists. Please sign in instead.",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+      
       const { error } = await signUp({
         email: values.email,
         password: values.password,
