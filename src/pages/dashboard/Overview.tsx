@@ -41,7 +41,7 @@ export default function Overview() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight">TrueSpend v4.2 Dashboard</h1>
-          <p className="text-muted-foreground mt-2">19-Layer + Layer 10B with Performance & ML Optimization (48 weeks, 15 phases, 587 SP)</p>
+          <p className="text-muted-foreground mt-2">19-Layer + Layer 10B with Native Mobile Apps (51 weeks, 16 phases, 632 SP)</p>
         </div>
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="text-lg px-4 py-2">
@@ -150,7 +150,7 @@ export default function Overview() {
             Phase Status Overview
           </CardTitle>
           <CardDescription>
-            Track progress across all 15 implementation phases (48 weeks total, v4.2 performance + ML + Layer 10B 💰)
+            Track progress across all 16 implementation phases (51 weeks total, v4.2 with Native Mobile Apps 📱)
           </CardDescription>
         </CardHeader>
         <CardContent>

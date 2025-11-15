@@ -221,6 +221,62 @@ const BLUEPRINT_PHASES: Phase[] = [
     ]
   },
   {
+    id: 10,
+    name: "Phase 10: Browser Extension Production 🔌",
+    sections: [
+      {
+        name: "Extension Production Refinements",
+        tasks: [
+          { name: "Ephemeral SW Architecture", status: "pending" },
+          { name: "CORS/Bearer Auth", status: "pending" },
+          { name: "Realtime Filtering", status: "pending" },
+          { name: "Telemetry & Privacy Modal", status: "pending" },
+          { name: "Extension Production Ready", status: "milestone" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 11,
+    name: "Phase 11: Native Mobile Apps 📱",
+    sections: [
+      {
+        name: "Capacitor Setup",
+        tasks: [
+          { name: "Install Capacitor dependencies (@capacitor/core, cli, ios, android)", status: "pending" },
+          { name: "Initialize Capacitor project (npx cap init)", status: "pending" },
+          { name: "Configure capacitor.config.ts with sandbox URL", status: "pending" },
+          { name: "Add iOS platform (npx cap add ios)", status: "pending" },
+          { name: "Add Android platform (npx cap add android)", status: "pending" },
+        ]
+      },
+      {
+        name: "Background Location & Push Notifications",
+        tasks: [
+          { name: "Install @capacitor/geolocation plugin", status: "pending" },
+          { name: "Configure iOS Info.plist location permissions", status: "pending" },
+          { name: "Configure Android location permissions", status: "pending" },
+          { name: "Implement background location tracking service", status: "pending" },
+          { name: "Install @capacitor/push-notifications plugin", status: "pending" },
+          { name: "Configure APNS certificates (iOS)", status: "pending" },
+          { name: "Configure FCM credentials (Android)", status: "pending" },
+          { name: "Create push notification handler", status: "pending" },
+        ]
+      },
+      {
+        name: "Native Geofencing & App Store Prep",
+        tasks: [
+          { name: "Implement iOS CLLocationManager geofence monitoring", status: "pending" },
+          { name: "Implement Android GeofencingClient", status: "pending" },
+          { name: "Create iOS Widget Extension (Today Extension)", status: "pending" },
+          { name: "Configure app icons and splash screens", status: "pending" },
+          { name: "Configure build settings for App Store/Play Store", status: "pending" },
+          { name: "Native Mobile Apps Complete", status: "milestone" },
+        ]
+      }
+    ]
+  },
+  {
     id: 12,
     name: "Phase 12: Performance Optimization 🚀",
     sections: [
@@ -307,9 +363,9 @@ export function HierarchicalProjectDiagram() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>TrueSpend v4.2: Complete Implementation with Performance & ML</CardTitle>
+        <CardTitle>TrueSpend v4.2: Complete Implementation with Native Mobile Apps</CardTitle>
         <CardDescription>
-          Hierarchical view of all 15 phases, sections, and tasks in the 48-week timeline
+          Hierarchical view of all 16 phases, sections, and tasks in the 51-week timeline
         </CardDescription>
       </CardHeader>
       <CardContent>
