@@ -72,6 +72,35 @@ export default function Auth() {
   // Get redirectTo from URL params
   const redirectTo = new URLSearchParams(location.search).get('redirectTo') || '/dashboard';
 
+  // Check for OAuth errors in URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const hash = new URLSearchParams(location.hash.substring(1));
+    
+    const error = params.get('error') || hash.get('error');
+    const errorDescription = params.get('error_description') || hash.get('error_description');
+    
+    if (error) {
+      console.error('[Auth] OAuth error:', { error, errorDescription });
+      
+      let userMessage = "Authentication failed. Please try again.";
+      
+      if (error === 'invalid_client' || errorDescription?.includes('invalid_client')) {
+        userMessage = "Google sign-in is temporarily unavailable. Please use email/password or try again later.";
+      } else if (error === 'access_denied') {
+        userMessage = "Access was denied. Please try again and grant the necessary permissions.";
+      } else if (errorDescription) {
+        userMessage = errorDescription;
+      }
+      
+      toast({
+        title: "Sign-in Error",
+        description: userMessage,
+        variant: "destructive",
+      });
+    }
+  }, [location.search, location.hash, toast]);
+
   // Auto-redirect if user is already logged in (but not during MFA processing)
   useEffect(() => {
     if (!loading && user && !showMFAModal && !mfaInlineProcessing && !mfaPending && !isLoading && !mfaRequired) {

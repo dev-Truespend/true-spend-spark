@@ -11,7 +11,18 @@ export default function Home() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/dashboard', { replace: true });
+      // Check for stored redirect target from OAuth flow first
+      const redirectTarget = localStorage.getItem('ts_redirect_to');
+      console.log('[Home] Redirecting authenticated user:', { redirectTarget, hasUser: !!user });
+      
+      if (redirectTarget) {
+        console.log('[Home] Found redirect target, navigating to:', redirectTarget);
+        localStorage.removeItem('ts_redirect_to');
+        navigate(redirectTarget, { replace: true });
+      } else {
+        console.log('[Home] No redirect target, navigating to /dashboard');
+        navigate('/dashboard', { replace: true });
+      }
     }
   }, [user, loading, navigate]);
 
