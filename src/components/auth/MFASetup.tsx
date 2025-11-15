@@ -67,6 +67,14 @@ export function MFASetup() {
       const enabled = (data as any)?.totp_enabled === true; // STRICT
       const hasPendingSecret = !!(data as any)?.pending_mfa_secret;
       
+      console.log('[MFA] checkMFAStatus - Raw DB data:', {
+        totp_enabled: (data as any)?.totp_enabled,
+        has_totp_secret: !!(data as any)?.totp_secret,
+        has_pending_secret: hasPendingSecret,
+        computed_enabled: enabled,
+        computed_pending: !enabled && hasPendingSecret,
+      });
+      
       setMfaEnabled(enabled);
       setMfaPending(!enabled && hasPendingSecret); // Pending only if secret but not enabled
     } catch (error) {
@@ -77,6 +85,7 @@ export function MFASetup() {
   };
 
   const generateSecret = async () => {
+    console.log('[MFA] Starting MFA setup...');
     setLoading(true);
     setError(null);
     try {
@@ -84,10 +93,11 @@ export function MFASetup() {
 
       if (error) {
         const statusCode = (error as any)?.status || (error as any)?.statusCode;
-        console.error('Error generating MFA secret:', { error, statusCode });
+        console.error('[MFA] Error generating secret:', { error, statusCode });
         throw new Error(statusCode === 500 ? 'Security service unavailable. Please try again.' : (error as any)?.message || 'Failed to generate MFA secret');
       }
 
+      console.log('[MFA] Secret generated successfully');
       setSecret(data.secret);
       const qrDataUrl = await QRCodeLib.toDataURL(data.qrCodeUrl);
       setQrCodeUrl(qrDataUrl);
@@ -95,7 +105,7 @@ export function MFASetup() {
       // QR screen shows immediately - no intermediate screen
       toast.success('Scan the QR code with your authenticator app');
     } catch (error: any) {
-      console.error('Error generating MFA secret:', error);
+      console.error('[MFA] Error in generateSecret:', error);
       setError(error.message || 'Failed to generate MFA secret');
       toast.error(error.message || 'Failed to generate MFA secret');
     } finally {
@@ -109,6 +119,7 @@ export function MFASetup() {
       return;
     }
 
+    console.log('[MFA] Attempting to verify code and enable MFA...');
     setLoading(true);
     setError(null);
     try {
@@ -121,7 +132,7 @@ export function MFASetup() {
         const errorCode = (error as any)?.code || data?.code;
         const errorMessage = data?.error || error.message;
         
-        console.error('MFA enable error:', { error, statusCode, errorCode, errorMessage });
+        console.error('[MFA] Verification failed:', { error, statusCode, errorCode, errorMessage });
         
         if (errorCode === 'MFA_VERIFY_LOCKED') {
           throw new Error('Too many incorrect codes. Please try again in 24 hours.');
@@ -136,6 +147,8 @@ export function MFASetup() {
         }
       }
 
+      console.log('[MFA] Verification SUCCESS - MFA enabled in database');
+      
       setBackupCodes(data.backupCodes);
       setShowBackupCodes(true);
       // Clear QR setup state
@@ -144,10 +157,11 @@ export function MFASetup() {
       setVerificationCode("");
       // CRITICAL: Let DB be the ONLY source of truth - do NOT set local state
       // Only checkMFAStatus() can update mfaEnabled based on actual DB value
+      console.log('[MFA] Refetching status after successful enable...');
       await checkMFAStatus();
       toast.success("Two-factor authentication enabled successfully!");
     } catch (error: any) {
-      console.error('Error enabling MFA:', error);
+      console.error('[MFA] Error enabling MFA:', error);
       setError(error.message || "Failed to enable MFA. Please check your code.");
       toast.error(error.message || "Failed to enable MFA. Please check your code.");
     } finally {
@@ -187,10 +201,13 @@ export function MFASetup() {
 
   // Handler for canceling MFA setup
   const handleCancelSetup = async () => {
+    console.log('[MFA] Cancelling MFA setup...');
     setLoading(true);
     try {
       // Call backend to clean up pending secret
       await supabase.functions.invoke('mfa-cancel-setup');
+      
+      console.log('[MFA] Cancel successful, clearing frontend state');
       
       // Clear frontend state
       setQrCodeUrl("");
@@ -198,12 +215,13 @@ export function MFASetup() {
       setVerificationCode("");
       setError(null);
       
-      // Refetch DB status
+      // Refetch DB status to ensure UI matches DB
+      console.log('[MFA] Refetching status after cancel...');
       await checkMFAStatus();
       
       toast.success('MFA setup cancelled');
     } catch (error) {
-      console.error('Error cancelling setup:', error);
+      console.error('[MFA] Error cancelling setup:', error);
       toast.error('Failed to cancel setup');
     } finally {
       setLoading(false);
