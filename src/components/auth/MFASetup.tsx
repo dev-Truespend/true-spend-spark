@@ -145,37 +145,52 @@ export function MFASetup() {
       });
 
       if (error) {
-        console.error('[MFA] Verification error received:', error);
+        console.error('[MFA] Verification error received:', JSON.stringify(error, null, 2));
         
         // Safely extract error details - handle various error formats
-        let errorCode = data?.code;
-        let errorMessage = data?.error;
-        const statusCode = (error as any)?.status || (error as any)?.statusCode;
+        let errorCode = null;
+        let errorMessage = null;
+        let statusCode = null;
         
-        // Try to parse error.context.body if it exists
         try {
-          if (error.context?.body) {
-            const errorBody = typeof error.context.body === 'string' 
-              ? JSON.parse(error.context.body) 
-              : error.context.body;
-            
-            if (errorBody) {
-              errorCode = errorCode || errorBody.code;
-              errorMessage = errorMessage || errorBody.error;
+          // First check if data has the error info
+          errorCode = data?.code || null;
+          errorMessage = data?.error || null;
+          statusCode = (error as any)?.status || (error as any)?.statusCode || null;
+          
+          // Try to parse error.context.body if it exists
+          if (error && typeof error === 'object' && 'context' in error) {
+            const context = (error as any).context;
+            if (context && context.body) {
+              try {
+                const errorBody = typeof context.body === 'string' 
+                  ? JSON.parse(context.body) 
+                  : context.body;
+                
+                if (errorBody && typeof errorBody === 'object') {
+                  errorCode = errorCode || errorBody.code || null;
+                  errorMessage = errorMessage || errorBody.error || null;
+                }
+              } catch (jsonError) {
+                console.warn('[MFA] JSON parse failed:', jsonError);
+              }
             }
           }
+          
+          // Fallback to error.message if nothing else available
+          if (!errorMessage && error && typeof error === 'object' && 'message' in error) {
+            errorMessage = (error as any).message;
+          }
         } catch (parseError) {
-          console.warn('[MFA] Could not parse error.context.body:', parseError);
+          console.error('[MFA] Error parsing failed:', parseError);
+          errorMessage = 'Failed to verify code';
         }
-        
-        // Fallback to error.message if nothing else available
-        errorMessage = errorMessage || error.message || 'Failed to verify code';
         
         console.error('[MFA] Processed error:', { statusCode, errorCode, errorMessage });
         
         // Map specific error codes to user-friendly messages
-        let userMessage = '';
-        let userError = '';
+        let userMessage = 'Failed to verify code';
+        let userError = 'Failed to verify code';
         
         if (errorCode === 'MFA_VERIFY_LOCKED') {
           userError = 'Too many incorrect codes. Your account is locked for 24 hours.';
@@ -192,7 +207,7 @@ export function MFASetup() {
         } else if (statusCode === 401) {
           userError = 'Authentication failed. Please sign in again.';
           userMessage = 'Session expired. Please sign in again.';
-        } else {
+        } else if (errorMessage) {
           userError = errorMessage;
           userMessage = errorMessage;
         }
