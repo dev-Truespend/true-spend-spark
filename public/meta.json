@@ -1,9 +1,17 @@
 {
-  "version": "3.2.0",
-  "buildId": "20251115T080000",
-  "commit": "enterprise-google-oauth-v3.2.0",
-  "timestamp": 1763193600000,
+  "version": "4.0.0",
+  "buildId": "20251115T104500",
+  "commit": "advanced-rate-limiting-v4.0.0",
+  "timestamp": 1763195100000,
   "changelog": {
+    "4.0.0": [
+      "SECURITY: Enhanced rate limiting - 5 failed attempts trigger 24-hour account lock",
+      "SECURITY: Fixed Google OAuth email verification logic - verified Gmail accounts no longer blocked",
+      "SECURITY: MFA setup verification now locks after 5 wrong codes for 24 hours",
+      "SECURITY: Login attempts now lock after 5 continuous failures for 24 hours",
+      "SECURITY: Successful authentication resets all failure counters to zero",
+      "IMPROVEMENT: More specific error messages for locked accounts vs invalid credentials"
+    ],
     "3.2.0": [
       "ENTERPRISE: Implemented enterprise-ready Google OAuth sign-in flow",
       "SECURITY: Added comprehensive audit logging for all Google authentication events",
