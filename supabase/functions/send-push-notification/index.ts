@@ -5,9 +5,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Cache for OAuth 2.0 access tokens (valid for 1 hour)
+// Firebase OAuth 2.0 token caching
 let cachedAccessToken: string | null = null;
 let tokenExpiresAt = 0;
+
+// iOS APNS Configuration
+const IOS_APNS_KEY = Deno.env.get('IOS_APNS_KEY');
+const IOS_APNS_KEY_ID = Deno.env.get('IOS_APNS_KEY_ID');
+const IOS_APNS_TEAM_ID = Deno.env.get('IOS_APNS_TEAM_ID');
+const APNS_HOST = 'https://api.push.apple.com'; // Production
+
+// APNS JWT token caching
+let cachedApnsToken: string | null = null;
+let apnsTokenExpiresAt = 0;
 
 /**
  * Generate OAuth 2.0 access token from Firebase Service Account JSON
@@ -72,6 +82,10 @@ async function getFirebaseAccessToken(): Promise<string> {
   const tokenData = await tokenResponse.json();
   cachedAccessToken = tokenData.access_token;
   tokenExpiresAt = now + (tokenData.expires_in || 3600);
+  
+  if (!cachedAccessToken) {
+    throw new Error('Failed to obtain access token');
+  }
   
   return cachedAccessToken;
 }
