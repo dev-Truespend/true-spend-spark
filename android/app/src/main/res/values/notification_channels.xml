@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Default notification channel -->
+    <string name="default_notification_channel_id">general</string>
+    <string name="default_notification_channel_name">General</string>
+    <string name="default_notification_channel_description">General app notifications</string>
+
+    <!-- Budget Alert Channel -->
+    <string name="budget_alert_channel_id">budget_alert</string>
+    <string name="budget_alert_channel_name">Budget Alerts</string>
+    <string name="budget_alert_channel_description">Notifications when you approach or exceed budget limits</string>
+
+    <!-- Geofence Reminder Channel -->
+    <string name="geofence_reminder_channel_id">geofence_reminder</string>
+    <string name="geofence_reminder_channel_name">Location Reminders</string>
+    <string name="geofence_reminder_channel_description">Notifications when you enter or leave important locations</string>
+
+    <!-- Transaction Alert Channel -->
+    <string name="transaction_alert_channel_id">transaction_alert</string>
+    <string name="transaction_alert_channel_name">Transaction Alerts</string>
+    <string name="transaction_alert_channel_description">Notifications for new transactions and purchases</string>
+</resources>
