@@ -153,42 +153,27 @@ const { toast } = useToast();
         
         // Only apply strict checks for Google OAuth
         if (provider === 'google') {
-          console.log('Google sign-in detected, checking email verification');
+          console.log('Google sign-in detected, verifying email presence');
           
-          // Check for email presence
+          // For Google OAuth: Only check that email is present
+          // Google has already verified the email on their end
+          // DO NOT check user_metadata.email_verified - that flag may be stale
+          // from a previous email/password signup attempt
           if (!authUser.email) {
             await supabase.auth.signOut();
             setTimeout(() => {
               toast({
                 title: "Sign-In Failed",
-                description: "We couldn't retrieve an email from Google. Please use another account or sign in with email.",
+                description: "We couldn't retrieve an email from Google. Please try again or contact support.",
                 variant: "destructive",
               });
             }, 100);
             return;
           }
           
-          // For Google OAuth: email_confirmed_at is automatically set by Supabase on successful OAuth
-          // Only block if email_confirmed_at is explicitly NULL (which would be unusual for Google)
-          // Check user_metadata.email_verified as backup indicator
-          const emailVerified = authUser.user_metadata?.email_verified;
-          
-          // Only reject if explicitly false (not undefined or missing)
-          if (emailVerified === false) {
-            await supabase.auth.signOut();
-            setTimeout(() => {
-              toast({
-                title: "Email Verification Required",
-                description: "Your Google email is not verified. Please verify your email with Google first.",
-                variant: "destructive",
-              });
-            }, 100);
-            return;
-          }
-          
-          // Email present and not explicitly unverified = ALLOW
-          // Database trigger already set status to 'active' for Google users
-          // Just log the successful login
+          // Email is present = ALLOW LOGIN
+          // The database trigger already sets status='active' for Google users
+          // Log the successful Google login (non-blocking)
           supabase.functions.invoke('audit-google-login', {
             body: {
               eventType: 'google_login_success',
