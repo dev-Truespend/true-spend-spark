@@ -361,6 +361,56 @@ export type Database = {
         }
         Relationships: []
       }
+      email_delivery_logs: {
+        Row: {
+          created_at: string | null
+          delivered_at: string | null
+          email_type: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          recipient_email: string
+          resend_message_id: string | null
+          sent_at: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          delivered_at?: string | null
+          email_type: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email: string
+          resend_message_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          delivered_at?: string | null
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string
+          resend_message_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_delivery_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_rate_limits: {
         Row: {
           attempt_count: number
@@ -2165,7 +2215,7 @@ export type Database = {
       }
       check_password_history: {
         Args: {
-          p_history_count?: number
+          p_history_limit?: number
           p_password_hash: string
           p_user_id: string
         }
@@ -2183,10 +2233,9 @@ export type Database = {
       cleanup_old_rate_limits: { Args: never; Returns: number }
       cleanup_old_security_logs: { Args: never; Returns: number }
       cleanup_unverified_accounts: { Args: never; Returns: number }
-      clear_login_attempts: {
-        Args: { p_identifier: string }
-        Returns: undefined
-      }
+      clear_login_attempts:
+        | { Args: { p_user_id: string }; Returns: undefined }
+        | { Args: { p_identifier: string }; Returns: undefined }
       decrypt_pii: { Args: { secret_id: string }; Returns: string }
       decrypt_totp_secret: { Args: { secret_id: string }; Returns: string }
       delete_totp_vault_secret: {
@@ -2194,7 +2243,9 @@ export type Database = {
         Returns: undefined
       }
       encrypt_pii: { Args: { data: string }; Returns: string }
-      encrypt_totp_secret: { Args: { secret: string }; Returns: string }
+      encrypt_totp_secret:
+        | { Args: { secret: string; user_id: string }; Returns: string }
+        | { Args: { secret: string }; Returns: string }
       evaluate_transaction_rules: {
         Args: { p_transaction_data: Json; p_user_id: string }
         Returns: Json
@@ -2242,11 +2293,12 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
-      is_account_locked: {
-        Args: { p_identifier: string }
-        Returns: Record<string, unknown>
-      }
-      mark_token_used: { Args: { p_token: string }; Returns: undefined }
+      is_account_locked:
+        | { Args: { p_user_id: string }; Returns: boolean }
+        | { Args: { p_identifier: string }; Returns: Record<string, unknown> }
+      mark_token_used:
+        | { Args: { p_token: string }; Returns: undefined }
+        | { Args: { p_token_id: string }; Returns: undefined }
       migrate_existing_pii_to_encrypted: {
         Args: never
         Returns: {
@@ -2268,9 +2320,8 @@ export type Database = {
       validate_reset_token: {
         Args: { p_token: string }
         Returns: {
-          error_message: string
-          expires_at: string
           is_valid: boolean
+          token_id: string
           user_id: string
         }[]
       }

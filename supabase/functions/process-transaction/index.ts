@@ -22,8 +22,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const correlationId = req.headers.get('x-request-id') || `req-${Date.now()}`;
-  console.log(`[${correlationId}] Processing transaction request`);
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
+  const correlationId = req.headers.get('x-correlation-id') || requestId;
+  console.log(`💳 [${requestId}] Processing transaction request`);
 
   try {
     const supabase = createClient(

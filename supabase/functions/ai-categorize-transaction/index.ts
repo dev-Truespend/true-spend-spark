@@ -53,8 +53,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const correlationId = req.headers.get('x-request-id') || `req-${Date.now()}`;
-  console.log(`[${correlationId}] AI categorization request`);
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
+  const correlationId = req.headers.get('x-correlation-id') || requestId;
+  console.log(`🤖 [${requestId}] AI categorization request`);
 
   try {
     if (!LOVABLE_API_KEY) {
