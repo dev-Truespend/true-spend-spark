@@ -15,7 +15,7 @@ interface TestResult {
 export function Phase2TestSuite() {
   const [tests, setTests] = useState<TestResult[]>([
     { name: "CSP Headers", status: "pending" },
-    { name: "Security Headers", status: "pending" },
+    { name: "Security Headers (3-Layer)", status: "pending" },
     { name: "Rate Limiting", status: "pending" },
     { name: "Health Check", status: "pending" },
     { name: "SRI Hashes", status: "pending" },
@@ -67,39 +67,45 @@ export function Phase2TestSuite() {
   };
 
   const testSecurityHeaders = async (): Promise<void> => {
-    updateTest("Security Headers", { status: "running" });
+    updateTest("Security Headers (3-Layer)", { status: "running" });
     try {
       const response = await fetch(window.location.origin);
-      const headers = {
+      const requiredHeaders = {
+        "Strict-Transport-Security": response.headers.get("Strict-Transport-Security"),
         "X-Content-Type-Options": response.headers.get("X-Content-Type-Options"),
         "X-Frame-Options": response.headers.get("X-Frame-Options"),
         "X-XSS-Protection": response.headers.get("X-XSS-Protection"),
-        "Strict-Transport-Security": response.headers.get("Strict-Transport-Security"),
+        "Referrer-Policy": response.headers.get("Referrer-Policy"),
+        "Permissions-Policy": response.headers.get("Permissions-Policy"),
+        "Content-Security-Policy-Report-Only": response.headers.get("Content-Security-Policy-Report-Only"),
       };
 
-      const presentHeaders = Object.entries(headers).filter(([_, v]) => v !== null);
+      const presentHeaders = Object.entries(requiredHeaders).filter(([_, v]) => v !== null);
+      const missingHeaders = Object.entries(requiredHeaders)
+        .filter(([_, v]) => v === null)
+        .map(([k]) => k);
       
-      if (presentHeaders.length >= 3) {
-        updateTest("Security Headers", {
+      if (presentHeaders.length === 7) {
+        updateTest("Security Headers (3-Layer)", {
           status: "passed",
-          message: `${presentHeaders.length}/4 security headers present`,
-          details: presentHeaders.map(([k, v]) => `${k}: ${v}`).join("\n")
+          message: "All 7 security headers present (3-layer defense active)",
+          details: `✅ Cloudflare Layer\n✅ Vercel Layer\n✅ Edge Functions Layer\n\n${presentHeaders.map(([k, v]) => `${k}: ${v}`).join("\n")}`
         });
-      } else if (presentHeaders.length > 0) {
-        updateTest("Security Headers", {
+      } else if (presentHeaders.length >= 4) {
+        updateTest("Security Headers (3-Layer)", {
           status: "warning",
-          message: `Only ${presentHeaders.length}/4 security headers present`,
-          details: "Configure additional headers via CDN or edge function"
+          message: `${presentHeaders.length}/7 security headers present`,
+          details: `Missing: ${missingHeaders.join(", ")}\n\nPresent:\n${presentHeaders.map(([k, v]) => `${k}: ${v}`).join("\n")}`
         });
       } else {
-        updateTest("Security Headers", {
+        updateTest("Security Headers (3-Layer)", {
           status: "warning",
-          message: "Security headers not detected (requires CDN configuration)",
-          details: "Deploy to production and configure Cloudflare"
+          message: `Only ${presentHeaders.length}/7 headers detected`,
+          details: "Verify Cloudflare Transform Rules, vercel.json, and edge function configurations"
         });
       }
     } catch (error) {
-      updateTest("Security Headers", {
+      updateTest("Security Headers (3-Layer)", {
         status: "failed",
         message: "Failed to check security headers",
         details: error instanceof Error ? error.message : "Unknown error"

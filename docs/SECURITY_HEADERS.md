@@ -11,6 +11,33 @@ This document explains the comprehensive security headers implementation across 
 
 ## Architecture Layers
 
+Security headers are implemented across three defensive layers for maximum protection:
+
+### Layer 1: Cloudflare Transform Rules (Primary - Edge Defense)
+
+Applied at the Cloudflare edge before requests reach Vercel or any application code. These headers protect all traffic at the outermost layer.
+
+**Configuration Location:**  
+Cloudflare Dashboard → Rules → Transform Rules → Modify Response Header
+
+### Layer 2: Vercel Headers (Secondary - Platform Fallback)
+
+Applied at the Vercel platform level. Provides defense-in-depth if Cloudflare headers fail or for direct Vercel deployments.
+
+**Configuration Location:**  
+`vercel.json` → `headers` array
+
+### Layer 3: Edge Functions (Tertiary - API Defense)
+
+Applied programmatically in Supabase Edge Functions. Ensures backend API responses have security headers regardless of frontend routing.
+
+**Configuration Location:**  
+`supabase/functions/*/index.ts` → Response headers
+
+---
+
+## Security Headers Configuration
+
 ### 1. Cloudflare Transform Rules (Primary Implementation)
 
 Applied at the Cloudflare edge before requests reach Vercel or any application code. These headers protect all traffic at the outermost layer.
@@ -89,28 +116,79 @@ Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsa
 - Cloudflare Dashboard → Caching → Configuration → Purge Everything
 - Allow 1-2 minutes for global propagation
 
-### 2. Supabase Edge Function (`supabase/functions/security-headers`)
+### 2. Vercel Headers (Platform Fallback)
+
+Configured in `vercel.json` as a secondary defense layer. These headers are applied at the Vercel edge and provide protection if:
+- Cloudflare headers fail to apply
+- Direct Vercel deployments (bypassing Cloudflare)
+- Development/preview deployments
+
+**Configuration Location:**  
+`vercel.json` → `headers` array
+
+**Configured Headers:**
+- All 7 security headers from Cloudflare layer
+- Applied to `"/(.*)"` route (all requests)
+- Non-conflicting with Cloudflare (Cloudflare takes precedence)
+
+**Example Configuration:**
+```json
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains; preload"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 3. Supabase Edge Function Headers (API Defense)
 
 Provides security headers programmatically for backend API responses. Used by edge functions that need to add security headers to their responses.
 
 **Use Cases:**
-- API Gateway responses
-- Edge function responses
-- Dynamic content with security requirements
+- API Gateway responses (`api-gateway/index.ts`)
+- Health check responses (`health-check/index.ts`)
+- BFF Dashboard responses (`bff-dashboard/index.ts`)
+- All edge functions requiring security headers
 
 **Integration:**
 ```typescript
-import { securityHeaders } from '../security-headers/index.ts';
+// In your edge function
+const securityHeaders = {
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'geolocation=(self), camera=(self), microphone=(self), payment=(self)',
+};
 
 return new Response(JSON.stringify(data), {
   headers: {
-    'Content-Type': 'application/json',
+    ...corsHeaders,
     ...securityHeaders,
+    'Content-Type': 'application/json',
   },
 });
 ```
 
-### 3. CSP Violation Reporting (`src/lib/security/csp.ts`)
+**Currently Applied To:**
+- ✅ `api-gateway` - All API gateway responses
+- ✅ `health-check` - Health check endpoint responses
+- ✅ `bff-dashboard` - Dashboard BFF responses
+
+### 4. CSP Violation Reporting (`src/lib/security/csp.ts`)
 
 Client-side monitoring for Content Security Policy violations.
 
