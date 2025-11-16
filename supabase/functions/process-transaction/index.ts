@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-request-id',
 };
 
 interface TransactionInput {
@@ -14,12 +14,16 @@ interface TransactionInput {
   location_lat?: number;
   location_lng?: number;
   timestamp?: string;
+  idempotency_key?: string;
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const correlationId = req.headers.get('x-request-id') || `req-${Date.now()}`;
+  console.log(`[${correlationId}] Processing transaction request`);
 
   try {
     const supabase = createClient(
@@ -32,7 +36,15 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      console.error(`[${correlationId}] Auth error:`, authError);
+      return new Response(JSON.stringify({ 
+        ok: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Unauthorized',
+          correlationId,
+        }
+      }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -42,9 +54,50 @@ serve(async (req) => {
 
     // Validate input
     if (!input.amount || input.amount <= 0) {
-      return new Response(JSON.stringify({ error: 'Invalid amount' }), {
+      return new Response(JSON.stringify({ 
+        ok: false,
+        error: {
+          code: 'INVALID_AMOUNT',
+          message: 'Invalid amount',
+          correlationId,
+        }
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check idempotency
+    if (input.idempotency_key) {
+      console.log(`[${correlationId}] Checking idempotency key: ${input.idempotency_key}`);
+      
+      const { data: existingEvent } = await supabase
+        .from('transaction_events_log')
+        .select('response_payload')
+        .eq('idempotency_key', input.idempotency_key)
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .single();
+
+      if (existingEvent && existingEvent.response_payload) {
+        console.log(`[${correlationId}] Returning cached response for idempotency key`);
+        return new Response(JSON.stringify(existingEvent.response_payload), {
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-Idempotent-Replay': 'true',
+          },
+        });
+      }
+
+      // Log event start
+      await supabase.from('transaction_events_log').insert({
+        idempotency_key: input.idempotency_key,
+        user_id: user.id,
+        event_type: 'process_transaction',
+        request_payload: input,
+        status: 'processing',
+        correlation_id: correlationId,
       });
     }
 
@@ -118,7 +171,12 @@ serve(async (req) => {
       .select()
       .single();
 
-    if (txError) throw txError;
+    if (txError) {
+      console.error(`[${correlationId}] Transaction insert error:`, txError);
+      throw txError;
+    }
+
+    console.log(`[${correlationId}] Transaction created: ${transaction.id}`);
 
     // Step 4: Budget threshold trigger will auto-fire via database trigger
     // No need to manually check budgets here
@@ -142,6 +200,7 @@ serve(async (req) => {
     let rulesApplied = 0;
     if (!rulesError && rulesResult && Array.isArray(rulesResult)) {
       rulesApplied = rulesResult.length;
+      console.log(`[${correlationId}] Applied ${rulesApplied} rules`);
       
       // Apply rule actions
       for (const appliedRule of rulesResult) {
@@ -159,21 +218,47 @@ serve(async (req) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({
+    const response = {
+      ok: true,
+      data: {
         transaction,
         geofence_matched: !!geofence_id,
         rules_applied: rulesApplied,
-      }),
+      },
+    };
+
+    // Update idempotency log
+    if (input.idempotency_key) {
+      await supabase
+        .from('transaction_events_log')
+        .update({
+          response_payload: response,
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+        })
+        .eq('idempotency_key', input.idempotency_key)
+        .eq('user_id', user.id);
+    }
+
+    console.log(`[${correlationId}] Transaction processing complete`);
+    return new Response(
+      JSON.stringify(response),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   } catch (error) {
-    console.error('Transaction processing error:', error);
+    console.error(`[${correlationId}] Transaction processing error:`, error);
     
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ 
+        ok: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          correlationId,
+        }
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

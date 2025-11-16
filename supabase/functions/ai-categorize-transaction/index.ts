@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-request-id',
 };
 
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -15,10 +15,46 @@ interface CategorizationRequest {
   location_type?: string;
 }
 
+// Deterministic fallback categorizer
+function fallbackCategorize(description: string): { category: string; confidence: number } {
+  const desc = description.toLowerCase();
+  
+  // Simple rule-based categorization
+  if (desc.includes('restaurant') || desc.includes('cafe') || desc.includes('food')) {
+    return { category: 'Dining', confidence: 0.7 };
+  }
+  if (desc.includes('grocery') || desc.includes('market') || desc.includes('supermarket')) {
+    return { category: 'Groceries', confidence: 0.7 };
+  }
+  if (desc.includes('gas') || desc.includes('fuel') || desc.includes('parking') || desc.includes('uber') || desc.includes('lyft')) {
+    return { category: 'Transportation', confidence: 0.7 };
+  }
+  if (desc.includes('store') || desc.includes('shop') || desc.includes('retail')) {
+    return { category: 'Shopping', confidence: 0.6 };
+  }
+  if (desc.includes('movie') || desc.includes('theater') || desc.includes('game') || desc.includes('entertainment')) {
+    return { category: 'Entertainment', confidence: 0.7 };
+  }
+  if (desc.includes('pharmacy') || desc.includes('doctor') || desc.includes('hospital') || desc.includes('gym')) {
+    return { category: 'Health', confidence: 0.7 };
+  }
+  if (desc.includes('electric') || desc.includes('water') || desc.includes('internet') || desc.includes('phone') || desc.includes('utility')) {
+    return { category: 'Utilities', confidence: 0.7 };
+  }
+  if (desc.includes('hotel') || desc.includes('flight') || desc.includes('travel') || desc.includes('airline')) {
+    return { category: 'Travel', confidence: 0.7 };
+  }
+  
+  return { category: 'Other', confidence: 0.5 };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const correlationId = req.headers.get('x-request-id') || `req-${Date.now()}`;
+  console.log(`[${correlationId}] AI categorization request`);
 
   try {
     if (!LOVABLE_API_KEY) {
@@ -38,7 +74,15 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      console.error(`[${correlationId}] Auth error:`, authError);
+      return new Response(JSON.stringify({ 
+        ok: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Unauthorized',
+          correlationId,
+        }
+      }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -47,21 +91,44 @@ serve(async (req) => {
     const input: CategorizationRequest = await req.json();
 
     if (!input.description) {
-      return new Response(JSON.stringify({ error: 'Description is required' }), {
+      return new Response(JSON.stringify({ 
+        ok: false,
+        error: {
+          code: 'MISSING_DESCRIPTION',
+          message: 'Description is required',
+          correlationId,
+        }
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Prepare context for AI
-    const context = [
-      `Transaction description: ${input.description}`,
-      input.merchant_name ? `Merchant: ${input.merchant_name}` : '',
-      input.amount ? `Amount: $${input.amount}` : '',
-      input.location_type ? `Location type: ${input.location_type}` : '',
-    ].filter(Boolean).join('\n');
+    // Check feature flag for AI categorization
+    const { data: featureFlag } = await supabase
+      .from('feature_flags')
+      .select('enabled, config')
+      .eq('flag_name', 'ai_categorization_enabled')
+      .single();
 
-    const systemPrompt = `You are a transaction categorization AI. Analyze transaction details and return ONLY a JSON object with this exact structure:
+    const aiEnabled = featureFlag?.enabled !== false;
+    console.log(`[${correlationId}] AI categorization enabled: ${aiEnabled}`);
+
+    let result;
+    let usedFallback = false;
+
+    if (aiEnabled && LOVABLE_API_KEY) {
+      // Try AI categorization
+      try {
+        // Prepare context for AI
+        const context = [
+          `Transaction description: ${input.description}`,
+          input.merchant_name ? `Merchant: ${input.merchant_name}` : '',
+          input.amount ? `Amount: $${input.amount}` : '',
+          input.location_type ? `Location type: ${input.location_type}` : '',
+        ].filter(Boolean).join('\n');
+
+        const systemPrompt = `You are a transaction categorization AI. Analyze transaction details and return ONLY a JSON object with this exact structure:
 {
   "category": "one of: Dining, Groceries, Transportation, Shopping, Entertainment, Health, Utilities, Travel, Other",
   "confidence": 0.0 to 1.0,
@@ -81,93 +148,96 @@ Rules:
 
 Return ONLY the JSON, no additional text.`;
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite', // Fast & cheap for classification
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: context },
-        ],
-        temperature: 0.3, // Low temperature for consistent categorization
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-flash-lite',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: context },
+            ],
+            temperature: 0.3,
+          }),
         });
+
+        if (!aiResponse.ok) {
+          if (aiResponse.status === 429) {
+            console.warn(`[${correlationId}] Rate limit, using fallback`);
+            throw new Error('RATE_LIMIT');
+          }
+          if (aiResponse.status === 402) {
+            console.warn(`[${correlationId}] Credits depleted, using fallback`);
+            throw new Error('CREDITS_DEPLETED');
+          }
+          throw new Error(`AI API error: ${aiResponse.status}`);
+        }
+
+        const aiData = await aiResponse.json();
+        const content = aiData.choices?.[0]?.message?.content;
+        if (!content) throw new Error('No content in AI response');
+
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('Could not extract JSON');
+
+        result = JSON.parse(jsonMatch[0]);
+        console.log(`[${correlationId}] AI success: ${result.category}`);
+
+      } catch (aiError) {
+        console.error(`[${correlationId}] AI error, using fallback:`, aiError);
+        const fallback = fallbackCategorize(input.description);
+        result = {
+          category: fallback.category,
+          confidence: fallback.confidence,
+          merchant_normalized: input.description,
+        };
+        usedFallback = true;
       }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: 'AI credits depleted. Please add credits to continue.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
-      const errorText = await aiResponse.text();
-      console.error('AI API error:', aiResponse.status, errorText);
-      throw new Error('AI categorization failed');
+    } else {
+      console.log(`[${correlationId}] Using fallback (AI disabled)`);
+      const fallback = fallbackCategorize(input.description);
+      result = {
+        category: fallback.category,
+        confidence: fallback.confidence,
+        merchant_normalized: input.description,
+      };
+      usedFallback = true;
     }
 
-    const aiData = await aiResponse.json();
-    const content = aiData.choices?.[0]?.message?.content;
-
-    if (!content) {
-      throw new Error('No response from AI');
-    }
-
-    // Parse JSON from AI response
-    let result;
-    try {
-      // Remove markdown code blocks if present
-      const jsonContent = content.replace(/```json\n?|\n?```/g, '').trim();
-      result = JSON.parse(jsonContent);
-    } catch (e) {
-      console.error('Failed to parse AI response:', content);
-      throw new Error('Invalid AI response format');
-    }
-
-    // Validate required fields
-    if (!result.category || typeof result.confidence !== 'number') {
-      throw new Error('AI response missing required fields');
-    }
-
-    // Log categorization for future improvements
     await supabase.from('api_request_log').insert({
       user_id: user.id,
-      endpoint: '/ai-categorize-transaction',
+      endpoint: 'ai-categorize-transaction',
       method: 'POST',
       status_code: 200,
-      payload_size_bytes: JSON.stringify(input).length,
+      cache_hit: usedFallback,
     });
 
-    return new Response(
-      JSON.stringify({
-        category: result.category,
-        confidence: result.confidence,
-        merchant_normalized: result.merchant_normalized || input.merchant_name,
+    return new Response(JSON.stringify({
+      ok: true,
+      data: {
+        ...result,
         original_description: input.description,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+        used_fallback: usedFallback,
+      },
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   } catch (error) {
-    console.error('AI categorization error:', error);
-    
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    console.error(`[${correlationId}] Error:`, error);
+    return new Response(JSON.stringify({
+      ok: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        correlationId,
+      },
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
