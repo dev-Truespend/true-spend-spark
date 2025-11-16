@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { MFASetup } from "@/components/auth/MFASetup";
-import { Shield, User, Bell, Settings as SettingsIcon } from "lucide-react";
+import { SessionsAndDevices } from "@/components/auth/SessionsAndDevices";
+import { Shield, User, Monitor } from "lucide-react";
 import { GlobalNav } from "@/components/navigation/GlobalNav";
 
 export default function Settings() {
@@ -24,7 +25,7 @@ export default function Settings() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -32,6 +33,10 @@ export default function Settings() {
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Security
+            </TabsTrigger>
+            <TabsTrigger value="sessions" className="flex items-center gap-2">
+              <Monitor className="h-4 w-4" />
+              Sessions
             </TabsTrigger>
           </TabsList>
 
@@ -103,7 +108,9 @@ export default function Settings() {
             <MFASetup />
           </TabsContent>
 
-
+          <TabsContent value="sessions" className="space-y-6">
+            <SessionsAndDevices />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
