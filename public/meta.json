@@ -1,9 +1,19 @@
 {
-  "version": "5.5.5",
-  "buildId": "20251115T203500",
-  "commit": "google-oauth-production-ready-v5.5.5",
-  "timestamp": 1731700500000,
+  "version": "5.6.0",
+  "buildId": "20251116T203900",
+  "commit": "3-layer-security-headers-defense-in-depth",
+  "timestamp": 1731787140000,
   "changelog": {
+    "5.6.0": [
+      "SECURITY: Implemented 3-layer defense-in-depth security headers architecture",
+      "SECURITY: Added comprehensive security headers to Vercel platform layer (fallback)",
+      "SECURITY: Enhanced edge functions with inline security headers (api-gateway, health-check, bff-dashboard)",
+      "SECURITY: All 7 critical security headers now applied across Cloudflare, Vercel, and Edge Functions",
+      "DOCUMENTATION: Updated SECURITY_HEADERS.md to reflect 3-layer architecture",
+      "DOCUMENTATION: Added security headers verification guide to CLOUDFLARE_COMPLETE_SETUP.md",
+      "TESTING: Enhanced Phase2TestSuite with comprehensive 3-layer security headers validation",
+      "PRODUCTION: 100% defense-in-depth security posture - headers applied at edge, platform, and API layers"
+    ],
     "5.5.5": [
       "PRODUCTION READY: Google OAuth flow fully optimized with zero-flicker redirects",
       "UX ENHANCEMENT: Added 'Completing sign-in...' loading screen during OAuth callback",

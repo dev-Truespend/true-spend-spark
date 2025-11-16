@@ -7,6 +7,16 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 };
 
+// Security headers configuration
+const securityHeaders = {
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'geolocation=(self), camera=(self), microphone=(self), payment=(self)',
+};
+
 // Sanitize input to prevent XSS
 function sanitizeInput(input: any): any {
   if (typeof input === 'string') {
@@ -29,7 +39,7 @@ function sanitizeInput(input: any): any {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: { ...corsHeaders, ...securityHeaders } });
   }
 
   try {
@@ -64,6 +74,7 @@ serve(async (req) => {
           status: 429,
           headers: {
             ...corsHeaders,
+            ...securityHeaders,
             'Content-Type': 'application/json',
             'Retry-After': rateLimitData.retryAfter?.toString() || '60',
           },
@@ -82,7 +93,7 @@ serve(async (req) => {
           JSON.stringify({ error: 'Invalid JSON body' }),
           {
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
           }
         );
       }
@@ -111,6 +122,7 @@ serve(async (req) => {
         status: 200,
         headers: {
           ...corsHeaders,
+          ...securityHeaders,
           'Content-Type': 'application/json',
           'X-API-Version': apiVersion,
         },
@@ -126,7 +138,7 @@ serve(async (req) => {
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
       }
     );
   }

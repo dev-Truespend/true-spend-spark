@@ -627,6 +627,34 @@ for i in {1..110}; do curl -s https://truespend.org/api/health > /dev/null; done
 # After 100, should return 429 Too Many Requests or challenge page
 ```
 
+### ✅ Security Headers
+
+Verify all 7 security headers are present:
+
+```bash
+curl -sS https://truespend.org -o /dev/null -D - | egrep -i "strict-transport|x-frame|x-content-type|x-xss|referrer|permissions|content-security"
+```
+
+**Expected Output:**
+```
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-frame-options: DENY
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+permissions-policy: camera=(), microphone=(), geolocation=(self), payment=(self)
+content-security-policy-report-only: default-src 'self'; ...
+```
+
+**Verify 3-Layer Defense:**
+1. **Cloudflare Layer**: Headers present in curl output above
+2. **Vercel Layer**: Check `vercel.json` → `headers` array contains all 7 headers
+3. **Edge Functions Layer**: Check edge function responses include security headers
+
+**Tools:**
+- [SecurityHeaders.com](https://securityheaders.com/?q=https://truespend.org) - Should show A or A+ grade
+- Browser DevTools → Network → Select any request → Headers tab
+
 ### ✅ Performance
 
 1. Open browser DevTools → Network tab
