@@ -97,7 +97,7 @@ gantt
 
 | Phase | Name | Weeks | Duration | Story Points | Team Size | Risk | Dependencies |
 |-------|------|-------|----------|--------------|-----------|------|--------------|
-| **1** | Foundation & Client Layer | 1-4 | 4 weeks | 34 SP | 6 FTE | 🟡 Medium | None |
+| **1** | Foundation & Client Layer (NO PWA) | 1-4 | 4 weeks | 34 SP | 6 FTE | 🟡 Medium | None |
 | **2** | Security & Ingress | 5-7 | 3 weeks | 40 SP | 6 FTE | 🔴 High | Phase 1 |
 | **3 📍** | Geofencing Foundation | 8-10 | 3 weeks | 38 SP | 5 FTE | 🟡 Medium | Phase 1, 2 |
 | **4** | Auth & Supply Chain | 11-14 | 4 weeks | 48 SP | 6 FTE | 🔴 High | Phase 1, 2, 3 |
