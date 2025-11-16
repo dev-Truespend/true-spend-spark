@@ -1,3 +1,15 @@
+/**
+ * DORMANT CODE - Not currently used in production
+ * 
+ * This IndexedDB schema was created for Phase 1 PWA implementation (now deprecated).
+ * Kept for potential future offline-first features requiring manual sync queue management.
+ * 
+ * Current offline strategy: React Query with IndexedDB persistence via idb-keyval
+ * See: src/lib/queryPersister.ts for active offline caching
+ * 
+ * Last active: Phase 1 PWA implementation (removed)
+ */
+
 // IndexedDB wrapper for offline-first architecture - Phase 1
 import { openDB, IDBPDatabase } from 'idb';
 

@@ -5,8 +5,10 @@ const config: CapacitorConfig = {
   appName: 'TrueSpend',
   webDir: 'dist',
   server: {
-    url: 'https://d4487a59-0405-4f34-88da-4c7979cc73d3.lovableproject.com?forceHideBadge=true',
-    cleartext: true
+    // Production domain - use dev URL only in development
+    url: 'https://truespend.org',
+    // Allow cleartext only in development, enforce HTTPS in production
+    cleartext: false
   },
   plugins: {
     PushNotifications: {
