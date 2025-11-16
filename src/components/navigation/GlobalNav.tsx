@@ -40,17 +40,14 @@ export function GlobalNav() {
   const handleForceRefresh = async () => {
     toast.loading('Forcing cache clear and reload...');
     try {
-      // Unregister all service workers
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map(r => r.unregister()));
+      // Clear all browser caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+        console.log('[Force Refresh] 💥 Cleared all caches');
+      }
       
-      // Clear all caches
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map(name => caches.delete(name)));
-      
-      console.log('[Force Refresh] 💥 Cleared all caches and SWs');
-      
-      // Reload
+      // Hard reload
       setTimeout(() => window.location.reload(), 500);
     } catch (error) {
       console.error('[Force Refresh] Failed:', error);

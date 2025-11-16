@@ -81,6 +81,28 @@ console.log('FOURSQUARE_API_KEY:', !!Deno.env.get('FOURSQUARE_API_KEY'));
 console.log('FIREBASE_PROJECT_ID:', !!Deno.env.get('FIREBASE_PROJECT_ID'));
 ```
 
+### Maintenance Mode
+
+**Emergency Offline Toggle**
+
+To take the site offline for maintenance:
+
+1. Set `VITE_MAINTENANCE_MODE="true"` in `.env`
+2. Publish the update
+3. Site will display a "Temporarily Offline" message to all visitors
+4. Admins are not bypassed - maintenance mode blocks all access
+
+To bring the site back online:
+
+1. Set `VITE_MAINTENANCE_MODE="false"` in `.env`
+2. Publish the update
+3. Site returns to normal operation
+
+**Use this when:**
+- Performing critical database migrations
+- Handling security incidents
+- When platform unpublish is unavailable
+
 ---
 
 ## 🌐 2. Cloudflare Configuration (Manual Setup - CRITICAL)

@@ -54,6 +54,21 @@ function NotificationTriggersWrapper() {
 }
 
 function App() {
+  // Maintenance mode gate
+  if (import.meta.env.VITE_MAINTENANCE_MODE === 'true') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center space-y-4 max-w-md px-6">
+          <h1 className="text-3xl font-bold text-foreground">Temporarily Offline</h1>
+          <p className="text-muted-foreground">
+            We're performing maintenance to improve your experience. 
+            Please check back in a few minutes.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <React.Fragment>
       <QueryClientProvider client={queryClient}>
