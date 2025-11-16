@@ -70,12 +70,14 @@ class BFFClient {
     body?: any
   ): Promise<T> {
     const correlationId = generateCorrelationId();
+    const requestId = crypto.randomUUID();
     
     const { data, error } = await supabase.functions.invoke(functionName, {
       body,
       method,
       headers: {
-        'x-request-id': correlationId, // Add correlation ID for tracing
+        'x-request-id': requestId,
+        'x-correlation-id': correlationId,
       },
     });
 

@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.80.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-request-id',
 };
 
 interface SearchParams {
@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
   const startTime = Date.now();
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -28,7 +29,7 @@ Deno.serve(async (req) => {
   try {
     const { lat, lng, radius = 100, categories, query, limit = 10 }: SearchParams = await req.json();
 
-    console.log('🔍 Foursquare Places Search:', { lat, lng, radius, categories, query, limit });
+    console.log(`🔍 [${requestId}] Foursquare Places Search:`, { lat, lng, radius, categories, query, limit });
 
     // Build cache key
     const cacheKey = `search_${lat}_${lng}_${radius}_${categories || 'all'}_${query || 'none'}`;

@@ -1,10 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-request-id',
 };
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
@@ -13,6 +13,9 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
+  console.log(`📧 [${requestId}] Verification email request`);
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -195,36 +198,45 @@ serve(async (req) => {
       </html>
     `;
 
-    // Use environment variable for "from" address to allow easy switching
-    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'TrueSpend <noreply@truespend.org>';
-    
-    const { error: emailError } = await resend.emails.send({
-      from: fromEmail,
+    // Send email via Resend
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: Deno.env.get('RESEND_FROM_EMAIL') || 'TrueSpend <noreply@truespend.org>',
       to: [profile.email],
       subject: 'Verify your TrueSpend account',
       html: emailHtml,
     });
 
     if (emailError) {
-      console.error('Resend error:', emailError);
+      console.error(`❌ [${requestId}] Resend error:`, emailError);
       throw new Error('Failed to send verification email');
     }
 
-    console.log(`Verification email sent to ${profile.email}`);
+    console.log(`✅ [${requestId}] Verification email sent to ${profile.email}`);
+
+    // Log email delivery
+    await supabase.from('email_delivery_logs').insert({
+      user_id: user.id,
+      email_type: 'verification',
+      resend_message_id: emailData?.id,
+      recipient_email: profile.email,
+      status: 'sent',
+      metadata: { request_id: requestId },
+    });
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         expiresAt: expiresAt.toISOString(),
-        message: 'Verification email sent successfully'
+        message: 'Verification email sent successfully',
+        request_id: requestId
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error: any) {
-    console.error('Error:', error);
+    console.error(`❌ [${requestId}] Error:`, error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: error.message || 'Internal server error', request_id: requestId }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

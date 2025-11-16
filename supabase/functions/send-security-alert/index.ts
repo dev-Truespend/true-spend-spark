@@ -6,7 +6,7 @@ import { SecurityAlertEmail } from '../_shared/email-templates/security-alert.ts
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-request-id',
 };
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
@@ -15,6 +15,9 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
+  console.log(`🚨 [${requestId}] Security alert request`);
 
   try {
     const supabase = createClient(
@@ -56,7 +59,7 @@ Deno.serve(async (req) => {
     );
 
     // Send email
-  const { error: emailError } = await resend.emails.send({
+  const { data: emailData, error: emailError } = await resend.emails.send({
     from: Deno.env.get('RESEND_FROM_EMAIL') || 'TrueSpend <noreply@truespend.org>',
     to: [email],
     subject: alertType === 'password_changed' 
@@ -68,27 +71,45 @@ Deno.serve(async (req) => {
   });
 
   if (emailError) {
-    console.error('❌ Security alert email failed:', {
+    console.error(`❌ [${requestId}] Security alert email failed:`, {
       error: emailError,
       to: email
     });
     return new Response(
-      JSON.stringify({ success: false, error: 'Failed to send email' }),
+      JSON.stringify({ success: false, error: 'Failed to send email', request_id: requestId }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } else {
-    console.log('✅ Security alert sent to:', email);
   }
 
+    console.log(`✅ [${requestId}] Security alert sent to:`, email);
+
+    // Log email delivery
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
+
+    if (userProfile) {
+      await supabase.from('email_delivery_logs').insert({
+        user_id: userProfile.id,
+        email_type: 'security_alert',
+        resend_message_id: emailData?.id,
+        recipient_email: email,
+        status: 'sent',
+        metadata: { request_id: requestId, alert_type: alertType },
+      });
+    }
+
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, request_id: requestId }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Send security alert error:', error);
+    console.error(`❌ [${requestId}] Send security alert error:`, error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', request_id: requestId }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
