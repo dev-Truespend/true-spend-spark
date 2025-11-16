@@ -13,7 +13,7 @@ interface Layer {
 }
 
 const layers: Layer[] = [
-  { id: "1", name: "Client Layer", color: "#2563EB", purpose: "User-facing interface", components: ["React SPA", "PWA", "State Management"], group: "Client & Ingress" },
+  { id: "1", name: "Client Layer", color: "#2563EB", purpose: "User-facing interface", components: ["React SPA", "State Management", "React Query Cache"], group: "Client & Ingress" },
   { id: "2", name: "Edge & Ingress", color: "#f97316", purpose: "Request routing and filtering", components: ["CDN", "WAF", "Edge Functions", "DDoS Protection"], group: "Client & Ingress" },
   { id: "3", name: "API Gateway", color: "#7c3aed", purpose: "Centralized API management", components: ["Request Routing", "Rate Limiting", "API Versioning"], group: "Client & Ingress" },
   { id: "4", name: "Modern Safety", color: "#16a34a", purpose: "Client-side security enforcement", components: ["CSP", "SRI", "CORS", "Security Headers"], group: "Security & Auth" },

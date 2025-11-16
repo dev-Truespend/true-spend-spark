@@ -2,7 +2,9 @@ import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createSyncPersister } from '@/lib/queryPersister';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -39,13 +41,15 @@ import { useNotificationTriggers } from "./hooks/useNotificationTriggers";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      gcTime: 1000 * 60 * 5, // 5 minutes (reduced from 24 hours)
+      gcTime: 1000 * 60 * 60 * 24, // 24 hours for persistence
       staleTime: 1000 * 30, // 30 seconds (reduced from 5 minutes)
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
     },
   },
 });
+
+const persister = createSyncPersister();
 
 function NotificationTriggersWrapper() {
   // Initialize notification triggers for automatic push notifications
@@ -71,7 +75,7 @@ function App() {
 
   return (
     <React.Fragment>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
         <TooltipProvider>
           <BrowserRouter>
             <AuthProvider>
@@ -222,11 +226,11 @@ function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-  </React.Fragment>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </PersistQueryClientProvider>
+    </React.Fragment>
   );
 }
 

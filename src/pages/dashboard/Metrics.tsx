@@ -8,6 +8,7 @@ import { Activity, Database, Gauge, HardDrive, Zap } from 'lucide-react';
 
 export default function Metrics() {
   // Fetch Phase 1 performance metrics
+  // Note: PWA removed - using React Query IndexedDB persistence instead
   const { data: phase1Metrics } = useQuery({
     queryKey: ['phase1-metrics'],
     queryFn: async () => {
@@ -17,13 +18,12 @@ export default function Metrics() {
         .in('metric_name', [
           'database_query_time',
           'api_response_time',
-          'pwa_load_time',
           'storage_upload_time',
           'offline_sync_latency',
           'cache_hit_rate'
         ])
         .order('timestamp', { ascending: false })
-        .limit(6);
+        .limit(5);
 
       if (error) throw error;
       return data;
@@ -65,7 +65,6 @@ export default function Metrics() {
                       <div className="p-2 rounded-lg bg-primary/10">
                         {metric.metric_name.includes('database') && <Database className="h-5 w-5 text-primary" />}
                         {metric.metric_name.includes('api') && <Activity className="h-5 w-5 text-primary" />}
-                        {metric.metric_name.includes('pwa') && <Zap className="h-5 w-5 text-primary" />}
                         {metric.metric_name.includes('storage') && <HardDrive className="h-5 w-5 text-primary" />}
                         {metric.metric_name.includes('sync') && <Activity className="h-5 w-5 text-primary" />}
                         {metric.metric_name.includes('cache') && <Gauge className="h-5 w-5 text-primary" />}
