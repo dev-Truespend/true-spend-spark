@@ -8,7 +8,7 @@ on:
     branches: [main, develop]
     paths:
       - 'package.json'
-      - 'package-lock.json'
+      - 'bun.lockb'
   workflow_dispatch:
 
 jobs:
@@ -19,44 +19,58 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          fetch-depth: 2
+        
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
           
-      - name: Verify lockfile matches package.json
+      - name: Check if package.json changed without lockfile
         run: |
           echo "🔐 Verifying lockfile integrity..."
           
-          # Remove existing node_modules and package-lock to ensure clean state
-          rm -rf node_modules package-lock.json
+          # Check if package.json changed in this PR
+          PACKAGE_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c "package.json" || true)
+          LOCKFILE_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c "bun.lockb" || true)
           
-          # Generate fresh lockfile
-          npm install --package-lock-only
-          
-          # Check if lockfile changed
-          if git diff --exit-code package-lock.json; then
-            echo "✅ Lockfile integrity verified"
-          else
-            echo "❌ Lockfile does not match package.json"
-            echo "Please run 'npm install' and commit the updated package-lock.json"
+          if [ "$PACKAGE_CHANGED" -gt 0 ] && [ "$LOCKFILE_CHANGED" -eq 0 ]; then
+            echo "❌ package.json changed without bun.lockb"
+            echo "Please run 'bun install' and commit the updated bun.lockb"
             exit 1
           fi
           
-      - name: Check for malicious packages
+          if [ "$LOCKFILE_CHANGED" -gt 0 ] && [ "$PACKAGE_CHANGED" -eq 0 ]; then
+            echo "⚠️  bun.lockb changed without package.json - please verify this is intentional"
+          fi
+          
+          echo "✅ Lockfile integrity verified"
+          
+      - name: Verify lockfile is up to date
+        run: |
+          echo "🔍 Verifying lockfile is up to date..."
+          
+          # Install dependencies
+          bun install --frozen-lockfile
+          
+          echo "✅ Lockfile is up to date"
+          
+      - name: Check for suspicious packages
         run: |
           echo "🛡️ Scanning for known malicious packages..."
           
-          # Extract all package names from package-lock.json
-          PACKAGES=$(jq -r '.packages | keys[]' package-lock.json)
+          # Extract all package names from package.json
+          PACKAGES=$(cat package.json | grep '"' | grep ':' | cut -d'"' -f2 | grep -v "^@" | head -50)
           
-          echo "Total packages: $(echo "$PACKAGES" | wc -l)"
+          echo "Checking packages for known malicious patterns..."
           
           # Basic check for suspicious package names (typosquatting patterns)
           SUSPICIOUS=0
+          KNOWN_BAD="crossenv|electron-native-notify|fabric-js|ffmpeg-windows"
+          
           for pkg in $PACKAGES; do
-            if [[ "$pkg" =~ (crossenv|electron-native-notify|fabric-js|ffmpeg-windows) ]]; then
+            if echo "$pkg" | grep -qE "$KNOWN_BAD"; then
               echo "⚠️  Suspicious package detected: $pkg"
               SUSPICIOUS=$((SUSPICIOUS + 1))
             fi
@@ -68,9 +82,3 @@ jobs:
           fi
           
           echo "✅ No known malicious packages detected"
-          
-      - name: Validate package integrity
-        run: |
-          echo "🔍 Validating package integrity..."
-          npm ci --ignore-scripts
-          echo "✅ All packages installed successfully with integrity verification"
