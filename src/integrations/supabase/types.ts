@@ -388,6 +388,33 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          enabled: boolean
+          flag_name: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          enabled?: boolean
+          flag_name: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          enabled?: boolean
+          flag_name?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       foursquare_api_logs: {
         Row: {
           cache_hit: boolean | null
@@ -1914,6 +1941,45 @@ export type Database = {
           test_suite?: string | null
           test_type?: string
           timestamp?: string | null
+        }
+        Relationships: []
+      }
+      transaction_events_log: {
+        Row: {
+          completed_at: string | null
+          correlation_id: string | null
+          created_at: string | null
+          event_type: string
+          id: string
+          idempotency_key: string
+          request_payload: Json
+          response_payload: Json | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          correlation_id?: string | null
+          created_at?: string | null
+          event_type: string
+          id?: string
+          idempotency_key: string
+          request_payload: Json
+          response_payload?: Json | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          correlation_id?: string | null
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          idempotency_key?: string
+          request_payload?: Json
+          response_payload?: Json | null
+          status?: string
+          user_id?: string
         }
         Relationships: []
       }
