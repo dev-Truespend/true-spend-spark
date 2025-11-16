@@ -108,8 +108,8 @@ export function useProjectOverview() {
   const tasks = useTasks();
   const milestones = useMilestones();
 
-  const currentWeek = 7; // End of Phase 2 (awaiting Cloudflare configuration)
-  const totalWeeks = 51; // Blueprint v4.2: 51 weeks with 16 phases (including Phase 11: Native Mobile Apps)
+  const currentWeek = 14; // End of Phase 4 (Auth & Supply Chain complete)
+  const totalWeeks = 51; // Blueprint v4.2: 51 weeks with 16 sequential phases - 677 SP total
 
   const overallProgress = phases.data
     ? Math.round(

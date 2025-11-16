@@ -13,12 +13,13 @@
 This document outlines the complete phased implementation approach for TrueSpend v4.2's comprehensive 19-layer architecture + Layer 10B with native mobile geofencing, browser extension, Capacitor native apps, performance optimization, and ML intelligence. The implementation is structured across **16 phases spanning 51 calendar weeks**.
 
 **Total Duration:** 51 weeks (12.75 months)
-- **Phases 1-9:** Core platform (37 weeks, 429 SP) - Blueprint v4.1
-- **Phase 11:** Native Mobile Apps (3 weeks, 45 SP) - Capacitor iOS/Android
-- **Phases 15-18:** Optimization & ML (11 weeks, 158 SP) - v4.2 enhancements
+- **Phases 1-10:** Core platform (37 weeks, 429 SP) - Blueprint v4.1
+- **Phase 11:** Browser Extension (3 weeks, 44 SP) - Manifest V3
+- **Phase 12:** Native Mobile Apps (3 weeks, 45 SP) - Capacitor iOS/Android
+- **Phases 13-16:** Optimization & ML (11 weeks, 168 SP) - v4.2 enhancements
 
 **Team Size:** 6-8 engineers (Frontend: 3, Backend: 4, DevOps: 1, Security: 1, ML: 2)  
-**Total Story Points:** 632 SP (429 SP v4.1 + 45 SP native + 158 SP v4.2)  
+**Total Story Points:** 677 SP (429 SP v4.1 + 89 SP apps + 168 SP v4.2)  
 **Architecture:** 19 layers + Layer 10B (Deals & Cashback Gateway) + Browser extension (Layer 1B) + Capacitor Native Apps
 
 ---
@@ -36,59 +37,58 @@ gantt
     section Phase 2
     Security & Ingress                  :p2, after p1, 21d
     
-    section Phase 2.5 📍
-    Geofencing Foundation               :crit, p2_5, after p2, 21d
-    
-    section Phase 3
-    Auth & Supply Chain                 :p3, after p2_5, 28d
+    section Phase 3 📍
+    Geofencing Foundation               :crit, p3, after p2, 21d
     
     section Phase 4
-    Core Services (BFF, Logic, AI)      :crit, p4, after p3, 35d
-    
+    Auth & Supply Chain                 :p4, after p3, 28d
     section Phase 5
-    External Communication              :p5, after p4, 21d
-    
-    section Phase 5.5 🗺️
-    Location Intelligence               :crit, p5_5, after p5, 21d
+    Core Services (BFF, Logic, AI)      :crit, p5, after p4, 35d
     
     section Phase 6
-    Messaging & Events                  :p6, after p5_5, 21d
+    External Communication              :p6, after p5, 21d
     
-    section Phase 7
-    Data Planes & DR                    :p7, after p1, 28d
+    section Phase 7 🗺️
+    Location Intelligence               :crit, p7, after p6, 21d
     
     section Phase 8
-    Observability & Polish              :p8, after p6, 14d
+    Messaging & Events                  :p8, after p7, 21d
     
-    section Phase 9 🔌
-    Browser Extension MVP               :p9, after p8, 21d
+    section Phase 9
+    Data Planes & DR                    :p9, after p8, 28d
     
-    section Phase 11 📱
-    Native Mobile Apps (Capacitor)      :crit, p11, after p9, 21d
+    section Phase 10
+    Observability & Polish              :p10, after p9, 14d
     
-    section Phase 15 🚀
-    Performance Optimization            :p15, after p11, 21d
+    section Phase 11 🔌
+    Browser Extension MVP               :p11, after p10, 21d
     
-    section Phase 16 🤖
-    ML Infrastructure                   :p16, after p15, 21d
+    section Phase 12 📱
+    Native Mobile Apps (Capacitor)      :crit, p12, after p11, 21d
     
-    section Phase 17 💰
-    Advanced ML & Layer 10B             :p17, after p16, 21d
+    section Phase 13 🚀
+    Performance Optimization            :p13, after p12, 21d
     
-    section Phase 18 ✨
-    Cost Optimization & Polish          :p18, after p17, 14d
+    section Phase 14 🤖
+    ML Infrastructure                   :p14, after p13, 21d
+    
+    section Phase 15 💰
+    Advanced ML & Layer 10B             :p15, after p14, 21d
+    
+    section Phase 16 ✨
+    Cost Optimization & Polish          :p16, after p15, 14d
     
     section Milestones
     Phase 1 Complete                    :milestone, m1, after p1, 0d
-    Geofencing Operational 📍           :milestone, m2_5, after p2_5, 0d
-    Core Business Logic + AI            :milestone, m4, after p4, 0d
-    Location Intelligence 🗺️            :milestone, m5_5, after p5_5, 0d
-    Extension Launch 🔌                 :milestone, m9, after p9, 0d
-    Native Apps Launch 📱               :milestone, m11, after p11, 0d
-    Performance Foundation 🚀           :milestone, m15, after p15, 0d
-    ML Infrastructure 🤖                :milestone, m16, after p16, 0d
-    Revenue Integration 💰              :milestone, m17, after p17, 0d
-    v4.2 Launch ✨                      :milestone, m18, after p18, 0d
+    Geofencing Operational 📍           :milestone, m3, after p3, 0d
+    Core Business Logic + AI            :milestone, m5, after p5, 0d
+    Location Intelligence 🗺️            :milestone, m7, after p7, 0d
+    Extension Launch 🔌                 :milestone, m11, after p11, 0d
+    Native Apps Launch 📱               :milestone, m12, after p12, 0d
+    Performance Foundation 🚀           :milestone, m13, after p13, 0d
+    ML Infrastructure 🤖                :milestone, m14, after p14, 0d
+    Revenue Integration 💰              :milestone, m15, after p15, 0d
+    v4.2 Launch ✨                      :milestone, m16, after p16, 0d
 ```
 
 ---
@@ -99,21 +99,21 @@ gantt
 |-------|------|-------|----------|--------------|-----------|------|--------------|
 | **1** | Foundation & Client Layer | 1-4 | 4 weeks | 34 SP | 6 FTE | 🟡 Medium | None |
 | **2** | Security & Ingress | 5-7 | 3 weeks | 40 SP | 6 FTE | 🔴 High | Phase 1 |
-| **2.5 📍** | Geofencing Foundation | 8-10 | 3 weeks | 38 SP | 5 FTE | 🟡 Medium | Phase 2 |
-| **3** | Auth & Supply Chain | 11-14 | 4 weeks | 48 SP | 6 FTE | 🔴 High | Phase 2.5 |
-| **4** | Core Services (BFF, Logic, AI) | 15-19 | 5 weeks | 65 SP | 8 FTE | 🔴 Critical | Phase 3 |
-| **5** | External Communication | 20-22 | 3 weeks | 42 SP | 5 FTE | 🟡 Medium | Phase 4 |
-| **5.5 🗺️** | Location Intelligence | 23-25 | 3 weeks | 42 SP | 7 FTE | 🟡 Medium | Phase 5 |
-| **6** | Messaging & Events | 26-28 | 3 weeks | 38 SP | 5 FTE | 🟡 Medium | Phase 5.5 |
-| **7** | Data Planes & DR | 29-32 | 4 weeks | 45 SP | 6 FTE | 🔴 High | Phase 1 |
-| **8** | Observability & Polish | 33-34 | 2 weeks | 28 SP | 8 FTE | 🟢 Low | All Phases |
-| **9 🔌** | Browser Extension MVP | 35-37 | 3 weeks | 44 SP | 2 FTE | 🟢 Low | Phase 8 |
-| **11 📱** | Native Mobile Apps (Capacitor) | 38-40 | 3 weeks | 45 SP | 6 FTE | 🔴 High | Phase 9 |
-| **15 🚀** | Performance Optimization | 41-43 | 3 weeks | 52 SP | 4 FTE | 🟡 Medium | Phase 11 |
-| **16 🤖** | ML Infrastructure | 44-46 | 3 weeks | 48 SP | 5 FTE | 🔴 High | Phase 15 |
-| **17 💰** | Advanced ML & Layer 10B | 47-49 | 3 weeks | 42 SP | 6 FTE | 🔴 High | Phase 16 |
-| **18 ✨** | Cost Optimization & Polish | 50-51 | 2 weeks | 26 SP | 4 FTE | 🟡 Medium | Phase 17 |
-| **Total** | **All Phases** | **1-51** | **51 weeks** | **632 SP** | **6-8 FTE** | | |
+| **3 📍** | Geofencing Foundation | 8-10 | 3 weeks | 38 SP | 5 FTE | 🟡 Medium | Phase 1, 2 |
+| **4** | Auth & Supply Chain | 11-14 | 4 weeks | 48 SP | 6 FTE | 🔴 High | Phase 1, 2, 3 |
+| **5** | Core Services (BFF, Logic, AI) | 15-19 | 5 weeks | 65 SP | 8 FTE | 🔴 Critical | Phase 4 |
+| **6** | External Communication | 20-22 | 3 weeks | 42 SP | 5 FTE | 🟡 Medium | Phase 5 |
+| **7 🗺️** | Location Intelligence | 23-25 | 3 weeks | 42 SP | 7 FTE | 🟡 Medium | Phase 3, 6 |
+| **8** | Messaging & Events | 26-28 | 3 weeks | 38 SP | 5 FTE | 🟡 Medium | Phase 7 |
+| **9** | Data Planes & DR | 29-32 | 4 weeks | 45 SP | 6 FTE | 🔴 High | Phase 8 |
+| **10** | Observability & Polish | 33-34 | 2 weeks | 28 SP | 8 FTE | 🟢 Low | Phase 9 |
+| **11 🔌** | Browser Extension MVP | 35-37 | 3 weeks | 44 SP | 2 FTE | 🟢 Low | Phase 10 |
+| **12 📱** | Native Mobile Apps (Capacitor) | 38-40 | 3 weeks | 45 SP | 6 FTE | 🔴 High | Phase 7, 11 |
+| **13 🚀** | Performance Optimization | 41-43 | 3 weeks | 52 SP | 4 FTE | 🟡 Medium | Phase 12 |
+| **14 🤖** | ML Infrastructure | 44-46 | 3 weeks | 48 SP | 5 FTE | 🔴 High | Phase 13 |
+| **15 💰** | Advanced ML & Layer 10B | 47-49 | 3 weeks | 42 SP | 6 FTE | 🔴 High | Phase 14 |
+| **16 ✨** | Cost Optimization & Polish | 50-51 | 2 weeks | 26 SP | 4 FTE | 🟡 Medium | Phase 15 |
+| **Total** | **All Phases** | **1-51** | **51 weeks** | **677 SP** | **6-8 FTE** | | |
 
 ---
 
@@ -127,36 +127,36 @@ gantt
 | 25 | Location Intelligence 🗺️ | AI location insights, merchant discovery |
 | 34 | System Polish Complete | Full observability, performance optimization |
 | 37 | Browser Extension Launch 🔌 | Extension published to Chrome Web Store |
-| 40 | Performance Foundation Ready 🚀 | GraphQL BFF, read replicas, 90%+ cache hit rate |
-| 43 | ML Infrastructure Complete 🤖 | Model registry, RL cache, LSTM anomaly detection |
-| 46 | Revenue Integration Live 💰 | Layer 10B, affiliate tracking, $2K+/mo revenue |
-| 48 | v4.2 Launch Ready ✨ | All optimizations deployed, 52% cost reduction |
+| 40 | Native Apps Launch 📱 | iOS/Android apps live on app stores |
+| 43 | Performance Foundation Ready 🚀 | GraphQL BFF, read replicas, 90%+ cache hit rate |
+| 46 | ML Infrastructure Complete 🤖 | Model registry, RL cache, LSTM anomaly detection |
+| 49 | Revenue Integration Live 💰 | Layer 10B, affiliate tracking, $2K+/mo revenue |
+| 51 | v4.2 Launch Ready ✨ | All optimizations deployed, 52% cost reduction |
 
 ---
 
-## Phases 1-9: Core Platform (Weeks 1-37) - Blueprint v4.1
+## Phases 1-10: Core Platform (Weeks 1-34) - Blueprint v4.1
 
 *For detailed week-by-week task breakdowns, refer to [Implementation Timeline v4.1](./implementation-timeline-v4.1.md).*
 
 **Phase Overview:**
-- **Phase 1 (Weeks 1-4):** Foundation & Client Layer - React Native, Supabase, storage
+- **Phase 1 (Weeks 1-4):** Foundation & Client Layer - React, TypeScript, Supabase, storage
 - **Phase 2 (Weeks 5-7):** Security & Ingress - WAF, rate limiting, DDoS protection
-- **Phase 2.5 📍 (Weeks 8-10):** Geofencing Foundation - GPS tracking, JWT, event queue
-- **Phase 3 (Weeks 11-14):** Auth & Supply Chain - Multi-factor auth, session management
-- **Phase 4 (Weeks 15-19):** Core Services - BFF, business logic, AI agents
-- **Phase 5 (Weeks 20-22):** External Communication - Email, SMS, push notifications
-- **Phase 5.5 🗺️ (Weeks 23-25):** Location Intelligence - AI location insights, merchant discovery
-- **Phase 6 (Weeks 26-28):** Messaging & Events - Event bus, webhooks, real-time updates
-- **Phase 7 (Weeks 29-32):** Data Planes - Backup, disaster recovery, replication
-- **Phase 8 (Weeks 33-34):** Observability & Polish - Monitoring, alerting, optimization
-- **Phase 9 🔌 (Weeks 35-37):** Browser Extension MVP - Chrome extension, transaction capture
+- **Phase 3 📍 (Weeks 8-10):** Geofencing Foundation - GPS tracking, JWT, event queue
+- **Phase 4 (Weeks 11-14):** Auth & Supply Chain - Multi-factor auth, session management
+- **Phase 5 (Weeks 15-19):** Core Services - BFF, business logic, AI agents
+- **Phase 6 (Weeks 20-22):** External Communication - Email, SMS, push notifications
+- **Phase 7 🗺️ (Weeks 23-25):** Location Intelligence - AI location insights, merchant discovery
+- **Phase 8 (Weeks 26-28):** Messaging & Events - Event bus, webhooks, real-time updates
+- **Phase 9 (Weeks 29-32):** Data Planes - Backup, disaster recovery, replication
+- **Phase 10 (Weeks 33-34):** Observability & Polish - Monitoring, alerting, optimization
 
 ---
 
-## Phase 11: Native Mobile Apps 📱 (Weeks 38-40)
+## Phase 12: Native Mobile Apps 📱 (Weeks 38-40)
 
 **Duration:** 3 weeks  
-**Story Points:** 45 SP  
+**Story Points:** 45 SP
 **Team:** 6 FTE (2 iOS, 2 Android, 1 Backend, 1 DevOps)  
 **Goal:** Implement Capacitor native apps for iOS and Android with background location tracking, push notifications, native geofencing, and app store deployment
 
@@ -236,7 +236,7 @@ gantt
 
 ---
 
-**Phase 11 Success Criteria:**
+**Phase 12 Success Criteria:**
 - [ ] Background GPS tracking <5% battery drain per day
 - [ ] Push notification delivery rate >95%
 - [ ] Geofence enter latency <5 seconds
@@ -246,7 +246,7 @@ gantt
 
 ---
 
-## Phase 15: Performance Optimization (Weeks 41-43)
+## Phase 13: Performance Optimization 🚀 (Weeks 41-43)
 
 **Duration:** 3 weeks  
 **Story Points:** 52 SP  
@@ -340,7 +340,7 @@ gantt
 
 ---
 
-## Phase 16: ML Infrastructure (Weeks 44-46)
+## Phase 14: ML Infrastructure 🤖 (Weeks 44-46)
 
 **Duration:** 3 weeks  
 **Story Points:** 48 SP  
@@ -426,7 +426,7 @@ gantt
 - Hybrid NLP for receipts (80% cost reduction)
 - ML monitoring dashboard
 
-**Phase 16 Milestones:**
+**Phase 14 Milestones:**
 - [ ] Model registry operational
 - [ ] RL cache policy in shadow mode (hit rate: 93%+)
 - [ ] LSTM anomaly detection in shadow mode (accuracy: 90%+)
@@ -435,7 +435,7 @@ gantt
 
 ---
 
-## Phase 17: Advanced ML & Layer 10B (Weeks 47-49)
+## Phase 15: Advanced ML & Layer 10B 💰 (Weeks 47-49)
 
 **Duration:** 3 weeks  
 **Story Points:** 42 SP  
@@ -515,7 +515,7 @@ gantt
 - Attribution tracking and fraud prevention
 - GraphQL schema extensions
 
-**Phase 17 Milestones:**
+**Phase 15 Milestones:**
 - [ ] Multi-Armed Bandits live (budget adherence: +20%)
 - [ ] K-Means++ geofence optimization live (accuracy: 95%+)
 - [ ] LambdaMART offer ranking live (CTR: +30%)
@@ -524,7 +524,7 @@ gantt
 
 ---
 
-## Phase 18: Cost Optimization & Polish (Weeks 50-51)
+## Phase 16: Cost Optimization & Polish ✨ (Weeks 50-51)
 
 **Duration:** 2 weeks  
 **Story Points:** 26 SP  
@@ -591,7 +591,7 @@ gantt
 - CDN cache prewarming (50% hit rate improvement)
 - Final performance report
 
-**Phase 15 Milestones:**
+**Phase 16 Milestones:**
 - [ ] R-Tree indexing live (5ms geofence lookups)
 - [ ] Bloom filters live (<1ms negative cache)
 - [ ] Data partitioning complete (50% query speed improvement)
@@ -633,32 +633,32 @@ gantt
 
 ---
 
-## Gantt Chart (Phases 15-18)
+## Gantt Chart (Phases 13-16)
 
 ```mermaid
 gantt
-    title Blueprint v4.2 Implementation Timeline (Phases 15-18)
+    title Blueprint v4.2 Implementation Timeline (Phases 13-16)
     dateFormat YYYY-MM-DD
     axisFormat Week %U
 
-    section Phase 15: Performance
-    GraphQL BFF & Cache         :p15-1, 2024-09-16, 1w
-    Read Replicas & Pooling     :p15-2, after p15-1, 1w
-    Compression & Batch Ops     :p15-3, after p15-2, 1w
+    section Phase 13: Performance
+    GraphQL BFF & Cache         :p13-1, 2024-09-16, 1w
+    Read Replicas & Pooling     :p13-2, after p13-1, 1w
+    Compression & Batch Ops     :p13-3, after p13-2, 1w
 
-    section Phase 16: ML Infrastructure
-    Model Registry & A/B        :p16-1, after p15-3, 1w
-    RL Cache & LSTM Anomaly     :p16-2, after p16-1, 1w
-    CF & Hybrid NLP             :p16-3, after p16-2, 1w
+    section Phase 14: ML Infrastructure
+    Model Registry & A/B        :p14-1, after p13-3, 1w
+    RL Cache & LSTM Anomaly     :p14-2, after p14-1, 1w
+    CF & Hybrid NLP             :p14-3, after p14-2, 1w
 
-    section Phase 17: Advanced ML
-    Bandits & K-Means++         :p17-1, after p16-3, 1w
-    LTR & Prophet               :p17-2, after p17-1, 1w
-    Layer 10B Launch            :p17-3, after p17-2, 1w
+    section Phase 15: Advanced ML
+    Bandits & K-Means++         :p15-1, after p14-3, 1w
+    LTR & Prophet               :p15-2, after p15-1, 1w
+    Layer 10B Launch            :p15-3, after p15-2, 1w
 
-    section Phase 18: Cost Optimization
-    Database Optimizations      :p18-1, after p17-3, 1w
-    Compression & Final Tuning  :p18-2, after p18-1, 1w
+    section Phase 16: Cost Optimization
+    Database Optimizations      :p16-1, after p15-3, 1w
+    Compression & Final Tuning  :p16-2, after p16-1, 1w
 ```
 
 ---
@@ -706,10 +706,10 @@ gantt
 - ML training compute resources (GPU instances)
 
 ### Internal Dependencies
-- Phase 11 must complete before Phase 15 (native apps before performance optimization)
-- Phase 15 must complete before Phase 16 (cache infrastructure for RL model)
-- Phase 16 must complete before Phase 17 (model registry for advanced ML)
-- Phase 17 must complete before Phase 18 (Layer 10B for affiliate revenue)
+- Phase 12 must complete before Phase 13 (native apps before performance optimization)
+- Phase 13 must complete before Phase 14 (cache infrastructure for RL model)
+- Phase 14 must complete before Phase 15 (model registry for advanced ML)
+- Phase 15 must complete before Phase 16 (Layer 10B for affiliate revenue)
 
 ---
 
@@ -717,7 +717,7 @@ gantt
 
 1. **Approve Timeline:** Stakeholder review and sign-off
 2. **Resource Allocation:** Assign engineers to phases
-3. **Kickoff Phase 11:** Begin Capacitor setup and background location tracking
+3. **Kickoff Phase 12:** Begin Capacitor setup and background location tracking
 4. **Kickoff Phase 15:** Begin GraphQL BFF and cache hierarchy
 5. **Provider Onboarding:** Sign up for affiliate programs
 6. **Training Data Prep:** Collect and label data for ML models
