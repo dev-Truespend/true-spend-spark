@@ -3,54 +3,6 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import sri from "rollup-plugin-sri";
-import { readFileSync, writeFileSync, existsSync } from "fs";
-
-// Custom plugin to inject version and build timestamp
-const swVersionPlugin = () => ({
-  name: 'sw-version-injector',
-  buildStart() {
-    // Auto-increment version based on timestamp
-    const now = new Date();
-    const buildId = now.toISOString().replace(/[-:]/g, '').split('.')[0].replace('T', 'T');
-    const timestamp = now.getTime();
-    
-    // Auto semantic versioning: 1.0.X where X increments on each build
-    // Read current version, increment patch number
-    let version = "1.0.0";
-    try {
-      const metaPath = 'public/meta.json';
-      if (existsSync(metaPath)) {
-        const currentMeta = JSON.parse(readFileSync(metaPath, 'utf-8'));
-        if (currentMeta.version) {
-          const [major, minor, patch] = currentMeta.version.split('.').map(Number);
-          version = `${major}.${minor}.${patch + 1}`;
-        }
-      }
-    } catch (error) {
-      console.log('⚠️ Starting fresh at version 1.0.0');
-    }
-    
-    const meta = {
-      version,
-      buildId,
-      commit: process.env.VERCEL_GIT_COMMIT_SHA || `build-${buildId}`,
-      timestamp
-    };
-    
-    writeFileSync('public/meta.json', JSON.stringify(meta, null, 2));
-    console.log('✅ meta.json updated:', meta.version, meta.buildId);
-  },
-  writeBundle() {
-    const swPath = 'dist/sw.js';
-    if (existsSync(swPath)) {
-      let content = readFileSync(swPath, 'utf-8');
-      const buildTimestamp = Date.now().toString();
-      content = content.replace('__BUILD_TIMESTAMP__', buildTimestamp);
-      writeFileSync(swPath, content);
-      console.log('✅ Service Worker version updated:', buildTimestamp);
-    }
-  }
-});
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -65,7 +17,6 @@ export default defineConfig(({ mode }) => ({
       algorithms: ["sha384"],
       publicPath: "/",
     }),
-    mode === "production" && swVersionPlugin(),
   ].filter(Boolean),
   resolve: {
     alias: {
