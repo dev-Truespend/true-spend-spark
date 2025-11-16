@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 interface TestCase {
   id: string;
   name: string;
-  category: 'pwa' | 'offline' | 'sync' | 'camera' | 'network';
+  category: 'offline' | 'sync' | 'camera' | 'network';
   status: 'pending' | 'running' | 'passed' | 'failed' | 'warning';
   duration?: number;
   error?: string;
@@ -24,32 +24,6 @@ interface TestCase {
 }
 
 const TEST_CASES: TestCase[] = [
-  // PWA Tests
-  {
-    id: 'pwa-1',
-    name: 'Service Worker Registration',
-    category: 'pwa',
-    status: 'pending',
-  },
-  {
-    id: 'pwa-2',
-    name: 'PWA Installability',
-    category: 'pwa',
-    status: 'pending',
-  },
-  {
-    id: 'pwa-3',
-    name: 'Manifest Configuration',
-    category: 'pwa',
-    status: 'pending',
-  },
-  {
-    id: 'pwa-4',
-    name: 'Cache Versioning',
-    category: 'pwa',
-    status: 'pending',
-  },
-  
   // Offline Tests
   {
     id: 'offline-1',
@@ -145,23 +119,6 @@ export function Phase1TestResults() {
       await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
 
       switch (testId) {
-        case 'pwa-1':
-          if ('serviceWorker' in navigator) {
-            const registration = await navigator.serviceWorker.getRegistration();
-            if (registration) {
-              return { ...test, status: 'passed', duration: Date.now() - startTime, details: 'Service worker active' };
-            }
-          }
-          return { ...test, status: 'failed', duration: Date.now() - startTime, error: 'No service worker registered' };
-
-        case 'pwa-2':
-          return { 
-            ...test, 
-            status: 'BeforeInstallPromptEvent' in window ? 'passed' : 'warning',
-            duration: Date.now() - startTime,
-            details: 'BeforeInstallPromptEvent' in window ? 'Installable' : 'Already installed or not supported'
-          };
-
         case 'offline-1':
           const dbSupported = 'indexedDB' in window;
           return {
@@ -324,7 +281,6 @@ export function Phase1TestResults() {
   };
 
   const categoryStats = {
-    pwa: tests.filter(t => t.category === 'pwa'),
     offline: tests.filter(t => t.category === 'offline'),
     sync: tests.filter(t => t.category === 'sync'),
     camera: tests.filter(t => t.category === 'camera'),
@@ -396,7 +352,7 @@ export function Phase1TestResults() {
       </Card>
 
       {/* Category Results */}
-      <div className="grid md:grid-cols-5 gap-4">
+      <div className="grid md:grid-cols-4 gap-4">
         {Object.entries(categoryStats).map(([category, categoryTests]) => {
           const passed = categoryTests.filter(t => t.status === 'passed').length;
           const total = categoryTests.length;
