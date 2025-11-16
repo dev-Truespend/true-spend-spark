@@ -6,8 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { MFASetup } from "@/components/auth/MFASetup";
-import { PushNotificationManager } from "@/components/pwa/PushNotificationManager";
-import { NotificationTestPanel } from "@/components/pwa/NotificationTestPanel";
 import { Shield, User, Bell, Settings as SettingsIcon } from "lucide-react";
 import { GlobalNav } from "@/components/navigation/GlobalNav";
 
