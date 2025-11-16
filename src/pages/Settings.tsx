@@ -72,7 +72,7 @@ export default function Settings() {
                     />
                   </div>
                 </div>
-                <Button className="w-full">Save Changes</Button>
+                <Button className="w-full" disabled>Save Changes (Coming Soon)</Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -96,7 +96,7 @@ export default function Settings() {
                   <Label htmlFor="confirmPassword">Confirm New Password</Label>
                   <Input id="confirmPassword" type="password" />
                 </div>
-                <Button className="w-full">Update Password</Button>
+                <Button className="w-full" disabled>Update Password (Coming Soon)</Button>
               </CardContent>
             </Card>
 

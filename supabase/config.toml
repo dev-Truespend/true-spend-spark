@@ -112,3 +112,19 @@ verify_jwt = true
 
 [functions.ai-analyze-spending]
 verify_jwt = true
+
+[functions.cleanup-old-csp-violations]
+verify_jwt = false
+schedule = "0 2 * * *"
+
+[functions.cleanup-old-security-logs]
+verify_jwt = false
+schedule = "0 3 * * 0"
+
+[functions.cleanup-old-auth-attempts]
+verify_jwt = false
+schedule = "0 4 * * 0"
+
+[functions.cleanup-expired-google-maps-cache]
+verify_jwt = false
+schedule = "0 1 * * *"
