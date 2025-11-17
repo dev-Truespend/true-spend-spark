@@ -15,8 +15,12 @@ export function useV42Metrics() {
     costBefore: '$1,400',
     costAfter: '$680',
     
-    // Phase 4 Specific Metrics
-    phase4Completion: '95%', // Gate: Conditional Pass — MFA fix deployed; testing pending
+    // Phase Completion Metrics
+    phase1Completion: '70%', // New code added, not yet integrated
+    phase2Completion: '100%', // Production ready
+    phase3Completion: '50%', // Partially ready
+    phase4Completion: '100%', // Production ready
+    phase5Completion: '100%', // Production ready
     bffEndpointsLive: 4,
     aiModelsIntegrated: 2,
     tablesCreated: 5,
