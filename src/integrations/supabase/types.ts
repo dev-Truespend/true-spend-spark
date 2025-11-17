@@ -631,6 +631,57 @@ export type Database = {
         }
         Relationships: []
       }
+      event_log: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          event_payload: Json
+          event_type: string
+          id: string
+          max_retries: number | null
+          metadata: Json | null
+          processed_at: string | null
+          retry_count: number | null
+          scheduled_for: string | null
+          status: string | null
+          topic: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          event_payload: Json
+          event_type: string
+          id?: string
+          max_retries?: number | null
+          metadata?: Json | null
+          processed_at?: string | null
+          retry_count?: number | null
+          scheduled_for?: string | null
+          status?: string | null
+          topic: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          event_payload?: Json
+          event_type?: string
+          id?: string
+          max_retries?: number | null
+          metadata?: Json | null
+          processed_at?: string | null
+          retry_count?: number | null
+          scheduled_for?: string | null
+          status?: string | null
+          topic?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       experiment_metrics: {
         Row: {
           experiment_id: string

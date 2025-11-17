@@ -156,3 +156,12 @@ schedule = "0 */6 * * *"
 
 [functions.deal-notification-trigger]
 verify_jwt = true
+
+# Phase 8: Messaging & Events Infrastructure
+
+[functions.publish-event]
+verify_jwt = true
+
+[functions.event-consumer]
+verify_jwt = false
+schedule = "*/1 * * * *"
