@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { MapPin, Calendar, DollarSign } from "lucide-react";
+import { MapPin, DollarSign } from "lucide-react";
 import { LocationInsightsPanel } from "@/components/insights/LocationInsightsPanel";
+import { SpendingHeatmap } from "@/components/location/SpendingHeatmap";
+import { MerchantDiscoveryCard } from "@/components/location/MerchantDiscoveryCard";
 
 export default function LocationHistory() {
   const { data: analytics, isLoading } = useQuery({
@@ -27,6 +29,36 @@ export default function LocationHistory() {
       </div>
 
       <LocationInsightsPanel />
+
+      {/* Spending Heatmap Visualization */}
+      <SpendingHeatmap />
+
+      {/* Nearby Merchant Recommendations */}
+      {analytics?.merchant_recommendations && analytics.merchant_recommendations.length > 0 && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Nearby Deals & Recommendations</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {analytics.merchant_recommendations.map((merchant: any) => (
+              <MerchantDiscoveryCard
+                key={merchant.id}
+                merchantId={merchant.merchant_id}
+                recommendationId={merchant.id}
+                name={merchant.merchant_name}
+                category={merchant.category}
+                rating={merchant.rating}
+                priceTier={merchant.price_tier}
+                distance={merchant.distance}
+                dealType={merchant.deal_type}
+                dealDescription={merchant.deal_description}
+                potentialSavings={merchant.potential_savings}
+                address={merchant.address}
+                lat={merchant.lat}
+                lng={merchant.lng}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <h2 className="text-xl font-semibold mb-4">Spending by Location</h2>
