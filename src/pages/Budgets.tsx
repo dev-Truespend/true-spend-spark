@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Plus, AlertTriangle, CheckCircle2, RefreshCw, WifiOff } from "lucide-react";
+import { Loader2, Plus, AlertTriangle, CheckCircle2, RefreshCw, WifiOff, MapPin } from "lucide-react";
 import { OfflineIndicator } from "@/components/network/OfflineIndicator";
 import { SyncStatusBadge } from "@/components/sync/SyncStatusBadge";
 
@@ -39,6 +39,61 @@ export default function Budgets() {
     limit_amount: 0,
     period: "monthly",
     alert_threshold: 0.8,
+    geofence_id: null as string | null,
+  });
+
+  // Fetch user's geofences
+  const { data: userGeofences } = useQuery({
+    queryKey: ['user-geofences'],
+    queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return [];
+
+      const { data, error } = await supabase
+        .from('geofences')
+        .select('*')
+        .eq('user_id', user.user.id)
+        .eq('active', true);
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch geofence spending summary
+  const { data: geofenceSpending } = useQuery({
+    queryKey: ['geofence-spending'],
+    queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return [];
+
+      const { data: transactions, error } = await supabase
+        .from('transactions')
+        .select('amount, geofence_id, geofence:geofences(name)')
+        .eq('user_id', user.user.id)
+        .not('geofence_id', 'is', null)
+        .gte('timestamp', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+
+      if (error) throw error;
+
+      // Group by geofence
+      const grouped = transactions?.reduce((acc: any, tx: any) => {
+        const geofenceId = tx.geofence_id;
+        if (!acc[geofenceId]) {
+          acc[geofenceId] = {
+            geofence_id: geofenceId,
+            name: tx.geofence?.name || 'Unknown',
+            total: 0,
+            count: 0,
+          };
+        }
+        acc[geofenceId].total += Number(tx.amount);
+        acc[geofenceId].count += 1;
+        return acc;
+      }, {});
+
+      return Object.values(grouped || {});
+    },
   });
 
   const { data: budgets, isLoading } = useQuery<any[]>({
@@ -88,20 +143,39 @@ export default function Budgets() {
         // Get spending for each budget
         const budgetsWithSpending = await Promise.all(
           budgets.map(async (budget) => {
-            const { data: transactions } = await supabase
+            let query = supabase
               .from('transactions')
               .select('amount')
               .eq('category', budget.category)
               .gte('timestamp', budget.start_date)
               .lte('timestamp', budget.end_date || new Date().toISOString());
 
+            // Filter by geofence if budget is linked to one
+            if (budget.geofence_id) {
+              query = query.eq('geofence_id', budget.geofence_id);
+            }
+
+            const { data: transactions } = await query;
+
             const spent = transactions?.reduce((sum, tx) => sum + Number(tx.amount), 0) || 0;
+
+            // Fetch geofence name if linked
+            let geofence = null;
+            if (budget.geofence_id) {
+              const { data: gf } = await supabase
+                .from('geofences')
+                .select('name')
+                .eq('id', budget.geofence_id)
+                .single();
+              geofence = gf;
+            }
 
             return {
               ...budget,
               spent,
               remaining: Number(budget.limit_amount) - spent,
               utilization: (spent / Number(budget.limit_amount)) * 100,
+              geofence,
             };
           })
         );
@@ -207,7 +281,7 @@ export default function Budgets() {
       }
       
       setIsAddOpen(false);
-      setNewBudget({ category: "Other", limit_amount: 0, period: "monthly", alert_threshold: 0.8 });
+      setNewBudget({ category: "Other", limit_amount: 0, period: "monthly", alert_threshold: 0.8, geofence_id: null });
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to create budget');
@@ -274,6 +348,7 @@ export default function Budgets() {
               end_date: (budget as any).end_date,
               alert_threshold: (budget as any).alert_threshold,
               active: (budget as any).active,
+              geofence_id: (budget as any).geofence_id,
             })
             .select()
             .single();
@@ -409,6 +484,34 @@ export default function Budgets() {
                 </Select>
               </div>
 
+              {userGeofences && userGeofences.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="geofence">Link to Location (Optional)</Label>
+                  <Select
+                    value={newBudget.geofence_id || "none"}
+                    onValueChange={(value) => setNewBudget(prev => ({ 
+                      ...prev, 
+                      geofence_id: value === "none" ? null : value 
+                    }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No location</SelectItem>
+                      {userGeofences.map((gf: any) => (
+                        <SelectItem key={gf.id} value={gf.id}>
+                          {gf.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Track spending only at this location
+                  </p>
+                </div>
+              )}
+
               <Button type="submit" className="w-full" disabled={addBudgetMutation.isPending}>
                 {addBudgetMutation.isPending ? (
                   <>
@@ -455,6 +558,37 @@ export default function Budgets() {
         </Card>
       )}
 
+      {geofenceSpending && geofenceSpending.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              <CardTitle>Spending by Location</CardTitle>
+            </div>
+            <CardDescription>Last 30 days</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {geofenceSpending.map((gf: any) => (
+                <div key={gf.geofence_id} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium">{gf.name}</p>
+                      <p className="text-sm text-muted-foreground">{gf.count} transactions</p>
+                    </div>
+                    <p className="text-lg font-bold">${gf.total.toFixed(2)}</p>
+                  </div>
+                  <Progress 
+                    value={(gf.total / Math.max(...(geofenceSpending as any[]).map((g: any) => g.total))) * 100} 
+                    className="h-2" 
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -465,8 +599,14 @@ export default function Budgets() {
             <Card key={budget.id}>
               <CardHeader>
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <CardTitle>{budget.category}</CardTitle>
+                    {budget.geofence && (
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {budget.geofence.name}
+                      </Badge>
+                    )}
                     <SyncStatusBadge
                       status={budget.synced === false ? 'pending' : 'synced'}
                       lastSyncTime={budget.updated_at}
