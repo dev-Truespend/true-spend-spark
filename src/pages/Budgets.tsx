@@ -58,13 +58,13 @@ export default function Budgets() {
               tx.timestamp >= budget.start_date &&
               tx.timestamp <= (budget.end_date || new Date().toISOString())
           );
-          const spent = transactions.reduce((sum: number, tx: any) => {
+          const spent: number = transactions.reduce<number>((sum: number, tx: any): number => {
             const amount = Number(tx.amount) || 0;
             return sum + amount;
           }, 0);
-          const limitAmount = Number(budget.limit_amount) || 1;
-          const remaining = limitAmount - spent;
-          const utilization = (spent / limitAmount) * 100;
+          const limitAmount: number = Number(budget.limit_amount) || 1;
+          const remaining: number = limitAmount - spent;
+          const utilization: number = (spent / limitAmount) * 100;
           
           return {
             ...budget,
