@@ -149,3 +149,10 @@ verify_jwt = true
 [functions.cache-prewarmer]
 verify_jwt = false
 schedule = "0 */4 * * *"
+
+[functions.cache-eviction]
+verify_jwt = false
+schedule = "0 */6 * * *"
+
+[functions.deal-notification-trigger]
+verify_jwt = true
