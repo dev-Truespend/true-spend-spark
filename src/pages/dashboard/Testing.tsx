@@ -3,6 +3,7 @@ import { usePhases } from '@/hooks/useProjectData';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Phase1TestResults } from '@/components/testing/Phase1TestResults';
+import { Phase7TestSuite } from '@/components/testing/Phase7TestSuite';
 import { Badge } from '@/components/ui/badge';
 import { TestTube, TrendingUp, AlertCircle } from 'lucide-react';
 
@@ -67,8 +68,8 @@ export default function Testing() {
 
       {/* Phase Selector */}
       <Tabs value={selectedPhase} onValueChange={setSelectedPhase}>
-        <TabsList className="grid w-full grid-cols-5">
-          {phases?.slice(0, 5).map(phase => (
+        <TabsList className="grid w-full grid-cols-7">
+          {phases?.slice(0, 7).map(phase => (
             <TabsTrigger key={phase.id} value={phase.phase_number.toString()}>
               <span className="hidden sm:inline">Phase </span>
               {phase.phase_number}
@@ -77,14 +78,21 @@ export default function Testing() {
                   Active
                 </Badge>
               )}
+              {phase.phase_number === 7 && (
+                <Badge variant="default" className="ml-2">
+                  Testing
+                </Badge>
+              )}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        {phases?.slice(0, 5).map(phase => (
+        {phases?.slice(0, 7).map(phase => (
           <TabsContent key={phase.id} value={phase.phase_number.toString()} className="mt-6">
             {phase.phase_number === 1 ? (
               <Phase1TestResults />
+            ) : phase.phase_number === 7 ? (
+              <Phase7TestSuite />
             ) : (
               <Card className="p-8 text-center">
                 <p className="text-muted-foreground">
