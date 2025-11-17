@@ -41,6 +41,8 @@ import Insights from "./pages/Insights";
 import LocationHistory from "./pages/LocationHistory";
 import LocationMetrics from "./pages/dashboard/LocationMetrics";
 import NotFound from "./pages/NotFound";
+import FavoriteMerchants from "./pages/FavoriteMerchants";
+import WebhookAnalytics from "./pages/dashboard/WebhookAnalytics";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
 import { useNotificationTriggers } from "./hooks/useNotificationTriggers";
@@ -302,6 +304,14 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
+              <Route 
+                path="/favorites" 
+                element={
+                  <ProtectedRoute>
+                    <FavoriteMerchants />
+                  </ProtectedRoute>
+                } 
+              />
 
               {/* Admin Dashboard - Project Management */}
               <Route 
@@ -325,9 +335,10 @@ function App() {
                 <Route path="testing" element={<Testing />} />
                   <Route path="security" element={<Security />} />
                   <Route path="security-monitor" element={<SecurityDashboard />} />
-                  <Route path="geofences" element={<Geofences />} />
-                  <Route path="phase3" element={<Phase3Completion />} />
-                  <Route path="location-metrics" element={<LocationMetrics />} />
+                <Route path="geofences" element={<Geofences />} />
+                <Route path="phase3" element={<Phase3Completion />} />
+                <Route path="location-metrics" element={<LocationMetrics />} />
+                <Route path="webhook-analytics" element={<WebhookAnalytics />} />
               </Route>
 
               {/* TrueSpend User App - Coming Soon */}

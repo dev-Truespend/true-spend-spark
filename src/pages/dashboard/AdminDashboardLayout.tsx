@@ -15,6 +15,7 @@ import {
   Layers,
   Zap,
   Shield,
+  Webhook,
   LogOut
 } from "lucide-react";
 
@@ -31,6 +32,7 @@ const navigation = [
   { name: "Testing", href: "/admin/testing", icon: TestTube },
   { name: "Security", href: "/admin/security", icon: Shield },
   { name: "Architecture", href: "/admin/architecture", icon: Layers },
+  { name: "Webhook Analytics", href: "/admin/webhook-analytics", icon: Webhook },
 ];
 
 export default function AdminDashboardLayout() {

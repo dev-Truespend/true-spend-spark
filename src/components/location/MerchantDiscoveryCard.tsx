@@ -1,10 +1,11 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Star, DollarSign, Navigation, Tag } from 'lucide-react';
+import { MapPin, Star, DollarSign, Navigation, Tag, Heart } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { useFavoriteMerchants } from '@/hooks/useFavoriteMerchants';
 
 interface MerchantDiscoveryCardProps {
   merchantId: string;
@@ -38,8 +39,10 @@ export function MerchantDiscoveryCard({
   lng
 }: MerchantDiscoveryCardProps) {
   const [isTracking, setIsTracking] = useState(false);
+  const { isFavorite, addFavorite, removeFavorite, isAdding, isRemoving } = useFavoriteMerchants();
 
   const hasDeal = dealType && dealDescription;
+  const isSaved = isFavorite(merchantId);
 
   const handleGetDirections = async () => {
     if (!lat || !lng) {
@@ -91,6 +94,21 @@ export function MerchantDiscoveryCard({
     }
 
     toast.info('Full merchant details coming soon');
+  };
+
+  const handleToggleFavorite = () => {
+    if (isSaved) {
+      removeFavorite(merchantId);
+    } else {
+      addFavorite({
+        merchantId,
+        name,
+        category,
+        address,
+        lat,
+        lng
+      });
+    }
   };
 
   const getPriceTierDisplay = (tier?: number) => {
@@ -197,19 +215,28 @@ export function MerchantDiscoveryCard({
           {/* Actions */}
           <div className="flex gap-2 pt-2">
             <Button
+              onClick={handleToggleFavorite}
+              variant={isSaved ? "default" : "outline"}
+              size="icon"
+              disabled={isAdding || isRemoving}
+              title={isSaved ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Heart className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
+            </Button>
+            <Button
               onClick={handleGetDirections}
               disabled={!lat || !lng || isTracking}
               className="flex-1"
             >
               <Navigation className="h-4 w-4 mr-2" />
-              Get Directions
+              Directions
             </Button>
             <Button
               onClick={handleViewDetails}
               variant="outline"
               disabled={isTracking}
             >
-              View Details
+              Details
             </Button>
           </div>
         </div>

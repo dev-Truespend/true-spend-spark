@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
-import { Settings, LayoutDashboard, BarChart3, RefreshCw, AlertTriangle, MapPin } from 'lucide-react';
+import { Settings, LayoutDashboard, BarChart3, RefreshCw, AlertTriangle, MapPin, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { VersionDisplay } from '@/components/version/VersionDisplay';
@@ -15,7 +15,8 @@ const navItems = [
   { id: 'transactions', label: 'Transactions', route: '/transactions', icon: BarChart3, roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'budgets', label: 'Budgets', route: '/budgets', icon: BarChart3, roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'insights', label: 'Insights', route: '/insights', icon: BarChart3, roles: ['user', 'developer', 'admin'], authRequired: true },
-  { id: 'location-history', label: 'Location History', route: '/location-history', icon: MapPin, roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'location-history', label: 'Location', route: '/location-history', icon: MapPin, roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'favorites', label: 'Favorites', route: '/favorites', icon: Heart, roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'monitoring', label: 'Monitoring', route: '/monitoring', icon: BarChart3, roles: ['admin', 'developer'], authRequired: true },
   { id: 'admin', label: 'Admin', route: '/admin', icon: Settings, roles: ['admin'], authRequired: true },
 ];

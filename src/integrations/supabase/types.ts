@@ -489,6 +489,41 @@ export type Database = {
           },
         ]
       }
+      digest_preferences: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          frequency: string | null
+          preferred_time: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          frequency?: string | null
+          preferred_time?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          frequency?: string | null
+          preferred_time?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digest_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_delivery_logs: {
         Row: {
           bounced_at: string | null
@@ -505,6 +540,8 @@ export type Database = {
           recipient_email: string
           resend_message_id: string | null
           retry_count: number | null
+          scheduled_send_time: string | null
+          send_status: string | null
           sent_at: string | null
           status: string | null
           template_name: string | null
@@ -526,6 +563,8 @@ export type Database = {
           recipient_email: string
           resend_message_id?: string | null
           retry_count?: number | null
+          scheduled_send_time?: string | null
+          send_status?: string | null
           sent_at?: string | null
           status?: string | null
           template_name?: string | null
@@ -547,6 +586,8 @@ export type Database = {
           recipient_email?: string
           resend_message_id?: string | null
           retry_count?: number | null
+          scheduled_send_time?: string | null
+          send_status?: string | null
           sent_at?: string | null
           status?: string | null
           template_name?: string | null
@@ -2874,6 +2915,53 @@ export type Database = {
             columns: ["experiment_id"]
             isOneToOne: false
             referencedRelation: "ab_experiments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_favorite_merchants: {
+        Row: {
+          created_at: string | null
+          foursquare_id: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          merchant_address: string | null
+          merchant_category: string | null
+          merchant_id: string | null
+          merchant_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          foursquare_id?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          merchant_address?: string | null
+          merchant_category?: string | null
+          merchant_id?: string | null
+          merchant_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          foursquare_id?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          merchant_address?: string | null
+          merchant_category?: string | null
+          merchant_id?: string | null
+          merchant_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorite_merchants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
