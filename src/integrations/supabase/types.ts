@@ -361,44 +361,115 @@ export type Database = {
         }
         Relationships: []
       }
+      dead_letter_queue: {
+        Row: {
+          created_at: string | null
+          failure_reason: string
+          id: string
+          manual_review_required: boolean | null
+          original_queue_type: string
+          payload: Json
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          retry_history: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          failure_reason: string
+          id?: string
+          manual_review_required?: boolean | null
+          original_queue_type: string
+          payload: Json
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          retry_history?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          failure_reason?: string
+          id?: string
+          manual_review_required?: boolean | null
+          original_queue_type?: string
+          payload?: Json
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          retry_history?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dead_letter_queue_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_delivery_logs: {
         Row: {
+          bounced_at: string | null
+          clicked_at: string | null
+          complained_at: string | null
           created_at: string | null
           delivered_at: string | null
           email_type: string
           error_message: string | null
           id: string
+          last_retry_at: string | null
           metadata: Json | null
+          opened_at: string | null
           recipient_email: string
           resend_message_id: string | null
+          retry_count: number | null
           sent_at: string | null
           status: string | null
+          template_name: string | null
+          template_version: string | null
           user_id: string | null
         }
         Insert: {
+          bounced_at?: string | null
+          clicked_at?: string | null
+          complained_at?: string | null
           created_at?: string | null
           delivered_at?: string | null
           email_type: string
           error_message?: string | null
           id?: string
+          last_retry_at?: string | null
           metadata?: Json | null
+          opened_at?: string | null
           recipient_email: string
           resend_message_id?: string | null
+          retry_count?: number | null
           sent_at?: string | null
           status?: string | null
+          template_name?: string | null
+          template_version?: string | null
           user_id?: string | null
         }
         Update: {
+          bounced_at?: string | null
+          clicked_at?: string | null
+          complained_at?: string | null
           created_at?: string | null
           delivered_at?: string | null
           email_type?: string
           error_message?: string | null
           id?: string
+          last_retry_at?: string | null
           metadata?: Json | null
+          opened_at?: string | null
           recipient_email?: string
           resend_message_id?: string | null
+          retry_count?: number | null
           sent_at?: string | null
           status?: string | null
+          template_name?: string | null
+          template_version?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -1198,6 +1269,95 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          budget_alert_threshold: number | null
+          created_at: string | null
+          email_budget_alerts: boolean | null
+          email_enabled: boolean | null
+          email_geofence_entry: boolean | null
+          email_geofence_exit: boolean | null
+          email_security_alerts: boolean | null
+          email_transaction_alerts: boolean | null
+          email_weekly_summary: boolean | null
+          id: string
+          push_budget_alerts: boolean | null
+          push_enabled: boolean | null
+          push_geofence_entry: boolean | null
+          push_geofence_exit: boolean | null
+          push_transaction_alerts: boolean | null
+          quiet_hours_enabled: boolean | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          sms_budget_alerts: boolean | null
+          sms_enabled: boolean | null
+          sms_geofence_entry: boolean | null
+          sms_security_alerts: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget_alert_threshold?: number | null
+          created_at?: string | null
+          email_budget_alerts?: boolean | null
+          email_enabled?: boolean | null
+          email_geofence_entry?: boolean | null
+          email_geofence_exit?: boolean | null
+          email_security_alerts?: boolean | null
+          email_transaction_alerts?: boolean | null
+          email_weekly_summary?: boolean | null
+          id?: string
+          push_budget_alerts?: boolean | null
+          push_enabled?: boolean | null
+          push_geofence_entry?: boolean | null
+          push_geofence_exit?: boolean | null
+          push_transaction_alerts?: boolean | null
+          quiet_hours_enabled?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          sms_budget_alerts?: boolean | null
+          sms_enabled?: boolean | null
+          sms_geofence_entry?: boolean | null
+          sms_security_alerts?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget_alert_threshold?: number | null
+          created_at?: string | null
+          email_budget_alerts?: boolean | null
+          email_enabled?: boolean | null
+          email_geofence_entry?: boolean | null
+          email_geofence_exit?: boolean | null
+          email_security_alerts?: boolean | null
+          email_transaction_alerts?: boolean | null
+          email_weekly_summary?: boolean | null
+          id?: string
+          push_budget_alerts?: boolean | null
+          push_enabled?: boolean | null
+          push_geofence_entry?: boolean | null
+          push_geofence_exit?: boolean | null
+          push_transaction_alerts?: boolean | null
+          quiet_hours_enabled?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          sms_budget_alerts?: boolean | null
+          sms_enabled?: boolean | null
+          sms_geofence_entry?: boolean | null
+          sms_security_alerts?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_queue: {
         Row: {
           attempts: number | null
@@ -1737,6 +1897,48 @@ export type Database = {
           },
         ]
       }
+      retry_queue: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_error: string | null
+          max_retries: number | null
+          payload: Json
+          priority: number | null
+          queue_type: string
+          retry_count: number | null
+          scheduled_for: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_error?: string | null
+          max_retries?: number | null
+          payload: Json
+          priority?: number | null
+          queue_type: string
+          retry_count?: number | null
+          scheduled_for: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_error?: string | null
+          max_retries?: number | null
+          payload?: Json
+          priority?: number | null
+          queue_type?: string
+          retry_count?: number | null
+          scheduled_for?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       risks: {
         Row: {
           created_at: string | null
@@ -2204,6 +2406,51 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_events: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          payload: Json
+          processed: boolean | null
+          processed_at: string | null
+          received_at: string | null
+          retry_count: number | null
+          signature: string | null
+          source: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          payload: Json
+          processed?: boolean | null
+          processed_at?: string | null
+          received_at?: string | null
+          retry_count?: number | null
+          signature?: string | null
+          source: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          payload?: Json
+          processed?: boolean | null
+          processed_at?: string | null
+          received_at?: string | null
+          retry_count?: number | null
+          signature?: string | null
+          source?: string
         }
         Relationships: []
       }
