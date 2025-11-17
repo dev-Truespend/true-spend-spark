@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +9,11 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { GlobalNav } from "@/components/navigation/GlobalNav";
+import { ConflictResolutionDialog } from "@/components/sync/ConflictResolutionDialog";
+import { syncManager, SyncStatus } from "@/services/syncManager";
+import { offlineSyncService, SyncConflict, ConflictResolution } from "@/services/offlineSync";
+import { useOfflineStorage } from "@/hooks/useOfflineStorage";
+import { toast } from "sonner";
 import AdminDashboardLayout from "./pages/dashboard/AdminDashboardLayout";
 import DashboardLauncher from "./pages/DashboardLauncher";
 import Home from "./pages/Home";
@@ -57,6 +62,137 @@ function NotificationTriggersWrapper() {
   return null;
 }
 
+function SyncManagerWrapper() {
+  const { storage, status, resolveConflict } = useOfflineStorage();
+  const [currentConflict, setCurrentConflict] = useState<SyncConflict | null>(null);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const conflictResolutionRef = useRef<((resolution: ConflictResolution) => void) | null>(null);
+
+  // Subscribe to syncManager status changes
+  useEffect(() => {
+    console.log('[App] Subscribing to sync status changes');
+    const unsubscribe = syncManager.onStatusChange((status, error) => {
+      setSyncStatus(status);
+      if (error) {
+        console.error('[App] Sync error:', error);
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // Start auto-sync on mount
+  useEffect(() => {
+    console.log('[App] Starting auto-sync (every 30 seconds)');
+    syncManager.startAutoSync(30000);
+
+    return () => {
+      console.log('[App] Stopping auto-sync');
+      syncManager.stopAutoSync();
+    };
+  }, []);
+
+  // Check for conflicts when coming back online
+  useEffect(() => {
+    const checkConflicts = async () => {
+      if (!status.isOnline) return;
+
+      console.log('[App] Checking for sync conflicts...');
+      
+      try {
+        // Check transactions for conflicts
+        const transactions = await storage.getAll('transactions');
+        const txResult = await offlineSyncService.sync(
+          'transactions',
+          transactions,
+          async (conflict) => {
+            console.log('[App] Conflict detected:', conflict);
+            setCurrentConflict(conflict);
+            setShowConflictDialog(true);
+            
+            // Wait for user resolution
+            return new Promise<ConflictResolution>((resolve) => {
+              conflictResolutionRef.current = resolve;
+            });
+          }
+        );
+
+        // Check budgets for conflicts
+        const budgets = await storage.getAll('budgets');
+        const budgetResult = await offlineSyncService.sync(
+          'budgets',
+          budgets,
+          async (conflict) => {
+            console.log('[App] Conflict detected:', conflict);
+            setCurrentConflict(conflict);
+            setShowConflictDialog(true);
+            
+            return new Promise<ConflictResolution>((resolve) => {
+              conflictResolutionRef.current = resolve;
+            });
+          }
+        );
+
+        const totalConflicts = txResult.conflicts.length + budgetResult.conflicts.length;
+        if (totalConflicts > 0) {
+          toast.warning(`${totalConflicts} sync conflict(s) need resolution`);
+        } else if (txResult.pushed > 0 || txResult.pulled > 0 || budgetResult.pushed > 0 || budgetResult.pulled > 0) {
+          toast.success('Successfully synced all changes');
+        }
+      } catch (error) {
+        console.error('[App] Conflict check error:', error);
+      }
+    };
+
+    // Check on mount and when coming back online
+    checkConflicts();
+    
+    window.addEventListener('online', checkConflicts);
+    return () => window.removeEventListener('online', checkConflicts);
+  }, [status.isOnline, storage]);
+
+  const handleConflictResolve = async (resolution: 'local' | 'remote') => {
+    if (!currentConflict) return;
+
+    console.log('[App] Resolving conflict:', resolution);
+    
+    // Call the resolution callback
+    if (conflictResolutionRef.current) {
+      conflictResolutionRef.current(resolution);
+      conflictResolutionRef.current = null;
+    }
+
+    // Use the resolveConflict method from useOfflineStorage
+    await resolveConflict(currentConflict, resolution);
+
+    setShowConflictDialog(false);
+    setCurrentConflict(null);
+    
+    toast.success('Conflict resolved successfully');
+  };
+
+  return (
+    <>
+      <ConflictResolutionDialog
+        conflict={currentConflict}
+        open={showConflictDialog}
+        onClose={() => {
+          setShowConflictDialog(false);
+          setCurrentConflict(null);
+          // Resolve as "manual" to skip
+          if (conflictResolutionRef.current) {
+            conflictResolutionRef.current('manual');
+            conflictResolutionRef.current = null;
+          }
+        }}
+        onResolve={handleConflictResolve}
+      />
+    </>
+  );
+}
+
 function App() {
   // Maintenance mode gate
   if (import.meta.env.VITE_MAINTENANCE_MODE === 'true') {
@@ -80,6 +216,7 @@ function App() {
           <BrowserRouter>
             <AuthProvider>
               <NotificationTriggersWrapper />
+              <SyncManagerWrapper />
               <Toaster />
               <Sonner />
               <CSPViolationReporter />

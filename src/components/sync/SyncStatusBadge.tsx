@@ -99,6 +99,7 @@ export function SyncStatusBadge({
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge
+            data-testid={`sync-badge-${status}`}
             variant={config.variant}
             className={cn(
               'gap-1.5 px-2 py-0.5 text-xs cursor-default transition-all',

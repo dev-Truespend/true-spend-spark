@@ -325,6 +325,7 @@ export default function Budgets() {
         <div className="flex gap-2">
           {status.pendingChanges > 0 && status.isOnline && (
             <Button
+              data-testid="sync-now-button"
               variant="outline"
               onClick={handleSyncNow}
               disabled={isSyncing}
