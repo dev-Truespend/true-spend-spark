@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, File, X, CheckCircle, AlertCircle, Camera, Image as ImageIcon } from 'lucide-react';
+import { Upload, File, X, CheckCircle, AlertCircle, Camera, Image as ImageIcon, Scan } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { uploadFile, getUserPath } from '@/services/storageService';
 import { prepareImageForOCR } from '@/services/ocrPreparation';
+import { extractReceiptData, ReceiptData } from '@/services/ocrService';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { CameraCapture } from '@/components/camera/CameraCapture';
@@ -15,10 +16,11 @@ import { OCRQualityIndicator } from '@/components/receipt/OCRQualityIndicator';
 
 interface UploadedFile {
   name: string;
-  status: 'uploading' | 'success' | 'error' | 'analyzing';
+  status: 'uploading' | 'success' | 'error' | 'analyzing' | 'extracting';
   progress: number;
   url?: string;
   error?: string;
+  extractedData?: ReceiptData;
   metadata?: {
     size: number;
     type: string;
@@ -29,7 +31,11 @@ interface UploadedFile {
   };
 }
 
-export function ReceiptUpload() {
+export interface ReceiptUploadProps {
+  onReceiptExtracted?: (data: ReceiptData) => void;
+}
+
+export function ReceiptUpload({ onReceiptExtracted }: ReceiptUploadProps = {}) {
   const { user } = useAuth();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [showCamera, setShowCamera] = useState(false);
@@ -120,7 +126,29 @@ export function ReceiptUpload() {
         return updated;
       });
 
-      toast.success(`${file.name} uploaded successfully`);
+      // Extract receipt data for images
+      if (file.type.startsWith('image/')) {
+        setFiles(prev => {
+          const updated = [...prev];
+          if (updated[fileIndex]) updated[fileIndex].status = 'extracting';
+          return updated;
+        });
+
+        const ocrResult = await extractReceiptData(fileToUpload);
+        if (ocrResult.success && ocrResult.data) {
+          setFiles(prev => {
+            const updated = [...prev];
+            if (updated[fileIndex]) updated[fileIndex].extractedData = ocrResult.data;
+            return updated;
+          });
+          onReceiptExtracted?.(ocrResult.data);
+          toast.success('Receipt extracted!', { description: `${ocrResult.data.merchant}: $${ocrResult.data.amount}` });
+        } else {
+          toast.success(`${file.name} uploaded (OCR failed - enter manually)`);
+        }
+      } else {
+        toast.success(`${file.name} uploaded successfully`);
+      }
     } catch (error) {
       setFiles(prev => {
         const updated = [...prev];

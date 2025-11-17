@@ -1,4 +1,7 @@
+// BFF Client - Backend for Frontend API client with adaptive network handling
 import { supabase } from "@/integrations/supabase/client";
+import { AdaptiveClient } from './adaptiveClient';
+import { NetworkQuality } from '@/hooks/useNetworkQuality';
 
 export interface DashboardData {
   transactions: any[];
@@ -64,6 +67,12 @@ function generateCorrelationId(): string {
 }
 
 class BFFClient {
+  private adaptiveClient: AdaptiveClient | null = null;
+
+  setNetworkQuality(quality: NetworkQuality) {
+    this.adaptiveClient = new AdaptiveClient(quality);
+  }
+
   private async call<T>(
     functionName: string,
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
@@ -72,7 +81,13 @@ class BFFClient {
     const correlationId = generateCorrelationId();
     const requestId = crypto.randomUUID();
     
-    const { data, error } = await supabase.functions.invoke(functionName, {
+    // Apply adaptive timeout if available
+    const timeout = this.adaptiveClient?.getRequestTimeout() || 30000;
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout')), timeout)
+    );
+
+    const requestPromise = supabase.functions.invoke(functionName, {
       body,
       method,
       headers: {
@@ -80,6 +95,11 @@ class BFFClient {
         'x-correlation-id': correlationId,
       },
     });
+
+    const { data, error } = await Promise.race([
+      requestPromise,
+      timeoutPromise
+    ]) as any;
 
     if (error) {
       console.error(`BFF ${functionName} error [${correlationId}]:`, error);
