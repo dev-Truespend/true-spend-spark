@@ -112,6 +112,7 @@ export function OfflineIndicator() {
       <Tooltip>
         <TooltipTrigger asChild>
           <div
+            data-testid="offline-indicator"
             className={cn(
               'fixed top-4 right-4 z-50 transition-all duration-300',
               'hover:scale-105 cursor-pointer'

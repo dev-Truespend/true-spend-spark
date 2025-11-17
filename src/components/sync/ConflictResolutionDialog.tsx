@@ -17,7 +17,7 @@ interface SyncConflict {
   localData: any;
   remoteData: any;
   table: string;
-  id: string;
+  recordId: string;
 }
 
 interface ConflictResolutionDialogProps {
@@ -108,7 +108,7 @@ export function ConflictResolutionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl" data-testid="conflict-dialog">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

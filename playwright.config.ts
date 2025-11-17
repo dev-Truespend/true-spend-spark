@@ -10,12 +10,18 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:8080',
     trace: 'on-first-retry',
+    // Enable IndexedDB for offline tests
+    storageState: undefined, // Don't persist storage between tests
   },
 
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        // Enable service workers and offline support
+        serviceWorkers: 'allow',
+      },
     },
   ],
 
@@ -23,5 +29,6 @@ export default defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:8080',
     reuseExistingServer: !process.env.CI,
+    timeout: 120000, // Increase timeout for slower environments
   },
 });
