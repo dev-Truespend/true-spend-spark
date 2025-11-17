@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_experiments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          experiment_name: string
+          id: string
+          minimum_sample_size: number | null
+          start_date: string
+          status: string
+          target_metric: string
+          traffic_allocation: Json
+          updated_at: string
+          variants: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          experiment_name: string
+          id?: string
+          minimum_sample_size?: number | null
+          start_date: string
+          status?: string
+          target_metric: string
+          traffic_allocation: Json
+          updated_at?: string
+          variants: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          experiment_name?: string
+          id?: string
+          minimum_sample_size?: number | null
+          start_date?: string
+          status?: string
+          target_metric?: string
+          traffic_allocation?: Json
+          updated_at?: string
+          variants?: Json
+        }
+        Relationships: []
+      }
       anomaly_detections: {
         Row: {
           anomaly_type: string
@@ -325,6 +373,39 @@ export type Database = {
           },
         ]
       }
+      cache_analytics: {
+        Row: {
+          cache_type: string
+          geohash: string | null
+          id: string
+          metadata: Json | null
+          operation: string
+          response_time_ms: number | null
+          saved_api_cost_usd: number | null
+          timestamp: string
+        }
+        Insert: {
+          cache_type: string
+          geohash?: string | null
+          id?: string
+          metadata?: Json | null
+          operation: string
+          response_time_ms?: number | null
+          saved_api_cost_usd?: number | null
+          timestamp?: string
+        }
+        Update: {
+          cache_type?: string
+          geohash?: string | null
+          id?: string
+          metadata?: Json | null
+          operation?: string
+          response_time_ms?: number | null
+          saved_api_cost_usd?: number | null
+          timestamp?: string
+        }
+        Relationships: []
+      }
       csp_violations: {
         Row: {
           blocked_uri: string | null
@@ -508,6 +589,47 @@ export type Database = {
           window_start?: string
         }
         Relationships: []
+      }
+      experiment_metrics: {
+        Row: {
+          experiment_id: string
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_value: number | null
+          recorded_at: string
+          user_id: string
+          variant: string
+        }
+        Insert: {
+          experiment_id: string
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_value?: number | null
+          recorded_at?: string
+          user_id: string
+          variant: string
+        }
+        Update: {
+          experiment_id?: string
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_value?: number | null
+          recorded_at?: string
+          user_id?: string
+          variant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experiment_metrics_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "ab_experiments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feature_flags: {
         Row: {
@@ -711,6 +833,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      geofence_heatmap_data: {
+        Row: {
+          amount_spent: number | null
+          category: string | null
+          id: string
+          intensity: number
+          lat: number
+          lng: number
+          period_end: string
+          period_start: string
+          timestamp: string
+          transaction_count: number | null
+          user_id: string
+        }
+        Insert: {
+          amount_spent?: number | null
+          category?: string | null
+          id?: string
+          intensity: number
+          lat: number
+          lng: number
+          period_end: string
+          period_start: string
+          timestamp?: string
+          transaction_count?: number | null
+          user_id: string
+        }
+        Update: {
+          amount_spent?: number | null
+          category?: string | null
+          id?: string
+          intensity?: number
+          lat?: number
+          lng?: number
+          period_end?: string
+          period_start?: string
+          timestamp?: string
+          transaction_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
       }
       geofence_metrics: {
         Row: {
@@ -929,6 +1093,177 @@ export type Database = {
         }
         Relationships: []
       }
+      location_analytics: {
+        Row: {
+          average_transaction: number | null
+          budget_adherence_score: number | null
+          created_at: string
+          geofence_id: string | null
+          id: string
+          period_end: string
+          period_start: string
+          spending_trend: string | null
+          top_categories: Json | null
+          top_merchants: Json | null
+          total_spent: number | null
+          total_visits: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          average_transaction?: number | null
+          budget_adherence_score?: number | null
+          created_at?: string
+          geofence_id?: string | null
+          id?: string
+          period_end: string
+          period_start: string
+          spending_trend?: string | null
+          top_categories?: Json | null
+          top_merchants?: Json | null
+          total_spent?: number | null
+          total_visits?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          average_transaction?: number | null
+          budget_adherence_score?: number | null
+          created_at?: string
+          geofence_id?: string | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          spending_trend?: string | null
+          top_categories?: Json | null
+          top_merchants?: Json | null
+          total_spent?: number | null
+          total_visits?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_analytics_geofence_id_fkey"
+            columns: ["geofence_id"]
+            isOneToOne: false
+            referencedRelation: "geofences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_insights: {
+        Row: {
+          actioned: boolean | null
+          actioned_at: string | null
+          confidence_score: number | null
+          created_at: string
+          description: string
+          expires_at: string | null
+          geofence_id: string | null
+          id: string
+          insight_type: string
+          metadata: Json | null
+          priority: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          actioned?: boolean | null
+          actioned_at?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          description: string
+          expires_at?: string | null
+          geofence_id?: string | null
+          id?: string
+          insight_type: string
+          metadata?: Json | null
+          priority?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          actioned?: boolean | null
+          actioned_at?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          description?: string
+          expires_at?: string | null
+          geofence_id?: string | null
+          id?: string
+          insight_type?: string
+          metadata?: Json | null
+          priority?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_insights_geofence_id_fkey"
+            columns: ["geofence_id"]
+            isOneToOne: false
+            referencedRelation: "geofences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_recommendations: {
+        Row: {
+          accepted: boolean | null
+          accepted_at: string | null
+          created_at: string
+          current_value: number | null
+          data_points_analyzed: number | null
+          expires_at: string | null
+          geofence_id: string | null
+          id: string
+          potential_savings: number | null
+          rationale: string
+          recommendation_type: string
+          recommended_value: number | null
+          user_id: string
+        }
+        Insert: {
+          accepted?: boolean | null
+          accepted_at?: string | null
+          created_at?: string
+          current_value?: number | null
+          data_points_analyzed?: number | null
+          expires_at?: string | null
+          geofence_id?: string | null
+          id?: string
+          potential_savings?: number | null
+          rationale: string
+          recommendation_type: string
+          recommended_value?: number | null
+          user_id: string
+        }
+        Update: {
+          accepted?: boolean | null
+          accepted_at?: string | null
+          created_at?: string
+          current_value?: number | null
+          data_points_analyzed?: number | null
+          expires_at?: string | null
+          geofence_id?: string | null
+          id?: string
+          potential_savings?: number | null
+          rationale?: string
+          recommendation_type?: string
+          recommended_value?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_recommendations_geofence_id_fkey"
+            columns: ["geofence_id"]
+            isOneToOne: false
+            referencedRelation: "geofences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_foursquare_mapping: {
         Row: {
           confidence_score: number | null
@@ -963,6 +1298,81 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "merchant_foursquare_mapping_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchant_recommendations: {
+        Row: {
+          clicked: boolean | null
+          clicked_at: string | null
+          confidence_score: number | null
+          converted: boolean | null
+          converted_at: string | null
+          created_at: string
+          deal_description: string | null
+          deal_type: string | null
+          expires_at: string | null
+          geofence_id: string | null
+          id: string
+          merchant_id: string | null
+          potential_savings: number | null
+          recommendation_reason: string
+          user_id: string
+          viewed: boolean | null
+          viewed_at: string | null
+        }
+        Insert: {
+          clicked?: boolean | null
+          clicked_at?: string | null
+          confidence_score?: number | null
+          converted?: boolean | null
+          converted_at?: string | null
+          created_at?: string
+          deal_description?: string | null
+          deal_type?: string | null
+          expires_at?: string | null
+          geofence_id?: string | null
+          id?: string
+          merchant_id?: string | null
+          potential_savings?: number | null
+          recommendation_reason: string
+          user_id: string
+          viewed?: boolean | null
+          viewed_at?: string | null
+        }
+        Update: {
+          clicked?: boolean | null
+          clicked_at?: string | null
+          confidence_score?: number | null
+          converted?: boolean | null
+          converted_at?: string | null
+          created_at?: string
+          deal_description?: string | null
+          deal_type?: string | null
+          expires_at?: string | null
+          geofence_id?: string | null
+          id?: string
+          merchant_id?: string | null
+          potential_savings?: number | null
+          recommendation_reason?: string
+          user_id?: string
+          viewed?: boolean | null
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_recommendations_geofence_id_fkey"
+            columns: ["geofence_id"]
+            isOneToOne: false
+            referencedRelation: "geofences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merchant_recommendations_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
@@ -1024,6 +1434,57 @@ export type Database = {
           place_id?: string
           rating?: number | null
           website?: string | null
+        }
+        Relationships: []
+      }
+      merchants_cache_v2: {
+        Row: {
+          cached_at: string
+          categories: string[] | null
+          expires_at: string
+          geohash: string
+          geohash_precision: number
+          hit_count: number | null
+          id: string
+          last_accessed: string | null
+          lat: number
+          lng: number
+          merchant_data: Json
+          price_tier: number | null
+          rating: number | null
+          source: string
+        }
+        Insert: {
+          cached_at?: string
+          categories?: string[] | null
+          expires_at?: string
+          geohash: string
+          geohash_precision?: number
+          hit_count?: number | null
+          id?: string
+          last_accessed?: string | null
+          lat: number
+          lng: number
+          merchant_data: Json
+          price_tier?: number | null
+          rating?: number | null
+          source: string
+        }
+        Update: {
+          cached_at?: string
+          categories?: string[] | null
+          expires_at?: string
+          geohash?: string
+          geohash_precision?: number
+          hit_count?: number | null
+          id?: string
+          last_accessed?: string | null
+          lat?: number
+          lng?: number
+          merchant_data?: Json
+          price_tier?: number | null
+          rating?: number | null
+          source?: string
         }
         Relationships: []
       }
@@ -2385,6 +2846,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_experiment_assignments: {
+        Row: {
+          assigned_at: string
+          experiment_id: string
+          id: string
+          user_id: string
+          variant: string
+        }
+        Insert: {
+          assigned_at?: string
+          experiment_id: string
+          id?: string
+          user_id: string
+          variant: string
+        }
+        Update: {
+          assigned_at?: string
+          experiment_id?: string
+          id?: string
+          user_id?: string
+          variant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_experiment_assignments_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "ab_experiments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -2473,8 +2966,10 @@ export type Database = {
       }
       cleanup_expired_foursquare_cache: { Args: never; Returns: number }
       cleanup_expired_google_maps_cache: { Args: never; Returns: number }
+      cleanup_expired_insights: { Args: never; Returns: number }
       cleanup_expired_mfa_codes: { Args: never; Returns: number }
       cleanup_expired_push_tokens: { Args: never; Returns: number }
+      cleanup_expired_recommendations: { Args: never; Returns: number }
       cleanup_old_auth_attempts: { Args: never; Returns: number }
       cleanup_old_csp_violations: { Args: never; Returns: number }
       cleanup_old_foursquare_logs: { Args: never; Returns: number }
@@ -2539,6 +3034,7 @@ export type Database = {
       }
       hash_ip: { Args: { ip: string }; Returns: string }
       hash_pii: { Args: { data: string }; Returns: string }
+      increment_cache_hit: { Args: { cache_id: string }; Returns: undefined }
       invalidate_all_user_sessions: {
         Args: { p_user_id: string }
         Returns: undefined
