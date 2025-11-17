@@ -1,23 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { MapPin, DollarSign } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { MapPin, DollarSign, AlertCircle } from "lucide-react";
 import { LocationInsightsPanel } from "@/components/insights/LocationInsightsPanel";
 import { SpendingHeatmap } from "@/components/location/SpendingHeatmap";
 import { MerchantDiscoveryCard } from "@/components/location/MerchantDiscoveryCard";
+import { useLocationAnalytics } from "@/hooks/useLocationAnalytics";
 
 export default function LocationHistory() {
-  const { data: analytics, isLoading } = useQuery({
-    queryKey: ['location-analytics'],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('location-analytics-bff', {
-        body: { period_days: 30 },
-      });
-
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: analytics, isLoading, error } = useLocationAnalytics({ periodDays: 30 });
 
   return (
     <div className="container mx-auto p-6 space-y-8">
@@ -28,17 +19,40 @@ export default function LocationHistory() {
         </p>
       </div>
 
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error Loading Analytics</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : 'Failed to load location analytics. Please try again later.'}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <LocationInsightsPanel />
 
       {/* Spending Heatmap Visualization */}
       <SpendingHeatmap />
 
       {/* Nearby Merchant Recommendations */}
-      {analytics?.merchant_recommendations && analytics.merchant_recommendations.length > 0 && (
+      {isLoading ? (
         <div>
           <h2 className="text-xl font-semibold mb-4">Nearby Deals & Recommendations</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {analytics.merchant_recommendations.map((merchant: any) => (
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="p-6">
+                <Skeleton className="h-6 w-3/4 mb-4" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-2/3" />
+              </Card>
+            ))}
+          </div>
+        </div>
+      ) : analytics?.merchant_recommendations && analytics.merchant_recommendations.length > 0 ? (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Nearby Deals & Recommendations</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {analytics.merchant_recommendations.map((merchant) => (
               <MerchantDiscoveryCard
                 key={merchant.id}
                 merchantId={merchant.merchant_id}
@@ -58,7 +72,7 @@ export default function LocationHistory() {
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
       <div>
         <h2 className="text-xl font-semibold mb-4">Spending by Location</h2>
@@ -71,9 +85,9 @@ export default function LocationHistory() {
               </Card>
             ))}
           </div>
-        ) : (
+        ) : analytics?.analytics && analytics.analytics.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {analytics?.analytics?.map((location: any) => (
+            {analytics.analytics.map((location) => (
               <Card key={location.geofence_id} className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="p-2 rounded-lg bg-primary/10">
@@ -89,7 +103,7 @@ export default function LocationHistory() {
                       <span>• {location.transaction_count} transactions</span>
                     </div>
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {Object.entries(location.categories || {}).map(([cat, count]: any) => (
+                      {Object.entries(location.categories || {}).map(([cat, count]) => (
                         <span
                           key={cat}
                           className="text-xs px-2 py-1 rounded-full bg-muted"
@@ -103,6 +117,12 @@ export default function LocationHistory() {
               </Card>
             ))}
           </div>
+        ) : !isLoading && (
+          <Card className="p-6">
+            <p className="text-center text-muted-foreground">
+              No location data available yet. Start making transactions to see your spending patterns!
+            </p>
+          </Card>
         )}
       </div>
 
