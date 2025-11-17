@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { bffClient, TransactionInput } from "@/lib/api/bffClient";
 import { useOfflineStorage } from "@/hooks/useOfflineStorage";
+import { useGPSTracking } from "@/hooks/useGPSTracking";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Plus, TrendingDown, TrendingUp, RefreshCw, WifiOff } from "lucide-react";
+import { Loader2, Plus, TrendingDown, TrendingUp, RefreshCw, WifiOff, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { OfflineIndicator } from "@/components/network/OfflineIndicator";
 import { SyncStatusBadge } from "@/components/sync/SyncStatusBadge";
@@ -31,15 +32,67 @@ const CATEGORIES = [
 export default function Transactions() {
   const queryClient = useQueryClient();
   const { storage, saveOffline, status } = useOfflineStorage();
+  const { position } = useGPSTracking(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newTransaction, setNewTransaction] = useState<Partial<TransactionInput>>({
     category: "Other",
   });
   const [isCategorizing, setIsCategorizing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [geofenceFilter, setGeofenceFilter] = useState<string>("all");
+  const [currentGeofence, setCurrentGeofence] = useState<any>(null);
+
+  // Fetch user's geofences for filtering
+  const { data: userGeofences } = useQuery({
+    queryKey: ['user-geofences'],
+    queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return [];
+
+      const { data, error } = await supabase
+        .from('geofences')
+        .select('*')
+        .eq('user_id', user.user.id)
+        .eq('active', true);
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Check current geofence when dialog opens
+  useEffect(() => {
+    const checkCurrentGeofence = async () => {
+      if (!isAddOpen || !position || !userGeofences) return;
+
+      // Find which geofence the user is currently in
+      for (const geofence of userGeofences) {
+        const R = 6371e3; // Earth radius in meters
+        const φ1 = (position.latitude * Math.PI) / 180;
+        const φ2 = (Number(geofence.center_lat) * Math.PI) / 180;
+        const Δφ = ((Number(geofence.center_lat) - position.latitude) * Math.PI) / 180;
+        const Δλ = ((Number(geofence.center_lng) - position.longitude) * Math.PI) / 180;
+
+        const a =
+          Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+          Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c;
+
+        if (distance <= geofence.radius_meters) {
+          setCurrentGeofence(geofence);
+          return;
+        }
+      }
+
+      setCurrentGeofence(null);
+    };
+
+    checkCurrentGeofence();
+  }, [isAddOpen, position, userGeofences]);
 
   const { data: transactions, isLoading } = useQuery<any[]>({
-    queryKey: ['transactions'],
+    queryKey: ['transactions', geofenceFilter],
     queryFn: async () => {
       // Try local storage first for offline-first experience
       const localTransactions = await storage.getAll('transactions');
@@ -52,11 +105,22 @@ export default function Transactions() {
 
       // If online, fetch from Supabase
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('transactions')
           .select('*, merchant:merchants(*), geofence:geofences(*)')
           .order('timestamp', { ascending: false })
           .limit(100);
+
+        // Apply geofence filter if selected
+        if (geofenceFilter !== 'all') {
+          if (geofenceFilter === 'none') {
+            query = query.is('geofence_id', null);
+          } else {
+            query = query.eq('geofence_id', geofenceFilter);
+          }
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
 
@@ -231,7 +295,24 @@ export default function Transactions() {
           </div>
         </div>
         
-        <div className="flex gap-2">{status.pendingChanges > 0 && status.isOnline && (
+        <div className="flex gap-2">
+          {userGeofences && userGeofences.length > 0 && (
+            <Select value={geofenceFilter} onValueChange={setGeofenceFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Locations</SelectItem>
+                <SelectItem value="none">No Location</SelectItem>
+                {userGeofences.map((gf: any) => (
+                  <SelectItem key={gf.id} value={gf.id}>
+                    {gf.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {status.pendingChanges > 0 && status.isOnline && (
             <Button
               data-testid="sync-now-button"
               variant="outline"
@@ -264,6 +345,12 @@ export default function Transactions() {
               <DialogTitle>Add New Transaction</DialogTitle>
               <DialogDescription>
                 Enter transaction details. Use AI to auto-categorize.
+                {currentGeofence && (
+                  <div className="mt-2 flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Inside {currentGeofence.name}</span>
+                  </div>
+                )}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -355,18 +442,24 @@ export default function Transactions() {
                         <TrendingUp className="h-4 w-4 text-green-600" />
                       )}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-lg">{tx.description || 'Transaction'}</CardTitle>
-                        <SyncStatusBadge
-                          status={(tx as any).synced === false ? 'pending' : 'synced'}
-                          lastSyncTime={(tx as any).updated_at}
-                        />
-                      </div>
-                      <CardDescription>
-                        {tx.merchant?.name || 'Unknown'} • {tx.category}
-                      </CardDescription>
-                    </div>
+                     <div>
+                       <div className="flex items-center gap-2 flex-wrap">
+                         <CardTitle className="text-lg">{tx.description || 'Transaction'}</CardTitle>
+                         {tx.geofence && (
+                           <Badge variant="secondary" className="flex items-center gap-1">
+                             <MapPin className="h-3 w-3" />
+                             {tx.geofence.name}
+                           </Badge>
+                         )}
+                         <SyncStatusBadge
+                           status={(tx as any).synced === false ? 'pending' : 'synced'}
+                           lastSyncTime={(tx as any).updated_at}
+                         />
+                       </div>
+                       <CardDescription>
+                         {tx.merchant?.name || 'Unknown'} • {tx.category}
+                       </CardDescription>
+                     </div>
                   </div>
                   <div className="text-right">
                     <p className={`text-2xl font-bold ${Number(tx.amount) > 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -377,15 +470,8 @@ export default function Transactions() {
                     </p>
                   </div>
                 </div>
-              </CardHeader>
-              {tx.geofence && (
-                <CardContent className="pt-0">
-                  <div className="text-sm text-muted-foreground">
-                    📍 {tx.geofence.name}
-                  </div>
-                </CardContent>
-              )}
-            </Card>
+               </CardHeader>
+             </Card>
           ))}
           
           {transactions?.length === 0 && (
