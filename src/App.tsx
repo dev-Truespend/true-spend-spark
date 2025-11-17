@@ -42,6 +42,7 @@ import LocationHistory from "./pages/LocationHistory";
 import LocationMetrics from "./pages/dashboard/LocationMetrics";
 import NotFound from "./pages/NotFound";
 import FavoriteMerchants from "./pages/FavoriteMerchants";
+import Settings from "./pages/Settings";
 import WebhookAnalytics from "./pages/dashboard/WebhookAnalytics";
 import AnomalyDetection from "./pages/dashboard/AnomalyDetection";
 import ABTesting from "./pages/dashboard/ABTesting";
@@ -311,6 +312,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <FavoriteMerchants />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <ProtectedRoute>
+                    <Settings />
                   </ProtectedRoute>
                 } 
               />

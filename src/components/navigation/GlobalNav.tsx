@@ -17,6 +17,7 @@ const navItems = [
   { id: 'insights', label: 'Insights', route: '/insights', icon: BarChart3, roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'location-history', label: 'Location', route: '/location-history', icon: MapPin, roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'favorites', label: 'Favorites', route: '/favorites', icon: Heart, roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'settings', label: 'Settings', route: '/settings', icon: Settings, roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'monitoring', label: 'Monitoring', route: '/monitoring', icon: BarChart3, roles: ['admin', 'developer'], authRequired: true },
   { id: 'admin', label: 'Admin', route: '/admin', icon: Settings, roles: ['admin'], authRequired: true },
 ];
