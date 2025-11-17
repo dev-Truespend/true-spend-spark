@@ -69,7 +69,7 @@ serve(async (_req) => {
     }
 
     // Clean up expired cache entries
-    const { data: expired, error: cleanupError } = await supabaseClient
+    const { error: cleanupError } = await supabaseClient
       .from('merchants_cache_v2')
       .delete()
       .lt('expires_at', new Date().toISOString());
@@ -79,7 +79,6 @@ serve(async (_req) => {
     return new Response(JSON.stringify({
       success: true,
       prewarmed_geofences: highTrafficGeofences.length,
-      expired_entries_cleaned: expired?.length || 0,
     }), {
       headers: { 'Content-Type': 'application/json' },
     });

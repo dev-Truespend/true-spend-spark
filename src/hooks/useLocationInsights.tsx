@@ -15,16 +15,16 @@ export interface LocationInsight {
 
 export function useLocationInsights() {
   return useQuery({
-    queryKey: ['location-insights'],
+    queryKey: ['location-insights'] as const,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('location_insights')
+        .from('location_insights' as any)
         .select('*, geofences(name, type)')
         .order('created_at', { ascending: false })
         .limit(10);
 
       if (error) throw error;
-      return data as LocationInsight[];
+      return (data as unknown) as LocationInsight[];
     },
     refetchInterval: 60000, // Refetch every minute
   });
