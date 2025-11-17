@@ -5,6 +5,9 @@ import { MapPin, DollarSign, AlertCircle } from "lucide-react";
 import { LocationInsightsPanel } from "@/components/insights/LocationInsightsPanel";
 import { SpendingHeatmap } from "@/components/location/SpendingHeatmap";
 import { MerchantDiscoveryCard } from "@/components/location/MerchantDiscoveryCard";
+import { MapGeofenceCreator } from "@/components/location/MapGeofenceCreator";
+import { LocationCSVExport } from "@/components/location/LocationCSVExport";
+import { LocationTutorial } from "@/components/location/LocationTutorial";
 import { useLocationAnalytics } from "@/hooks/useLocationAnalytics";
 
 export default function LocationHistory() {
@@ -28,6 +31,13 @@ export default function LocationHistory() {
           </AlertDescription>
         </Alert>
       )}
+
+      <LocationTutorial />
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <MapGeofenceCreator />
+        <LocationCSVExport />
+      </div>
 
       <LocationInsightsPanel />
 
