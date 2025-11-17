@@ -1,13 +1,16 @@
 /**
- * DORMANT CODE - Not currently used in production
+ * IndexedDB Offline Storage - Phase 1 PWA Implementation
  * 
- * This IndexedDB schema was created for Phase 1 PWA implementation (now deprecated).
- * Kept for potential future offline-first features requiring manual sync queue management.
+ * Provides offline-first data persistence with automatic sync queue management.
+ * Supports transactions, budgets, geofences with conflict resolution.
  * 
- * Current offline strategy: React Query with IndexedDB persistence via idb-keyval
- * See: src/lib/queryPersister.ts for active offline caching
+ * Architecture:
+ * - IndexedDB for structured offline data storage
+ * - Sync queue for tracking pending operations
+ * - Migration system for schema evolution
+ * - Health monitoring for diagnostics
  * 
- * Last active: Phase 1 PWA implementation (removed)
+ * Status: ACTIVE (Phase 1 - Production Ready)
  */
 
 // IndexedDB wrapper for offline-first architecture - Phase 1
@@ -75,7 +78,13 @@ const migrations: Record<number, MigrationHandler> = {
 };
 
 export async function initDB(): Promise<IDBPDatabase> {
-  if (dbInstance) return dbInstance;
+  if (dbInstance) {
+    console.log('[IndexedDB] Using existing database instance');
+    return dbInstance;
+  }
+
+  console.log('[IndexedDB] Initializing database...');
+  const startTime = performance.now();
 
   dbInstance = await openDB(DB_NAME, DB_VERSION, {
     upgrade(db, oldVersion, newVersion, transaction) {
@@ -121,6 +130,10 @@ export async function initDB(): Promise<IDBPDatabase> {
     },
   });
 
+  const endTime = performance.now();
+  console.log(`[IndexedDB] Database initialized successfully in ${(endTime - startTime).toFixed(2)}ms`);
+  console.log(`[IndexedDB] Version: ${dbInstance.version}, Stores: ${Array.from(dbInstance.objectStoreNames).join(', ')}`);
+
   return dbInstance;
 }
 
@@ -131,39 +144,51 @@ export async function addItem(
   storeName: StoreName,
   item: any
 ): Promise<void> {
+  console.log(`[IndexedDB] Adding item to ${storeName}:`, item.id || 'new item');
   const db = await initDB();
   await db.add(storeName, item);
+  console.log(`[IndexedDB] Item added successfully to ${storeName}`);
 }
 
 export async function getItem(
   storeName: StoreName,
   key: any
 ): Promise<any | undefined> {
+  console.log(`[IndexedDB] Getting item from ${storeName}:`, key);
   const db = await initDB();
-  return db.get(storeName, key);
+  const item = await db.get(storeName, key);
+  console.log(`[IndexedDB] Item ${item ? 'found' : 'not found'} in ${storeName}`);
+  return item;
 }
 
 export async function getAllItems(
   storeName: StoreName
 ): Promise<any[]> {
+  console.log(`[IndexedDB] Getting all items from ${storeName}`);
   const db = await initDB();
-  return db.getAll(storeName);
+  const items = await db.getAll(storeName);
+  console.log(`[IndexedDB] Retrieved ${items.length} items from ${storeName}`);
+  return items;
 }
 
 export async function updateItem(
   storeName: StoreName,
   item: any
 ): Promise<void> {
+  console.log(`[IndexedDB] Updating item in ${storeName}:`, item.id || 'unknown id');
   const db = await initDB();
   await db.put(storeName, item);
+  console.log(`[IndexedDB] Item updated successfully in ${storeName}`);
 }
 
 export async function deleteItem(
   storeName: StoreName,
   key: any
 ): Promise<void> {
+  console.log(`[IndexedDB] Deleting item from ${storeName}:`, key);
   const db = await initDB();
   await db.delete(storeName, key);
+  console.log(`[IndexedDB] Item deleted successfully from ${storeName}`);
 }
 
 // Sync queue operations
@@ -172,6 +197,7 @@ export async function addToSyncQueue(
   table: string,
   data: any
 ): Promise<void> {
+  console.log(`[IndexedDB] Adding to sync queue: ${action} on ${table}`);
   const db = await initDB();
   await db.add('syncQueue', {
     action,
@@ -180,11 +206,16 @@ export async function addToSyncQueue(
     timestamp: new Date().toISOString(),
     retries: 0,
   });
+  const queueSize = await db.count('syncQueue');
+  console.log(`[IndexedDB] Sync queue size: ${queueSize}`);
 }
 
 export async function getSyncQueue(): Promise<SyncQueueRecord[]> {
+  console.log('[IndexedDB] Retrieving sync queue');
   const db = await initDB();
-  return db.getAll('syncQueue') as Promise<SyncQueueRecord[]>;
+  const queue = await db.getAll('syncQueue') as SyncQueueRecord[];
+  console.log(`[IndexedDB] Sync queue contains ${queue.length} items`);
+  return queue;
 }
 
 export async function removeSyncQueueItem(id: number): Promise<void> {
@@ -230,12 +261,16 @@ export async function setSetting(key: string, value: any): Promise<void> {
 
 // Clear all data (for logout)
 export async function clearAllData(): Promise<void> {
+  console.log('[IndexedDB] Clearing all data...');
   const db = await initDB();
   const stores: StoreName[] = ['transactions', 'budgets', 'geofences', 'syncQueue', 'settings'];
   
   for (const store of stores) {
+    const count = await db.count(store);
     await db.clear(store);
+    console.log(`[IndexedDB] Cleared ${count} items from ${store}`);
   }
+  console.log('[IndexedDB] All data cleared successfully');
 }
 
 // Migration utilities
