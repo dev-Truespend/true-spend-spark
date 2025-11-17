@@ -131,3 +131,21 @@ schedule = "0 4 * * 0"
 [functions.cleanup-expired-google-maps-cache]
 verify_jwt = false
 schedule = "0 1 * * *"
+
+# Phase 7: Location Intelligence Edge Functions
+
+[functions.location-insights-ai]
+verify_jwt = true
+
+[functions.merchant-discovery]
+verify_jwt = true
+
+[functions.location-analytics-bff]
+verify_jwt = true
+
+[functions.ab-testing-manager]
+verify_jwt = true
+
+[functions.cache-prewarmer]
+verify_jwt = false
+schedule = "0 */4 * * *"
