@@ -57,6 +57,35 @@ serve(async (req) => {
 
     const { userId, template, data, category, scheduledFor }: EmailRequest = await req.json();
 
+    // Get user profile
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('email, first_name')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profile) {
+      throw new Error(`User profile not found: ${profileError?.message}`);
+    }
+
+    // Check email rate limit (max 10 emails per hour per user)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: recentEmails, error: rateLimitError } = await supabaseClient
+      .from('email_delivery_logs')
+      .select('id')
+      .eq('user_id', userId)
+      .gte('created_at', oneHourAgo);
+
+    if (!rateLimitError && recentEmails && recentEmails.length >= 10) {
+      console.log('Rate limit exceeded for user:', userId);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded. Maximum 10 emails per hour.' 
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // If scheduled time provided, save for later processing
     if (scheduledFor) {
       const scheduledTime = new Date(scheduledFor);
@@ -66,7 +95,7 @@ serve(async (req) => {
           .insert({
             user_id: userId,
             email_type: template,
-            recipient_email: '',
+            recipient_email: profile.email,
             template_name: template,
             metadata: data,
             scheduled_send_time: scheduledTime.toISOString(),
@@ -78,17 +107,6 @@ serve(async (req) => {
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-    }
-
-    // Get user profile and notification preferences
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('email, first_name')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !profile) {
-      throw new Error(`User profile not found: ${profileError?.message}`);
     }
 
     // Check notification preferences
