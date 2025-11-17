@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOfflineStorage } from "@/hooks/useOfflineStorage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +11,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Plus, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, AlertTriangle, CheckCircle2, RefreshCw, WifiOff } from "lucide-react";
+import { OfflineIndicator } from "@/components/network/OfflineIndicator";
+import { SyncStatusBadge } from "@/components/sync/SyncStatusBadge";
 
 const CATEGORIES = [
   "Dining",
@@ -28,7 +31,9 @@ const PERIODS = ["monthly", "weekly", "quarterly"];
 
 export default function Budgets() {
   const queryClient = useQueryClient();
+  const { storage, saveOffline, status } = useOfflineStorage();
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [newBudget, setNewBudget] = useState({
     category: "Other",
     limit_amount: 0,
@@ -36,39 +41,83 @@ export default function Budgets() {
     alert_threshold: 0.8,
   });
 
-  const { data: budgets, isLoading } = useQuery({
+  const { data: budgets, isLoading } = useQuery<any[]>({
     queryKey: ['budgets-with-spending'],
     queryFn: async () => {
-      const { data: budgets, error: budgetsError } = await supabase
-        .from('budgets')
-        .select('*')
-        .eq('active', true)
-        .order('created_at', { ascending: false });
+      // Try local storage first
+      const localBudgets = await storage.getAll('budgets');
+      const localTransactions = await storage.getAll('transactions');
 
-      if (budgetsError) throw budgetsError;
-
-      // Get spending for each budget
-      const budgetsWithSpending = await Promise.all(
-        budgets.map(async (budget) => {
-          const { data: transactions } = await supabase
-            .from('transactions')
-            .select('amount')
-            .eq('category', budget.category)
-            .gte('timestamp', budget.start_date)
-            .lte('timestamp', budget.end_date || new Date().toISOString());
-
-          const spent = transactions?.reduce((sum, tx) => sum + Number(tx.amount), 0) || 0;
-
+      // If offline, calculate spending from local data
+      if (!status.isOnline) {
+        console.log('[Budgets] Offline: Using local data');
+        return localBudgets.map((budget: any) => {
+          const transactions = localTransactions.filter(
+            (tx: any) =>
+              tx.category === budget.category &&
+              tx.timestamp >= budget.start_date &&
+              tx.timestamp <= (budget.end_date || new Date().toISOString())
+          );
+          const spent = transactions.reduce((sum: number, tx: any) => {
+            const amount = Number(tx.amount) || 0;
+            return sum + amount;
+          }, 0);
+          const limitAmount = Number(budget.limit_amount) || 1;
+          const remaining = limitAmount - spent;
+          const utilization = (spent / limitAmount) * 100;
+          
           return {
             ...budget,
             spent,
-            remaining: Number(budget.limit_amount) - spent,
-            utilization: (spent / Number(budget.limit_amount)) * 100,
+            remaining,
+            utilization,
           };
-        })
-      );
+        });
+      }
 
-      return budgetsWithSpending;
+      // If online, fetch from Supabase
+      try {
+        const { data: budgets, error: budgetsError } = await supabase
+          .from('budgets')
+          .select('*')
+          .eq('active', true)
+          .order('created_at', { ascending: false });
+
+        if (budgetsError) throw budgetsError;
+
+        // Get spending for each budget
+        const budgetsWithSpending = await Promise.all(
+          budgets.map(async (budget) => {
+            const { data: transactions } = await supabase
+              .from('transactions')
+              .select('amount')
+              .eq('category', budget.category)
+              .gte('timestamp', budget.start_date)
+              .lte('timestamp', budget.end_date || new Date().toISOString());
+
+            const spent = transactions?.reduce((sum, tx) => sum + Number(tx.amount), 0) || 0;
+
+            return {
+              ...budget,
+              spent,
+              remaining: Number(budget.limit_amount) - spent,
+              utilization: (spent / Number(budget.limit_amount)) * 100,
+            };
+          })
+        );
+
+        // Update local storage with fresh data
+        await storage.bulkSet(
+          'budgets',
+          budgetsWithSpending.map(b => ({ key: b.id, value: { ...b, synced: true } }))
+        );
+
+        return budgetsWithSpending;
+      } catch (error) {
+        console.error('[Budgets] Fetch error, falling back to local:', error);
+        // Fallback to local if online fetch fails
+        return localBudgets.length > 0 ? localBudgets : [];
+      }
     },
   });
 
@@ -88,9 +137,6 @@ export default function Budgets() {
 
   const addBudgetMutation = useMutation({
     mutationFn: async (input: typeof newBudget) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
       const startDate = new Date();
       let endDate: Date | null = null;
 
@@ -101,6 +147,32 @@ export default function Budgets() {
       } else if (input.period === 'quarterly') {
         endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 3, startDate.getDate());
       }
+
+      // If offline, save locally
+      if (!status.isOnline) {
+        const offlineBudget = {
+          id: crypto.randomUUID(),
+          user_id: '', // Will be set by backend
+          category: input.category,
+          limit_amount: input.limit_amount,
+          period: input.period,
+          start_date: startDate.toISOString(),
+          end_date: endDate?.toISOString() || null,
+          alert_threshold: input.alert_threshold,
+          active: true,
+          synced: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        await saveOffline('budgets', offlineBudget, 'CREATE');
+        console.log('[Budgets] Saved offline:', offlineBudget.id);
+        return offlineBudget;
+      }
+
+      // If online, create in Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
         .from('budgets')
@@ -117,11 +189,23 @@ export default function Budgets() {
         .single();
 
       if (error) throw error;
+      
+      // Save to local storage
+      await storage.set('budgets', data.id, { ...data, synced: true });
+      
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['budgets-with-spending'] });
-      toast.success('Budget created successfully');
+      
+      if ('synced' in data && !data.synced) {
+        toast.success('Budget saved offline - will sync when online', {
+          icon: <WifiOff className="h-4 w-4" />,
+        });
+      } else {
+        toast.success('Budget created successfully');
+      }
+      
       setIsAddOpen(false);
       setNewBudget({ category: "Other", limit_amount: 0, period: "monthly", alert_threshold: 0.8 });
     },
@@ -156,6 +240,63 @@ export default function Budgets() {
     addBudgetMutation.mutate(newBudget);
   };
 
+  const handleSyncNow = async () => {
+    if (!status.isOnline) {
+      toast.error('Cannot sync while offline');
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      // Get all unsynced budgets
+      const allBudgets = await storage.getAll('budgets');
+      const unsyncedBudgets = allBudgets.filter((b: any) => !b.synced);
+
+      if (unsyncedBudgets.length === 0) {
+        toast.info('All budgets are already synced');
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Process each unsynced budget
+      for (const budget of unsyncedBudgets) {
+        try {
+          const { data, error } = await supabase
+            .from('budgets')
+            .insert({
+              user_id: user.id,
+              category: (budget as any).category,
+              limit_amount: (budget as any).limit_amount,
+              period: (budget as any).period,
+              start_date: (budget as any).start_date,
+              end_date: (budget as any).end_date,
+              alert_threshold: (budget as any).alert_threshold,
+              active: (budget as any).active,
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          // Mark as synced in local storage
+          await storage.set('budgets', (budget as any).id, { ...data, synced: true });
+        } catch (error) {
+          console.error('[Budgets] Sync error:', error);
+          toast.error(`Failed to sync budget: ${(budget as any).category}`);
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['budgets-with-spending'] });
+      toast.success(`Synced ${unsyncedBudgets.length} budget(s)`);
+    } catch (error) {
+      toast.error('Sync failed');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const getSeverityColor = (utilization: number) => {
     if (utilization >= 100) return 'text-destructive';
     if (utilization >= 90) return 'text-orange-600';
@@ -165,11 +306,43 @@ export default function Budgets() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <OfflineIndicator />
+      
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Budgets</h1>
-          <p className="text-muted-foreground">Monitor and manage your spending limits</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-muted-foreground">Monitor and manage your spending limits</p>
+            {status.pendingChanges > 0 && (
+              <Badge variant="secondary" className="gap-1">
+                <WifiOff className="h-3 w-3" />
+                {status.pendingChanges} pending
+              </Badge>
+            )}
+          </div>
         </div>
+        
+        <div className="flex gap-2">
+          {status.pendingChanges > 0 && status.isOnline && (
+            <Button
+              variant="outline"
+              onClick={handleSyncNow}
+              disabled={isSyncing}
+              className="gap-2"
+            >
+              {isSyncing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  Sync Now
+                </>
+              )}
+            </Button>
+          )}
         
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
@@ -248,6 +421,7 @@ export default function Budgets() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {alerts && alerts.length > 0 && (
@@ -286,11 +460,17 @@ export default function Budgets() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {budgets?.map((budget) => (
+          {budgets?.map((budget: any) => (
             <Card key={budget.id}>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>{budget.category}</CardTitle>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <CardTitle>{budget.category}</CardTitle>
+                    <SyncStatusBadge
+                      status={budget.synced === false ? 'pending' : 'synced'}
+                      lastSyncTime={budget.updated_at}
+                    />
+                  </div>
                   {budget.utilization >= 100 ? (
                     <Badge variant="destructive">Exceeded</Badge>
                   ) : budget.utilization >= 90 ? (
