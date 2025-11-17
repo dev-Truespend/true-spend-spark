@@ -21,6 +21,7 @@ interface EmailRequest {
   template: 'budget_alert' | 'transaction_notification' | 'weekly_summary' | 'geofence_alert';
   data: Record<string, any>;
   category?: string;
+  scheduledFor?: string; // ISO timestamp for scheduled delivery
 }
 
 serve(async (req) => {
@@ -54,7 +55,30 @@ serve(async (req) => {
       );
     }
 
-    const { userId, template, data, category }: EmailRequest = await req.json();
+    const { userId, template, data, category, scheduledFor }: EmailRequest = await req.json();
+
+    // If scheduled time provided, save for later processing
+    if (scheduledFor) {
+      const scheduledTime = new Date(scheduledFor);
+      if (scheduledTime > new Date()) {
+        await supabaseClient
+          .from('email_delivery_logs')
+          .insert({
+            user_id: userId,
+            email_type: template,
+            recipient_email: '',
+            template_name: template,
+            metadata: data,
+            scheduled_send_time: scheduledTime.toISOString(),
+            send_status: 'scheduled'
+          });
+
+        return new Response(
+          JSON.stringify({ message: 'Email scheduled successfully', scheduledFor }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     // Get user profile and notification preferences
     const { data: profile, error: profileError } = await supabaseClient

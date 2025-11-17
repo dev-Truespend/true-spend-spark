@@ -124,11 +124,19 @@ export default function LocationMetrics() {
 
       if (error) throw error;
 
+      const total = data?.length || 0;
+      const viewed = data?.filter(d => d.viewed).length || 0;
+      const clicked = data?.filter(d => d.clicked).length || 0;
+      const converted = data?.filter(d => d.converted).length || 0;
+
       return {
-        total: data?.length || 0,
-        viewed: data?.filter(d => d.viewed).length || 0,
-        clicked: data?.filter(d => d.clicked).length || 0,
-        converted: data?.filter(d => d.converted).length || 0
+        total,
+        viewed,
+        clicked,
+        converted,
+        view_rate: total > 0 ? (viewed / total) * 100 : 0,
+        click_rate: viewed > 0 ? (clicked / viewed) * 100 : 0,
+        conversion_rate: clicked > 0 ? (converted / clicked) * 100 : 0
       };
     }
   });
@@ -328,9 +336,7 @@ export default function LocationMetrics() {
                 {merchantLoading ? (
                   <Skeleton className="h-8 w-20" />
                 ) : (
-                  `${merchantStats && merchantStats.total > 0
-                    ? ((merchantStats.viewed / merchantStats.total) * 100).toFixed(1)
-                    : 0}%`
+                  `${merchantStats?.view_rate.toFixed(1) || 0}%`
                 )}
               </CardTitle>
             </CardHeader>
@@ -343,9 +349,7 @@ export default function LocationMetrics() {
                 {merchantLoading ? (
                   <Skeleton className="h-8 w-20" />
                 ) : (
-                  `${merchantStats && merchantStats.viewed > 0
-                    ? ((merchantStats.clicked / merchantStats.viewed) * 100).toFixed(1)
-                    : 0}%`
+                  `${merchantStats?.click_rate.toFixed(1) || 0}%`
                 )}
               </CardTitle>
             </CardHeader>
@@ -358,9 +362,7 @@ export default function LocationMetrics() {
                 {merchantLoading ? (
                   <Skeleton className="h-8 w-20" />
                 ) : (
-                  `${merchantStats && merchantStats.clicked > 0
-                    ? ((merchantStats.converted / merchantStats.clicked) * 100).toFixed(1)
-                    : 0}%`
+                  `${merchantStats?.conversion_rate.toFixed(1) || 0}%`
                 )}
               </CardTitle>
             </CardHeader>
