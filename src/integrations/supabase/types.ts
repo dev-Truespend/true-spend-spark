@@ -605,6 +605,7 @@ export type Database = {
           id: string
           location_lat: number | null
           location_lng: number | null
+          location_token: string | null
           timestamp: string | null
           user_id: string
         }
@@ -615,6 +616,7 @@ export type Database = {
           id?: string
           location_lat?: number | null
           location_lng?: number | null
+          location_token?: string | null
           timestamp?: string | null
           user_id: string
         }
@@ -625,6 +627,7 @@ export type Database = {
           id?: string
           location_lat?: number | null
           location_lng?: number | null
+          location_token?: string | null
           timestamp?: string | null
           user_id?: string
         }
