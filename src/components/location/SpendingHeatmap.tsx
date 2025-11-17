@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Calendar, AlertCircle } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
@@ -89,7 +90,7 @@ export function SpendingHeatmap({ className }: SpendingHeatmapProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   // Fetch heatmap data
-  const { data: heatmapData, isLoading } = useQuery({
+  const { data: heatmapData, isLoading, error } = useQuery({
     queryKey: ['spending-heatmap', periodDays, selectedCategory],
     queryFn: async () => {
       const startDate = new Date();
@@ -99,7 +100,8 @@ export function SpendingHeatmap({ className }: SpendingHeatmapProps) {
         .from('geofence_heatmap_data')
         .select('lat, lng, intensity, category, amount_spent')
         .gte('period_start', startDate.toISOString())
-        .order('intensity', { ascending: false });
+        .order('intensity', { ascending: false })
+        .limit(500); // Limit for performance
 
       if (selectedCategory !== 'all') {
         query = query.eq('category', selectedCategory);
@@ -109,7 +111,9 @@ export function SpendingHeatmap({ className }: SpendingHeatmapProps) {
 
       if (error) throw error;
       return data as HeatmapPoint[];
-    }
+    },
+    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+    retry: 2,
   });
 
   // Fetch available categories
@@ -175,6 +179,15 @@ export function SpendingHeatmap({ className }: SpendingHeatmapProps) {
         </div>
       </CardHeader>
       <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error Loading Heatmap</AlertTitle>
+            <AlertDescription>
+              {error instanceof Error ? error.message : 'Failed to load heatmap data. Please try again later.'}
+            </AlertDescription>
+          </Alert>
+        )}
         {isLoading ? (
           <Skeleton className="h-[500px] w-full rounded-lg" />
         ) : !heatmapData || heatmapData.length === 0 ? (
