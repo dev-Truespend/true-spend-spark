@@ -43,6 +43,8 @@ import LocationMetrics from "./pages/dashboard/LocationMetrics";
 import NotFound from "./pages/NotFound";
 import FavoriteMerchants from "./pages/FavoriteMerchants";
 import WebhookAnalytics from "./pages/dashboard/WebhookAnalytics";
+import AnomalyDetection from "./pages/dashboard/AnomalyDetection";
+import ABTesting from "./pages/dashboard/ABTesting";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
 import { useNotificationTriggers } from "./hooks/useNotificationTriggers";
@@ -339,6 +341,8 @@ function App() {
                 <Route path="phase3" element={<Phase3Completion />} />
                 <Route path="location-metrics" element={<LocationMetrics />} />
                 <Route path="webhook-analytics" element={<WebhookAnalytics />} />
+                <Route path="anomaly-detection" element={<AnomalyDetection />} />
+                <Route path="ab-testing" element={<ABTesting />} />
               </Route>
 
               {/* TrueSpend User App - Coming Soon */}
