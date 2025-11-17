@@ -110,6 +110,9 @@ verify_jwt = true
 [functions.ai-categorize-transaction]
 verify_jwt = true
 
+[functions.ocr-process-receipt]
+verify_jwt = true
+
 [functions.ai-analyze-spending]
 verify_jwt = true
 
