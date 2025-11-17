@@ -63,7 +63,7 @@ export const WeeklySummaryEmail = ({
         <Text style={summarySubtext}>
           {trendEmoji} {trendText}
         </Text>
-        <Text style={transactionCount}>
+        <Text style={transactionCountStyle}>
           {transactionCount} {transactionCount === 1 ? 'transaction' : 'transactions'}
         </Text>
       </Section>
@@ -157,7 +157,7 @@ const summarySubtext = {
   margin: '8px 0',
 };
 
-const transactionCount = {
+const transactionCountStyle = {
   color: 'rgba(255, 255, 255, 0.7)',
   fontSize: '14px',
   margin: '12px 0 0',
