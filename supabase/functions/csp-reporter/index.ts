@@ -30,8 +30,29 @@ serve(async (req) => {
       );
     }
 
+    const documentUri = cspReport['document-uri'];
+
+    // Rate limiting: 50 violations per hour per document URI
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await supabase
+      .from('csp_violations')
+      .select('*', { count: 'exact', head: true })
+      .eq('document_uri', documentUri)
+      .gte('timestamp', oneHourAgo);
+
+    if (count && count >= 50) {
+      console.log('[CSP Rate Limit] Exceeded for:', documentUri);
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded' }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     console.log('CSP Violation detected:', {
-      documentUri: cspReport['document-uri'],
+      documentUri,
       violatedDirective: cspReport['violated-directive'],
       blockedUri: cspReport['blocked-uri'],
     });
