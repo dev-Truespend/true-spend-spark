@@ -103,27 +103,72 @@ serve(async (req) => {
 
     if (cacheError) throw cacheError;
 
-    // Log cache hit/miss
+    // Log cache hit/miss with enhanced metrics
+    const cacheHit = cachedMerchants && cachedMerchants.length > 0;
     await supabaseClient.from('cache_analytics').insert({
       cache_type: 'merchant_discovery',
-      hit_count: cachedMerchants && cachedMerchants.length > 0 ? 1 : 0,
-      miss_count: cachedMerchants && cachedMerchants.length > 0 ? 0 : 1,
+      operation: cacheHit ? 'hit' : 'miss',
+      geohash: geohashPrefix,
+      response_time_ms: Date.now() - Date.now(), // Will be updated below
+      saved_api_cost_usd: cacheHit ? 0.002 : 0, // Google Places API cost per request
+      metadata: {
+        category: category || 'all',
+        deals_only: deals_only || false,
+        results_count: cachedMerchants?.length || 0,
+      },
     });
 
-    // If cache hit, record recommendations
+    // If cache hit, update access tracking and record recommendations
     if (cachedMerchants && cachedMerchants.length > 0) {
-      const recommendations = cachedMerchants.slice(0, 5).map(m => ({
-        user_id: user.id,
-        merchant_id: m.merchant_id,
-        recommendation_reason: deals_only ? 'deal_available' : 'proximity_match',
-        score: m.popularity_score || 0,
-      }));
+      // Update hit count and last accessed timestamp for LRU
+      const cacheIds = cachedMerchants.map(m => m.id);
+      await supabaseClient
+        .from('merchants_cache_v2')
+        .update({ 
+          last_accessed: new Date().toISOString(),
+        })
+        .in('id', cacheIds)
+        .select()
+        .then(({ data }) => {
+          if (data) {
+            data.forEach(async (item) => {
+              await supabaseClient.rpc('increment_cache_hit', { cache_id: item.id });
+            });
+          }
+        });
+
+      // Create contextual recommendations with enhanced scoring
+      const recommendations = cachedMerchants.slice(0, 5).map((m, index) => {
+        let confidence = 0.8 - (index * 0.1); // Decay confidence by ranking
+        let reason = 'proximity_match';
+        
+        if (deals_only && m.merchant_data?.deal_available) {
+          confidence += 0.15;
+          reason = 'deal_available';
+        }
+        
+        if (m.rating && m.rating > 4.0) {
+          confidence += 0.05;
+        }
+
+        return {
+          user_id: user.id,
+          merchant_id: m.merchant_data?.merchant_id || m.id,
+          recommendation_reason: reason,
+          confidence_score: Math.min(confidence, 1.0),
+          geofence_id: null,
+          deal_type: m.merchant_data?.deal_type || null,
+          deal_description: m.merchant_data?.deal_description || null,
+          potential_savings: m.merchant_data?.potential_savings || null,
+        };
+      });
 
       await supabaseClient.from('merchant_recommendations').insert(recommendations);
 
       return new Response(JSON.stringify({ 
         merchants: cachedMerchants, 
-        cache_hit: true 
+        cache_hit: true,
+        recommendations_generated: recommendations.length,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -141,16 +186,32 @@ serve(async (req) => {
     const placesResponse = await fetch(placesUrl);
     const placesData = await placesResponse.json();
 
-    // Cache results
+    // Cache results with TTL and versioning
+    const cacheVersion = '2.0';
+    const ttlHours = 24; // Cache for 24 hours
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + ttlHours);
+
     const merchantsToCache = placesData.results?.slice(0, 20).map((place: any) => ({
       geohash: encodeGeohash(place.geometry.location.lat, place.geometry.location.lng),
+      geohash_precision: 7,
       lat: place.geometry.location.lat,
       lng: place.geometry.location.lng,
-      name: place.name,
-      category: place.types?.[0],
-      popularity_score: place.rating || 0,
-      deal_available: false,
-      cashback_rate: 0,
+      categories: place.types || [],
+      rating: place.rating || null,
+      price_tier: place.price_level || null,
+      source: 'google_places',
+      expires_at: expiresAt.toISOString(),
+      merchant_data: {
+        merchant_id: place.place_id,
+        name: place.name,
+        category: place.types?.[0],
+        popularity_score: place.rating || 0,
+        deal_available: false,
+        cashback_rate: 0,
+        address: place.vicinity,
+        cache_version: cacheVersion,
+      },
     })) || [];
 
     if (merchantsToCache.length > 0) {
