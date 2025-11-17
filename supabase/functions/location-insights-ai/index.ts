@@ -6,16 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface GeofenceEvent {
-  id: string;
-  user_id: string;
-  geofence_id: string;
-  event_type: string;
-  location_lat: number;
-  location_lng: number;
-  timestamp: string;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -27,8 +17,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'No authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { data: { user } } = await supabaseClient.auth.getUser(
-      req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
+      authHeader.replace('Bearer ', '')
     );
 
     if (!user) {
@@ -38,77 +36,146 @@ serve(async (req) => {
       });
     }
 
-    // Fetch recent geofence events (last 24 hours)
-    const { data: recentEvents, error: eventsError } = await supabaseClient
+    console.log(`[location-insights-ai] Processing request for user: ${user.id}`);
+
+    // Fetch geofence events for last 30 days
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: events, error: eventsError } = await supabaseClient
       .from('geofence_events')
-      .select('*, geofences(*)')
+      .select('*, geofences(name, type, budget_limit, alert_threshold)')
       .eq('user_id', user.id)
-      .gte('timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-      .order('timestamp', { ascending: false });
+      .gte('timestamp', thirtyDaysAgo)
+      .order('timestamp', { ascending: false })
+      .limit(1000);
 
-    if (eventsError) throw eventsError;
-
-    // Noise reduction: Skip if >10 triggers in last hour
-    const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const recentTriggersCount = recentEvents?.filter(e => 
-      new Date(e.timestamp) > hourAgo
-    ).length || 0;
-
-    if (recentTriggersCount > 10) {
-      console.log(`Noise reduction: ${recentTriggersCount} triggers in last hour for user ${user.id}`);
-      return new Response(JSON.stringify({ 
-        skipped: true, 
-        reason: 'noise_reduction',
-        trigger_count: recentTriggersCount 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (eventsError) {
+      console.error('[location-insights-ai] Error fetching events:', eventsError);
+      throw eventsError;
     }
 
-    // Fetch spending patterns for analysis
-    const { data: patterns, error: patternsError } = await supabaseClient
-      .from('spending_patterns')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('pattern_strength', { ascending: false })
-      .limit(10);
+    // Noise reduction: Count triggers per geofence per day
+    const triggerCounts = events?.reduce((acc: any, event: any) => {
+      if (event.event_type === 'entry') {
+        const date = new Date(event.timestamp).toISOString().split('T')[0];
+        const key = `${event.geofence_id}_${date}`;
+        acc[key] = (acc[key] || 0) + 1;
+      }
+      return acc;
+    }, {});
 
-    if (patternsError) throw patternsError;
+    // Filter out noisy geofences (>10 triggers/day)
+    const noisyGeofences = Object.entries(triggerCounts || {})
+      .filter(([_, count]) => (count as number) > 10)
+      .map(([key, _]) => key.split('_')[0]);
 
-    // Fetch recent transactions for context
+    console.log(`[location-insights-ai] Found ${noisyGeofences.length} noisy geofences`);
+
+    // Fetch transactions linked to geofences
     const { data: transactions, error: txError } = await supabaseClient
       .from('transactions')
-      .select('*, geofences(name, type)')
+      .select('*, geofences(name, type, budget_limit)')
       .eq('user_id', user.id)
+      .gte('timestamp', thirtyDaysAgo)
+      .not('geofence_id', 'is', null);
+
+    if (txError) {
+      console.error('[location-insights-ai] Error fetching transactions:', txError);
+      throw txError;
+    }
+
+    // Fetch geofence metrics for telemetry feedback
+    const { data: metrics, error: metricsError } = await supabaseClient
+      .from('geofence_metrics')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('timestamp', thirtyDaysAgo)
+      .in('metric_type', ['location_accuracy', 'ai_insight_quality'])
       .order('timestamp', { ascending: false })
-      .limit(50);
+      .limit(100);
 
-    if (txError) throw txError;
+    if (metricsError) {
+      console.error('[location-insights-ai] Error fetching metrics:', metricsError);
+    }
 
-    // Call Lovable AI for pattern analysis
+    // Prepare context for AI analysis
+    const spendingByGeofence = transactions?.reduce((acc: any, tx: any) => {
+      const gid = tx.geofence_id;
+      if (!acc[gid]) {
+        acc[gid] = {
+          name: tx.geofences?.name || 'Unknown',
+          type: tx.geofences?.type || 'unknown',
+          budget_limit: tx.geofences?.budget_limit,
+          total_spent: 0,
+          transaction_count: 0,
+          categories: {},
+        };
+      }
+      acc[gid].total_spent += parseFloat(tx.amount);
+      acc[gid].transaction_count += 1;
+      acc[gid].categories[tx.category] = (acc[gid].categories[tx.category] || 0) + parseFloat(tx.amount);
+      return acc;
+    }, {});
+
+    const eventPatterns = events?.reduce((acc: any, event: any) => {
+      const gid = event.geofence_id;
+      if (!acc[gid]) {
+        acc[gid] = { entry_count: 0, exit_count: 0, dwell_time_estimate: 0 };
+      }
+      if (event.event_type === 'entry') acc[gid].entry_count += 1;
+      if (event.event_type === 'exit') acc[gid].exit_count += 1;
+      return acc;
+    }, {});
+
+    // Calculate average accuracy from metrics
+    const avgAccuracy = metrics?.reduce((sum, m) => {
+      if (m.metric_type === 'location_accuracy') return sum + m.value;
+      return sum;
+    }, 0) / (metrics?.filter(m => m.metric_type === 'location_accuracy').length || 1);
+
+    const systemPrompt = `You are an AI financial advisor analyzing location-based spending patterns. 
+
+Context:
+- User's geofence events and transactions over the last 30 days
+- Telemetry feedback: Average location accuracy is ${avgAccuracy.toFixed(1)}%
+- Noisy geofences (>10 triggers/day) are filtered out for better insights
+
+Your task:
+1. Identify spending patterns and anomalies at specific locations
+2. Provide actionable budget recommendations based on location behavior
+3. Detect savings opportunities (e.g., frequent visits to expensive places)
+4. Consider the telemetry feedback - if accuracy is low, recommend recalibrating geofences
+
+Output format: JSON array of insights with:
+- title: Clear, actionable title (max 60 chars)
+- description: Detailed explanation (max 200 chars)
+- insight_type: 'savings_opportunity' | 'spending_alert' | 'budget_recommendation' | 'pattern_detected'
+- priority: 'low' | 'medium' | 'high'
+- confidence_score: 0-100 (consider telemetry accuracy)
+- geofence_id: relevant geofence ID (if applicable)
+- metadata: additional context as JSON object
+
+Generate 3-5 insights. Be specific and actionable.`;
+
+    const userPrompt = `Analyze this location spending data:
+
+Spending by Location:
+${JSON.stringify(spendingByGeofence, null, 2)}
+
+Visit Patterns:
+${JSON.stringify(eventPatterns, null, 2)}
+
+Location Accuracy: ${avgAccuracy.toFixed(1)}%
+Noisy Geofences (excluded): ${noisyGeofences.length}
+
+Generate insights.`;
+
+    // Call Lovable AI
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    const aiPrompt = `Analyze this user's location-based spending data and provide personalized insights:
-
-Recent Events: ${JSON.stringify(recentEvents?.slice(0, 5))}
-Spending Patterns: ${JSON.stringify(patterns)}
-Recent Transactions: ${JSON.stringify(transactions?.slice(0, 20))}
-
-Provide 1-3 actionable insights in this JSON format:
-{
-  "insights": [
-    {
-      "type": "spending_pattern" | "budget_recommendation" | "anomaly_detection" | "optimization",
-      "confidence": 0.0-1.0,
-      "recommendation": "Brief, actionable recommendation",
-      "reasoning": "Why this matters",
-      "geofence_id": "uuid or null"
-    }
-  ]
-}`;
+    console.log('[location-insights-ai] Calling AI model...');
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -119,58 +186,111 @@ Provide 1-3 actionable insights in this JSON format:
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: 'You are a financial insights AI. Provide concise, actionable recommendations.' },
-          { role: 'user', content: aiPrompt }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
         ],
-        temperature: 0.7,
+        response_format: { type: 'json_object' },
       }),
     });
 
     if (!aiResponse.ok) {
-      throw new Error(`AI gateway error: ${aiResponse.statusText}`);
+      const errorText = await aiResponse.text();
+      console.error('[location-insights-ai] AI API error:', aiResponse.status, errorText);
+      
+      if (aiResponse.status === 429) {
+        return new Response(JSON.stringify({ 
+          error: 'Rate limit exceeded. Please try again later.',
+          code: 'RATE_LIMIT'
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      if (aiResponse.status === 402) {
+        return new Response(JSON.stringify({ 
+          error: 'AI credits depleted. Please add credits to your workspace.',
+          code: 'CREDITS_DEPLETED'
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      throw new Error(`AI API error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
-    const aiContent = aiData.choices[0].message.content;
-    const insights = JSON.parse(aiContent).insights;
+    const content = aiData.choices[0]?.message?.content;
+    
+    if (!content) {
+      throw new Error('No content in AI response');
+    }
+
+    const parsedInsights = JSON.parse(content);
+    const insights = Array.isArray(parsedInsights) ? parsedInsights : parsedInsights.insights || [];
+
+    console.log(`[location-insights-ai] Generated ${insights.length} insights`);
 
     // Store insights in database
     const insightsToInsert = insights.map((insight: any) => ({
       user_id: user.id,
       geofence_id: insight.geofence_id || null,
-      insight_type: insight.type,
-      confidence_score: insight.confidence,
-      recommendation: insight.recommendation,
-      metadata: { reasoning: insight.reasoning },
+      title: insight.title,
+      description: insight.description,
+      insight_type: insight.insight_type,
+      priority: insight.priority,
+      confidence_score: insight.confidence_score,
+      metadata: insight.metadata || {},
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
     }));
 
-    const { error: insertError } = await supabaseClient
+    const { data: insertedInsights, error: insertError } = await supabaseClient
       .from('location_insights')
-      .insert(insightsToInsert);
+      .insert(insightsToInsert)
+      .select();
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error('[location-insights-ai] Error inserting insights:', insertError);
+      throw insertError;
+    }
 
-    // Record telemetry metrics
-    await supabaseClient.from('geofence_metrics').insert({
-      user_id: user.id,
-      metric_type: 'ai_insights',
-      metric_name: 'insights_generated',
-      value: insights.length,
-      metadata: { model: 'gemini-2.5-flash', noise_reduced: recentTriggersCount > 10 },
-    });
+    // Record AI quality metric for feedback loop
+    await supabaseClient
+      .from('geofence_metrics')
+      .insert({
+        user_id: user.id,
+        metric_name: 'ai_insights_generated',
+        metric_type: 'ai_insight_quality',
+        value: insights.length,
+        unit: 'count',
+        metadata: {
+          avg_confidence: insights.reduce((sum: number, i: any) => sum + i.confidence_score, 0) / insights.length,
+          location_accuracy: avgAccuracy,
+          noisy_geofences_filtered: noisyGeofences.length,
+        },
+      });
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      insights_generated: insights.length,
-      insights 
+    console.log(`[location-insights-ai] Successfully stored ${insertedInsights.length} insights`);
+
+    return new Response(JSON.stringify({
+      success: true,
+      insights: insertedInsights,
+      stats: {
+        events_analyzed: events?.length || 0,
+        transactions_analyzed: transactions?.length || 0,
+        location_accuracy: avgAccuracy,
+        noisy_geofences_filtered: noisyGeofences.length,
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in location-insights-ai:', error);
+    console.error('[location-insights-ai] Error:', error);
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Internal server error' 
+      error: error instanceof Error ? error.message : 'Internal server error',
+      details: error instanceof Error ? error.stack : undefined
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

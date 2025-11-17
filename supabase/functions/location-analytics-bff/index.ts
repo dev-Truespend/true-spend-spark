@@ -69,7 +69,7 @@ serve(async (req) => {
       .from('geofence_heatmap_data')
       .select('*')
       .eq('user_id', user.id)
-      .order('spending_intensity', { ascending: false })
+      .order('intensity', { ascending: false })
       .limit(100);
 
     if (heatmapError) throw heatmapError;
