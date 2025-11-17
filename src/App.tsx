@@ -38,6 +38,8 @@ import ConfirmEmailChange from "./pages/ConfirmEmailChange";
 import Transactions from "./pages/Transactions";
 import Budgets from "./pages/Budgets";
 import Insights from "./pages/Insights";
+import LocationHistory from "./pages/LocationHistory";
+import LocationMetrics from "./pages/dashboard/LocationMetrics";
 import NotFound from "./pages/NotFound";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
@@ -291,6 +293,16 @@ function App() {
                 } 
               />
 
+              {/* Phase 7: Location Intelligence */}
+              <Route 
+                path="/location-history" 
+                element={
+                  <ProtectedRoute>
+                    <LocationHistory />
+                  </ProtectedRoute>
+                } 
+              />
+
               {/* Admin Dashboard - Project Management */}
               <Route 
                 path="/admin" 
@@ -315,6 +327,7 @@ function App() {
                   <Route path="security-monitor" element={<SecurityDashboard />} />
                   <Route path="geofences" element={<Geofences />} />
                   <Route path="phase3" element={<Phase3Completion />} />
+                  <Route path="location-metrics" element={<LocationMetrics />} />
               </Route>
 
               {/* TrueSpend User App - Coming Soon */}
