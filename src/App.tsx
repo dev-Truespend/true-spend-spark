@@ -51,6 +51,8 @@ import FeatureFlags from "./pages/dashboard/FeatureFlags";
 import Workflows from "./pages/dashboard/Workflows";
 import DistributedTracing from "./pages/dashboard/DistributedTracing";
 import DataPlanes from "./pages/dashboard/DataPlanes";
+import SystemLogs from "./pages/dashboard/SystemLogs";
+import Observability from "./pages/dashboard/Observability";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
 import { useNotificationTriggers } from "./hooks/useNotificationTriggers";
@@ -362,6 +364,8 @@ function App() {
                 <Route path="workflows" element={<Workflows />} />
                 <Route path="distributed-tracing" element={<DistributedTracing />} />
                 <Route path="data-planes" element={<DataPlanes />} />
+                <Route path="system-logs" element={<SystemLogs />} />
+                <Route path="observability" element={<Observability />} />
               </Route>
 
               {/* TrueSpend User App - Coming Soon */}

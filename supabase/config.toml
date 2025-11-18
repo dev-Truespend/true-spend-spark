@@ -191,3 +191,13 @@ schedule = "0 */6 * * *"
 
 [functions.data-export-request]
 verify_jwt = true
+
+# Phase 10: Observability & Polish
+
+[functions.log-collector]
+verify_jwt = false
+
+[functions.metrics-aggregator]
+verify_jwt = false
+# Run every hour
+# schedule = "0 * * * *"

@@ -1,6 +1,7 @@
 /**
  * API Client with Validation and Rate Limiting
  * Phase 2: Security & Ingress - Layer 3 (API Gateway)
+ * Phase 10: Enhanced with structured logging
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -55,27 +56,89 @@ export class ApiClient {
     const url = `${this.baseUrl}/functions/v1/${path}`;
 
     const makeRequest = async () => {
-      const response = await fetchWithRateLimit(url, {
-        ...fetchOptions,
-        headers,
-      });
-
-      // Update rate limit state
-      const rateLimitInfo = parseRateLimitHeaders(response);
-      if (rateLimitInfo) {
-        saveRateLimitState({
-          isRateLimited: rateLimitInfo.remaining === 0,
-          rateLimitInfo,
-          retryAfter: rateLimitInfo.retryAfter || null,
+      const startTime = performance.now();
+      
+      try {
+        const response = await fetchWithRateLimit(url, {
+          ...fetchOptions,
+          headers,
         });
-      }
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Request failed: ${response.statusText}`);
-      }
+        const duration = Math.round(performance.now() - startTime);
 
-      return response.json();
+        // Update rate limit state
+        const rateLimitInfo = parseRateLimitHeaders(response);
+        if (rateLimitInfo) {
+          saveRateLimitState({
+            isRateLimited: rateLimitInfo.remaining === 0,
+            rateLimitInfo,
+            retryAfter: rateLimitInfo.retryAfter || null,
+          });
+        }
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          
+          // Log API error
+          supabase.functions.invoke('log-collector', {
+            body: {
+              level: 'error',
+              message: `API request failed: ${path}`,
+              component: 'ApiClient',
+              metadata: {
+                endpoint: path,
+                method: fetchOptions.method || 'GET',
+                status_code: response.status,
+                duration_ms: duration,
+                error_message: error.message || response.statusText,
+              },
+              timestamp: new Date().toISOString(),
+            },
+          }).catch(() => {}); // Silent failure for logging
+
+          throw new Error(error.message || `Request failed: ${response.statusText}`);
+        }
+
+        // Log successful API request (debug level)
+        if (import.meta.env.DEV) {
+          supabase.functions.invoke('log-collector', {
+            body: {
+              level: 'debug',
+              message: `API request successful: ${path}`,
+              component: 'ApiClient',
+              metadata: {
+                endpoint: path,
+                method: fetchOptions.method || 'GET',
+                status_code: response.status,
+                duration_ms: duration,
+              },
+              timestamp: new Date().toISOString(),
+            },
+          }).catch(() => {});
+        }
+
+        return response.json();
+      } catch (error) {
+        const duration = Math.round(performance.now() - startTime);
+        
+        // Log API error
+        supabase.functions.invoke('log-collector', {
+          body: {
+            level: 'error',
+            message: `API request exception: ${path}`,
+            component: 'ApiClient',
+            metadata: {
+              endpoint: path,
+              method: fetchOptions.method || 'GET',
+              duration_ms: duration,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            },
+            timestamp: new Date().toISOString(),
+          },
+        }).catch(() => {});
+
+        throw error;
+      }
     };
 
     if (retry) {
