@@ -4,7 +4,6 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
 import { useCallback } from "react";
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'critical';
@@ -35,20 +34,21 @@ export interface LogEntry {
  * Logs to console in dev and sends to backend log collector
  */
 export const useLogger = () => {
-  const { user } = useAuth();
-
   const log = useCallback(async (
     level: LogLevel,
     message: string,
     options: LogOptions
   ) => {
     try {
+      // Get user from current session without creating circular dependency
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const logEntry: LogEntry = {
         level,
         message,
         component: options.component,
         metadata: options.metadata || {},
-        user_id: user?.id,
+        user_id: session?.user?.id,
         request_id: options.requestId || crypto.randomUUID(),
         trace_id: options.traceId,
         stack_trace: options.stackTrace,
@@ -83,7 +83,7 @@ export const useLogger = () => {
         console.error('[useLogger] Logging error:', error);
       }
     }
-  }, [user]);
+  }, []);
 
   return {
     debug: useCallback((message: string, options: LogOptions) => 
