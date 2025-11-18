@@ -169,3 +169,10 @@ schedule = "*/1 * * * *"
 [functions.event-batch-processor]
 verify_jwt = false
 schedule = "*/2 * * * *"
+
+[functions.feature-flag-evaluator]
+verify_jwt = true
+
+[functions.service-health-check]
+verify_jwt = false
+schedule = "*/5 * * * *"
