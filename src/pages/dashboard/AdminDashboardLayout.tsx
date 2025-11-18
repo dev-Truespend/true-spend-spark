@@ -49,6 +49,7 @@ const navigation = [
   { name: "Data Planes & DR", href: "/admin/data-planes", icon: Database },
   { name: "System Logs", href: "/admin/system-logs", icon: Activity },
   { name: "Observability", href: "/admin/observability", icon: BarChart3 },
+  { name: "Incidents", href: "/admin/incidents", icon: AlertTriangle },
 ];
 
 export default function AdminDashboardLayout() {
