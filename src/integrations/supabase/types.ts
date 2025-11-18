@@ -723,29 +723,91 @@ export type Database = {
           },
         ]
       }
+      feature_flag_audit: {
+        Row: {
+          action: string
+          flag_id: string | null
+          id: string
+          metadata: Json | null
+          new_state: Json | null
+          previous_state: Json | null
+          result: boolean | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          flag_id?: string | null
+          id?: string
+          metadata?: Json | null
+          new_state?: Json | null
+          previous_state?: Json | null
+          result?: boolean | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          flag_id?: string | null
+          id?: string
+          metadata?: Json | null
+          new_state?: Json | null
+          previous_state?: Json | null
+          result?: boolean | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_flag_audit_flag_id_fkey"
+            columns: ["flag_id"]
+            isOneToOne: false
+            referencedRelation: "feature_flags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feature_flags: {
         Row: {
           config: Json | null
           created_at: string | null
+          dependencies: Json | null
           enabled: boolean
+          environment: string | null
           flag_name: string
           id: string
+          metadata: Json | null
+          rollout_percentage: number | null
+          target_roles: string[] | null
+          target_users: string[] | null
           updated_at: string | null
         }
         Insert: {
           config?: Json | null
           created_at?: string | null
+          dependencies?: Json | null
           enabled?: boolean
+          environment?: string | null
           flag_name: string
           id?: string
+          metadata?: Json | null
+          rollout_percentage?: number | null
+          target_roles?: string[] | null
+          target_users?: string[] | null
           updated_at?: string | null
         }
         Update: {
           config?: Json | null
           created_at?: string | null
+          dependencies?: Json | null
           enabled?: boolean
+          environment?: string | null
           flag_name?: string
           id?: string
+          metadata?: Json | null
+          rollout_percentage?: number | null
+          target_roles?: string[] | null
+          target_users?: string[] | null
           updated_at?: string | null
         }
         Relationships: []
@@ -2578,6 +2640,89 @@ export type Database = {
         }
         Relationships: []
       }
+      service_health_history: {
+        Row: {
+          checked_at: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          response_time_ms: number | null
+          service_id: string | null
+          status: string
+        }
+        Insert: {
+          checked_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          service_id?: string | null
+          status: string
+        }
+        Update: {
+          checked_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          service_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_health_history_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "service_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_registry: {
+        Row: {
+          created_at: string | null
+          dependencies: string[] | null
+          endpoint: string | null
+          health_check_interval_seconds: number | null
+          id: string
+          last_health_check: string | null
+          metadata: Json | null
+          service_name: string
+          service_type: string
+          status: string | null
+          updated_at: string | null
+          version: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dependencies?: string[] | null
+          endpoint?: string | null
+          health_check_interval_seconds?: number | null
+          id?: string
+          last_health_check?: string | null
+          metadata?: Json | null
+          service_name: string
+          service_type: string
+          status?: string | null
+          updated_at?: string | null
+          version?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dependencies?: string[] | null
+          endpoint?: string | null
+          health_check_interval_seconds?: number | null
+          id?: string
+          last_health_check?: string | null
+          metadata?: Json | null
+          service_name?: string
+          service_type?: string
+          status?: string | null
+          updated_at?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
       spending_patterns: {
         Row: {
           cached_at: string
@@ -3111,8 +3256,10 @@ export type Database = {
       cleanup_expired_recommendations: { Args: never; Returns: number }
       cleanup_old_auth_attempts: { Args: never; Returns: number }
       cleanup_old_csp_violations: { Args: never; Returns: number }
+      cleanup_old_feature_flag_audit: { Args: never; Returns: number }
       cleanup_old_foursquare_logs: { Args: never; Returns: number }
       cleanup_old_google_maps_logs: { Args: never; Returns: number }
+      cleanup_old_health_history: { Args: never; Returns: number }
       cleanup_old_notification_logs: { Args: never; Returns: number }
       cleanup_old_rate_limits: { Args: never; Returns: number }
       cleanup_old_security_logs: { Args: never; Returns: number }
@@ -3130,6 +3277,10 @@ export type Database = {
       encrypt_totp_secret:
         | { Args: { secret: string; user_id: string }; Returns: string }
         | { Args: { secret: string }; Returns: string }
+      evaluate_feature_flag: {
+        Args: { p_environment?: string; p_flag_name: string; p_user_id: string }
+        Returns: boolean
+      }
       evaluate_transaction_rules: {
         Args: { p_transaction_data: Json; p_user_id: string }
         Returns: Json
