@@ -50,6 +50,7 @@ import RealtimeEvents from "./pages/dashboard/RealtimeEvents";
 import FeatureFlags from "./pages/dashboard/FeatureFlags";
 import Workflows from "./pages/dashboard/Workflows";
 import DistributedTracing from "./pages/dashboard/DistributedTracing";
+import DataPlanes from "./pages/dashboard/DataPlanes";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
 import { useNotificationTriggers } from "./hooks/useNotificationTriggers";
@@ -355,12 +356,13 @@ function App() {
                 <Route path="location-metrics" element={<LocationMetrics />} />
                 <Route path="webhook-analytics" element={<WebhookAnalytics />} />
                 <Route path="anomaly-detection" element={<AnomalyDetection />} />
-              <Route path="ab-testing" element={<ABTesting />} />
-              <Route path="realtime-events" element={<RealtimeEvents />} />
-                  <Route path="feature-flags" element={<FeatureFlags />} />
-                  <Route path="workflows" element={<Workflows />} />
-                  <Route path="distributed-tracing" element={<DistributedTracing />} />
-                </Route>
+                <Route path="ab-testing" element={<ABTesting />} />
+                <Route path="realtime-events" element={<RealtimeEvents />} />
+                <Route path="feature-flags" element={<FeatureFlags />} />
+                <Route path="workflows" element={<Workflows />} />
+                <Route path="distributed-tracing" element={<DistributedTracing />} />
+                <Route path="data-planes" element={<DataPlanes />} />
+              </Route>
 
               {/* TrueSpend User App - Coming Soon */}
               <Route 

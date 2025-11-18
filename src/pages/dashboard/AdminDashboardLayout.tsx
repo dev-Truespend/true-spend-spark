@@ -22,6 +22,7 @@ import {
   Flag,
   Workflow,
   Network,
+  Database,
   LogOut
 } from "lucide-react";
 
@@ -45,6 +46,7 @@ const navigation = [
   { name: "Feature Flags", href: "/admin/feature-flags", icon: Flag },
   { name: "Workflows", href: "/admin/workflows", icon: Workflow },
   { name: "Distributed Tracing", href: "/admin/distributed-tracing", icon: Network },
+  { name: "Data Planes & DR", href: "/admin/data-planes", icon: Database },
 ];
 
 export default function AdminDashboardLayout() {

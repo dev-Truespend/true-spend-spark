@@ -277,6 +277,39 @@ export type Database = {
           },
         ]
       }
+      backup_status: {
+        Row: {
+          backup_timestamp: string
+          backup_type: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          size_bytes: number | null
+          status: string
+          verification_status: string | null
+        }
+        Insert: {
+          backup_timestamp: string
+          backup_type: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          size_bytes?: number | null
+          status: string
+          verification_status?: string | null
+        }
+        Update: {
+          backup_timestamp?: string
+          backup_type?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          size_bytes?: number | null
+          status?: string
+          verification_status?: string | null
+        }
+        Relationships: []
+      }
       budget_alerts: {
         Row: {
           acknowledged_at: string | null
