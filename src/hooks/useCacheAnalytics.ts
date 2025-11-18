@@ -7,10 +7,19 @@ interface CacheEvent {
   ttl?: number;
 }
 
+// Sampling rate: only record 15% of cache events to reduce database load
+const SAMPLING_RATE = 0.15;
+
 export const useCacheAnalytics = () => {
   const recordCacheEvent = async ({ layer, key, hit, ttl }: CacheEvent) => {
+    // Sample events - only record 15% of the time
+    if (Math.random() > SAMPLING_RATE) {
+      return;
+    }
+
+    // Fire-and-forget: never block user flows on analytics failures
     try {
-      const { error } = await supabase.from('cache_analytics').insert({
+      await supabase.from('cache_analytics').insert({
         cache_type: layer,
         operation: hit ? 'hit' : 'miss',
         metadata: { 
@@ -18,12 +27,11 @@ export const useCacheAnalytics = () => {
           ttl_seconds: ttl
         }
       });
-
-      if (error) {
-        console.error('Failed to record cache analytics:', error);
-      }
     } catch (error) {
-      console.error('Cache analytics error:', error);
+      // Silent failure - analytics should never break the app
+      if (import.meta.env.DEV) {
+        console.error('Cache analytics error:', error);
+      }
     }
   };
 

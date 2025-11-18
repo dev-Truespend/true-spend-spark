@@ -19,103 +19,132 @@ Deno.serve(async (req) => {
   try {
     console.log('📋 Syncing Foursquare categories...');
 
-    // Fetch all categories from Foursquare API
-    const response = await fetch('https://api.foursquare.com/v3/places/categories', {
-      headers: {
-        'Authorization': foursquareApiKey,
-        'Accept': 'application/json',
-      },
-    });
+    // Fetch all categories from Foursquare API with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Foursquare API Error:', response.status, errorText);
-      
-      await supabase.from('foursquare_api_logs').insert({
-        endpoint: '/categories',
-        response_status: response.status,
-        response_time_ms: Date.now() - startTime,
-        cache_hit: false,
-        error_message: errorText,
+    try {
+      const response = await fetch('https://api.foursquare.com/v3/places/categories', {
+        headers: {
+          'Authorization': foursquareApiKey,
+          'Accept': 'application/json',
+        },
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
-      return new Response(
-        JSON.stringify({ error: 'Foursquare API error', details: errorText }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const data = await response.json();
-    const categories = data.categories || [];
-
-    console.log(`✅ Fetched ${categories.length} categories from Foursquare`);
-
-    let syncedCount = 0;
-    let errorCount = 0;
-
-    // Flatten nested categories and insert them
-    const flattenCategories = (cats: any[], parentId: number | null = null, level: number = 1) => {
-      const flattened: any[] = [];
-      
-      for (const cat of cats) {
-        flattened.push({
-          category_id: cat.id,
-          category_name: cat.name,
-          icon_prefix: cat.icon?.prefix,
-          icon_suffix: cat.icon?.suffix,
-          parent_category_id: parentId,
-          level,
-          metadata: cat,
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Foursquare API Error:', response.status, errorText);
+        
+        await supabase.from('foursquare_api_logs').insert({
+          endpoint: '/categories',
+          response_status: response.status,
+          response_time_ms: Date.now() - startTime,
+          cache_hit: false,
+          error_message: errorText,
         });
 
-        if (cat.categories && cat.categories.length > 0) {
-          flattened.push(...flattenCategories(cat.categories, cat.id, level + 1));
+        return new Response(
+          JSON.stringify({ error: 'Foursquare API error', details: errorText }),
+          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const data = await response.json();
+      const categories = data.categories || [];
+
+      console.log(`✅ Fetched ${categories.length} categories from Foursquare`);
+
+      let syncedCount = 0;
+      let errorCount = 0;
+
+      // Flatten nested categories and insert them
+      const flattenCategories = (cats: any[], parentId: number | null = null, level: number = 1) => {
+        const flattened: any[] = [];
+        
+        for (const cat of cats) {
+          flattened.push({
+            category_id: cat.id,
+            category_name: cat.name,
+            icon_prefix: cat.icon?.prefix,
+            icon_suffix: cat.icon?.suffix,
+            parent_category_id: parentId,
+            level,
+            metadata: cat,
+          });
+
+          if (cat.categories && cat.categories.length > 0) {
+            flattened.push(...flattenCategories(cat.categories, cat.id, level + 1));
+          }
+        }
+
+        return flattened;
+      };
+
+      const flattenedCategories = flattenCategories(categories);
+
+      // Upsert all categories
+      for (const category of flattenedCategories) {
+        const { error } = await supabase
+          .from('foursquare_categories')
+          .upsert(category, { onConflict: 'category_id' });
+
+        if (error) {
+          console.error('Error upserting category:', category.category_name, error);
+          errorCount++;
+        } else {
+          syncedCount++;
         }
       }
 
-      return flattened;
-    };
+      console.log(`✅ Synced ${syncedCount} categories (${errorCount} errors)`);
 
-    const flattenedCategories = flattenCategories(categories);
+      // Log sync
+      await supabase.from('foursquare_api_logs').insert({
+        endpoint: '/categories',
+        response_status: 200,
+        response_time_ms: Date.now() - startTime,
+        cache_hit: false,
+        metadata: {
+          synced_count: syncedCount,
+          error_count: errorCount,
+          total_categories: flattenedCategories.length,
+        },
+      });
 
-    // Upsert all categories
-    for (const category of flattenedCategories) {
-      const { error } = await supabase
-        .from('foursquare_categories')
-        .upsert(category, { onConflict: 'category_id' });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          synced: syncedCount,
+          errors: errorCount,
+          total: flattenedCategories.length,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      // Handle timeout
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('Foursquare API timeout after 8 seconds');
+        
+        await supabase.from('foursquare_api_logs').insert({
+          endpoint: '/categories',
+          response_status: 408,
+          response_time_ms: 8000,
+          cache_hit: false,
+          error_message: 'Request timeout',
+        });
 
-      if (error) {
-        console.error('Error upserting category:', category.category_name, error);
-        errorCount++;
-      } else {
-        syncedCount++;
+        return new Response(
+          JSON.stringify({ error: 'Foursquare API timeout', details: 'Request took longer than 8 seconds' }),
+          { status: 408, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
+
+      throw fetchError;
     }
-
-    console.log(`✅ Synced ${syncedCount} categories (${errorCount} errors)`);
-
-    // Log sync
-    await supabase.from('foursquare_api_logs').insert({
-      endpoint: '/categories',
-      response_status: 200,
-      response_time_ms: Date.now() - startTime,
-      cache_hit: false,
-      metadata: {
-        synced_count: syncedCount,
-        error_count: errorCount,
-        total_categories: flattenedCategories.length,
-      },
-    });
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        synced: syncedCount,
-        errors: errorCount,
-        total: flattenedCategories.length,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
 
   } catch (error) {
     console.error('Error in foursquare-sync-categories:', error);

@@ -73,25 +73,42 @@ async function getFirebaseAccessToken(): Promise<string> {
   const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)));
   const jwt = `${unsignedToken}.${encodedSignature}`;
 
-  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
-  });
+  // Fetch Firebase access token with timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-  if (!tokenResponse.ok) {
-    throw new Error(`Failed to get Firebase access token: ${await tokenResponse.text()}`);
-  }
+  try {
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
 
-  const tokenData = await tokenResponse.json();
-  cachedAccessToken = tokenData.access_token;
-  tokenExpiresAt = now + (tokenData.expires_in || 3600);
-  
-  if (!cachedAccessToken) {
-    throw new Error('Failed to obtain access token');
+    if (!tokenResponse.ok) {
+      throw new Error(`Failed to get Firebase access token: ${await tokenResponse.text()}`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    cachedAccessToken = tokenData.access_token;
+    tokenExpiresAt = now + (tokenData.expires_in || 3600);
+    
+    if (!cachedAccessToken) {
+      throw new Error('Failed to obtain access token');
+    }
+    
+    return cachedAccessToken;
+  } catch (fetchError) {
+    clearTimeout(timeoutId);
+    
+    // Handle timeout
+    if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+      throw new Error('Firebase token request timeout after 8 seconds');
+    }
+    
+    throw fetchError;
   }
-  
-  return cachedAccessToken;
 }
 
 // Generate iOS APNS JWT token

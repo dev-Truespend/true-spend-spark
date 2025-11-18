@@ -110,93 +110,124 @@ Deno.serve(async (req) => {
     }
     googleUrl += `&key=${googleMapsKey}`;
 
-    const response = await fetch(googleUrl);
-    const responseTime = Date.now() - startTime;
+    // Create abort controller for 8-second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Google Maps API Error:', response.status, errorText);
+    try {
+      const response = await fetch(googleUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      const responseTime = Date.now() - startTime;
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Google Maps API Error:', response.status, errorText);
+
+        await supabase.from('google_maps_api_logs').insert({
+          api_type: 'geocoding',
+          endpoint: 'google-maps-geocode',
+          request_params: { address, lat, lng },
+          response_status: response.status,
+          response_time_ms: responseTime,
+          cache_hit: false,
+          error_message: errorText,
+        });
+
+        return new Response(
+          JSON.stringify({ error: 'Google Maps API error', details: errorText }),
+          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const data = await response.json();
+
+      if (data.status !== 'OK' || !data.results || data.results.length === 0) {
+        console.error('Google Maps returned no results:', data.status);
+
+        await supabase.from('google_maps_api_logs').insert({
+          api_type: 'geocoding',
+          endpoint: 'google-maps-geocode',
+          request_params: { address, lat, lng },
+          response_status: 404,
+          response_time_ms: responseTime,
+          cache_hit: false,
+          error_message: data.status,
+        });
+
+        return new Response(
+          JSON.stringify({ error: 'No results found', status: data.status }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const result = data.results[0];
+      const resultData = {
+        lat: result.geometry.location.lat,
+        lng: result.geometry.location.lng,
+        formatted_address: result.formatted_address,
+        place_id: result.place_id,
+        address_components: result.address_components,
+      };
+
+      // Store in cache (30-day expiry)
+      await supabase.from('google_maps_geocode_cache').insert({
+        query_hash: queryHash,
+        address: address || null,
+        lat: resultData.lat,
+        lng: resultData.lng,
+        formatted_address: resultData.formatted_address,
+        place_id: resultData.place_id,
+        components: resultData.address_components,
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        hit_count: 0,
+      });
+
+      // Log API call with cost
       await supabase.from('google_maps_api_logs').insert({
         api_type: 'geocoding',
         endpoint: 'google-maps-geocode',
         request_params: { address, lat, lng },
-        response_status: response.status,
+        response_status: 200,
         response_time_ms: responseTime,
         cache_hit: false,
-        error_message: errorText,
+        cost_usd: 0.005,
       });
 
-      return new Response(
-        JSON.stringify({ error: 'Google Maps API error', details: errorText }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const data = await response.json();
-
-    if (data.status !== 'OK' || !data.results || data.results.length === 0) {
-      console.error('Google Maps returned no results:', data.status);
-
-      await supabase.from('google_maps_api_logs').insert({
-        api_type: 'geocoding',
-        endpoint: 'google-maps-geocode',
-        request_params: { address, lat, lng },
-        response_status: 404,
-        response_time_ms: responseTime,
-        cache_hit: false,
-        error_message: data.status,
-      });
+      console.log('✅ Geocode successful, cached result');
 
       return new Response(
-        JSON.stringify({ error: 'No results found', status: data.status }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          ...resultData,
+          cache_hit: false,
+          response_time_ms: responseTime,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      // Handle timeout
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('Google Maps API timeout after 8 seconds');
+        
+        await supabase.from('google_maps_api_logs').insert({
+          api_type: 'geocoding',
+          endpoint: 'google-maps-geocode',
+          request_params: { address, lat, lng },
+          response_status: 408,
+          response_time_ms: 8000,
+          cache_hit: false,
+          error_message: 'Request timeout',
+        });
+
+        return new Response(
+          JSON.stringify({ error: 'Google Maps API timeout', details: 'Request took longer than 8 seconds' }),
+          { status: 408, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      throw fetchError;
     }
-
-    const result = data.results[0];
-    const resultData = {
-      lat: result.geometry.location.lat,
-      lng: result.geometry.location.lng,
-      formatted_address: result.formatted_address,
-      place_id: result.place_id,
-      address_components: result.address_components,
-    };
-
-    // Store in cache (30-day expiry)
-    await supabase.from('google_maps_geocode_cache').insert({
-      query_hash: queryHash,
-      address: address || null,
-      lat: resultData.lat,
-      lng: resultData.lng,
-      formatted_address: resultData.formatted_address,
-      place_id: resultData.place_id,
-      components: resultData.address_components,
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      hit_count: 0,
-    });
-
-    // Log API call with cost
-    await supabase.from('google_maps_api_logs').insert({
-      api_type: 'geocoding',
-      endpoint: 'google-maps-geocode',
-      request_params: { address, lat, lng },
-      response_status: 200,
-      response_time_ms: responseTime,
-      cache_hit: false,
-      cost_usd: 0.005,
-    });
-
-    console.log('✅ Geocode successful, cached result');
-
-    return new Response(
-      JSON.stringify({
-        ...resultData,
-        cache_hit: false,
-        response_time_ms: responseTime,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
     console.error('Error in google-maps-geocode:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

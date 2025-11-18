@@ -86,96 +86,127 @@ Deno.serve(async (req) => {
 
     console.log('❌ Cache MISS - calling Google Geolocation API');
 
-    // Call Google Geolocation API
+    // Call Google Geolocation API with timeout
     const googleUrl = `https://www.googleapis.com/geolocation/v1/geolocate?key=${googleMapsKey}`;
     
-    const response = await fetch(googleUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ considerIp: true }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-    const responseTime = Date.now() - startTime;
+    try {
+      const response = await fetch(googleUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ considerIp: true }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Google Geolocation API Error:', response.status, errorText);
+      const responseTime = Date.now() - startTime;
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Google Geolocation API Error:', response.status, errorText);
+
+        await supabase.from('google_maps_api_logs').insert({
+          api_type: 'geolocation',
+          endpoint: 'google-geolocation',
+          request_params: { ip_address: ipAddress },
+          response_status: response.status,
+          response_time_ms: responseTime,
+          cache_hit: false,
+          error_message: errorText,
+        });
+
+        return new Response(
+          JSON.stringify({ error: 'Google Geolocation API error', details: errorText }),
+          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const data = await response.json();
+
+      if (!data.location) {
+        console.error('Google Geolocation returned no location');
+
+        await supabase.from('google_maps_api_logs').insert({
+          api_type: 'geolocation',
+          endpoint: 'google-geolocation',
+          request_params: { ip_address: ipAddress },
+          response_status: 404,
+          response_time_ms: responseTime,
+          cache_hit: false,
+          error_message: 'No location found',
+        });
+
+        return new Response(
+          JSON.stringify({ error: 'Location not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const resultData = {
+        lat: data.location.lat,
+        lng: data.location.lng,
+        accuracy: data.accuracy || 5000,
+      };
+
+      // Store in cache (24-hour expiry for IP-based geolocation)
+      await supabase.from('google_maps_geocode_cache').insert({
+        query_hash: queryHash,
+        address: `IP: ${ipAddress}`,
+        lat: resultData.lat,
+        lng: resultData.lng,
+        formatted_address: `Geolocation for ${ipAddress}`,
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        hit_count: 0,
+      });
+
+      // Log API call with cost (very low: $0.00001 per call)
       await supabase.from('google_maps_api_logs').insert({
         api_type: 'geolocation',
         endpoint: 'google-geolocation',
         request_params: { ip_address: ipAddress },
-        response_status: response.status,
+        response_status: 200,
         response_time_ms: responseTime,
         cache_hit: false,
-        error_message: errorText,
+        cost_usd: 0.00001,
       });
 
-      return new Response(
-        JSON.stringify({ error: 'Google Geolocation API error', details: errorText }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const data = await response.json();
-
-    if (!data.location) {
-      console.error('Google Geolocation returned no location');
-
-      await supabase.from('google_maps_api_logs').insert({
-        api_type: 'geolocation',
-        endpoint: 'google-geolocation',
-        request_params: { ip_address: ipAddress },
-        response_status: 404,
-        response_time_ms: responseTime,
-        cache_hit: false,
-        error_message: 'No location found',
-      });
+      console.log('✅ Geolocation successful, cached result');
 
       return new Response(
-        JSON.stringify({ error: 'Location not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          ...resultData,
+          cache_hit: false,
+          response_time_ms: responseTime,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      // Handle timeout
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('Google Geolocation API timeout after 8 seconds');
+        
+        await supabase.from('google_maps_api_logs').insert({
+          api_type: 'geolocation',
+          endpoint: 'google-geolocation',
+          request_params: { ip_address: ipAddress },
+          response_status: 408,
+          response_time_ms: 8000,
+          cache_hit: false,
+          error_message: 'Request timeout',
+        });
+
+        return new Response(
+          JSON.stringify({ error: 'Google Geolocation API timeout', details: 'Request took longer than 8 seconds' }),
+          { status: 408, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      throw fetchError;
     }
-
-    const resultData = {
-      lat: data.location.lat,
-      lng: data.location.lng,
-      accuracy: data.accuracy || 5000,
-    };
-
-    // Store in cache (24-hour expiry for IP-based geolocation)
-    await supabase.from('google_maps_geocode_cache').insert({
-      query_hash: queryHash,
-      address: `IP: ${ipAddress}`,
-      lat: resultData.lat,
-      lng: resultData.lng,
-      formatted_address: `Geolocation for ${ipAddress}`,
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      hit_count: 0,
-    });
-
-    // Log API call with cost (very low: $0.00001 per call)
-    await supabase.from('google_maps_api_logs').insert({
-      api_type: 'geolocation',
-      endpoint: 'google-geolocation',
-      request_params: { ip_address: ipAddress },
-      response_status: 200,
-      response_time_ms: responseTime,
-      cache_hit: false,
-      cost_usd: 0.00001,
-    });
-
-    console.log('✅ Geolocation successful, cached result');
-
-    return new Response(
-      JSON.stringify({
-        ...resultData,
-        cache_hit: false,
-        response_time_ms: responseTime,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
     console.error('Error in google-geolocation:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
