@@ -182,3 +182,12 @@ verify_jwt = true
 
 [functions.trace-collector]
 verify_jwt = false
+
+# Phase 9: Data Planes & Disaster Recovery
+
+[functions.backup-verification]
+verify_jwt = false
+schedule = "0 */6 * * *"
+
+[functions.data-export-request]
+verify_jwt = true
