@@ -210,3 +210,6 @@ verify_jwt = true
 
 [functions.slo-manager]
 verify_jwt = true
+
+[functions.security-audit]
+verify_jwt = true
