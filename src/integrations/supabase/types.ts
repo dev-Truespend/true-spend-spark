@@ -2897,6 +2897,154 @@ export type Database = {
         }
         Relationships: []
       }
+      trace_errors: {
+        Row: {
+          error_message: string
+          error_type: string
+          id: string
+          metadata: Json | null
+          span_id: string | null
+          stack_trace: string | null
+          timestamp: string | null
+          trace_id: string
+        }
+        Insert: {
+          error_message: string
+          error_type: string
+          id?: string
+          metadata?: Json | null
+          span_id?: string | null
+          stack_trace?: string | null
+          timestamp?: string | null
+          trace_id: string
+        }
+        Update: {
+          error_message?: string
+          error_type?: string
+          id?: string
+          metadata?: Json | null
+          span_id?: string | null
+          stack_trace?: string | null
+          timestamp?: string | null
+          trace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trace_errors_trace_id_fkey"
+            columns: ["trace_id"]
+            isOneToOne: false
+            referencedRelation: "traces"
+            referencedColumns: ["trace_id"]
+          },
+        ]
+      }
+      trace_spans: {
+        Row: {
+          attributes: Json | null
+          completed_at: string | null
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          events: Json | null
+          id: string
+          operation_name: string
+          parent_span_id: string | null
+          service_name: string
+          span_id: string
+          span_type: string
+          started_at: string
+          status: string | null
+          trace_id: string
+        }
+        Insert: {
+          attributes?: Json | null
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          events?: Json | null
+          id?: string
+          operation_name: string
+          parent_span_id?: string | null
+          service_name: string
+          span_id: string
+          span_type: string
+          started_at?: string
+          status?: string | null
+          trace_id: string
+        }
+        Update: {
+          attributes?: Json | null
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          events?: Json | null
+          id?: string
+          operation_name?: string
+          parent_span_id?: string | null
+          service_name?: string
+          span_id?: string
+          span_type?: string
+          started_at?: string
+          status?: string | null
+          trace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trace_spans_trace_id_fkey"
+            columns: ["trace_id"]
+            isOneToOne: false
+            referencedRelation: "traces"
+            referencedColumns: ["trace_id"]
+          },
+        ]
+      }
+      traces: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          operation_name: string
+          started_at: string
+          status: string | null
+          tags: Json | null
+          trace_id: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          operation_name: string
+          started_at?: string
+          status?: string | null
+          tags?: Json | null
+          trace_id: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          operation_name?: string
+          started_at?: string
+          status?: string | null
+          tags?: Json | null
+          trace_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       transaction_events_log: {
         Row: {
           completed_at: string | null
@@ -3479,6 +3627,7 @@ export type Database = {
       cleanup_old_notification_logs: { Args: never; Returns: number }
       cleanup_old_rate_limits: { Args: never; Returns: number }
       cleanup_old_security_logs: { Args: never; Returns: number }
+      cleanup_old_traces: { Args: never; Returns: undefined }
       cleanup_old_workflow_executions: { Args: never; Returns: number }
       cleanup_unverified_accounts: { Args: never; Returns: number }
       clear_login_attempts:
@@ -3525,6 +3674,19 @@ export type Database = {
           phone: string
           status: string
           updated_at: string
+        }[]
+      }
+      get_trace_statistics: {
+        Args: { p_end_time?: string; p_start_time?: string }
+        Returns: {
+          avg_duration_ms: number
+          completed_traces: number
+          error_rate: number
+          error_traces: number
+          p50_duration_ms: number
+          p95_duration_ms: number
+          p99_duration_ms: number
+          total_traces: number
         }[]
       }
       get_user_providers: { Args: { p_user_id: string }; Returns: string[] }
