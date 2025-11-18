@@ -202,18 +202,29 @@ async function getTotalRequests(supabase: any, startTime: string): Promise<numbe
 
 async function sendAlert(supabase: any, incident: any): Promise<void> {
   try {
-    // Create alert record
-    const { error } = await supabase
-      .from('incident_alerts')
-      .insert({
-        incident_id: incident.id,
-        channel: 'system_notification',
-        status: 'sent',
-        recipient: 'system_admin',
-      });
+    // Call alert-manager to handle alert routing and delivery
+    const { error } = await supabase.functions.invoke('alert-manager', {
+      body: {
+        incidentId: incident.id,
+        severity: incident.severity,
+        title: incident.title,
+        description: incident.description,
+        metadata: incident.metadata
+      }
+    });
 
     if (error) {
-      console.error('Error creating alert record:', error);
+      console.error('Error triggering alert-manager:', error);
+      
+      // Fallback: Create basic alert record
+      await supabase
+        .from('incident_alerts')
+        .insert({
+          incident_id: incident.id,
+          channel: 'system_notification',
+          status: 'failed',
+          recipient: 'system_admin',
+        });
     }
 
     // Log the alert
@@ -228,12 +239,11 @@ async function sendAlert(supabase: any, incident: any): Promise<void> {
           severity: incident.severity,
         },
       });
-
-    console.log(`Alert sent for incident: ${incident.id}`);
   } catch (error) {
-    console.error('Error sending alert:', error);
+    console.error('Error in sendAlert:', error);
   }
 }
+
 
 async function autoResolveIncidents(supabase: any): Promise<void> {
   try {

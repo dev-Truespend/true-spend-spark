@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
             .maybeSingle();
 
           if (!existingIncident.data) {
-            await supabase.from('incidents').insert({
+            const { data: newIncident } = await supabase.from('incidents').insert({
               title: `SLO Breach: ${slo.slo_name}`,
               description: `SLO compliance dropped to ${slo.compliance_percentage.toFixed(2)}%`,
               severity: 'high',
@@ -104,7 +104,29 @@ Deno.serve(async (req) => {
               affected_services: ['observability'],
               auto_detected: true,
               metadata: { slo_name: slo.slo_name, compliance: slo.compliance_percentage },
-            });
+            }).select().single();
+            
+            if (newIncident) {
+              // Trigger alert for SLO breach
+              try {
+                await supabase.functions.invoke('alert-manager', {
+                  body: {
+                    incidentId: newIncident.id,
+                    severity: 'high',
+                    title: newIncident.title,
+                    description: newIncident.description,
+                    metadata: {
+                      slo_name: slo.slo_name,
+                      compliance: slo.compliance_percentage,
+                      event_type: 'slo_breach'
+                    }
+                  }
+                });
+                console.log('Alert triggered for SLO breach:', newIncident.id);
+              } catch (alertError) {
+                console.error('Failed to trigger SLO alert:', alertError);
+              }
+            }
           }
         }
 
