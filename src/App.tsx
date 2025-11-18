@@ -46,6 +46,7 @@ import Settings from "./pages/Settings";
 import WebhookAnalytics from "./pages/dashboard/WebhookAnalytics";
 import AnomalyDetection from "./pages/dashboard/AnomalyDetection";
 import ABTesting from "./pages/dashboard/ABTesting";
+import RealtimeEvents from "./pages/dashboard/RealtimeEvents";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
 import { useNotificationTriggers } from "./hooks/useNotificationTriggers";
@@ -352,6 +353,7 @@ function App() {
                 <Route path="webhook-analytics" element={<WebhookAnalytics />} />
                 <Route path="anomaly-detection" element={<AnomalyDetection />} />
                 <Route path="ab-testing" element={<ABTesting />} />
+                <Route path="realtime-events" element={<RealtimeEvents />} />
               </Route>
 
               {/* TrueSpend User App - Coming Soon */}

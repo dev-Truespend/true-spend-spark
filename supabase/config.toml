@@ -165,3 +165,7 @@ verify_jwt = true
 [functions.event-consumer]
 verify_jwt = false
 schedule = "*/1 * * * *"
+
+[functions.event-batch-processor]
+verify_jwt = false
+schedule = "*/2 * * * *"
