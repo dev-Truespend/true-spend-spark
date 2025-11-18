@@ -371,6 +371,11 @@ function App() {
                     {React.createElement(lazy(() => import('@/pages/dashboard/Incidents')))}
                   </Suspense>
                 } />
+                <Route path="slo-tracking" element={
+                  <Suspense fallback={<div className="p-8">Loading...</div>}>
+                    {React.createElement(lazy(() => import('@/pages/dashboard/SLOTracking')))}
+                  </Suspense>
+                } />
               </Route>
 
               {/* TrueSpend User App - Coming Soon */}
