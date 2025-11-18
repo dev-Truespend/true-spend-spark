@@ -1,4 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.80.0';
+import { getCircuitBreaker } from '../_shared/circuit-breaker.ts';
+import { createRequestLogger } from '../_shared/request-logger.ts';
+import { withFallback, withRetry, withTimeout } from '../_shared/graceful-degradation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,6 +18,8 @@ interface SearchParams {
 }
 
 Deno.serve(async (req) => {
+  const logger = createRequestLogger('foursquare-places-search', req);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -27,14 +32,14 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
+    logger.logRequest(req);
+    
     const { lat, lng, radius = 100, categories, query, limit = 10 }: SearchParams = await req.json();
 
-    console.log(`🔍 [${requestId}] Foursquare Places Search:`, { lat, lng, radius, categories, query, limit });
+    logger.logInfo('Foursquare Places Search', { lat, lng, radius, categories, query, limit });
 
-    // Build cache key
     const cacheKey = `search_${lat}_${lng}_${radius}_${categories || 'all'}_${query || 'none'}`;
     
-    // Check cache first
     const { data: cachedData } = await supabase
       .from('place_enrichment_cache')
       .select('place_data, hit_count')
@@ -43,15 +48,13 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (cachedData) {
-      console.log('✅ Cache HIT for:', cacheKey);
+      logger.logInfo('Cache HIT', { cacheKey });
       
-      // Increment hit count
       await supabase
         .from('place_enrichment_cache')
         .update({ hit_count: (cachedData.hit_count || 0) + 1 })
         .eq('fsq_id', cacheKey);
 
-      // Log cache hit
       await supabase.from('foursquare_api_logs').insert({
         endpoint: '/places/search',
         request_params: { lat, lng, radius, categories, query },
@@ -60,84 +63,107 @@ Deno.serve(async (req) => {
         cache_hit: true,
       });
 
-      return new Response(
+      const response = new Response(
         JSON.stringify({ results: cachedData.place_data, cached: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    }
-
-    console.log('❌ Cache MISS - Fetching from Foursquare API');
-
-    // Build Foursquare API URL
-    const params = new URLSearchParams({
-      ll: `${lat},${lng}`,
-      radius: radius.toString(),
-      limit: limit.toString(),
-    });
-
-    if (categories) params.append('categories', categories);
-    if (query) params.append('query', query);
-
-    const foursquareUrl = `https://api.foursquare.com/v3/places/search?${params}`;
-
-    // Call Foursquare API
-    const response = await fetch(foursquareUrl, {
-      headers: {
-        'Authorization': foursquareApiKey,
-        'Accept': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Foursquare API Error:', response.status, errorText);
       
-      await supabase.from('foursquare_api_logs').insert({
-        endpoint: '/places/search',
-        request_params: { lat, lng, radius, categories, query },
-        response_status: response.status,
-        response_time_ms: Date.now() - startTime,
-        cache_hit: false,
-        error_message: errorText,
-      });
-
-      return new Response(
-        JSON.stringify({ error: 'Foursquare API error', details: errorText }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      logger.logResponse(response);
+      return response;
     }
 
-    const data = await response.json();
-    const places = data.results || [];
+    logger.logInfo('Cache MISS - Fetching from Foursquare API');
 
-    console.log(`✅ Found ${places.length} places from Foursquare`);
+    const circuitBreaker = getCircuitBreaker('foursquare-api', {
+      failureThreshold: 3,
+      resetTimeout: 30000,
+    });
 
-    // Store each place in foursquare_places table
+    const places = await withFallback(
+      () => withRetry(
+        () => withTimeout(
+          () => circuitBreaker.execute(async () => {
+            const params = new URLSearchParams({
+              ll: `${lat},${lng}`,
+              radius: radius.toString(),
+              limit: limit.toString(),
+            });
+
+            if (categories) params.append('categories', categories);
+            if (query) params.append('query', query);
+
+            const foursquareUrl = `https://api.foursquare.com/v3/places/search?${params}`;
+
+            logger.logInfo('Calling Foursquare API');
+            const response = await fetch(foursquareUrl, {
+              headers: {
+                'Authorization': foursquareApiKey,
+                'Accept': 'application/json',
+              },
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              await supabase.from('foursquare_api_logs').insert({
+                endpoint: '/places/search',
+                request_params: { lat, lng, radius, categories, query },
+                response_status: response.status,
+                response_time_ms: Date.now() - startTime,
+                cache_hit: false,
+                error_message: errorText,
+              });
+              throw new Error(`Foursquare API error: ${response.status} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            return data.results || [];
+          }),
+          { timeoutMs: 10000 }
+        ),
+        { 
+          maxRetries: 2,
+          initialDelay: 500,
+          retryableErrors: (error) => {
+            return error.message.includes('fetch') || error.message.includes('timeout');
+          }
+        }
+      ),
+      {
+        fallbackValue: [],
+        cacheKey: `foursquare-search-${lat}-${lng}`,
+        cacheDuration: 300000,
+        onError: (error) => {
+          logger.logError(error, { lat, lng, query, service: 'foursquare' });
+        }
+      }
+    );
+
+    logger.logInfo('Found places from Foursquare', { count: places.length });
+
     for (const place of places) {
       await supabase.from('foursquare_places').upsert({
         fsq_id: place.fsq_id,
         name: place.name,
-        categories: place.categories || [],
-        primary_category: place.categories?.[0]?.name,
-        location: place.location,
+        categories: place.categories,
         geocodes: place.geocodes,
-        chains: place.chains,
-        rating: place.rating,
+        location: place.location,
         popularity: place.popularity,
         price_tier: place.price,
+        rating: place.rating,
+        chains: place.chains,
         metadata: place,
+        last_verified_at: new Date().toISOString(),
       }, { onConflict: 'fsq_id' });
     }
 
-    // Cache the results (30 days)
-    await supabase.from('place_enrichment_cache').insert({
+    await supabase.from('place_enrichment_cache').upsert({
       fsq_id: cacheKey,
       place_data: places,
-      enrichment_type: 'search',
+      cached_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       hit_count: 0,
     });
 
-    // Log API call
     await supabase.from('foursquare_api_logs').insert({
       endpoint: '/places/search',
       request_params: { lat, lng, radius, categories, query },
@@ -146,26 +172,29 @@ Deno.serve(async (req) => {
       cache_hit: false,
     });
 
-    return new Response(
+    logger.logInfo('Successfully fetched Foursquare places', { count: places.length });
+
+    const response = new Response(
       JSON.stringify({ results: places, cached: false }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+    
+    logger.logResponse(response);
+    return response;
 
   } catch (error) {
-    console.error('Error in foursquare-places-search:', error);
-    
-    await supabase.from('foursquare_api_logs').insert({
-      endpoint: '/places/search',
-      request_params: await req.json().catch(() => ({})),
-      response_status: 500,
-      response_time_ms: Date.now() - startTime,
-      cache_hit: false,
-      error_message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    logger.logError(error);
 
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Internal server error',
+        fallback: 'Service temporarily unavailable, returning empty results',
+        results: []
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });

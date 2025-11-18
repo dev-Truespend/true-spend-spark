@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.80.0';
+import { getAllCircuitBreakerStats } from '../_shared/circuit-breaker.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -108,9 +109,33 @@ serve(async (req) => {
       };
     }
 
+    // Circuit breaker status
+    if (checkType === 'all' || checkType === 'circuits') {
+      try {
+        const circuitStats = getAllCircuitBreakerStats();
+        const openCircuits = Object.entries(circuitStats).filter(([_, stats]) => stats.state === 'OPEN');
+        
+        results.checks.circuitBreakers = {
+          status: openCircuits.length === 0 ? 'healthy' : 'degraded',
+          openCircuits: openCircuits.length,
+          circuits: circuitStats,
+        };
+        
+        if (openCircuits.length > 0) {
+          results.status = 'degraded';
+        }
+      } catch (error) {
+        results.checks.circuitBreakers = {
+          status: 'unknown',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
+    }
+
     // System info
     results.system = {
       memory: Deno.memoryUsage(),
+      uptime: Deno.osUptime ? Deno.osUptime() : undefined,
     };
 
     const statusCode = results.status === 'healthy' ? 200 : results.status === 'degraded' ? 503 : 500;
