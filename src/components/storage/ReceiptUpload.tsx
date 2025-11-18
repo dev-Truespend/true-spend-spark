@@ -210,7 +210,9 @@ export function ReceiptUpload({ onReceiptExtracted }: ReceiptUploadProps = {}) {
           lng: position.coords.longitude,
         };
       } catch (err) {
-        console.log('[ReceiptUpload] Location not available');
+        if (import.meta.env.DEV) {
+          console.log('[ReceiptUpload] Location not available');
+        }
       }
     }
 

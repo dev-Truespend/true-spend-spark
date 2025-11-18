@@ -3,14 +3,17 @@ import { Resend } from 'https://esm.sh/resend@4.0.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-request-id',
 };
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
 Deno.serve(async (req) => {
+  // Generate or extract correlation ID
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
+  
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: { ...corsHeaders, 'x-request-id': requestId } });
   }
 
   try {
@@ -46,10 +49,10 @@ Deno.serve(async (req) => {
 
     if (recentRequests && recentRequests.length >= 3) {
       // Too many requests, but still return success message
-      console.log(`Rate limit hit for email: ${normalizedEmail}`);
+      console.log(`[${requestId}] Rate limit hit for email: ${normalizedEmail}`);
       return new Response(
         JSON.stringify(successResponse),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-request-id': requestId } }
       );
     }
 
@@ -62,16 +65,16 @@ Deno.serve(async (req) => {
 
     // If user doesn't exist or is deleted, still return success (don't reveal)
     if (!profile || profile.status === 'deleted') {
-      console.log(`Password reset requested for non-existent email: ${normalizedEmail}`);
+      console.log(`[${requestId}] Password reset requested for non-existent email: ${normalizedEmail}`);
       return new Response(
         JSON.stringify(successResponse),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-request-id': requestId } }
       );
     }
 
     // Block Google OAuth users from password reset
     if (profile.auth_provider === 'google') {
-      console.log(`Password reset blocked for Google OAuth user: ${normalizedEmail}`);
+      console.log(`[${requestId}] Password reset blocked for Google OAuth user: ${normalizedEmail}`);
       
       // Log security event
       await supabase.from('security_logs').insert({
@@ -89,7 +92,7 @@ Deno.serve(async (req) => {
           error: 'google_oauth_account',
           message: 'This account uses Google sign-in. Please use the "Sign in with Google" button to access your account. Password reset is not available for Google accounts.'
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-request-id': requestId } }
       );
     }
 

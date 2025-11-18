@@ -105,6 +105,42 @@ To bring the site back online:
 
 ---
 
+## 🚨 If Something Goes Wrong
+
+### Quick Response Guide
+
+**1. Check System Health**
+- Navigate to `/admin/real-time-metrics` for live system status
+- Review `/admin/incidents` for active incidents
+- Check `/admin/slo-tracking` for SLO breaches
+
+**2. Review Logs**
+- Navigate to `/admin/system-logs` to view recent errors
+- Filter by severity: `error` or `critical`
+- Look for correlation IDs (`x-request-id`) to trace issues
+
+**3. Consult Runbooks**
+- **Incident Response:** `docs/INCIDENT_RESPONSE_GUIDE.md`
+- **Observability:** `docs/OBSERVABILITY_RUNBOOK.md`
+- **SLO Monitoring:** `docs/SLO_MONITORING_GUIDE.md`
+- **Alerting:** `docs/MONITORING_ALERTS_SETUP.md`
+
+**4. Common Issues**
+
+| Issue | Check | Resolution |
+|-------|-------|------------|
+| 500 errors | Edge function logs | Verify secrets configured |
+| Auth failures | `/admin/security` | Check login attempt locks |
+| Slow performance | Cache hit rate | Review cache analytics |
+| Database errors | RLS policies | Verify user status not 'deleted' |
+
+**5. Emergency Contacts**
+- Engineering Lead: [TODO: Add contact]
+- DevOps On-Call: [TODO: Add contact]
+- Security Team: [TODO: Add contact]
+
+---
+
 ## 🌐 2. Cloudflare Configuration (Manual Setup - CRITICAL)
 
 **⏱️ Estimated Time:** 2-3 hours  

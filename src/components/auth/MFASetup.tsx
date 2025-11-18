@@ -67,13 +67,15 @@ export function MFASetup() {
       const enabled = (data as any)?.totp_enabled === true; // STRICT
       const hasPendingSecret = !!(data as any)?.pending_mfa_secret;
       
-      console.log('[MFA] checkMFAStatus - Raw DB data:', {
-        totp_enabled: (data as any)?.totp_enabled,
-        has_totp_secret: !!(data as any)?.totp_secret,
-        has_pending_secret: hasPendingSecret,
-        computed_enabled: enabled,
-        computed_pending: !enabled && hasPendingSecret,
-      });
+      if (import.meta.env.DEV) {
+        console.log('[MFA] checkMFAStatus - Raw DB data:', {
+          totp_enabled: (data as any)?.totp_enabled,
+          has_totp_secret: !!(data as any)?.totp_secret,
+          has_pending_secret: hasPendingSecret,
+          computed_enabled: enabled,
+          computed_pending: !enabled && hasPendingSecret,
+        });
+      }
       
       setMfaEnabled(enabled);
       setMfaPending(!enabled && hasPendingSecret); // Pending only if secret but not enabled
@@ -83,16 +85,20 @@ export function MFASetup() {
         setQrCodeUrl('');
         setSecret('');
         setVerificationCode('');
-        console.log('[MFA] Cleared stale QR state (DB shows not pending)');
+        if (import.meta.env.DEV) {
+          console.log('[MFA] Cleared stale QR state (DB shows not pending)');
+        }
       }
       
-      console.log('[MFA] Status check complete:', { 
-        enabled, 
-        hasPendingSecret, 
-        mfaPending: !enabled && hasPendingSecret,
-        clearingStaleQR: !enabled && !hasPendingSecret && (qrCodeUrl || secret)
-      });
-      console.log('[MFA] Final UI state:', { enabled, pending: !enabled && hasPendingSecret, hasQR: !!qrCodeUrl });
+      if (import.meta.env.DEV) {
+        console.log('[MFA] Status check complete:', {
+          enabled, 
+          hasPendingSecret, 
+          mfaPending: !enabled && hasPendingSecret,
+          clearingStaleQR: !enabled && !hasPendingSecret && (qrCodeUrl || secret)
+        });
+        console.log('[MFA] Final UI state:', { enabled, pending: !enabled && hasPendingSecret, hasQR: !!qrCodeUrl });
+      }
     } catch (error) {
       console.error('Error checking MFA status:', error);
     } finally {
@@ -101,7 +107,9 @@ export function MFASetup() {
   };
 
   const generateSecret = async () => {
-    console.log('[MFA] Starting MFA setup...');
+    if (import.meta.env.DEV) {
+      console.log('[MFA] Starting MFA setup...');
+    }
     setLoading(true);
     setError(null);
     try {
@@ -113,7 +121,9 @@ export function MFASetup() {
         throw new Error(statusCode === 500 ? 'Security service unavailable. Please try again.' : (error as any)?.message || 'Failed to generate MFA secret');
       }
 
-      console.log('[MFA] Secret generated successfully');
+      if (import.meta.env.DEV) {
+        console.log('[MFA] Secret generated successfully');
+      }
       setSecret(data.secret);
       const qrDataUrl = await QRCodeLib.toDataURL(data.qrCodeUrl);
       setQrCodeUrl(qrDataUrl);
@@ -135,7 +145,9 @@ export function MFASetup() {
       return;
     }
 
-    console.log('[MFA] Attempting to verify code and enable MFA...');
+    if (import.meta.env.DEV) {
+      console.log('[MFA] Attempting to verify code and enable MFA...');
+    }
     setLoading(true);
     setError(null);
     
@@ -218,7 +230,9 @@ export function MFASetup() {
         return;
       }
 
-      console.log('[MFA] Verification SUCCESS - MFA enabled in database by backend');
+      if (import.meta.env.DEV) {
+        console.log('[MFA] Verification SUCCESS - MFA enabled in database by backend');
+      }
       
       // Show backup codes to user (they MUST save these)
       setBackupCodes(data.backupCodes);
@@ -232,7 +246,9 @@ export function MFASetup() {
       // CRITICAL: Database is the ONLY source of truth
       // Do NOT set mfaEnabled(true) here - let DB state control it
       // Only checkMFAStatus() can update mfaEnabled based on totp_enabled from DB
-      console.log('[MFA] Refetching status from DB after successful enable...');
+      if (import.meta.env.DEV) {
+        console.log('[MFA] Refetching status from DB after successful enable...');
+      }
       await checkMFAStatus();
       
       toast.success("Two-factor authentication enabled successfully!");
@@ -252,7 +268,9 @@ export function MFASetup() {
       return;
     }
 
-    console.log('[MFA] Attempting to disable MFA...');
+    if (import.meta.env.DEV) {
+      console.log('[MFA] Attempting to disable MFA...');
+    }
     setLoading(true);
     setError(null);
     try {
@@ -262,14 +280,18 @@ export function MFASetup() {
 
       if (error) throw error;
 
-      console.log('[MFA] Disable successful, clearing local state');
+      if (import.meta.env.DEV) {
+        console.log('[MFA] Disable successful, clearing local state');
+      }
       
       // Clear local state immediately
       setPassword("");
       
       // CRITICAL: Refetch DB state to update UI
       // Do NOT set mfaEnabled(false) manually - let DB control it
-      console.log('[MFA] Refetching status from DB after disable...');
+      if (import.meta.env.DEV) {
+        console.log('[MFA] Refetching status from DB after disable...');
+      }
       await checkMFAStatus();
       
       toast.success("Two-factor authentication disabled");
@@ -284,7 +306,9 @@ export function MFASetup() {
 
   // Handler for canceling MFA setup
   const handleCancelSetup = async () => {
-    console.log('[MFA] User clicked Cancel during setup');
+    if (import.meta.env.DEV) {
+      console.log('[MFA] User clicked Cancel during setup');
+    }
     setLoading(true);
     setError(null);
     
@@ -299,7 +323,9 @@ export function MFASetup() {
         return;
       }
       
-      console.log('[MFA] Cancel successful - clearing all local state');
+      if (import.meta.env.DEV) {
+        console.log('[MFA] Cancel successful - clearing all local state');
+      }
       
       // Immediately clear ALL local state
       setQrCodeUrl('');

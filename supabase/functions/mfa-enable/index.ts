@@ -3,7 +3,7 @@ import * as OTPAuth from 'https://esm.sh/otpauth@9.3.6';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-request-id',
 };
 
 const MAX_MFA_FAILS = 5;
@@ -22,8 +22,11 @@ function generateBackupCode(): string {
 }
 
 Deno.serve(async (req) => {
+  // Generate or extract correlation ID
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
+  
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: { ...corsHeaders, 'x-request-id': requestId } });
   }
 
   try {
@@ -46,7 +49,7 @@ Deno.serve(async (req) => {
     if (userError || !user) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-request-id': requestId } }
       );
     }
 
@@ -58,7 +61,7 @@ Deno.serve(async (req) => {
           error: 'Please enter a valid 6-digit code',
           code: 'INVALID_CODE_FORMAT'
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-request-id': requestId } }
       );
     }
 
@@ -70,10 +73,10 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (mfaError) {
-      console.error('MFA settings fetch error:', mfaError);
+      console.error(`[${requestId}] MFA settings fetch error:`, mfaError);
       return new Response(
         JSON.stringify({ error: 'Failed to fetch MFA settings' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-request-id': requestId } }
       );
     }
 
@@ -82,7 +85,7 @@ Deno.serve(async (req) => {
     if (mfaSettings?.mfa_lock_until) {
       const lockUntil = new Date(mfaSettings.mfa_lock_until);
       if (lockUntil > now) {
-        console.log('MFA verification locked for user:', user.id);
+        console.log(`[${requestId}] MFA verification locked for user:`, user.id);
         
         await adminClient.from('security_logs').insert({
           user_id: user.id,
@@ -100,7 +103,7 @@ Deno.serve(async (req) => {
             error: 'Too many incorrect codes. Please try again in 24 hours.',
             code: 'MFA_VERIFY_LOCKED'
           }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-request-id': requestId } }
         );
       }
     }
@@ -112,7 +115,7 @@ Deno.serve(async (req) => {
           error: 'No MFA setup in progress. Please start MFA setup first.',
           code: 'NO_PENDING_SETUP'
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-request-id': requestId } }
       );
     }
 

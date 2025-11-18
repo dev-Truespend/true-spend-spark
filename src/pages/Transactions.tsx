@@ -99,7 +99,9 @@ export default function Transactions() {
       
       // If offline, return local data
       if (!status.isOnline) {
-        console.log('[Transactions] Offline: Using local data');
+        if (import.meta.env.DEV) {
+          console.log('[Transactions] Offline: Using local data');
+        }
         return localTransactions;
       }
 
@@ -157,7 +159,9 @@ export default function Transactions() {
 
         await saveOffline('transactions', offlineTransaction, 'CREATE');
         
-        console.log('[Transactions] Saved offline:', offlineTransaction.id);
+        if (import.meta.env.DEV) {
+          console.log('[Transactions] Saved offline:', offlineTransaction.id);
+        }
         return offlineTransaction;
       }
 

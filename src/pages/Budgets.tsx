@@ -105,7 +105,9 @@ export default function Budgets() {
 
       // If offline, calculate spending from local data
       if (!status.isOnline) {
-        console.log('[Budgets] Offline: Using local data');
+        if (import.meta.env.DEV) {
+          console.log('[Budgets] Offline: Using local data');
+        }
         return localBudgets.map((budget: any) => {
           const transactions = localTransactions.filter(
             (tx: any) =>
@@ -240,7 +242,9 @@ export default function Budgets() {
         };
 
         await saveOffline('budgets', offlineBudget, 'CREATE');
-        console.log('[Budgets] Saved offline:', offlineBudget.id);
+        if (import.meta.env.DEV) {
+          console.log('[Budgets] Saved offline:', offlineBudget.id);
+        }
         return offlineBudget;
       }
 

@@ -13,22 +13,20 @@
 - ✅ Updated `README.md` with Snyk badge and Phase 1-3 status
 - ✅ Documented account creation, token generation, first scan
 
-### Step 2: PWA Removal (1-2 hours)
-- ✅ Deleted 8 PWA-related files:
-  - `src/components/pwa/ForceRefreshBanner.tsx`
-  - `src/components/pwa/OfflineIndicator.tsx`
-  - `src/components/pwa/SyncIndicator.tsx`
-  - `src/hooks/useOfflineSync.tsx`
-  - `src/hooks/useSync.tsx`
-  - `src/services/offlineSync.ts`
-  - `src/services/syncManager.ts`
-  - `src/components/sync/SyncStatusManager.tsx`
-- ✅ Cleaned up `src/App.tsx` (removed PWA imports and components)
+### Step 2: PWA Install Banner Removal (1 hour)
+- ✅ Removed PWA install prompts and banners
 - ✅ Updated `index.html` (removed manifest link, kept theme-color)
 - ✅ Updated `docs/PWA_DISABLE_GUIDE.md` (new status document)
-- ✅ Preserved push notification files (for native apps in Phase 11):
+- ✅ **Offline sync capabilities retained** - Files still active:
+  - `src/services/offlineSync.ts` - Handles offline data persistence
+  - `src/services/syncManager.ts` - Manages sync operations
+  - `src/hooks/useOfflineStorage.ts` - Offline storage hook
+  - `src/lib/db/indexedDB.ts` - IndexedDB wrapper
+- ✅ Push notification files preserved (for native apps in Phase 11):
   - `src/components/pwa/PushNotificationManager.tsx`
   - `src/components/pwa/NotificationTestPanel.tsx`
+
+**Note:** PWA install UI was removed, but offline-first capabilities remain active for better user experience during connectivity issues.
 
 ### Step 3: Architecture Alignment (2 hours)
 - ✅ Updated database: Phase 3 marked complete (100%)
@@ -77,16 +75,16 @@
 
 ---
 
-## 🗑️ Files Deleted (8 PWA Files)
+## 🔄 Offline Sync Status
 
-1. `src/components/pwa/ForceRefreshBanner.tsx`
-2. `src/components/pwa/OfflineIndicator.tsx`
-3. `src/components/pwa/SyncIndicator.tsx`
-4. `src/hooks/useOfflineSync.tsx`
-5. `src/hooks/useSync.tsx`
-6. `src/services/offlineSync.ts`
-7. `src/services/syncManager.ts`
-8. `src/components/sync/SyncStatusManager.tsx`
+**Current State:** Offline sync is **ACTIVE** and working as intended.
+
+- ✅ `src/services/offlineSync.ts` - Active (handles offline data operations)
+- ✅ `src/services/syncManager.ts` - Active (manages sync queue)
+- ✅ `src/lib/db/indexedDB.ts` - Active (IndexedDB wrapper)
+- ✅ `src/hooks/useOfflineStorage.ts` - Active (offline storage hook)
+
+**What was removed:** PWA install prompts and UI components only.
 
 **Note:** Push notification files were **preserved** for Phase 11 native apps.
 
