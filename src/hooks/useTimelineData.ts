@@ -5,7 +5,7 @@ export function useTimelineData() {
   const phases = usePhases();
   const milestones = useMilestones();
 
-  const currentWeek = 28; // Current week in the timeline (Phase 8 complete)
+  const currentWeek = 29; // Current week in the timeline (Phase 9 Step 1 - Week 29)
   const totalWeeks = 51; // Blueprint v4.2: 51 weeks with 16 phases - 677 SP total
 
   const timelineData = useMemo(() => {
