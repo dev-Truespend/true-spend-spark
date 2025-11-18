@@ -47,6 +47,8 @@ const navigation = [
   { name: "Workflows", href: "/admin/workflows", icon: Workflow },
   { name: "Distributed Tracing", href: "/admin/distributed-tracing", icon: Network },
   { name: "Data Planes & DR", href: "/admin/data-planes", icon: Database },
+  { name: "System Logs", href: "/admin/system-logs", icon: Activity },
+  { name: "Observability", href: "/admin/observability", icon: BarChart3 },
 ];
 
 export default function AdminDashboardLayout() {

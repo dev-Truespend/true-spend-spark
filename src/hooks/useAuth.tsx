@@ -3,6 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useLogger } from "@/hooks/useLogger";
 
 interface Profile {
   id: string;
@@ -76,6 +77,7 @@ const mfaPendingRef = useRef(false);
 useEffect(() => { mfaPendingRef.current = mfaPending; }, [mfaPending]);
 const navigate = useNavigate();
 const { toast } = useToast();
+const logger = useLogger();
 
   // Fetch profile with all auth providers
   useEffect(() => {
@@ -376,6 +378,16 @@ const { toast } = useToast();
 
       // Step 6: Handle authentication failure
       if (authError) {
+        // Log authentication failure
+        logger.warn('Authentication failed', {
+          component: 'useAuth.signIn',
+          metadata: {
+            email: email.toLowerCase(),
+            hasMFA: providerCheck.mfaEnabled,
+            error: authError.message,
+          },
+        });
+
         // Increment login failure counter
         if (providerCheck.userId) {
           try {
@@ -395,6 +407,11 @@ const { toast } = useToast();
       }
 
       if (!authData.user) {
+        logger.error('Authentication returned no user', {
+          component: 'useAuth.signIn',
+          metadata: { email: email.toLowerCase() },
+        });
+        
         return {
           error: {
             message: "Authentication failed"
@@ -412,6 +429,11 @@ const { toast } = useToast();
       const profile = profileData as any;
 
       if (!profile) {
+        logger.error('Profile not found after authentication', {
+          component: 'useAuth.signIn',
+          metadata: { userId: authData.user.id },
+        });
+        
         await supabase.auth.signOut();
         return {
           error: {
@@ -421,6 +443,11 @@ const { toast } = useToast();
       }
 
       if (profile.status === 'deleted') {
+        logger.warn('Deleted account login attempt', {
+          component: 'useAuth.signIn',
+          metadata: { userId: authData.user.id },
+        });
+        
         await supabase.auth.signOut();
         return {
           error: {
@@ -456,6 +483,16 @@ const { toast } = useToast();
 
       // Successful login - reset rate limit counters
       setMfaPending(false);
+
+      // Log successful authentication
+      logger.info('User authenticated successfully', {
+        component: 'useAuth.signIn',
+        metadata: {
+          userId: authData.user.id,
+          email: email.toLowerCase(),
+          hasMFA: providerCheck.mfaEnabled,
+        },
+      });
 
       // Reset login rate limit counters
       if (authData.user) {
