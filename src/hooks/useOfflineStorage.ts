@@ -27,29 +27,62 @@ export function useOfflineStorage() {
     version: 1,
     stores: ['transactions', 'budgets', 'geofences', 'syncQueue', 'settings'],
   }));
+  
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    storage.init();
+    let mounted = true;
+    
+    const initStorage = async () => {
+      try {
+        await storage.init();
+        if (mounted) {
+          setIsInitialized(true);
+        }
+      } catch (error) {
+        console.error('[useOfflineStorage] Failed to initialize:', error);
+      }
+    };
+    
+    initStorage();
+    
+    return () => {
+      mounted = false;
+    };
   }, [storage]);
 
   useEffect(() => {
+    if (!isInitialized) return;
+    
+    let mounted = true;
+    
     const updateStatus = async () => {
-      const syncStatus = syncManager.getStatus();
-      const unsyncedTransactions = await storage.query('transactions', (item: any) => !item.synced);
-      const unsyncedBudgets = await storage.query('budgets', (item: any) => !item.synced);
-      
-      setStatus(prev => ({
-        ...prev,
-        isOnline: quality !== 'offline',
-        isSyncing: syncStatus === 'syncing',
-        pendingChanges: unsyncedTransactions.length + unsyncedBudgets.length,
-      }));
+      try {
+        const syncStatus = syncManager.getStatus();
+        const unsyncedTransactions = await storage.query('transactions', (item: any) => !item.synced);
+        const unsyncedBudgets = await storage.query('budgets', (item: any) => !item.synced);
+        
+        if (mounted) {
+          setStatus(prev => ({
+            ...prev,
+            isOnline: quality !== 'offline',
+            isSyncing: syncStatus === 'syncing',
+            pendingChanges: unsyncedTransactions.length + unsyncedBudgets.length,
+          }));
+        }
+      } catch (error) {
+        console.error('[useOfflineStorage] Failed to update status:', error);
+      }
     };
 
     updateStatus();
     const interval = setInterval(updateStatus, 5000);
-    return () => clearInterval(interval);
-  }, [quality, storage]);
+    
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [quality, storage, isInitialized]);
 
   const saveOffline = async <T extends { id?: string }>(
     storeName: string,
