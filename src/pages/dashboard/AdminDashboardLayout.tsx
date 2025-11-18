@@ -18,6 +18,7 @@ import {
   Webhook,
   Activity,
   FlaskConical,
+  Radio,
   LogOut
 } from "lucide-react";
 
@@ -37,6 +38,7 @@ const navigation = [
   { name: "Webhook Analytics", href: "/admin/webhook-analytics", icon: Webhook },
   { name: "Anomaly Detection", href: "/admin/anomaly-detection", icon: Activity },
   { name: "A/B Testing", href: "/admin/ab-testing", icon: FlaskConical },
+  { name: "Realtime Events", href: "/admin/realtime-events", icon: Radio },
 ];
 
 export default function AdminDashboardLayout() {
