@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -366,6 +366,11 @@ function App() {
                 <Route path="data-planes" element={<DataPlanes />} />
                 <Route path="system-logs" element={<SystemLogs />} />
                 <Route path="observability" element={<Observability />} />
+                <Route path="incidents" element={
+                  <Suspense fallback={<div className="p-8">Loading...</div>}>
+                    {React.createElement(lazy(() => import('@/pages/dashboard/Incidents')))}
+                  </Suspense>
+                } />
               </Route>
 
               {/* TrueSpend User App - Coming Soon */}

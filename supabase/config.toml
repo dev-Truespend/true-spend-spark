@@ -199,5 +199,11 @@ verify_jwt = false
 
 [functions.metrics-aggregator]
 verify_jwt = false
+
+[functions.incident-detector]
+verify_jwt = false
+
+[functions.incident-manager]
+verify_jwt = true
 # Run every hour
 # schedule = "0 * * * *"
