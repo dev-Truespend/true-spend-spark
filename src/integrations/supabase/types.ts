@@ -62,6 +62,102 @@ export type Database = {
         }
         Relationships: []
       }
+      alert_history: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_rule_id: string | null
+          channel: string
+          error_message: string | null
+          id: string
+          incident_id: string | null
+          metadata: Json | null
+          recipient: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_rule_id?: string | null
+          channel: string
+          error_message?: string | null
+          id?: string
+          incident_id?: string | null
+          metadata?: Json | null
+          recipient: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_rule_id?: string | null
+          channel?: string
+          error_message?: string | null
+          id?: string
+          incident_id?: string | null
+          metadata?: Json | null
+          recipient?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_history_alert_rule_id_fkey"
+            columns: ["alert_rule_id"]
+            isOneToOne: false
+            referencedRelation: "alert_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_history_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alert_rules: {
+        Row: {
+          active: boolean | null
+          channels: string[]
+          created_at: string | null
+          escalation_timeout_minutes: number | null
+          id: string
+          name: string
+          severity: string
+          trigger_conditions: Json | null
+          updated_at: string | null
+          user_ids: string[]
+        }
+        Insert: {
+          active?: boolean | null
+          channels?: string[]
+          created_at?: string | null
+          escalation_timeout_minutes?: number | null
+          id?: string
+          name: string
+          severity: string
+          trigger_conditions?: Json | null
+          updated_at?: string | null
+          user_ids?: string[]
+        }
+        Update: {
+          active?: boolean | null
+          channels?: string[]
+          created_at?: string | null
+          escalation_timeout_minutes?: number | null
+          id?: string
+          name?: string
+          severity?: string
+          trigger_conditions?: Json | null
+          updated_at?: string | null
+          user_ids?: string[]
+        }
+        Relationships: []
+      }
       anomaly_detections: {
         Row: {
           anomaly_type: string
