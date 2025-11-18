@@ -124,7 +124,9 @@ export function useDealNotifications(geofenceId: string | null, userId: string |
 
     // This would be called from a geofence event handler
     // Example implementation shown in hook structure
-    console.log('[DealNotification] Listening for deals at geofence:', geofenceId);
+    if (import.meta.env.DEV) {
+      console.log('[DealNotification] Listening for deals at geofence:', geofenceId);
+    }
 
     // In production, this would subscribe to merchant_recommendations
     // and trigger notifications when user enters a geofence with active deals

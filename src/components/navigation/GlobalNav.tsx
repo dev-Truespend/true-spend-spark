@@ -50,7 +50,9 @@ export function GlobalNav() {
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map(name => caches.delete(name)));
-        console.log('[Force Refresh] 💥 Cleared all caches');
+        if (import.meta.env.DEV) {
+          console.log('[Force Refresh] 💥 Cleared all caches');
+        }
       }
       
       // Hard reload

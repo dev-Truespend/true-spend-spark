@@ -159,7 +159,9 @@ const logger = useLogger();
         
         // Google-specific validation
         if (provider === 'google') {
-          console.log('Google sign-in detected, validating email');
+          if (import.meta.env.DEV) {
+            console.log('Google sign-in detected, validating email');
+          }
           
           if (!authUser.email) {
             await supabase.auth.signOut();
@@ -171,7 +173,9 @@ const logger = useLogger();
             return;
           }
           
-          console.log('Google sign-in successful - Auth page will handle redirect');
+          if (import.meta.env.DEV) {
+            console.log('Google sign-in successful - Auth page will handle redirect');
+          }
           
           // Log successful Google login (non-blocking)
           supabase.functions.invoke('audit-google-login', {

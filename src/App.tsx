@@ -10,6 +10,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { GlobalNav } from "@/components/navigation/GlobalNav";
 import { ConflictResolutionDialog } from "@/components/sync/ConflictResolutionDialog";
+import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 import { syncManager, SyncStatus } from "@/services/syncManager";
 import { offlineSyncService, SyncConflict, ConflictResolution } from "@/services/offlineSync";
 import { useOfflineStorage } from "@/hooks/useOfflineStorage";
@@ -88,7 +89,9 @@ function SyncManagerWrapper() {
 
   // Subscribe to syncManager status changes
   useEffect(() => {
-    console.log('[App] Subscribing to sync status changes');
+    if (import.meta.env.DEV) {
+      console.log('[App] Subscribing to sync status changes');
+    }
     const unsubscribe = syncManager.onStatusChange((status, error) => {
       setSyncStatus(status);
       if (error) {
@@ -102,11 +105,15 @@ function SyncManagerWrapper() {
 
   // Start auto-sync on mount
   useEffect(() => {
-    console.log('[App] Starting auto-sync (every 30 seconds)');
+    if (import.meta.env.DEV) {
+      console.log('[App] Starting auto-sync (every 30 seconds)');
+    }
     syncManager.startAutoSync(30000);
 
     return () => {
-      console.log('[App] Stopping auto-sync');
+      if (import.meta.env.DEV) {
+        console.log('[App] Stopping auto-sync');
+      }
       syncManager.stopAutoSync();
     };
   }, []);
@@ -116,7 +123,9 @@ function SyncManagerWrapper() {
     const checkConflicts = async () => {
       if (!status.isOnline) return;
 
-      console.log('[App] Checking for sync conflicts...');
+      if (import.meta.env.DEV) {
+        console.log('[App] Checking for sync conflicts...');
+      }
       
       try {
         // Check transactions for conflicts
@@ -125,7 +134,9 @@ function SyncManagerWrapper() {
           'transactions',
           transactions,
           async (conflict) => {
-            console.log('[App] Conflict detected:', conflict);
+            if (import.meta.env.DEV) {
+              console.log('[App] Conflict detected:', conflict);
+            }
             setCurrentConflict(conflict);
             setShowConflictDialog(true);
             
@@ -142,7 +153,9 @@ function SyncManagerWrapper() {
           'budgets',
           budgets,
           async (conflict) => {
-            console.log('[App] Conflict detected:', conflict);
+            if (import.meta.env.DEV) {
+              console.log('[App] Conflict detected:', conflict);
+            }
             setCurrentConflict(conflict);
             setShowConflictDialog(true);
             
@@ -173,7 +186,9 @@ function SyncManagerWrapper() {
   const handleConflictResolve = async (resolution: 'local' | 'remote') => {
     if (!currentConflict) return;
 
-    console.log('[App] Resolving conflict:', resolution);
+    if (import.meta.env.DEV) {
+      console.log('[App] Resolving conflict:', resolution);
+    }
     
     // Call the resolution callback
     if (conflictResolutionRef.current) {
@@ -230,16 +245,17 @@ function App() {
     <React.Fragment>
       <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
         <TooltipProvider>
-          <BrowserRouter>
-            <AuthProvider>
-              <NotificationTriggersWrapper />
-              <SyncManagerWrapper />
-              <Toaster />
-              <Sonner />
-              <CSPViolationReporter />
-              <GlobalNav />
-              <RateLimitStatus />
-              <div className="pt-14">
+          <ErrorBoundary>
+            <BrowserRouter>
+              <AuthProvider>
+                <NotificationTriggersWrapper />
+                <SyncManagerWrapper />
+                <Toaster />
+                <Sonner />
+                <CSPViolationReporter />
+                <GlobalNav />
+                <RateLimitStatus />
+                <div className="pt-14">
             <Routes>
               {/* Root shows Home page */}
               <Route path="/" element={<Home />} />
@@ -432,6 +448,7 @@ function App() {
           </div>
             </AuthProvider>
           </BrowserRouter>
+          </ErrorBoundary>
         </TooltipProvider>
       </PersistQueryClientProvider>
     </React.Fragment>

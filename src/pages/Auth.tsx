@@ -119,7 +119,9 @@ export default function Auth() {
           const { getLandingRouteForUser } = await import('@/hooks/useAuth');
           const landingRoute = await getLandingRouteForUser(user.id);
           
-          console.log('OAuth callback detected, redirecting to:', landingRoute);
+          if (import.meta.env.DEV) {
+            console.log('OAuth callback detected, redirecting to:', landingRoute);
+          }
           
           // Clean URL and redirect
           window.history.replaceState({}, '', '/auth');

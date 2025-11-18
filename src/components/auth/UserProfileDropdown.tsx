@@ -325,7 +325,9 @@ export function UserProfileDropdown() {
       
       // Log backup codes for user to save
       if (data.backupCodes) {
-        console.log('🔐 SAVE THESE BACKUP CODES:', data.backupCodes);
+        if (import.meta.env.DEV) {
+          console.log('🔐 SAVE THESE BACKUP CODES:', data.backupCodes);
+        }
         toast({
           title: "Backup Codes Generated",
           description: "Check the console for your backup codes. Save them in a secure location.",

@@ -34,7 +34,9 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('[ErrorBoundary] Caught error:', error, errorInfo);
+    if (import.meta.env.DEV) {
+      console.error('[ErrorBoundary] Caught error:', error, errorInfo);
+    }
     
     this.setState({
       error,
@@ -44,25 +46,42 @@ export class ErrorBoundary extends Component<Props, State> {
     // Call optional error handler
     this.props.onError?.(error, errorInfo);
 
-    // Log to monitoring service
+    // Log to monitoring service via edge function
     if (typeof window !== 'undefined') {
       try {
-        // Send to log collector
-        fetch('/api/log-collector', {
+        const requestId = crypto.randomUUID();
+        
+        // Send to log-collector edge function (fire-and-forget)
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/log-collector`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'x-request-id': requestId,
+          },
           body: JSON.stringify({
-            level: 'error',
+            level: 'critical',
             component: 'ErrorBoundary',
             message: error.message,
+            request_id: requestId,
+            stack_trace: error.stack,
+            user_agent: navigator.userAgent,
             metadata: {
               componentStack: errorInfo.componentStack,
-              stack: error.stack,
+              route: window.location.pathname,
             },
           }),
-        }).catch(console.error);
+        }).catch((logError) => {
+          // Silent failure - logging should never break the app
+          if (import.meta.env.DEV) {
+            console.error('Failed to send error to log-collector:', logError);
+          }
+        });
       } catch (logError) {
-        console.error('Failed to log error:', logError);
+        // Silent failure - logging should never break the app
+        if (import.meta.env.DEV) {
+          console.error('Failed to log error:', logError);
+        }
       }
     }
   }
