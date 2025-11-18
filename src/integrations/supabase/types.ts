@@ -119,6 +119,60 @@ export type Database = {
           },
         ]
       }
+      alert_retry_queue: {
+        Row: {
+          alert_history_id: string
+          created_at: string
+          id: string
+          incident_id: string | null
+          last_error: string | null
+          max_retries: number
+          metadata: Json | null
+          next_retry_at: string
+          retry_count: number
+          updated_at: string
+        }
+        Insert: {
+          alert_history_id: string
+          created_at?: string
+          id?: string
+          incident_id?: string | null
+          last_error?: string | null
+          max_retries?: number
+          metadata?: Json | null
+          next_retry_at: string
+          retry_count?: number
+          updated_at?: string
+        }
+        Update: {
+          alert_history_id?: string
+          created_at?: string
+          id?: string
+          incident_id?: string | null
+          last_error?: string | null
+          max_retries?: number
+          metadata?: Json | null
+          next_retry_at?: string
+          retry_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_retry_queue_alert_history_id_fkey"
+            columns: ["alert_history_id"]
+            isOneToOne: false
+            referencedRelation: "alert_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_retry_queue_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alert_rules: {
         Row: {
           active: boolean | null
@@ -4198,6 +4252,7 @@ export type Database = {
       cleanup_old_incidents: { Args: never; Returns: number }
       cleanup_old_notification_logs: { Args: never; Returns: number }
       cleanup_old_rate_limits: { Args: never; Returns: number }
+      cleanup_old_retry_queue: { Args: never; Returns: number }
       cleanup_old_security_logs: { Args: never; Returns: number }
       cleanup_old_system_logs: { Args: never; Returns: number }
       cleanup_old_system_metrics: { Args: never; Returns: number }
