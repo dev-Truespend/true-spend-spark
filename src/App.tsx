@@ -53,6 +53,9 @@ import DistributedTracing from "./pages/dashboard/DistributedTracing";
 import DataPlanes from "./pages/dashboard/DataPlanes";
 import SystemLogs from "./pages/dashboard/SystemLogs";
 import Observability from "./pages/dashboard/Observability";
+import Alerts from "./pages/dashboard/Alerts";
+import Performance from "./pages/dashboard/Performance";
+import RealTimeMetrics from "./pages/dashboard/RealTimeMetrics";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
 import { useNotificationTriggers } from "./hooks/useNotificationTriggers";
@@ -376,6 +379,9 @@ function App() {
                     {React.createElement(lazy(() => import('@/pages/dashboard/SLOTracking')))}
                   </Suspense>
                 } />
+                <Route path="alerts" element={<Alerts />} />
+                <Route path="performance" element={<Performance />} />
+                <Route path="real-time-metrics" element={<RealTimeMetrics />} />
               </Route>
 
               {/* TrueSpend User App - Coming Soon */}

@@ -23,6 +23,7 @@ import {
   Workflow,
   Network,
   Database,
+  Bell,
   LogOut
 } from "lucide-react";
 
@@ -51,6 +52,9 @@ const navigation = [
   { name: "Observability", href: "/admin/observability", icon: BarChart3 },
   { name: "Incidents", href: "/admin/incidents", icon: AlertTriangle },
   { name: "SLO Tracking", href: "/admin/slo-tracking", icon: Target },
+  { name: "Alerts", href: "/admin/alerts", icon: Bell },
+  { name: "Performance", href: "/admin/performance", icon: Zap },
+  { name: "Real-time Metrics", href: "/admin/real-time-metrics", icon: Activity },
 ];
 
 export default function AdminDashboardLayout() {
