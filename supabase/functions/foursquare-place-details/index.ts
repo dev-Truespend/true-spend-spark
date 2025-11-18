@@ -63,76 +63,107 @@ Deno.serve(async (req) => {
 
     console.log('❌ Cache MISS - Fetching from Foursquare API');
 
-    // Fetch from Foursquare API
+    // Fetch from Foursquare API with timeout
     const foursquareUrl = `https://api.foursquare.com/v3/places/${fsq_id}?fields=fsq_id,name,categories,location,geocodes,hours,rating,popularity,price,chains,photos,tips`;
 
-    const response = await fetch(foursquareUrl, {
-      headers: {
-        'Authorization': foursquareApiKey,
-        'Accept': 'application/json',
-      },
-    });
+    // Create abort controller for 8-second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Foursquare API Error:', response.status, errorText);
-      
+    try {
+      const response = await fetch(foursquareUrl, {
+        headers: {
+          'Authorization': foursquareApiKey,
+          'Accept': 'application/json',
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Foursquare API Error:', response.status, errorText);
+        
+        await supabase.from('foursquare_api_logs').insert({
+          endpoint: '/places/details',
+          request_params: { fsq_id },
+          response_status: response.status,
+          response_time_ms: Date.now() - startTime,
+          cache_hit: false,
+          error_message: errorText,
+        });
+
+        return new Response(
+          JSON.stringify({ error: 'Foursquare API error', details: errorText }),
+          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const place = await response.json();
+
+      console.log('✅ Fetched place details:', place.name);
+
+      // Store/update in foursquare_places table
+      await supabase.from('foursquare_places').upsert({
+        fsq_id: place.fsq_id,
+        name: place.name,
+        categories: place.categories || [],
+        primary_category: place.categories?.[0]?.name,
+        location: place.location,
+        geocodes: place.geocodes,
+        chains: place.chains,
+        hours: place.hours,
+        rating: place.rating,
+        popularity: place.popularity,
+        price_tier: place.price,
+        metadata: place,
+      }, { onConflict: 'fsq_id' });
+
+      // Cache the result (30 days)
+      await supabase.from('place_enrichment_cache').insert({
+        fsq_id: place.fsq_id,
+        place_data: place,
+        enrichment_type: 'details',
+        hit_count: 0,
+      });
+
+      // Log API call
       await supabase.from('foursquare_api_logs').insert({
         endpoint: '/places/details',
         request_params: { fsq_id },
-        response_status: response.status,
+        response_status: 200,
         response_time_ms: Date.now() - startTime,
         cache_hit: false,
-        error_message: errorText,
       });
 
       return new Response(
-        JSON.stringify({ error: 'Foursquare API error', details: errorText }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ place, cached: false }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      // Handle timeout
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('Foursquare API timeout after 8 seconds');
+        
+        await supabase.from('foursquare_api_logs').insert({
+          endpoint: '/places/details',
+          request_params: { fsq_id },
+          response_status: 408,
+          response_time_ms: 8000,
+          cache_hit: false,
+          error_message: 'Request timeout',
+        });
+
+        return new Response(
+          JSON.stringify({ error: 'Foursquare API timeout', details: 'Request took longer than 8 seconds' }),
+          { status: 408, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      throw fetchError;
     }
-
-    const place = await response.json();
-
-    console.log('✅ Fetched place details:', place.name);
-
-    // Store/update in foursquare_places table
-    await supabase.from('foursquare_places').upsert({
-      fsq_id: place.fsq_id,
-      name: place.name,
-      categories: place.categories || [],
-      primary_category: place.categories?.[0]?.name,
-      location: place.location,
-      geocodes: place.geocodes,
-      chains: place.chains,
-      hours: place.hours,
-      rating: place.rating,
-      popularity: place.popularity,
-      price_tier: place.price,
-      metadata: place,
-    }, { onConflict: 'fsq_id' });
-
-    // Cache the result (30 days)
-    await supabase.from('place_enrichment_cache').insert({
-      fsq_id: place.fsq_id,
-      place_data: place,
-      enrichment_type: 'details',
-      hit_count: 0,
-    });
-
-    // Log API call
-    await supabase.from('foursquare_api_logs').insert({
-      endpoint: '/places/details',
-      request_params: { fsq_id },
-      response_status: 200,
-      response_time_ms: Date.now() - startTime,
-      cache_hit: false,
-    });
-
-    return new Response(
-      JSON.stringify({ place, cached: false }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
 
   } catch (error) {
     console.error('Error in foursquare-place-details:', error);
