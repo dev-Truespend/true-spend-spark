@@ -442,6 +442,50 @@ export type Database = {
         }
         Relationships: []
       }
+      data_access_audit: {
+        Row: {
+          accessed_fields: Json | null
+          id: string
+          ip_address_hash: string | null
+          operation: string
+          row_id: string | null
+          table_name: string
+          timestamp: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          accessed_fields?: Json | null
+          id?: string
+          ip_address_hash?: string | null
+          operation: string
+          row_id?: string | null
+          table_name: string
+          timestamp?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          accessed_fields?: Json | null
+          id?: string
+          ip_address_hash?: string | null
+          operation?: string
+          row_id?: string | null
+          table_name?: string
+          timestamp?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_access_audit_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dead_letter_queue: {
         Row: {
           created_at: string | null
@@ -3618,6 +3662,7 @@ export type Database = {
       cleanup_expired_mfa_codes: { Args: never; Returns: number }
       cleanup_expired_push_tokens: { Args: never; Returns: number }
       cleanup_expired_recommendations: { Args: never; Returns: number }
+      cleanup_old_audit_logs: { Args: never; Returns: number }
       cleanup_old_auth_attempts: { Args: never; Returns: number }
       cleanup_old_csp_violations: { Args: never; Returns: number }
       cleanup_old_feature_flag_audit: { Args: never; Returns: number }
