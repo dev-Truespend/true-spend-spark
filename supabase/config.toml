@@ -207,3 +207,6 @@ verify_jwt = false
 verify_jwt = true
 # Run every hour
 # schedule = "0 * * * *"
+
+[functions.slo-manager]
+verify_jwt = true

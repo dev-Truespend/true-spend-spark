@@ -50,6 +50,7 @@ const navigation = [
   { name: "System Logs", href: "/admin/system-logs", icon: Activity },
   { name: "Observability", href: "/admin/observability", icon: BarChart3 },
   { name: "Incidents", href: "/admin/incidents", icon: AlertTriangle },
+  { name: "SLO Tracking", href: "/admin/slo-tracking", icon: Target },
 ];
 
 export default function AdminDashboardLayout() {
