@@ -2903,6 +2903,51 @@ export type Database = {
           },
         ]
       }
+      service_level_objectives: {
+        Row: {
+          active: boolean
+          comparison_operator: string
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          priority: string
+          slo_type: string
+          target_value: number
+          time_window: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          comparison_operator: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          priority?: string
+          slo_type: string
+          target_value: number
+          time_window?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          comparison_operator?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          priority?: string
+          slo_type?: string
+          target_value?: number
+          time_window?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_registry: {
         Row: {
           created_at: string | null
@@ -2980,6 +3025,50 @@ export type Database = {
           timestamp?: string
         }
         Relationships: []
+      }
+      slo_compliance_history: {
+        Row: {
+          breached: boolean
+          compliance_percentage: number
+          created_at: string
+          current_value: number
+          id: string
+          metadata: Json | null
+          slo_id: string
+          target_value: number
+          timestamp: string
+        }
+        Insert: {
+          breached?: boolean
+          compliance_percentage: number
+          created_at?: string
+          current_value: number
+          id?: string
+          metadata?: Json | null
+          slo_id: string
+          target_value: number
+          timestamp?: string
+        }
+        Update: {
+          breached?: boolean
+          compliance_percentage?: number
+          created_at?: string
+          current_value?: number
+          id?: string
+          metadata?: Json | null
+          slo_id?: string
+          target_value?: number
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "slo_compliance_history_slo_id_fkey"
+            columns: ["slo_id"]
+            isOneToOne: false
+            referencedRelation: "service_level_objectives"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       spending_patterns: {
         Row: {
