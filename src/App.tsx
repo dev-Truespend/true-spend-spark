@@ -48,6 +48,7 @@ import AnomalyDetection from "./pages/dashboard/AnomalyDetection";
 import ABTesting from "./pages/dashboard/ABTesting";
 import RealtimeEvents from "./pages/dashboard/RealtimeEvents";
 import FeatureFlags from "./pages/dashboard/FeatureFlags";
+import Workflows from "./pages/dashboard/Workflows";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
 import { useNotificationTriggers } from "./hooks/useNotificationTriggers";
@@ -356,6 +357,7 @@ function App() {
               <Route path="ab-testing" element={<ABTesting />} />
               <Route path="realtime-events" element={<RealtimeEvents />} />
               <Route path="feature-flags" element={<FeatureFlags />} />
+              <Route path="workflows" element={<Workflows />} />
             </Route>
 
               {/* TrueSpend User App - Coming Soon */}
