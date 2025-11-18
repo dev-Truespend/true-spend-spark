@@ -214,5 +214,11 @@ verify_jwt = true
 [functions.security-audit]
 verify_jwt = true
 
+[functions.alert-manager]
+verify_jwt = true
+
+[functions.performance-analyzer]
+verify_jwt = true
+
 [functions.metrics-collector]
 verify_jwt = true

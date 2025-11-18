@@ -102,6 +102,17 @@ export function IncidentsDashboard() {
       });
 
       if (error) throw error;
+      
+      // Acknowledge any related alerts
+      await supabase
+        .from('alert_history')
+        .update({ 
+          status: 'acknowledged',
+          acknowledged_at: new Date().toISOString()
+        })
+        .eq('incident_id', incidentId)
+        .eq('status', 'sent');
+      
       toast.success('Incident resolved successfully');
       loadIncidents();
       loadStatistics();
