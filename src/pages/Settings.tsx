@@ -4,9 +4,13 @@ import { NotificationSettings } from "@/components/settings/NotificationSettings
 import { MFASetup } from "@/components/auth/MFASetup";
 import { SessionsAndDevices } from "@/components/auth/SessionsAndDevices";
 import { UserProfileDropdown } from "@/components/auth/UserProfileDropdown";
-import { Bell, Shield, User, Smartphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useDataExport } from "@/hooks/useDataExport";
+import { Bell, Shield, User, Smartphone, Download } from "lucide-react";
 
 export default function Settings() {
+  const { exportUserData, isExporting } = useDataExport();
+
   return (
     <div className="container max-w-4xl py-8 space-y-6">
       <div>
@@ -17,7 +21,7 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="notifications" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
             Notifications
@@ -33,6 +37,10 @@ export default function Settings() {
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Profile
+          </TabsTrigger>
+          <TabsTrigger value="privacy" className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Privacy
           </TabsTrigger>
         </TabsList>
 
@@ -68,6 +76,40 @@ export default function Settings() {
             </CardHeader>
             <CardContent>
               <UserProfileDropdown />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="privacy">
+          <Card>
+            <CardHeader>
+              <CardTitle>Privacy & Data</CardTitle>
+              <CardDescription>
+                Export your data and manage your privacy preferences (GDPR compliant)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Export Your Data</h3>
+                <p className="text-sm text-muted-foreground">
+                  Download a complete copy of your personal data including profile, transactions, budgets, geofences, and audit logs.
+                </p>
+                <Button
+                  onClick={exportUserData}
+                  disabled={isExporting}
+                  className="w-full sm:w-auto"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {isExporting ? "Exporting..." : "Export My Data"}
+                </Button>
+              </div>
+              
+              <div className="pt-4 border-t">
+                <h3 className="text-sm font-medium mb-2">Data Retention</h3>
+                <p className="text-sm text-muted-foreground">
+                  Your data is retained according to our privacy policy. Audit logs are kept for 90 days.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
