@@ -21,6 +21,7 @@ import {
   Radio,
   Flag,
   Workflow,
+  Network,
   LogOut
 } from "lucide-react";
 
@@ -43,6 +44,7 @@ const navigation = [
   { name: "Realtime Events", href: "/admin/realtime-events", icon: Radio },
   { name: "Feature Flags", href: "/admin/feature-flags", icon: Flag },
   { name: "Workflows", href: "/admin/workflows", icon: Workflow },
+  { name: "Distributed Tracing", href: "/admin/distributed-tracing", icon: Network },
 ];
 
 export default function AdminDashboardLayout() {
