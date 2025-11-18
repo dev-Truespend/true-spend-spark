@@ -1366,6 +1366,98 @@ export type Database = {
         }
         Relationships: []
       }
+      incident_alerts: {
+        Row: {
+          channel: string
+          id: string
+          incident_id: string
+          recipient: string | null
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          channel: string
+          id?: string
+          incident_id: string
+          recipient?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Update: {
+          channel?: string
+          id?: string
+          incident_id?: string
+          recipient?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_alerts_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incidents: {
+        Row: {
+          affected_services: string[] | null
+          auto_detected: boolean | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          started_at: string
+          status: string
+          title: string
+        }
+        Insert: {
+          affected_services?: string[] | null
+          auto_detected?: boolean | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          started_at?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          affected_services?: string[] | null
+          auto_detected?: boolean | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          started_at?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidents_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_masked"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_analytics: {
         Row: {
           average_transaction: number | null
@@ -2856,6 +2948,39 @@ export type Database = {
         }
         Relationships: []
       }
+      sli_metrics: {
+        Row: {
+          actual_percent: number
+          id: string
+          metadata: Json | null
+          period: string
+          sample_count: number | null
+          sli_name: string
+          target_percent: number
+          timestamp: string
+        }
+        Insert: {
+          actual_percent: number
+          id?: string
+          metadata?: Json | null
+          period?: string
+          sample_count?: number | null
+          sli_name: string
+          target_percent: number
+          timestamp?: string
+        }
+        Update: {
+          actual_percent?: number
+          id?: string
+          metadata?: Json | null
+          period?: string
+          sample_count?: number | null
+          sli_name?: string
+          target_percent?: number
+          timestamp?: string
+        }
+        Relationships: []
+      }
       spending_patterns: {
         Row: {
           cached_at: string
@@ -2886,6 +3011,100 @@ export type Database = {
           period_end?: string
           period_start?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      system_logs: {
+        Row: {
+          component: string
+          id: string
+          ip_address_hash: string | null
+          level: string
+          message: string
+          metadata: Json | null
+          request_id: string | null
+          stack_trace: string | null
+          timestamp: string
+          trace_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          component: string
+          id?: string
+          ip_address_hash?: string | null
+          level: string
+          message: string
+          metadata?: Json | null
+          request_id?: string | null
+          stack_trace?: string | null
+          timestamp?: string
+          trace_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          component?: string
+          id?: string
+          ip_address_hash?: string | null
+          level?: string
+          message?: string
+          metadata?: Json | null
+          request_id?: string | null
+          stack_trace?: string | null
+          timestamp?: string
+          trace_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_logs_trace_id_fkey"
+            columns: ["trace_id"]
+            isOneToOne: false
+            referencedRelation: "traces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_masked"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_metrics: {
+        Row: {
+          id: string
+          metric_name: string
+          tags: Json | null
+          timestamp: string
+          unit: string | null
+          value: number
+        }
+        Insert: {
+          id?: string
+          metric_name: string
+          tags?: Json | null
+          timestamp?: string
+          unit?: string | null
+          value: number
+        }
+        Update: {
+          id?: string
+          metric_name?: string
+          tags?: Json | null
+          timestamp?: string
+          unit?: string | null
+          value?: number
         }
         Relationships: []
       }
@@ -3791,9 +4010,12 @@ export type Database = {
       cleanup_old_foursquare_logs: { Args: never; Returns: number }
       cleanup_old_google_maps_logs: { Args: never; Returns: number }
       cleanup_old_health_history: { Args: never; Returns: number }
+      cleanup_old_incidents: { Args: never; Returns: number }
       cleanup_old_notification_logs: { Args: never; Returns: number }
       cleanup_old_rate_limits: { Args: never; Returns: number }
       cleanup_old_security_logs: { Args: never; Returns: number }
+      cleanup_old_system_logs: { Args: never; Returns: number }
+      cleanup_old_system_metrics: { Args: never; Returns: number }
       cleanup_old_traces: { Args: never; Returns: undefined }
       cleanup_old_workflow_executions: { Args: never; Returns: number }
       cleanup_unverified_accounts: { Args: never; Returns: number }
