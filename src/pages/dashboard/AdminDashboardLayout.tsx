@@ -20,6 +20,7 @@ import {
   FlaskConical,
   Radio,
   Flag,
+  Workflow,
   LogOut
 } from "lucide-react";
 
@@ -41,6 +42,7 @@ const navigation = [
   { name: "A/B Testing", href: "/admin/ab-testing", icon: FlaskConical },
   { name: "Realtime Events", href: "/admin/realtime-events", icon: Radio },
   { name: "Feature Flags", href: "/admin/feature-flags", icon: Flag },
+  { name: "Workflows", href: "/admin/workflows", icon: Workflow },
 ];
 
 export default function AdminDashboardLayout() {
