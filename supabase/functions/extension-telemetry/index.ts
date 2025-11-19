@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { getExtensionCorsHeaders, handleExtensionCors, logExtensionRequest } from "../_shared/extension-cors.ts";
+import { checkRateLimit, rateLimitHeaders, rateLimitResponse } from "../_shared/rate-limit-middleware.ts";
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -35,6 +36,16 @@ serve(async (req) => {
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Check rate limit (100 requests per 15 minutes)
+    const rateLimitResult = await checkRateLimit(user.id, 'extension-telemetry', {
+      requests: 100,
+      windowMinutes: 15,
+    });
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitResponse(rateLimitResult, corsHeaders);
     }
 
     // Log request for monitoring
@@ -77,7 +88,11 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ success: true, count: events.length }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { 
+        ...corsHeaders, 
+        ...rateLimitHeaders(rateLimitResult),
+        'Content-Type': 'application/json' 
+      } }
     );
 
   } catch (error) {

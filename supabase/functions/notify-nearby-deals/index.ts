@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { getExtensionCorsHeaders, handleExtensionCors, logExtensionRequest } from "../_shared/extension-cors.ts";
+import { checkRateLimit, rateLimitHeaders, rateLimitResponse } from "../_shared/rate-limit-middleware.ts";
 
 // Haversine formula to calculate distance between two coordinates
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -37,6 +38,16 @@ serve(async (req) => {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Check rate limit (50 requests per 15 minutes for location-based queries)
+    const rateLimitResult = await checkRateLimit(user.id, 'notify-nearby-deals', {
+      requests: 50,
+      windowMinutes: 15,
+    });
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitResponse(rateLimitResult, corsHeaders);
     }
 
     // Log request for monitoring
@@ -136,7 +147,11 @@ serve(async (req) => {
       deals: topDeals,
       count: topDeals.length,
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { 
+        ...corsHeaders, 
+        ...rateLimitHeaders(rateLimitResult),
+        'Content-Type': 'application/json' 
+      },
     });
 
   } catch (error) {

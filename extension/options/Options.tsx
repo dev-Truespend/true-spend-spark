@@ -141,6 +141,29 @@ export function Options() {
                 }
               />
             </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="debug-mode">Debug Mode</Label>
+                <p className="text-sm text-muted-foreground">
+                  Enable detailed console logging for troubleshooting (developer use)
+                </p>
+              </div>
+              <Switch
+                id="debug-mode"
+                checked={settings.debugMode || false}
+                onCheckedChange={(checked) => {
+                  updateSetting('debugMode', checked);
+                  // Update logger immediately
+                  if (typeof chrome !== 'undefined' && chrome.runtime) {
+                    chrome.runtime.sendMessage({
+                      type: 'SET_DEBUG_MODE',
+                      enabled: checked,
+                    });
+                  }
+                }}
+              />
+            </div>
           </CardContent>
         </Card>
 
