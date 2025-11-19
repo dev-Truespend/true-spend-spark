@@ -16,6 +16,9 @@ export interface ExtensionStorage {
     merchantDetection: boolean;
     desktopNotifications: boolean;
     telemetryEnabled: boolean;
+    budgetAlerts: boolean;
+    dealAlerts: boolean;
+    merchantAlerts: boolean;
   };
 }
 

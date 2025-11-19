@@ -10,6 +10,9 @@ interface ExtensionSettings {
   merchantDetection: boolean;
   desktopNotifications: boolean;
   telemetryEnabled: boolean;
+  budgetAlerts: boolean;
+  dealAlerts: boolean;
+  merchantAlerts: boolean;
 }
 
 export function Options() {
@@ -17,6 +20,9 @@ export function Options() {
     merchantDetection: true,
     desktopNotifications: true,
     telemetryEnabled: true,
+    budgetAlerts: true,
+    dealAlerts: true,
+    merchantAlerts: true,
   });
   const [loading, setLoading] = useState(true);
 
@@ -131,6 +137,64 @@ export function Options() {
                 checked={settings.telemetryEnabled}
                 onCheckedChange={(checked) =>
                   updateSetting('telemetryEnabled', checked)
+                }
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Notification Preferences</CardTitle>
+            <CardDescription>
+              Choose which types of alerts you want to receive
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="budget-alerts">Budget Alerts</Label>
+                <p className="text-sm text-muted-foreground">
+                  Get notified when approaching budget limits while shopping
+                </p>
+              </div>
+              <Switch
+                id="budget-alerts"
+                checked={settings.budgetAlerts}
+                onCheckedChange={(checked) =>
+                  updateSetting('budgetAlerts', checked)
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="deal-alerts">Deal Alerts</Label>
+                <p className="text-sm text-muted-foreground">
+                  Notify about deals and discounts at nearby favorite merchants
+                </p>
+              </div>
+              <Switch
+                id="deal-alerts"
+                checked={settings.dealAlerts}
+                onCheckedChange={(checked) =>
+                  updateSetting('dealAlerts', checked)
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="merchant-alerts">Merchant Detection Alerts</Label>
+                <p className="text-sm text-muted-foreground">
+                  Show notifications when shopping on supported e-commerce sites
+                </p>
+              </div>
+              <Switch
+                id="merchant-alerts"
+                checked={settings.merchantAlerts}
+                onCheckedChange={(checked) =>
+                  updateSetting('merchantAlerts', checked)
                 }
               />
             </div>
