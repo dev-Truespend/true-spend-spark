@@ -985,6 +985,51 @@ export type Database = {
           },
         ]
       }
+      extension_telemetry: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          extension_version: string | null
+          id: string
+          properties: Json | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          extension_version?: string | null
+          id?: string
+          properties?: Json | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          extension_version?: string | null
+          id?: string
+          properties?: Json | null
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extension_telemetry_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extension_telemetry_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_masked"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feature_flag_audit: {
         Row: {
           action: string
@@ -4245,6 +4290,7 @@ export type Database = {
       cleanup_old_audit_logs: { Args: never; Returns: number }
       cleanup_old_auth_attempts: { Args: never; Returns: number }
       cleanup_old_csp_violations: { Args: never; Returns: number }
+      cleanup_old_extension_telemetry: { Args: never; Returns: number }
       cleanup_old_feature_flag_audit: { Args: never; Returns: number }
       cleanup_old_foursquare_logs: { Args: never; Returns: number }
       cleanup_old_google_maps_logs: { Args: never; Returns: number }
