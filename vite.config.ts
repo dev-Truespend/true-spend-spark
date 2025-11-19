@@ -34,6 +34,7 @@ export default defineConfig(({ mode }) => ({
       input: mode === 'extension' 
         ? {
             popup: resolve(__dirname, 'extension/popup/index.html'),
+            options: resolve(__dirname, 'extension/options/index.html'),
             background: resolve(__dirname, 'extension/background/index.ts'),
             'content-merchant': resolve(__dirname, 'extension/content/merchant-detector.ts'),
           }

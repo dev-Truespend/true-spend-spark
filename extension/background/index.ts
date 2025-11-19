@@ -1,9 +1,32 @@
 import { handleAuth } from './auth';
+import { telemetry } from './telemetry';
+import { featureFlags } from './feature-flags';
 
 // Service Workers are EPHEMERAL in Manifest V3 (30s timeout)
 // Use chrome.alarms for persistent tasks
 
 console.log('[TrueSpend Extension] Background service worker started');
+
+// Initialize services
+featureFlags.initialize().then(() => {
+  console.log('[Background] Feature flags initialized');
+});
+
+// Track extension installation/update
+chrome.runtime.onInstalled.addListener((details) => {
+  console.log('[Background] Extension installed/updated:', details.reason);
+  
+  if (details.reason === 'install') {
+    telemetry.track('extension_installed', {
+      version: chrome.runtime.getManifest().version,
+    });
+  } else if (details.reason === 'update') {
+    telemetry.track('extension_updated', {
+      version: chrome.runtime.getManifest().version,
+      previous_version: details.previousVersion,
+    });
+  }
+});
 
 // Handle messages from popup/content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -30,6 +53,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       console.error('[Background] Merchant detection error:', error);
       sendResponse({ error: error.message });
     });
+    return true;
+  }
+
+  if (message.type === 'AUTH_EXPIRED') {
+    // Clear session and notify user
+    chrome.storage.local.remove('session');
+    chrome.action.setBadgeText({ text: '!' });
+    chrome.action.setBadgeBackgroundColor({ color: '#dc2626' });
+    sendResponse({ success: true });
     return true;
   }
 });
@@ -74,6 +106,13 @@ async function trackBudgetEvent(data: any) {
 
 async function handleMerchantDetection(data: any) {
   console.log('[Background] Merchant detected:', data);
+  
+  // Track in telemetry
+  telemetry.track('merchant_detected', {
+    merchant: data.merchant,
+    has_price: !!data.price,
+    url: data.url,
+  });
   
   // Store detection for analytics
   const detections = await chrome.storage.local.get('merchantDetections') || { merchantDetections: [] };
