@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import path, { resolve } from "path";
 import { componentTagger } from "lovable-tagger";
 import sri from "rollup-plugin-sri";
 
@@ -31,14 +31,28 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
+      input: mode === 'extension' 
+        ? {
+            popup: resolve(__dirname, 'extension/popup/index.html'),
+            background: resolve(__dirname, 'extension/background/index.ts'),
+            'content-merchant': resolve(__dirname, 'extension/content/merchant-detector.ts'),
+          }
+        : resolve(__dirname, 'index.html'),
       output: {
-        // Cache-busting: hashed filenames for long-term caching
-        entryFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: (chunkInfo) => {
+          if (mode === 'extension') {
+            if (chunkInfo.name === 'background' || chunkInfo.name === 'content-merchant') {
+              return '[name].js';
+            }
+            return 'assets/[name]-[hash].js';
+          }
+          return 'assets/[name]-[hash].js';
+        },
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
-        manualChunks: {
+        manualChunks: mode !== 'extension' ? {
           vendor: ['react', 'react-dom', 'react/jsx-runtime', '@tanstack/react-query'],
-        },
+        } : undefined,
       },
     },
   },
