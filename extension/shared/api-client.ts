@@ -1,40 +1,86 @@
 // Authenticated API client for extension
 // Handles token management and automatic re-auth on 401
 
-export async function authenticatedFetch(url: string, options: RequestInit = {}) {
-  try {
-    // Get session from chrome.storage
-    const result = await chrome.storage.local.get('session');
-    const session = result.session;
+import { logger } from './logger';
 
-    if (!session?.access_token) {
-      throw new Error('Not authenticated');
+interface FetchOptions extends RequestInit {
+  retries?: number;
+  retryDelay?: number;
+}
+
+export async function authenticatedFetch(
+  url: string, 
+  options: FetchOptions = {}
+): Promise<Response> {
+  const { retries = 3, retryDelay = 1000, ...fetchOptions } = options;
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      // Get session from chrome.storage
+      const result = await chrome.storage.local.get('session');
+      const session = result.session;
+
+      if (!session?.access_token) {
+        throw new Error('Not authenticated');
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+        'x-client-info': 'truespend-extension/1.0.0',
+        ...fetchOptions.headers,
+      };
+
+      logger.apiRequest(url, fetchOptions.method || 'GET');
+
+      const response = await fetch(url, {
+        ...fetchOptions,
+        headers,
+      });
+
+      logger.apiResponse(url, response.status);
+
+      if (response.status === 401) {
+        // Token expired - trigger re-auth
+        logger.warn('Session expired, triggering re-auth');
+        chrome.runtime.sendMessage({ type: 'AUTH_EXPIRED' });
+        throw new Error('Session expired');
+      }
+
+      // Success - return response
+      if (response.ok) {
+        return response;
+      }
+
+      // Server error - retry
+      if (response.status >= 500 && attempt < retries) {
+        logger.warn(`Server error ${response.status}, retry ${attempt}/${retries}`);
+        lastError = new Error(`HTTP ${response.status}: ${response.statusText}`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+        continue;
+      }
+
+      // Client error - don't retry
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      // Network error - retry if attempts remaining
+      if (attempt < retries && (error instanceof TypeError || error.message === 'Failed to fetch')) {
+        logger.warn(`Network error, retry ${attempt}/${retries}`, 'API', error);
+        await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+        continue;
+      }
+
+      // All retries exhausted or non-retryable error
+      logger.error(`Request failed after ${attempt} attempts`, 'API', lastError);
+      throw lastError;
     }
-
-    const headers = {
-      'Authorization': `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-      'x-client-info': 'truespend-extension/1.0.0',
-      ...options.headers,
-    };
-
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
-
-    if (response.status === 401) {
-      // Token expired - trigger re-auth
-      console.log('[API Client] Session expired, triggering re-auth');
-      chrome.runtime.sendMessage({ type: 'AUTH_EXPIRED' });
-      throw new Error('Session expired');
-    }
-
-    return response;
-  } catch (error) {
-    console.error('[API Client] Request failed:', error);
-    throw error;
   }
+
+  throw lastError || new Error('Request failed');
 }
 
 // Helper for GET requests

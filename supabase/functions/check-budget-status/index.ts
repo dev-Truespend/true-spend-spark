@@ -1,11 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { corsHeaders } from "../_shared/error-response.ts";
+import { getExtensionCorsHeaders, handleExtensionCors, logExtensionRequest } from "../_shared/extension-cors.ts";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // Handle CORS preflight
+  const corsResponse = handleExtensionCors(req);
+  if (corsResponse) return corsResponse;
+
+  const origin = req.headers.get('origin');
+  const corsHeaders = getExtensionCorsHeaders(origin);
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -23,6 +26,9 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Log request for monitoring
+    logExtensionRequest(req, user.id);
 
     const { merchant, price } = await req.json();
     
