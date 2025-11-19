@@ -13,6 +13,7 @@ interface ExtensionSettings {
   budgetAlerts: boolean;
   dealAlerts: boolean;
   merchantAlerts: boolean;
+  debugMode?: boolean;
 }
 
 export function Options() {

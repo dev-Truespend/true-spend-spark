@@ -4,8 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { AlertCircle, Wallet } from 'lucide-react';
+import { AlertCircle, Wallet, WifiOff } from 'lucide-react';
 import { PrivacyModal } from './PrivacyModal';
+import { logger } from '../shared/logger';
 
 interface Budget {
   id: string;
@@ -18,6 +19,7 @@ interface Budget {
 export function Popup() {
   const [session, setSession] = useState<any>(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
     // Check for stored session and privacy acceptance
@@ -29,9 +31,28 @@ export function Popup() {
         if (result.session) {
           setSession(result.session);
           supabase.auth.setSession(result.session);
+          logger.auth('Session restored from storage');
         }
       });
     }
+
+    // Online/offline detection
+    const handleOnline = () => {
+      setIsOnline(true);
+      logger.info('Extension back online');
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      logger.warn('Extension offline');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   const { data: budgets, isLoading } = useQuery({
@@ -73,6 +94,15 @@ export function Popup() {
   return (
     <>
       <div className="w-96 h-[500px] overflow-y-auto p-4 space-y-4">
+        {!isOnline && (
+          <Card className="bg-muted border-muted-foreground/20">
+            <CardContent className="pt-4 flex items-center gap-2 text-sm">
+              <WifiOff className="w-4 h-4" />
+              <span>You're offline. Showing cached data.</span>
+            </CardContent>
+          </Card>
+        )}
+
         <CardHeader className="px-0">
           <CardTitle className="flex items-center gap-2">
             <Wallet className="w-5 h-5" />
