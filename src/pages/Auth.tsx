@@ -52,7 +52,7 @@ export default function Auth() {
   const [mfaRequired, setMfaRequired] = useState(false);
   const [checkingMfa, setCheckingMfa] = useState(false);
   const [mfaMethod, setMfaMethod] = useState<'totp' | 'backup'>('totp');
-  const { signIn, signUp, user, loading, checkAuthProvider, checkMfaStatus, verifyBackupCode } = useAuth();
+  const { signIn, signUp, user, session, loading, checkAuthProvider, checkMfaStatus, verifyBackupCode } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -60,6 +60,7 @@ export default function Auth() {
   const hashParams = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
   
   const redirectTo = searchParams.get('redirectTo') || '/dashboard';
+  const isExtensionMode = searchParams.get('source') === 'extension';
   const hasOAuthInQuery = searchParams.has('code') || searchParams.has('access_token');
   const hasOAuthInHash = hashParams.has('code') || hashParams.has('access_token') || hashParams.has('refresh_token') || hashParams.has('provider_token');
   const hasOAuthError = searchParams.has('error') || hashParams.has('error');
@@ -157,6 +158,42 @@ export default function Auth() {
       redirectUser();
     }
   }, [user, loading, navigate, mfaRequired, isLoading, location.search]);
+
+  // Handle extension authentication flow
+  useEffect(() => {
+    if (isExtensionMode && user && session && !loading && !mfaRequired) {
+      console.log('[Auth] Extension mode: sending session to extension');
+      
+      // Send session to extension popup
+      if (window.opener && !window.opener.closed) {
+        try {
+          window.opener.postMessage({
+            type: 'TRUESPEND_AUTH_SUCCESS',
+            session: {
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+              expires_at: session.expires_at,
+              expires_in: session.expires_in,
+              user: session.user
+            }
+          }, window.location.origin);
+          
+          // Show success message before closing
+          toast({
+            title: "Success!",
+            description: "Signing you in to the extension...",
+          });
+          
+          // Close window after short delay
+          setTimeout(() => {
+            window.close();
+          }, 1500);
+        } catch (error) {
+          console.error('[Auth] Failed to send session to extension:', error);
+        }
+      }
+    }
+  }, [isExtensionMode, user, session, loading, mfaRequired, toast]);
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -347,6 +384,13 @@ export default function Auth() {
           <CardDescription className="text-center">Sign in or create account</CardDescription>
         </CardHeader>
         <CardContent>
+          {isExtensionMode && (
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4">
+              <p className="text-sm text-primary font-medium text-center">
+                🔐 Signing in to TrueSpend Browser Extension
+              </p>
+            </div>
+          )}
           <GoogleSignInButton />
           <div className="relative my-6">
             <Separator />

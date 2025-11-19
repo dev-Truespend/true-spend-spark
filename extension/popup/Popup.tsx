@@ -36,6 +36,36 @@ export function Popup() {
       });
     }
 
+    // Listen for auth success messages from popup window
+    const handleAuthMessage = (event: MessageEvent) => {
+      // Validate origin for security
+      const allowedOrigins = [
+        window.location.origin,
+        'https://uolpwcngftpmgkopltwz.supabase.co'
+      ];
+      
+      if (!allowedOrigins.includes(event.origin)) {
+        logger.warn('Rejected auth message from invalid origin', { origin: event.origin });
+        return;
+      }
+
+      if (event.data.type === 'TRUESPEND_AUTH_SUCCESS' && event.data.session) {
+        logger.auth('Received auth success from popup');
+        const session = event.data.session;
+        
+        // Store session in chrome storage
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+          chrome.storage.local.set({ session }, () => {
+            setSession(session);
+            supabase.auth.setSession(session);
+            logger.auth('Session stored successfully');
+          });
+        }
+      }
+    };
+
+    window.addEventListener('message', handleAuthMessage);
+
     // Online/offline detection
     const handleOnline = () => {
       setIsOnline(true);
@@ -50,6 +80,7 @@ export function Popup() {
     window.addEventListener('offline', handleOffline);
 
     return () => {
+      window.removeEventListener('message', handleAuthMessage);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
@@ -69,8 +100,24 @@ export function Popup() {
   });
 
   const handleSignIn = () => {
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.sendMessage({ type: 'AUTH_REQUEST' });
+    try {
+      // Open web app auth page in popup window
+      const authUrl = `${window.location.origin}/auth?source=extension`;
+      const popup = window.open(
+        authUrl,
+        'truespend-auth',
+        'width=500,height=700,left=100,top=100,popup=yes'
+      );
+
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        logger.warn('Popup blocked or failed to open');
+        // Handle popup blocking
+        alert('Please allow popups for TrueSpend to sign in');
+      } else {
+        logger.auth('Auth popup opened successfully');
+      }
+    } catch (error) {
+      logger.error('Failed to open auth popup', error);
     }
   };
 
@@ -84,7 +131,7 @@ export function Popup() {
             Sign in to track your budgets while you shop
           </p>
           <Button onClick={handleSignIn} className="w-full">
-            Sign In with Google
+            Sign In to TrueSpend
           </Button>
         </div>
       </div>
