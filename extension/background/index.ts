@@ -1,4 +1,3 @@
-import { handleAuth } from './auth';
 import { telemetry } from './telemetry';
 import { featureFlags } from './feature-flags';
 import { notifications } from './notifications';
@@ -34,14 +33,6 @@ chrome.runtime.onInstalled.addListener((details) => {
 // Handle messages from popup/content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('[Background] Received message:', message.type);
-
-  if (message.type === 'AUTH_REQUEST') {
-    handleAuth().then(sendResponse).catch(error => {
-      console.error('[Background] Auth error:', error);
-      sendResponse({ error: error.message });
-    });
-    return true; // Keep channel open for async response
-  }
 
   if (message.type === 'TRACK_BUDGET') {
     trackBudgetEvent(message.data).then(sendResponse).catch(error => {
