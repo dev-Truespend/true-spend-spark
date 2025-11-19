@@ -1,6 +1,7 @@
 import { handleAuth } from './auth';
 import { telemetry } from './telemetry';
 import { featureFlags } from './feature-flags';
+import { notifications } from './notifications';
 
 // Service Workers are EPHEMERAL in Manifest V3 (30s timeout)
 // Use chrome.alarms for persistent tasks
@@ -11,6 +12,8 @@ console.log('[TrueSpend Extension] Background service worker started');
 featureFlags.initialize().then(() => {
   console.log('[Background] Feature flags initialized');
 });
+
+notifications.setupListeners();
 
 // Track extension installation/update
 chrome.runtime.onInstalled.addListener((details) => {
@@ -119,6 +122,12 @@ async function handleMerchantDetection(data: any) {
   const updated = [...(detections.merchantDetections || []), data].slice(-100); // Keep last 100
   
   await chrome.storage.local.set({ merchantDetections: updated });
+
+  // Check budget status and show notifications if needed
+  await notifications.checkBudgetStatus(
+    data.merchant,
+    data.price
+  );
 
   return { success: true };
 }
