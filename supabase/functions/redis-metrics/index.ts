@@ -88,18 +88,46 @@ Deno.serve(async (req) => {
     const usedMemory = parseInt(info.used_memory || '0');
     const memoryUsageMB = usedMemory / (1024 * 1024);
 
-    // Calculate quota (Upstash free tier is 256MB)
-    const maxMemoryMB = 256;
-    const quotaRemaining = ((maxMemoryMB - memoryUsageMB) / maxMemoryMB) * 100;
+    // Fetch maxmemory configuration
+    const configResponse = await fetch(`${redisUrl}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${redisToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(['CONFIG', 'GET', 'maxmemory']),
+    });
 
-    // Estimate average latency (simplified - actual would require tracking)
-    const avgLatency = 2.5; // Redis typically < 5ms for Upstash
+    let maxMemoryMB = 256; // Fallback default for Upstash free tier
+    if (configResponse.ok) {
+      try {
+        const configData = await configResponse.json();
+        const maxMemoryBytes = parseInt(configData.result?.[1] || '0');
+        if (maxMemoryBytes > 0) {
+          maxMemoryMB = maxMemoryBytes / (1024 * 1024);
+        }
+      } catch (e) {
+        console.warn('Failed to parse maxmemory config, using default:', e);
+      }
+    }
+
+    // Calculate quota remaining
+    const quotaRemaining = maxMemoryMB > 0 
+      ? ((maxMemoryMB - memoryUsageMB) / maxMemoryMB) * 100 
+      : 100;
+
+    // Calculate average latency from instantaneous ops/sec (approximation)
+    const instantaneousOpsPerSec = parseInt(info.instantaneous_ops_per_sec || '0');
+    const avgLatency = instantaneousOpsPerSec > 0 
+      ? (1000 / instantaneousOpsPerSec) 
+      : 2.5; // Fallback estimate
 
     const metrics = {
       hitRate,
       totalRequests,
       memoryUsage: memoryUsageMB,
-      avgLatency,
+      maxMemory: maxMemoryMB,
+      avgLatency: Number(avgLatency.toFixed(2)),
       quotaRemaining: Math.max(0, quotaRemaining),
       raw: {
         keyspaceHits,
@@ -107,6 +135,7 @@ Deno.serve(async (req) => {
         usedMemory,
         connectedClients: parseInt(info.connected_clients || '0'),
         totalCommandsProcessed: parseInt(info.total_commands_processed || '0'),
+        instantaneousOpsPerSec,
       },
     };
 
