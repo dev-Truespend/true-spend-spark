@@ -33,7 +33,7 @@ class DBClientFactory {
   /**
    * Create a database client with intelligent routing
    */
-  async createClient(options: DBClientOptions = {}): Promise<SupabaseClient> {
+  async createClient(options: DBClientOptions = {}) {
     const {
       type = 'auto',
       fallback = true,
@@ -69,7 +69,7 @@ class DBClientFactory {
   /**
    * Create primary database client (for writes)
    */
-  private createPrimaryClient(pooling: boolean): SupabaseClient {
+  private createPrimaryClient(pooling: boolean) {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const poolerUrl = pooling ? (Deno.env.get('SUPABASE_POOLER_URL') || supabaseUrl) : supabaseUrl;
@@ -94,7 +94,7 @@ class DBClientFactory {
   /**
    * Create replica database client (for reads)
    */
-  private createReplicaClient(pooling: boolean): SupabaseClient {
+  private createReplicaClient(pooling: boolean) {
     const replicaUrl = Deno.env.get('SUPABASE_REPLICA_URL');
     const replicaKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     

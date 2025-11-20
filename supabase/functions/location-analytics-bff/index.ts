@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createDBClient } from '../_shared/db-client-factory.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,12 +45,15 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Use replica for read-heavy location analytics
+    const supabase = await createDBClient({ 
+      type: 'replica',
+      fallback: true 
+    });
 
-    const { data: { user } } = await supabaseClient.auth.getUser(
+    // For auth, use primary
+    const authClient = await createDBClient({ type: 'primary' });
+    const { data: { user } } = await authClient.auth.getUser(
       req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
     );
 
@@ -80,7 +83,7 @@ serve(async (req) => {
     }
 
     // Aggregate spending by geofence
-    const { data: analytics, error: analyticsError } = await supabaseClient
+    const { data: analytics, error: analyticsError } = await supabase
       .from('transactions')
       .select('geofence_id, amount, category, geofences(name, type, center_lat, center_lng)')
       .eq('user_id', user.id)
@@ -113,7 +116,7 @@ serve(async (req) => {
     const geofenceAnalytics = Object.values(aggregated || {});
 
     // Fetch heatmap data
-    const { data: heatmapData, error: heatmapError } = await supabaseClient
+    const { data: heatmapData, error: heatmapError } = await supabase
       .from('geofence_heatmap_data')
       .select('*')
       .eq('user_id', user.id)
@@ -123,7 +126,7 @@ serve(async (req) => {
     if (heatmapError) throw heatmapError;
 
     // Fetch insights
-    const { data: insights, error: insightsError } = await supabaseClient
+    const { data: insights, error: insightsError } = await supabase
       .from('location_insights')
       .select('*')
       .eq('user_id', user.id)
@@ -133,7 +136,7 @@ serve(async (req) => {
     if (insightsError) throw insightsError;
 
     // Fetch recommendations
-    const { data: recommendations, error: recsError } = await supabaseClient
+    const { data: recommendations, error: recsError } = await supabase
       .from('location_recommendations')
       .select('*, geofences(name)')
       .eq('user_id', user.id)

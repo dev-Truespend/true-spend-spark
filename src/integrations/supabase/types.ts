@@ -2993,6 +2993,54 @@ export type Database = {
           },
         ]
       }
+      replica_metrics: {
+        Row: {
+          avg_primary_latency: number | null
+          avg_replica_latency: number | null
+          connection_type: string | null
+          failover_count: number | null
+          id: string
+          latency_ms: number | null
+          metadata: Json | null
+          primary_query_count: number | null
+          query_type: string | null
+          replica_healthy: boolean | null
+          replica_lag_ms: number | null
+          replica_query_count: number | null
+          timestamp: string
+        }
+        Insert: {
+          avg_primary_latency?: number | null
+          avg_replica_latency?: number | null
+          connection_type?: string | null
+          failover_count?: number | null
+          id?: string
+          latency_ms?: number | null
+          metadata?: Json | null
+          primary_query_count?: number | null
+          query_type?: string | null
+          replica_healthy?: boolean | null
+          replica_lag_ms?: number | null
+          replica_query_count?: number | null
+          timestamp?: string
+        }
+        Update: {
+          avg_primary_latency?: number | null
+          avg_replica_latency?: number | null
+          connection_type?: string | null
+          failover_count?: number | null
+          id?: string
+          latency_ms?: number | null
+          metadata?: Json | null
+          primary_query_count?: number | null
+          query_type?: string | null
+          replica_healthy?: boolean | null
+          replica_lag_ms?: number | null
+          replica_query_count?: number | null
+          timestamp?: string
+        }
+        Relationships: []
+      }
       retry_queue: {
         Row: {
           created_at: string | null
@@ -4443,6 +4491,7 @@ export type Database = {
       cleanup_old_incidents: { Args: never; Returns: number }
       cleanup_old_notification_logs: { Args: never; Returns: number }
       cleanup_old_rate_limits: { Args: never; Returns: number }
+      cleanup_old_replica_metrics: { Args: never; Returns: number }
       cleanup_old_retry_queue: { Args: never; Returns: number }
       cleanup_old_security_logs: { Args: never; Returns: number }
       cleanup_old_system_logs: { Args: never; Returns: number }
@@ -4553,6 +4602,10 @@ export type Database = {
           p_success: boolean
           p_user_id?: string
         }
+        Returns: undefined
+      }
+      refresh_materialized_view: {
+        Args: { view_name: string }
         Returns: undefined
       }
       validate_reset_token: {
