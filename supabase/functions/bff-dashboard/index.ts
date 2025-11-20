@@ -6,6 +6,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Redis client for L1 cache
+async function redisGet(key: string): Promise<any> {
+  const url = Deno.env.get('UPSTASH_REDIS_REST_URL');
+  const token = Deno.env.get('UPSTASH_REDIS_REST_TOKEN');
+  if (!url || !token) return null;
+
+  try {
+    const res = await fetch(`${url}/get/${key}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    return data.result ? JSON.parse(data.result) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function redisSet(key: string, value: any, ttl: number): Promise<void> {
+  const url = Deno.env.get('UPSTASH_REDIS_REST_URL');
+  const token = Deno.env.get('UPSTASH_REDIS_REST_TOKEN');
+  if (!url || !token) return;
+
+  try {
+    await fetch(`${url}/setex/${key}/${ttl}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(value),
+    });
+  } catch (error) {
+    console.error('Redis set error:', error);
+  }
+}
+
 // Security headers configuration
 const securityHeaders = {
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
@@ -40,6 +73,29 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check Redis L1 cache first
+    const cacheKey = `dashboard:${user.id}`;
+    const cachedDashboard = await redisGet(cacheKey);
+
+    if (cachedDashboard) {
+      console.log(`Redis L1 cache hit for dashboard:${user.id}`);
+      return new Response(JSON.stringify({
+        ...cachedDashboard,
+        meta: {
+          ...cachedDashboard.meta,
+          cacheLayer: 'L1_Redis',
+        },
+      }), {
+        headers: {
+          ...corsHeaders,
+          ...securityHeaders,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'private, max-age=60',
+          'X-Cache': 'HIT',
+        },
       });
     }
 
@@ -120,29 +176,34 @@ serve(async (req) => {
       endpoint: '/bff-dashboard',
       method: 'GET',
       response_time_ms: Math.round(responseTime),
-      cache_hit: patterns.data && patterns.data.length > 0,
+      cache_hit: false,
       status_code: 200,
     });
 
-    return new Response(
-      JSON.stringify({
-        transactions: transactions.data,
-        budgets: budgetSummary,
-        alerts: alerts.data,
-        geofences: geofences.data,
-        patterns: patterns.data || [],
-        summary: {
-          totalSpent,
-          avgTransaction,
-          transactionCount: transactions.data?.length || 0,
-          activeBudgets: budgets.data?.length || 0,
-          alertCount: alerts.data?.length || 0,
-        },
-        meta: {
-          responseTime: `${responseTime.toFixed(2)}ms`,
-          cached: patterns.data && patterns.data.length > 0,
-        },
-      }),
+    const responseData = {
+      transactions: transactions.data,
+      budgets: budgetSummary,
+      alerts: alerts.data,
+      geofences: geofences.data,
+      patterns: patterns.data || [],
+      summary: {
+        totalSpent,
+        avgTransaction,
+        transactionCount: transactions.data?.length || 0,
+        activeBudgets: budgets.data?.length || 0,
+        alertCount: alerts.data?.length || 0,
+      },
+      meta: {
+        responseTime: `${responseTime.toFixed(2)}ms`,
+        cached: false,
+        cacheLayer: 'L3_Database',
+      },
+    };
+
+    // Store in Redis L1 cache (5 min TTL)
+    await redisSet(cacheKey, responseData, 300);
+
+    return new Response(JSON.stringify(responseData),
       {
         headers: { 
           ...corsHeaders,

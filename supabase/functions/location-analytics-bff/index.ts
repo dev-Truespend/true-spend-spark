@@ -6,6 +6,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Redis client for L1 cache
+async function redisGet(key: string): Promise<any> {
+  const url = Deno.env.get('UPSTASH_REDIS_REST_URL');
+  const token = Deno.env.get('UPSTASH_REDIS_REST_TOKEN');
+  if (!url || !token) return null;
+
+  try {
+    const res = await fetch(`${url}/get/${key}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    return data.result ? JSON.parse(data.result) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function redisSet(key: string, value: any, ttl: number): Promise<void> {
+  const url = Deno.env.get('UPSTASH_REDIS_REST_URL');
+  const token = Deno.env.get('UPSTASH_REDIS_REST_TOKEN');
+  if (!url || !token) return;
+
+  try {
+    await fetch(`${url}/setex/${key}/${ttl}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(value),
+    });
+  } catch (error) {
+    console.error('Redis set error:', error);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -30,6 +63,21 @@ serve(async (req) => {
 
     const { period_days = 30, geofence_id } = await req.json();
     const periodStart = new Date(Date.now() - period_days * 24 * 60 * 60 * 1000);
+
+    // Check Redis L1 cache
+    const cacheKey = `location_analytics:${user.id}:${period_days}:${geofence_id || 'all'}`;
+    const cachedAnalytics = await redisGet(cacheKey);
+
+    if (cachedAnalytics) {
+      console.log(`Redis L1 cache hit for ${cacheKey}`);
+      return new Response(JSON.stringify({
+        ...cachedAnalytics,
+        cache_hit: true,
+        cache_layer: 'L1_Redis',
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Aggregate spending by geofence
     const { data: analytics, error: analyticsError } = await supabaseClient
@@ -95,13 +143,20 @@ serve(async (req) => {
 
     if (recsError) throw recsError;
 
-    return new Response(JSON.stringify({
+    const responseData = {
       analytics: geofenceAnalytics,
       heatmap: heatmapData,
       insights,
       recommendations,
       period_days,
-    }), {
+      cache_hit: false,
+      cache_layer: 'L3_Database',
+    };
+
+    // Store in Redis L1 cache (10 min TTL for analytics)
+    await redisSet(cacheKey, responseData, 600);
+
+    return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

@@ -6,6 +6,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Redis client for L1 cache
+async function redisGet(key: string): Promise<any> {
+  const url = Deno.env.get('UPSTASH_REDIS_REST_URL');
+  const token = Deno.env.get('UPSTASH_REDIS_REST_TOKEN');
+  if (!url || !token) return null;
+
+  try {
+    const res = await fetch(`${url}/get/${key}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    return data.result ? JSON.parse(data.result) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function redisSet(key: string, value: any, ttl: number): Promise<void> {
+  const url = Deno.env.get('UPSTASH_REDIS_REST_URL');
+  const token = Deno.env.get('UPSTASH_REDIS_REST_TOKEN');
+  if (!url || !token) return;
+
+  try {
+    await fetch(`${url}/setex/${key}/${ttl}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(value),
+    });
+  } catch (error) {
+    console.error('Redis set error:', error);
+  }
+}
+
 // Geohash encoding function (precision 7 = ~153m)
 function encodeGeohash(lat: number, lng: number, precision = 7): string {
   const BASE32 = '0123456789bcdefghjkmnpqrstuvwxyz';
@@ -82,7 +115,31 @@ serve(async (req) => {
     const geohash = encodeGeohash(lat, lng);
     const geohashPrefix = geohash.substring(0, 5); // Expand search radius
 
-    // Query cache with geohash indexing
+    // L1 Redis cache check
+    const redisCacheKey = `merchants:${geohashPrefix}:${category || 'all'}:${deals_only || false}`;
+    const cachedInRedis = await redisGet(redisCacheKey);
+
+    if (cachedInRedis) {
+      console.log(`Redis L1 cache hit for ${redisCacheKey}`);
+      await supabaseClient.from('cache_analytics').insert({
+        cache_type: 'L1_Redis',
+        operation: 'hit',
+        geohash: geohashPrefix,
+        response_time_ms: 5, // Redis is fast
+        saved_api_cost_usd: 0.002,
+        metadata: { category: category || 'all', deals_only: deals_only || false },
+      });
+
+      return new Response(JSON.stringify({
+        merchants: cachedInRedis,
+        cache_hit: true,
+        cache_layer: 'L1_Redis',
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // L2 Supabase cache query
     let query = supabaseClient
       .from('merchants_cache_v2')
       .select('*')
@@ -103,14 +160,13 @@ serve(async (req) => {
 
     if (cacheError) throw cacheError;
 
-    // Log cache hit/miss with enhanced metrics
+    // Log L2 cache hit/miss
     const cacheHit = cachedMerchants && cachedMerchants.length > 0;
     await supabaseClient.from('cache_analytics').insert({
-      cache_type: 'merchant_discovery',
+      cache_type: cacheHit ? 'L2_Supabase' : 'L3_Database',
       operation: cacheHit ? 'hit' : 'miss',
       geohash: geohashPrefix,
-      response_time_ms: Date.now() - Date.now(), // Will be updated below
-      saved_api_cost_usd: cacheHit ? 0.002 : 0, // Google Places API cost per request
+      saved_api_cost_usd: cacheHit ? 0.002 : 0,
       metadata: {
         category: category || 'all',
         deals_only: deals_only || false,
@@ -165,9 +221,13 @@ serve(async (req) => {
 
       await supabaseClient.from('merchant_recommendations').insert(recommendations);
 
+      // Promote to Redis L1 cache
+      await redisSet(redisCacheKey, cachedMerchants, 300); // 5 min TTL
+
       return new Response(JSON.stringify({ 
         merchants: cachedMerchants, 
         cache_hit: true,
+        cache_layer: 'L2_Supabase',
         recommendations_generated: recommendations.length,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -216,11 +276,15 @@ serve(async (req) => {
 
     if (merchantsToCache.length > 0) {
       await supabaseClient.from('merchants_cache_v2').insert(merchantsToCache);
+      
+      // Store in Redis L1 cache
+      await redisSet(redisCacheKey, merchantsToCache, 300); // 5 min TTL
     }
 
     return new Response(JSON.stringify({ 
       merchants: merchantsToCache, 
-      cache_hit: false 
+      cache_hit: false,
+      cache_layer: 'L3_Database',
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
