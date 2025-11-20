@@ -6,6 +6,7 @@ import { IDBPDatabase } from 'idb';
 export class IndexedDBAdapter implements StorageAdapter {
   private db: IDBPDatabase | null = null;
   private config: StorageConfig;
+  private isClosing = false;
 
   constructor(config: StorageConfig) {
     this.config = config;
@@ -13,10 +14,14 @@ export class IndexedDBAdapter implements StorageAdapter {
 
   async init(): Promise<void> {
     console.log('[IndexedDBAdapter] Initializing...');
+    this.isClosing = false;
     this.db = await initDB();
   }
 
   private ensureDB(): IDBPDatabase {
+    if (this.isClosing) {
+      throw new Error('IndexedDBAdapter is closing. Cannot perform operations.');
+    }
     if (!this.db) {
       throw new Error('IndexedDBAdapter not initialized. Call init() first.');
     }
@@ -81,10 +86,15 @@ export class IndexedDBAdapter implements StorageAdapter {
   }
 
   async close(): Promise<void> {
+    this.isClosing = true;
     if (this.db) {
       this.db.close();
       this.db = null;
     }
+  }
+
+  isActive(): boolean {
+    return !this.isClosing && this.db !== null;
   }
 }
 
