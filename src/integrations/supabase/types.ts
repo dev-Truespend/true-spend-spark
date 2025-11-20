@@ -596,6 +596,67 @@ export type Database = {
         }
         Relationships: []
       }
+      consent_audit_log: {
+        Row: {
+          action: string
+          changed_fields: Json | null
+          consent_id: string
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          previous_values: Json | null
+          timestamp: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          changed_fields?: Json | null
+          consent_id: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          previous_values?: Json | null
+          timestamp?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          changed_fields?: Json | null
+          consent_id?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          previous_values?: Json | null
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consent_audit_log_consent_id_fkey"
+            columns: ["consent_id"]
+            isOneToOne: false
+            referencedRelation: "user_consents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_masked"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       csp_violations: {
         Row: {
           blocked_uri: string | null
@@ -3818,6 +3879,90 @@ export type Database = {
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_consents: {
+        Row: {
+          accepted_privacy: boolean
+          accepted_terms: boolean
+          affiliate_policy_version: string
+          ai_policy_version: string
+          consent_affiliate_transparency: boolean
+          consent_ai: boolean
+          consent_data_processing: boolean
+          consent_emails: boolean
+          consent_info_accuracy: boolean
+          consent_policy_version: string
+          consent_timestamp: string
+          created_at: string
+          data_processing_version: string
+          id: string
+          ip_address: string | null
+          privacy_version: string
+          terms_version: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_privacy?: boolean
+          accepted_terms?: boolean
+          affiliate_policy_version?: string
+          ai_policy_version?: string
+          consent_affiliate_transparency?: boolean
+          consent_ai?: boolean
+          consent_data_processing?: boolean
+          consent_emails?: boolean
+          consent_info_accuracy?: boolean
+          consent_policy_version?: string
+          consent_timestamp?: string
+          created_at?: string
+          data_processing_version?: string
+          id?: string
+          ip_address?: string | null
+          privacy_version?: string
+          terms_version?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_privacy?: boolean
+          accepted_terms?: boolean
+          affiliate_policy_version?: string
+          ai_policy_version?: string
+          consent_affiliate_transparency?: boolean
+          consent_ai?: boolean
+          consent_data_processing?: boolean
+          consent_emails?: boolean
+          consent_info_accuracy?: boolean
+          consent_policy_version?: string
+          consent_timestamp?: string
+          created_at?: string
+          data_processing_version?: string
+          id?: string
+          ip_address?: string | null
+          privacy_version?: string
+          terms_version?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_masked"
             referencedColumns: ["id"]
           },
         ]
