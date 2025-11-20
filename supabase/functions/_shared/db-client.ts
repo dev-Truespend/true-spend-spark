@@ -14,20 +14,20 @@ interface PooledClientOptions {
  * Creates a Supabase client with connection pooling optimized for Large instance
  * Uses transaction mode for better connection reuse and lower overhead
  */
-export function createPooledClient(options: PooledClientOptions = {}): SupabaseClient {
+export function createPooledClient(options: PooledClientOptions = {}) {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   
   // Use pooler connection string if available
   const poolerUrl = Deno.env.get('SUPABASE_POOLER_URL') || supabaseUrl;
   
-  const client = createClient(poolerUrl, supabaseKey, {
+  return createClient(poolerUrl, supabaseKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
     },
     db: {
-      schema: options.schema || 'public',
+      schema: 'public' as const,
     },
     global: {
       headers: {
@@ -35,14 +35,12 @@ export function createPooledClient(options: PooledClientOptions = {}): SupabaseC
       },
     },
   });
-
-  return client;
 }
 
 /**
  * Creates a standard client without pooling (for specific use cases)
  */
-export function createStandardClient(): SupabaseClient {
+export function createStandardClient() {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   

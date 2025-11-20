@@ -44,6 +44,9 @@ serve(async (_req) => {
     // Pre-warm cache for each high-traffic geofence
     const MERCHANT_DISCOVERY_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/merchant-discovery`;
     const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    let succeeded = 0;
+    let failed = 0;
 
     for (const geofence of highTrafficGeofences) {
       if (!geofence.lat || !geofence.lng) continue;
@@ -63,8 +66,10 @@ serve(async (_req) => {
         });
 
         console.log(`Pre-warmed cache for geofence: ${geofence.name}`);
+        succeeded++;
       } catch (error) {
         console.error(`Failed to pre-warm cache for ${geofence.name}:`, error);
+        failed++;
       }
     }
 
@@ -75,6 +80,21 @@ serve(async (_req) => {
       .lt('expires_at', new Date().toISOString());
 
     if (cleanupError) throw cleanupError;
+
+    // Refresh materialized views for dashboard performance
+    console.log('[cache-prewarmer] Refreshing materialized views...');
+    try {
+      await Promise.all([
+        supabaseClient.rpc('refresh_materialized_view', { view_name: 'dashboard_summary_mv' }),
+        supabaseClient.rpc('refresh_materialized_view', { view_name: 'transaction_analytics_mv' }),
+        supabaseClient.rpc('refresh_materialized_view', { view_name: 'location_spending_mv' }),
+      ]);
+      console.log('[cache-prewarmer] Materialized views refreshed');
+    } catch (error) {
+      console.error('[cache-prewarmer] Failed to refresh views:', error);
+    }
+
+    console.log('[cache-prewarmer] Completed:', { processed: highTrafficGeofences.length });
 
     return new Response(JSON.stringify({
       success: true,
