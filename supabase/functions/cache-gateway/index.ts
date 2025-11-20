@@ -152,17 +152,35 @@ serve(async (req) => {
           });
         }
 
-        const [keys] = await executeRedis<string[]>([
-          { command: 'KEYS', args: [pattern] }
-        ]);
+        // Use SCAN instead of KEYS to avoid blocking Redis
+        const allKeys: string[] = [];
+        let cursor = '0';
+        
+        do {
+          const [result] = await executeRedis<[string, string[]]>([
+            { command: 'SCAN', args: [cursor, 'MATCH', pattern, 'COUNT', 100] }
+          ]);
+          
+          cursor = result[0];
+          const keys = result[1];
+          
+          if (keys && keys.length > 0) {
+            allKeys.push(...keys);
+          }
+        } while (cursor !== '0');
 
-        if (keys && keys.length > 0) {
-          await executeRedis(keys.map(k => ({ command: 'DEL', args: [k] })));
+        // Delete all matched keys in batches
+        if (allKeys.length > 0) {
+          const batchSize = 100;
+          for (let i = 0; i < allKeys.length; i += batchSize) {
+            const batch = allKeys.slice(i, i + batchSize);
+            await executeRedis(batch.map(k => ({ command: 'DEL', args: [k] })));
+          }
         }
 
         return new Response(JSON.stringify({
           success: true,
-          invalidated: keys?.length || 0,
+          invalidated: allKeys.length,
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
