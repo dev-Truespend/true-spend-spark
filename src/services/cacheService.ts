@@ -1,173 +1,180 @@
 /**
- * Multi-Layer Cache Service
- * L1: Redis (in-memory, shared)
- * L2: IndexedDB (client-side, persistent)
- * L3: Supabase (database)
+ * Browser-side Cache Service (IndexedDB Only)
+ * Server-side caching (Redis) is handled by edge functions
  */
 
-import { redis } from './redisClient';
-import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval';
+import { openDB, DBSchema, IDBPDatabase } from 'idb';
+
+interface CacheDB extends DBSchema {
+  cache: {
+    key: string;
+    value: {
+      data: any;
+      timestamp: number;
+      ttl: number;
+    };
+  };
+}
 
 export interface CacheOptions {
-  ttl?: number; // seconds
-  skipRedis?: boolean;
-  skipIndexedDB?: boolean;
+  ttl?: number; // Time to live in seconds
 }
 
 export interface CacheStats {
-  layer: 'redis' | 'indexeddb' | 'miss';
+  layer: 'indexeddb' | 'miss';
   latency: number;
   key: string;
 }
 
-export class CacheService {
+class BrowserCacheService {
+  private db: IDBPDatabase<CacheDB> | null = null;
   private stats: CacheStats[] = [];
+  private maxStats = 1000;
+
+  async init() {
+    if (this.db) return;
+    
+    try {
+      this.db = await openDB<CacheDB>('truespend-cache', 1, {
+        upgrade(db) {
+          if (!db.objectStoreNames.contains('cache')) {
+            db.createObjectStore('cache');
+          }
+        },
+      });
+    } catch (error) {
+      console.error('Failed to initialize IndexedDB cache:', error);
+    }
+  }
 
   async get<T>(key: string, options: CacheOptions = {}): Promise<{ data: T | null; stats: CacheStats }> {
     const startTime = performance.now();
-
-    // L1: Redis
-    if (!options.skipRedis) {
-      try {
-        const cached = await redis.get(key);
-        if (cached) {
-          const data = JSON.parse(cached) as T;
-          const stats: CacheStats = {
-            layer: 'redis',
-            latency: performance.now() - startTime,
-            key,
-          };
-          this.recordStats(stats);
-          return { data, stats };
-        }
-      } catch (error) {
-        console.warn('Redis L1 cache miss:', error);
-      }
+    
+    await this.init();
+    
+    if (!this.db) {
+      return {
+        data: null,
+        stats: { layer: 'miss', latency: performance.now() - startTime, key }
+      };
     }
 
-    // L2: IndexedDB
-    if (!options.skipIndexedDB) {
-      try {
-        const cached = await idbGet<{ data: T; expires: number }>(key);
-        if (cached && cached.expires > Date.now()) {
-          // Promote to L1
-          if (!options.skipRedis) {
-            const ttl = Math.floor((cached.expires - Date.now()) / 1000);
-            await redis.set(key, JSON.stringify(cached.data), ttl).catch(() => {});
-          }
-
+    try {
+      const cached = await this.db.get('cache', key);
+      
+      if (cached) {
+        const age = Date.now() - cached.timestamp;
+        const ttlMs = cached.ttl * 1000;
+        
+        if (age < ttlMs) {
           const stats: CacheStats = {
             layer: 'indexeddb',
             latency: performance.now() - startTime,
-            key,
+            key
           };
           this.recordStats(stats);
-          return { data: cached.data, stats };
+          return { data: cached.data as T, stats };
+        } else {
+          // Expired, delete it
+          await this.db.delete('cache', key);
         }
-      } catch (error) {
-        console.warn('IndexedDB L2 cache miss:', error);
       }
+    } catch (error) {
+      console.error('IndexedDB cache get error:', error);
     }
 
-    // Cache miss
     const stats: CacheStats = {
       layer: 'miss',
       latency: performance.now() - startTime,
-      key,
+      key
     };
     this.recordStats(stats);
     return { data: null, stats };
   }
 
   async set<T>(key: string, data: T, options: CacheOptions = {}): Promise<void> {
-    const ttl = options.ttl || 300; // 5 min default
+    await this.init();
+    
+    if (!this.db) return;
 
-    // L1: Redis
-    if (!options.skipRedis) {
-      try {
-        await redis.set(key, JSON.stringify(data), ttl);
-      } catch (error) {
-        console.warn('Redis set failed:', error);
-      }
+    const ttl = options.ttl || 300; // Default 5 minutes
+
+    try {
+      await this.db.put('cache', {
+        data,
+        timestamp: Date.now(),
+        ttl
+      }, key);
+    } catch (error) {
+      console.error('IndexedDB cache set error:', error);
     }
+  }
 
-    // L2: IndexedDB
-    if (!options.skipIndexedDB) {
-      try {
-        const expires = Date.now() + ttl * 1000;
-        await idbSet(key, { data, expires });
-      } catch (error) {
-        console.warn('IndexedDB set failed:', error);
-      }
+  async invalidateKey(key: string): Promise<void> {
+    await this.init();
+    
+    if (!this.db) return;
+
+    try {
+      await this.db.delete('cache', key);
+    } catch (error) {
+      console.error('IndexedDB cache invalidate error:', error);
     }
   }
 
   async invalidate(pattern: string): Promise<void> {
-    // Clear Redis keys matching pattern
-    try {
-      const keys = await redis.keys(pattern);
-      await Promise.all(keys.map(key => redis.del(key)));
-    } catch (error) {
-      console.warn('Redis invalidation failed:', error);
-    }
-
-    // IndexedDB doesn't support pattern matching, so we can't efficiently clear it
-    // Individual keys should be deleted as needed
-  }
-
-  async invalidateKey(key: string): Promise<void> {
-    try {
-      await redis.del(key);
-    } catch (error) {
-      console.warn('Redis key deletion failed:', error);
-    }
+    await this.init();
+    
+    if (!this.db) return;
 
     try {
-      await idbDel(key);
+      const allKeys = await this.db.getAllKeys('cache');
+      const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+      
+      for (const key of allKeys) {
+        if (regex.test(key as string)) {
+          await this.db.delete('cache', key);
+        }
+      }
     } catch (error) {
-      console.warn('IndexedDB key deletion failed:', error);
+      console.error('IndexedDB cache invalidate pattern error:', error);
     }
   }
 
-  private recordStats(stats: CacheStats): void {
+  private recordStats(stats: CacheStats) {
     this.stats.push(stats);
-    if (this.stats.length > 1000) {
-      this.stats = this.stats.slice(-1000);
+    if (this.stats.length > this.maxStats) {
+      this.stats.shift();
     }
   }
 
   getStats(): CacheStats[] {
-    return [...this.stats];
+    return this.stats;
   }
 
-  getCacheHitRate(): { redis: number; indexeddb: number; miss: number } {
-    const total = this.stats.length;
-    if (total === 0) return { redis: 0, indexeddb: 0, miss: 0 };
+  getCacheHitRate(): { indexeddb: number; miss: number } {
+    if (this.stats.length === 0) {
+      return { indexeddb: 0, miss: 0 };
+    }
 
-    const redis = this.stats.filter(s => s.layer === 'redis').length;
-    const indexeddb = this.stats.filter(s => s.layer === 'indexeddb').length;
-    const miss = this.stats.filter(s => s.layer === 'miss').length;
+    const indexeddbHits = this.stats.filter(s => s.layer === 'indexeddb').length;
+    const total = this.stats.length;
 
     return {
-      redis: (redis / total) * 100,
-      indexeddb: (indexeddb / total) * 100,
-      miss: (miss / total) * 100,
+      indexeddb: (indexeddbHits / total) * 100,
+      miss: ((total - indexeddbHits) / total) * 100,
     };
   }
 
-  getAverageLatency(): { redis: number; indexeddb: number } {
-    const redisStats = this.stats.filter(s => s.layer === 'redis');
-    const idbStats = this.stats.filter(s => s.layer === 'indexeddb');
+  getAverageLatency(): { indexeddb: number } {
+    const indexeddbStats = this.stats.filter(s => s.layer === 'indexeddb');
 
     return {
-      redis: redisStats.length > 0
-        ? redisStats.reduce((sum, s) => sum + s.latency, 0) / redisStats.length
-        : 0,
-      indexeddb: idbStats.length > 0
-        ? idbStats.reduce((sum, s) => sum + s.latency, 0) / idbStats.length
+      indexeddb: indexeddbStats.length > 0
+        ? indexeddbStats.reduce((sum, s) => sum + s.latency, 0) / indexeddbStats.length
         : 0,
     };
   }
 }
 
-export const cacheService = new CacheService();
+export const cacheService = new BrowserCacheService();

@@ -2,36 +2,67 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useEffect, useState } from "react";
-import { cacheService } from "@/services/cacheService";
-import { Activity, Database, HardDrive, Zap } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Activity, Database, HardDrive, Zap, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+interface RedisMetrics {
+  hitRate: number;
+  totalRequests: number;
+  memoryUsage: number;
+  avgLatency: number;
+  quotaRemaining: number;
+}
 
 export function RedisCacheMonitor() {
-  const [stats, setStats] = useState({
-    hitRate: { redis: 0, indexeddb: 0, miss: 0 },
-    latency: { redis: 0, indexeddb: 0 },
-    totalRequests: 0,
-  });
+  const [metrics, setMetrics] = useState<RedisMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const updateStats = () => {
-      const hitRate = cacheService.getCacheHitRate();
-      const latency = cacheService.getAverageLatency();
-      const allStats = cacheService.getStats();
-
-      setStats({
-        hitRate,
-        latency,
-        totalRequests: allStats.length,
-      });
+    const fetchMetrics = async () => {
+      try {
+        const { data, error: fnError } = await supabase.functions.invoke('redis-metrics');
+        
+        if (fnError) throw fnError;
+        
+        setMetrics(data);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch Redis metrics:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch metrics');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    updateStats();
-    const interval = setInterval(updateStats, 2000);
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 10000); // Update every 10s
     return () => clearInterval(interval);
   }, []);
 
-  const totalHitRate = stats.hitRate.redis + stats.hitRate.indexeddb;
-  const avgLatency = (stats.latency.redis + stats.latency.indexeddb) / 2;
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">Loading Redis metrics...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (!metrics) return null;
 
   return (
     <div className="space-y-4">
@@ -42,10 +73,10 @@ export function RedisCacheMonitor() {
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalHitRate.toFixed(1)}%</div>
-            <Progress value={totalHitRate} className="mt-2" />
+            <div className="text-2xl font-bold">{metrics.hitRate.toFixed(1)}%</div>
+            <Progress value={metrics.hitRate} className="mt-2" />
             <p className="text-xs text-muted-foreground mt-2">
-              Redis: {stats.hitRate.redis.toFixed(1)}% | IDB: {stats.hitRate.indexeddb.toFixed(1)}%
+              Server-side Redis performance
             </p>
           </CardContent>
         </Card>
@@ -56,9 +87,9 @@ export function RedisCacheMonitor() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{avgLatency.toFixed(1)}ms</div>
+            <div className="text-2xl font-bold">{metrics.avgLatency.toFixed(1)}ms</div>
             <p className="text-xs text-muted-foreground mt-2">
-              Redis: {stats.latency.redis.toFixed(1)}ms | IDB: {stats.latency.indexeddb.toFixed(1)}ms
+              Redis response time
             </p>
           </CardContent>
         </Card>
@@ -69,71 +100,62 @@ export function RedisCacheMonitor() {
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalRequests}</div>
+            <div className="text-2xl font-bold">{metrics.totalRequests.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mt-2">
-              Last 1000 operations tracked
+              Lifetime cache operations
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cache Layers</CardTitle>
+            <CardTitle className="text-sm font-medium">Memory Usage</CardTitle>
             <HardDrive className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs">L1 Redis</span>
-                <Badge variant="outline">Active</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs">L2 IndexedDB</span>
-                <Badge variant="outline">Active</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs">L3 Supabase</span>
-                <Badge variant="outline">Fallback</Badge>
-              </div>
-            </div>
+            <div className="text-2xl font-bold">{metrics.memoryUsage.toFixed(1)}MB</div>
+            <Progress value={(metrics.memoryUsage / 256) * 100} className="mt-2" />
+            <p className="text-xs text-muted-foreground mt-2">
+              {metrics.quotaRemaining.toFixed(1)}% quota remaining
+            </p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Cache Performance</CardTitle>
+          <CardTitle>Cache Architecture</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Redis (L1)</span>
-                <span className="text-sm text-muted-foreground">
-                  {stats.hitRate.redis.toFixed(1)}% hit rate
-                </span>
+                <span className="text-sm font-medium">L1 Redis (Server)</span>
+                <Badge variant="default">Active</Badge>
               </div>
-              <Progress value={stats.hitRate.redis} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                Edge functions use Redis for fast server-side caching
+              </p>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">IndexedDB (L2)</span>
-                <span className="text-sm text-muted-foreground">
-                  {stats.hitRate.indexeddb.toFixed(1)}% hit rate
-                </span>
+                <span className="text-sm font-medium">L2 IndexedDB (Browser)</span>
+                <Badge variant="outline">Active</Badge>
               </div>
-              <Progress value={stats.hitRate.indexeddb} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                Client-side caching for offline support and reduced API calls
+              </p>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Cache Miss (L3)</span>
-                <span className="text-sm text-muted-foreground">
-                  {stats.hitRate.miss.toFixed(1)}% miss rate
-                </span>
+                <span className="text-sm font-medium">L3 Database (Supabase)</span>
+                <Badge variant="secondary">Fallback</Badge>
               </div>
-              <Progress value={stats.hitRate.miss} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                Direct database queries when cache misses occur
+              </p>
             </div>
           </div>
         </CardContent>

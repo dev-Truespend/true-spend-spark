@@ -1,44 +1,42 @@
 import { useQuery, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
 import { cacheService, CacheOptions } from '@/services/cacheService';
 
-interface UseRedisCacheOptions<T> extends CacheOptions {
+interface UseBrowserCacheOptions<T> extends CacheOptions {
   queryKey: string[];
   fetcher: () => Promise<T>;
   queryOptions?: Omit<UseQueryOptions<T>, 'queryKey' | 'queryFn'>;
 }
 
-export function useRedisCache<T>({
+/**
+ * React hook for browser-side caching using IndexedDB
+ * Server-side Redis caching is automatically handled by edge functions
+ */
+export function useBrowserCache<T>({
   queryKey,
   fetcher,
   ttl = 300,
-  skipRedis = false,
-  skipIndexedDB = false,
   queryOptions = {},
-}: UseRedisCacheOptions<T>) {
+}: UseBrowserCacheOptions<T>) {
   const queryClient = useQueryClient();
   const cacheKey = queryKey.join(':');
 
   const query = useQuery<T>({
     queryKey,
     queryFn: async () => {
-      // Try cache first
-      const { data, stats } = await cacheService.get<T>(cacheKey, {
-        ttl,
-        skipRedis,
-        skipIndexedDB,
-      });
+      // Try IndexedDB cache first
+      const { data, stats } = await cacheService.get<T>(cacheKey, { ttl });
 
       if (data) {
-        console.log(`Cache hit [${stats.layer}] for ${cacheKey} in ${stats.latency.toFixed(2)}ms`);
+        console.log(`Browser cache hit for ${cacheKey} in ${stats.latency.toFixed(2)}ms`);
         return data;
       }
 
       // Cache miss - fetch fresh data
-      console.log(`Cache miss for ${cacheKey}, fetching fresh data`);
+      console.log(`Browser cache miss for ${cacheKey}, fetching fresh data`);
       const freshData = await fetcher();
 
-      // Store in cache
-      await cacheService.set(cacheKey, freshData, { ttl, skipRedis, skipIndexedDB });
+      // Store in IndexedDB cache
+      await cacheService.set(cacheKey, freshData, { ttl });
 
       return freshData;
     },
@@ -58,7 +56,7 @@ export function useRedisCache<T>({
   };
 }
 
-export function useInvalidateCache() {
+export function useInvalidateBrowserCache() {
   const queryClient = useQueryClient();
 
   return async (pattern: string) => {
