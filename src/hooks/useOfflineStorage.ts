@@ -57,6 +57,8 @@ export function useOfflineStorage() {
     let mounted = true;
     
     const updateStatus = async () => {
+      if (!mounted || !storage.isActive()) return;
+      
       try {
         const syncStatus = syncManager.getStatus();
         const unsyncedTransactions = await storage.query('transactions', (item: any) => !item.synced);
@@ -71,7 +73,9 @@ export function useOfflineStorage() {
           }));
         }
       } catch (error) {
-        console.error('[useOfflineStorage] Failed to update status:', error);
+        if (mounted && error instanceof Error && !error.message.includes('closing')) {
+          console.error('[useOfflineStorage] Failed to update status:', error);
+        }
       }
     };
 
@@ -81,6 +85,7 @@ export function useOfflineStorage() {
     return () => {
       mounted = false;
       clearInterval(interval);
+      storage.close();
     };
   }, [quality, storage, isInitialized]);
 
