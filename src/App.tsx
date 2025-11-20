@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { GlobalNav } from "@/components/navigation/GlobalNav";
+import { Footer } from "@/components/navigation/Footer";
 import { ConflictResolutionDialog } from "@/components/sync/ConflictResolutionDialog";
 import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 import { syncManager, SyncStatus } from "@/services/syncManager";
@@ -443,8 +444,41 @@ function App() {
                 }
               />
 
+              {/* Legal Pages */}
+              <Route path="/legal/terms" element={
+                <Suspense fallback={<div className="p-8">Loading...</div>}>
+                  {React.createElement(lazy(() => import('@/pages/legal/TermsOfService')))}
+                </Suspense>
+              } />
+              <Route path="/legal/privacy" element={
+                <Suspense fallback={<div className="p-8">Loading...</div>}>
+                  {React.createElement(lazy(() => import('@/pages/legal/PrivacyPolicy')))}
+                </Suspense>
+              } />
+              <Route path="/legal/data-processing" element={
+                <Suspense fallback={<div className="p-8">Loading...</div>}>
+                  {React.createElement(lazy(() => import('@/pages/legal/DataProcessingPolicy')))}
+                </Suspense>
+              } />
+              <Route path="/legal/ai-recommendations" element={
+                <Suspense fallback={<div className="p-8">Loading...</div>}>
+                  {React.createElement(lazy(() => import('@/pages/legal/AIRecommendationPolicy')))}
+                </Suspense>
+              } />
+              <Route path="/legal/affiliate-transparency" element={
+                <Suspense fallback={<div className="p-8">Loading...</div>}>
+                  {React.createElement(lazy(() => import('@/pages/legal/AffiliateTransparency')))}
+                </Suspense>
+              } />
+              <Route path="/legal/consent" element={
+                <Suspense fallback={<div className="p-8">Loading...</div>}>
+                  {React.createElement(lazy(() => import('@/pages/legal/ConsentAgreement')))}
+                </Suspense>
+              } />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <Footer />
           </div>
             </AuthProvider>
           </BrowserRouter>
