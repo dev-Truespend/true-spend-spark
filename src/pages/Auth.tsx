@@ -15,6 +15,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
+import { ConsentBlock } from "@/components/auth/ConsentBlock";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Loader2, ArrowLeft, KeyRound, Smartphone } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -533,9 +534,14 @@ export default function Auth() {
                     </FormItem>
                   )} />
                   <FormField control={signupForm.control} name="agreeToTerms" render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                      <FormLabel className="text-sm font-normal">I agree to Terms & Privacy</FormLabel>
+                    <FormItem>
+                      <FormControl>
+                        <ConsentBlock
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          error={signupForm.formState.errors.agreeToTerms?.message}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />

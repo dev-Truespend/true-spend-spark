@@ -543,6 +543,32 @@ const logger = useLogger();
 
     if (error) return { error };
 
+    // Record user consents
+    if (authData.user) {
+      try {
+        await supabase.from('user_consents').insert({
+          user_id: authData.user.id,
+          accepted_terms: true,
+          accepted_privacy: true,
+          accepted_data_processing: true,
+          accepted_ai_recommendations: true,
+          accepted_affiliate_transparency: true,
+          accepted_consent_agreement: true,
+          terms_version: '1.0',
+          privacy_version: '1.0',
+          data_processing_version: '1.0',
+          ai_recommendations_version: '1.0',
+          affiliate_transparency_version: '1.0',
+          consent_agreement_version: '1.0',
+          ip_address: null, // Could capture via edge function if needed
+          user_agent: navigator.userAgent,
+        });
+      } catch (consentError) {
+        console.error('Failed to record user consent:', consentError);
+        // Don't block signup if consent recording fails
+      }
+    }
+
     // Trigger verification email via edge function
     if (authData.user && authData.session) {
       try {
