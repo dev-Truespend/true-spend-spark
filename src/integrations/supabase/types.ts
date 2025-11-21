@@ -5023,6 +5023,51 @@ export type Database = {
       }
     }
     Views: {
+      ocr_operational_metrics: {
+        Row: {
+          avg_cost_per_request: number | null
+          failed_requests: number | null
+          hour: string | null
+          success_rate: number | null
+          successful_requests: number | null
+          total_cost: number | null
+          total_requests: number | null
+          unique_users: number | null
+        }
+        Relationships: []
+      }
+      ocr_queue_status: {
+        Row: {
+          avg_retries: number | null
+          count: number | null
+          newest_item: string | null
+          oldest_item: string | null
+          status: string | null
+        }
+        Relationships: []
+      }
+      ocr_system_health: {
+        Row: {
+          active_anomalies: number | null
+          active_users: number | null
+          pending_queue: number | null
+          success_rate: number | null
+          timeframe: string | null
+          total_cost: number | null
+          total_requests: number | null
+        }
+        Relationships: []
+      }
+      ocr_user_tier_summary: {
+        Row: {
+          avg_daily_limit: number | null
+          avg_hourly_limit: number | null
+          tier: string | null
+          total_monthly_capacity: number | null
+          user_count: number | null
+        }
+        Relationships: []
+      }
       profiles_masked: {
         Row: {
           created_at: string | null
@@ -5081,6 +5126,7 @@ export type Database = {
       cleanup_old_health_history: { Args: never; Returns: number }
       cleanup_old_incidents: { Args: never; Returns: number }
       cleanup_old_notification_logs: { Args: never; Returns: number }
+      cleanup_old_ocr_data: { Args: never; Returns: Json }
       cleanup_old_rate_limits: { Args: never; Returns: number }
       cleanup_old_replica_metrics: { Args: never; Returns: number }
       cleanup_old_retry_queue: { Args: never; Returns: number }
