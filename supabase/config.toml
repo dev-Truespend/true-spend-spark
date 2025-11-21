@@ -1,5 +1,11 @@
 project_id = "uolpwcngftpmgkopltwz"
 
+[functions.ocr-health-check]
+verify_jwt = false
+
+[functions.ocr-alert-monitor]
+verify_jwt = false
+
 [functions.csp-reporter]
 verify_jwt = false
 

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { getCircuitBreaker } from '../_shared/circuit-breaker.ts';
 import { checkRateLimit, rateLimitHeaders, rateLimitResponse } from '../_shared/rate-limit-middleware.ts';
+import { withRetry, VISION_RETRY_CONFIG } from '../_shared/retry-middleware.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -124,8 +125,10 @@ serve(async (req) => {
     console.log('[GoogleVision] Processing receipt...');
     console.log(`[GoogleVision] User: ${userId}, Daily cost: $${todayTotal.toFixed(4)}/${DAILY_COST_LIMIT}`);
 
-    // Use circuit breaker to call Google Vision API
-    const result = await visionCircuitBreaker.execute(async () => {
+    // Use circuit breaker with retry logic to call Google Vision API
+    const retryResult = await withRetry(
+      async () => {
+        return await visionCircuitBreaker.execute(async () => {
       // Prepare image data
       let imageContent: string;
       if (imageBase64) {
@@ -197,10 +200,19 @@ serve(async (req) => {
         throw new Error('No text detected in image');
       }
 
-      return fullText;
-    });
+          return fullText;
+        });
+      },
+      VISION_RETRY_CONFIG
+    );
 
+    if (!retryResult.success || !retryResult.data) {
+      throw new Error(retryResult.error || 'Failed to extract text from image');
+    }
+
+    const result = retryResult.data;
     console.log('[GoogleVision] Text extracted, parsing receipt...');
+    console.log(`[GoogleVision] Retry stats: ${retryResult.attempts} attempt(s), ${retryResult.totalTime}ms total`);
 
     // Parse receipt data from text
     const receiptData = parseReceiptText(result);
