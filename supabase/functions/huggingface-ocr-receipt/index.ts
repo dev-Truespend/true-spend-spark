@@ -114,9 +114,9 @@ serve(async (req) => {
     // Log to metrics
     await supabaseClient.from('system_metrics').insert({
       metric_name: 'hf_ocr_request',
-      metric_value: latency,
+      value: latency,
       unit: 'ms',
-      metadata: {
+      tags: {
         success: true,
         model: result.model,
         user_id: user.id,

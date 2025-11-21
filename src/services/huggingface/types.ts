@@ -32,7 +32,7 @@ export interface HFMetrics {
   requestCount: number;
   successCount: number;
   errorCount: number;
-  avgResponseTime: number;
+  avgLatencyMs: number;
   cacheHitRate: number;
   lastError?: string;
 }

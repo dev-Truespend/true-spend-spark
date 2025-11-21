@@ -122,9 +122,9 @@ serve(async (req) => {
     // Log to metrics
     await supabaseClient.from('system_metrics').insert({
       metric_name: 'hf_categorize_request',
-      metric_value: latency,
+      value: latency,
       unit: 'ms',
-      metadata: {
+      tags: {
         success: true,
         category,
         confidence,
