@@ -2827,6 +2827,81 @@ export type Database = {
         }
         Relationships: []
       }
+      ocr_abuse_tracking: {
+        Row: {
+          anomaly_score: number
+          blocked_until: string | null
+          created_at: string | null
+          first_seen: string
+          id: string
+          ip_address_hash: string
+          last_seen: string
+          request_count: number
+          suspicious_patterns: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          anomaly_score?: number
+          blocked_until?: string | null
+          created_at?: string | null
+          first_seen?: string
+          id?: string
+          ip_address_hash: string
+          last_seen?: string
+          request_count?: number
+          suspicious_patterns?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          anomaly_score?: number
+          blocked_until?: string | null
+          created_at?: string | null
+          first_seen?: string
+          id?: string
+          ip_address_hash?: string
+          last_seen?: string
+          request_count?: number
+          suspicious_patterns?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ocr_anomaly_patterns: {
+        Row: {
+          created_at: string | null
+          detection_time: string
+          id: string
+          pattern_data: Json
+          pattern_type: string
+          resolved: boolean
+          resolved_at: string | null
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          detection_time?: string
+          id?: string
+          pattern_data: Json
+          pattern_type: string
+          resolved?: boolean
+          resolved_at?: string | null
+          severity: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          detection_time?: string
+          id?: string
+          pattern_data?: Json
+          pattern_type?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          severity?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ocr_batch_analytics: {
         Row: {
           avg_processing_time_ms: number | null
@@ -2916,6 +2991,30 @@ export type Database = {
           retry_count?: number
           status?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ocr_request_signatures: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          signature_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          signature_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          signature_hash?: string
           user_id?: string
         }
         Relationships: []
@@ -4971,6 +5070,7 @@ export type Database = {
       cleanup_expired_mfa_codes: { Args: never; Returns: number }
       cleanup_expired_push_tokens: { Args: never; Returns: number }
       cleanup_expired_recommendations: { Args: never; Returns: number }
+      cleanup_expired_request_signatures: { Args: never; Returns: number }
       cleanup_old_audit_logs: { Args: never; Returns: number }
       cleanup_old_auth_attempts: { Args: never; Returns: number }
       cleanup_old_csp_violations: { Args: never; Returns: number }
@@ -4999,6 +5099,7 @@ export type Database = {
         Args: { secret_id: string }
         Returns: undefined
       }
+      detect_ocr_anomalies: { Args: { p_user_id: string }; Returns: Json }
       encrypt_pii: { Args: { data: string }; Returns: string }
       encrypt_totp_secret:
         | { Args: { secret: string; user_id: string }; Returns: string }

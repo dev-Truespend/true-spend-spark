@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.ocr-queue-processor]
 verify_jwt = false
 
+[functions.ocr-security-monitor]
+verify_jwt = false
+
 [functions.csp-reporter]
 verify_jwt = false
 
