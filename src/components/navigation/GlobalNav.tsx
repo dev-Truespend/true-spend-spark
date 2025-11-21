@@ -9,6 +9,7 @@ import { VersionDisplay } from '@/components/version/VersionDisplay';
 import { UserProfileDropdown } from '@/components/auth/UserProfileDropdown';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { Logo } from '@/components/brand/Logo';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', route: '/dashboard', icon: LayoutDashboard, roles: ['user', 'developer', 'admin'], authRequired: true },
@@ -81,8 +82,8 @@ export function GlobalNav() {
     <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
       <div className="container mx-auto px-6">
         <div className="flex items-center gap-6 h-14">
-          <Link to="/" className="font-bold text-lg flex items-center gap-2">
-            TrueSpend
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <Logo variant="horizontal" />
             <VersionDisplay />
           </Link>
           <nav className="flex gap-2 ml-auto items-center">
