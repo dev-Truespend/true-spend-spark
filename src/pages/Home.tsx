@@ -38,7 +38,7 @@ export default function Home() {
       <div className="container mx-auto px-6 py-20">
         <div className="text-center max-w-3xl mx-auto">
           <div className="flex items-center justify-center gap-3 mb-6">
-            <Logo variant="full" className="h-16" showTagline={false} />
+            <Logo className="scale-125" />
             <Badge variant="secondary" className="text-xs">v5.5.5</Badge>
           </div>
           <p className="text-xl md:text-2xl text-muted-foreground mb-4 font-medium">

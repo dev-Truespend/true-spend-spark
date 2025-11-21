@@ -78,13 +78,15 @@ export function GlobalNav() {
     return item.roles.some(role => roles.includes(role as any));
   });
 
+  const handleLogoClick = () => {
+    window.location.href = '/';
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
       <div className="container mx-auto px-8">
         <div className="flex items-center gap-8 h-16">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <Logo variant="horizontal" />
-          </Link>
+          <Logo onClick={handleLogoClick} />
           <nav className="flex gap-1 ml-auto items-center">
             {accessibleItems.slice(0, 5).map(item => {
               const Icon = item.icon;
@@ -109,9 +111,10 @@ export function GlobalNav() {
               <Link to="/auth">
                 <Button 
                   size="sm"
-                  className="gap-2 bg-gradient-to-r from-[#3882F6] to-[#9333EA] hover:opacity-90 text-white shadow-lg hover:shadow-[#3882F6]/30 transition-all ml-2"
+                  variant="outline"
+                  className="gap-2 border-2 border-gray-300 dark:border-gray-700 hover:border-[#3882F6] hover:text-[#3882F6] transition-all ml-2"
                 >
-                  Get Premium
+                  Sign In / Sign Up
                 </Button>
               </Link>
             )}
