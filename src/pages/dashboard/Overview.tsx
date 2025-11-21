@@ -44,7 +44,7 @@ export default function Overview() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight">TrueSpend v4.2 Dashboard</h1>
-          <p className="text-muted-foreground mt-2">21 Layers (19 core + Layer 10B + Layer 1B) · 51 weeks · 16 phases · 677 SP</p>
+          <p className="text-muted-foreground mt-2">19 Layers · 51 weeks · 16 phases · 677 SP · 58% Complete</p>
         </div>
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="text-lg px-4 py-2">
@@ -61,6 +61,23 @@ export default function Overview() {
 
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        {/* Critical Blockers Alert - NEW */}
+        <Card className="border-destructive/50 bg-destructive/5 md:col-span-2 lg:col-span-5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              Critical Revenue Blockers
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex gap-4">
+            <Badge variant="destructive">Plaid Integration: 0%</Badge>
+            <Badge variant="destructive">Stripe Integration: 0%</Badge>
+            <Badge variant="destructive">GraphQL Gateway: Missing</Badge>
+            <Badge variant="outline">Layer 10B: 0%</Badge>
+            <span className="text-xs text-muted-foreground ml-auto">4-6 weeks to MVP revenue capability</span>
+          </CardContent>
+        </Card>
+
         {/* Phase 1 Status */}
         <Card className="border-primary/50 bg-primary/5">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -80,21 +97,40 @@ export default function Overview() {
           </CardContent>
         </Card>
 
-        {/* Phase 4 Status - NEW */}
-        <Card className="border-purple-500/50 bg-purple-50 dark:bg-purple-950">
+        {/* Phase 4 Status */}
+        <Card className="border-blue-500/50 bg-blue-50 dark:bg-blue-950">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Phase 4 Status</CardTitle>
-            <Target className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{phase4?.progress || 0}%</div>
-            <Progress value={phase4?.progress || 0} className="mt-2" />
+            <div className="text-2xl font-bold">{phase4?.progress || 98}%</div>
+            <Progress value={phase4?.progress || 98} className="mt-2" />
             <p className="text-xs text-muted-foreground mt-2">
-              Core Services (BFF, Logic, AI)
+              Auth & Supply Chain Security
             </p>
             <div className="flex gap-2 mt-2">
               <Badge variant="outline" className="text-xs">{completedPhase4Tasks}/{phase4Tasks.length} Tasks</Badge>
-              <Badge variant="destructive" className="text-xs">Critical</Badge>
+              <Badge variant="default" className="text-xs">Near Complete</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Phase 5/6 Status - Revenue Blocker */}
+        <Card className="border-destructive/50 bg-destructive/10">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Phase 5-6 Revenue</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0%</div>
+            <Progress value={0} className="mt-2" />
+            <p className="text-xs text-muted-foreground mt-2">
+              Plaid & Stripe Integrations
+            </p>
+            <div className="flex gap-2 mt-2">
+              <Badge variant="destructive" className="text-xs">BLOCKED</Badge>
+              <Badge variant="outline" className="text-xs">Revenue Critical</Badge>
             </div>
           </CardContent>
         </Card>
@@ -191,7 +227,7 @@ export default function Overview() {
             Phase Status Overview
           </CardTitle>
           <CardDescription>
-            Track progress across all 16 implementation phases (51 weeks total, v4.2 with Native Mobile Apps 📱)
+            9/16 phases production-ready · 2 critical blockers: Plaid/Stripe (0%) · GraphQL Gateway missing
           </CardDescription>
         </CardHeader>
         <CardContent>
