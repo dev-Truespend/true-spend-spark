@@ -2401,6 +2401,7 @@ export type Database = {
           artifact_url: string
           created_at: string | null
           deployed_at: string | null
+          hyperparameters: Json | null
           id: string
           metrics: Json | null
           model_id: string
@@ -2414,6 +2415,8 @@ export type Database = {
           storage_path: string | null
           trained_at: string | null
           training_config: Json | null
+          training_duration_seconds: number | null
+          training_samples_count: number | null
           updated_at: string | null
           version: string
         }
@@ -2421,6 +2424,7 @@ export type Database = {
           artifact_url: string
           created_at?: string | null
           deployed_at?: string | null
+          hyperparameters?: Json | null
           id?: string
           metrics?: Json | null
           model_id: string
@@ -2434,6 +2438,8 @@ export type Database = {
           storage_path?: string | null
           trained_at?: string | null
           training_config?: Json | null
+          training_duration_seconds?: number | null
+          training_samples_count?: number | null
           updated_at?: string | null
           version: string
         }
@@ -2441,6 +2447,7 @@ export type Database = {
           artifact_url?: string
           created_at?: string | null
           deployed_at?: string | null
+          hyperparameters?: Json | null
           id?: string
           metrics?: Json | null
           model_id?: string
@@ -2454,8 +2461,43 @@ export type Database = {
           storage_path?: string | null
           trained_at?: string | null
           training_config?: Json | null
+          training_duration_seconds?: number | null
+          training_samples_count?: number | null
           updated_at?: string | null
           version?: string
+        }
+        Relationships: []
+      }
+      ml_predictions: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          inference_time_ms: number | null
+          input_data: Json
+          model_id: string
+          prediction: Json
+          user_id: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          inference_time_ms?: number | null
+          input_data: Json
+          model_id: string
+          prediction: Json
+          user_id?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          inference_time_ms?: number | null
+          input_data?: Json
+          model_id?: string
+          prediction?: Json
+          user_id?: string | null
         }
         Relationships: []
       }

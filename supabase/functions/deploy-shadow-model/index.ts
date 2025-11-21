@@ -45,6 +45,18 @@ Deno.serve(async (req) => {
 
     console.log(`[Shadow Deploy] Deploying model ${model_id} with ${traffic_split}% traffic`);
 
+    // Validate model types
+    const validModelTypes = [
+      'dqn_cache',
+      'lstm_anomaly',
+      'distilbert_classifier',
+      'als_recommender',
+      'lambdamart_ranking',
+      'prophet_forecast',
+      'als_collab_filter',
+      'dqn_cache_policy'
+    ];
+
     // Get model from registry
     const { data: model, error: modelError } = await supabase
       .from('ml_model_registry')
@@ -54,6 +66,10 @@ Deno.serve(async (req) => {
 
     if (modelError || !model) {
       return errorResponse('MODEL_NOT_FOUND', 'Model not found in registry', 404);
+    }
+
+    if (!validModelTypes.includes(model.model_type)) {
+      return errorResponse('INVALID_MODEL_TYPE', `Model type ${model.model_type} not supported for deployment`, 400);
     }
 
     // Update model registry with shadow deployment status
