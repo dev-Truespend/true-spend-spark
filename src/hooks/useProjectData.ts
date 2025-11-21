@@ -108,8 +108,8 @@ export function useProjectOverview() {
   const tasks = useTasks();
   const milestones = useMilestones();
 
-  const currentWeek = 35; // Updated to match SSOT (Week 35 of 51 - Phase 10 complete)
-  const totalWeeks = 51; // Blueprint v4.2: 51 weeks with 16 phases - 677 SP total
+  const currentWeek = 35; // CURRENT STATUS 21-NOV-2025: Phase 10 complete (95%), 58% overall
+  const totalWeeks = 51; // 16 phases, 677 SP total - Critical blockers: Plaid/Stripe (0%), GraphQL missing
 
   const overallProgress = phases.data
     ? Math.round(
