@@ -2827,6 +2827,99 @@ export type Database = {
         }
         Relationships: []
       }
+      ocr_batch_analytics: {
+        Row: {
+          avg_processing_time_ms: number | null
+          batch_id: string
+          completed_at: string | null
+          created_at: string | null
+          failed_items: number
+          id: string
+          started_at: string
+          successful_items: number
+          total_cost_usd: number
+          total_items: number
+          user_id: string
+        }
+        Insert: {
+          avg_processing_time_ms?: number | null
+          batch_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          failed_items?: number
+          id?: string
+          started_at: string
+          successful_items?: number
+          total_cost_usd?: number
+          total_items: number
+          user_id: string
+        }
+        Update: {
+          avg_processing_time_ms?: number | null
+          batch_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          failed_items?: number
+          id?: string
+          started_at?: string
+          successful_items?: number
+          total_cost_usd?: number
+          total_items?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ocr_processing_queue: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          estimated_cost_usd: number | null
+          id: string
+          image_url: string
+          max_retries: number
+          priority: number
+          processing_completed_at: string | null
+          processing_started_at: string | null
+          result: Json | null
+          retry_count: number
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          estimated_cost_usd?: number | null
+          id?: string
+          image_url: string
+          max_retries?: number
+          priority?: number
+          processing_completed_at?: string | null
+          processing_started_at?: string | null
+          result?: Json | null
+          retry_count?: number
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          estimated_cost_usd?: number | null
+          id?: string
+          image_url?: string
+          max_retries?: number
+          priority?: number
+          processing_completed_at?: string | null
+          processing_started_at?: string | null
+          result?: Json | null
+          retry_count?: number
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       password_history: {
         Row: {
           created_at: string | null
@@ -4531,6 +4624,39 @@ export type Database = {
           created_by?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_tier_config: {
+        Row: {
+          created_at: string | null
+          daily_cost_limit: number
+          hourly_request_limit: number
+          monthly_request_limit: number
+          priority: number
+          tier: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          daily_cost_limit?: number
+          hourly_request_limit?: number
+          monthly_request_limit?: number
+          priority?: number
+          tier?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          daily_cost_limit?: number
+          hourly_request_limit?: number
+          monthly_request_limit?: number
+          priority?: number
+          tier?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
