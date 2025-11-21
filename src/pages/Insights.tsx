@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdaptiveContent } from "@/hooks/useAdaptiveContent";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, TrendingUp, Lightbulb, AlertCircle, Sparkles } from "lucide-react";
+import { LowDataModeIndicator } from "@/components/ui/LowDataModeIndicator";
+import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
+import { cn } from "@/lib/utils";
 
 interface SpendingAnalysis {
   insights: string[];
@@ -19,6 +23,7 @@ interface SpendingAnalysis {
 export default function Insights() {
   const [period, setPeriod] = useState<'week' | 'month' | 'quarter'>('month');
   const [isGenerating, setIsGenerating] = useState(false);
+  const { shouldDeferNonCritical, shouldAnimate } = useAdaptiveContent();
 
   const { data: analysis, isLoading, refetch } = useQuery<SpendingAnalysis>({
     queryKey: ['spending-analysis', period],
@@ -81,17 +86,24 @@ export default function Insights() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <LowDataModeIndicator />
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">AI Insights</h1>
           <p className="text-muted-foreground">Smart analysis of your spending patterns</p>
         </div>
         
-        <Button onClick={handleGenerateInsights} disabled={isGenerating}>
+        <Button onClick={handleGenerateInsights} disabled={isGenerating || shouldDeferNonCritical}>
           {isGenerating ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Analyzing...
+            </>
+          ) : shouldDeferNonCritical ? (
+            <>
+              <Sparkles className="mr-2 h-4 w-4" />
+              Deferred (Low Data)
             </>
           ) : (
             <>
@@ -111,11 +123,21 @@ export default function Insights() {
 
         <TabsContent value={period} className="space-y-6 mt-6">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
+            shouldDeferNonCritical ? (
+              <div className="text-center py-12 text-muted-foreground">
+                Deferring analysis... (Low Data Mode)
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <SkeletonLoader variant="chart" count={1} />
+                <SkeletonLoader variant="card" count={2} />
+              </div>
+            )
           ) : analysis ? (
-            <>
+            <div className={cn(
+              "space-y-6",
+              shouldAnimate && "animate-fade-in"
+            )}>
               {analysis.cached && (
                 <Badge variant="outline" className="mb-4">
                   <Sparkles className="mr-1 h-3 w-3" />
@@ -175,12 +197,12 @@ export default function Insights() {
                         <li key={i} className="text-sm text-muted-foreground">
                           • {pattern}
                         </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-            </>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+            </div>
           ) : (
             <Card>
               <CardContent className="pt-6 text-center text-muted-foreground">

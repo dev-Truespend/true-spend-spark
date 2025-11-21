@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOfflineStorage } from "@/hooks/useOfflineStorage";
+import { useAdaptiveContent } from "@/hooks/useAdaptiveContent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,9 @@ import { toast } from "sonner";
 import { Loader2, Plus, AlertTriangle, CheckCircle2, RefreshCw, WifiOff, MapPin } from "lucide-react";
 import { OfflineIndicator } from "@/components/network/OfflineIndicator";
 import { SyncStatusBadge } from "@/components/sync/SyncStatusBadge";
+import { LowDataModeIndicator } from "@/components/ui/LowDataModeIndicator";
+import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
+import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
   "Dining",
@@ -32,6 +36,7 @@ const PERIODS = ["monthly", "weekly", "quarterly"];
 export default function Budgets() {
   const queryClient = useQueryClient();
   const { storage, saveOffline, status } = useOfflineStorage();
+  const { shouldDeferNonCritical, shouldAnimate } = useAdaptiveContent();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [newBudget, setNewBudget] = useState({
@@ -386,6 +391,7 @@ export default function Budgets() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <OfflineIndicator />
+      <LowDataModeIndicator />
       
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -594,11 +600,20 @@ export default function Budgets() {
       )}
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        shouldDeferNonCritical ? (
+          <div className="text-center py-12 text-muted-foreground">
+            Loading budgets... (Low Data Mode)
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <SkeletonLoader variant="card" count={3} />
+          </div>
+        )
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className={cn(
+          "grid gap-4 md:grid-cols-2 lg:grid-cols-3",
+          shouldAnimate && "animate-fade-in"
+        )}>
           {budgets?.map((budget: any) => (
             <Card key={budget.id}>
               <CardHeader>
