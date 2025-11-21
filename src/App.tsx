@@ -50,6 +50,7 @@ import WebhookAnalytics from "./pages/dashboard/WebhookAnalytics";
 import AnomalyDetection from "./pages/dashboard/AnomalyDetection";
 import ABTesting from "./pages/dashboard/ABTesting";
 import HuggingFace from "./pages/dashboard/HuggingFace";
+import MLTraining from "./pages/dashboard/MLTraining";
 import RealtimeEvents from "./pages/dashboard/RealtimeEvents";
 import FeatureFlags from "./pages/dashboard/FeatureFlags";
 import DistributedTracing from "./pages/dashboard/DistributedTracing";
@@ -381,6 +382,7 @@ function App() {
                 <Route path="anomaly-detection" element={<AnomalyDetection />} />
                 <Route path="ab-testing" element={<ABTesting />} />
                 <Route path="huggingface" element={<HuggingFace />} />
+                <Route path="ml-training" element={<MLTraining />} />
                 <Route path="realtime-events" element={<RealtimeEvents />} />
                 <Route path="feature-flags" element={<FeatureFlags />} />
                 <Route path="workflows" element={<Workflows />} />
