@@ -135,6 +135,7 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('[Schedule Retraining] Error:', error);
-    return errorResponse('INTERNAL_ERROR', error.message, 500);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return errorResponse('INTERNAL_ERROR', errorMessage, 500);
   }
 });

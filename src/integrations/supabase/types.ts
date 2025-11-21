@@ -2312,6 +2312,10 @@ export type Database = {
           metrics: Json | null
           model_id: string
           model_type: string
+          production_deployed: boolean | null
+          shadow_deployed: boolean | null
+          shadow_deployed_at: string | null
+          shadow_traffic_split: number | null
           status: string
           storage_bucket: string | null
           storage_path: string | null
@@ -2328,6 +2332,10 @@ export type Database = {
           metrics?: Json | null
           model_id: string
           model_type: string
+          production_deployed?: boolean | null
+          shadow_deployed?: boolean | null
+          shadow_deployed_at?: string | null
+          shadow_traffic_split?: number | null
           status?: string
           storage_bucket?: string | null
           storage_path?: string | null
@@ -2344,6 +2352,10 @@ export type Database = {
           metrics?: Json | null
           model_id?: string
           model_type?: string
+          production_deployed?: boolean | null
+          shadow_deployed?: boolean | null
+          shadow_deployed_at?: string | null
+          shadow_traffic_split?: number | null
           status?: string
           storage_bucket?: string | null
           storage_path?: string | null
