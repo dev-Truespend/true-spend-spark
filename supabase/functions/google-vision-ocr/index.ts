@@ -10,9 +10,9 @@ const corsHeaders = {
 };
 
 // Cost constants for Google Vision API
-const COST_PER_REQUEST = 0.0015; // $1.50 per 1000 images
-const DAILY_COST_LIMIT = 5.0; // $5 daily limit per user
-const HOURLY_REQUEST_LIMIT = 50; // 50 requests per hour per user
+const DEFAULT_COST_PER_REQUEST = 0.0015; // $1.50 per 1000 images
+const DEFAULT_DAILY_COST_LIMIT = 5.0; // $5 daily limit per user
+const DEFAULT_HOURLY_REQUEST_LIMIT = 50; // 50 requests per hour per user
 
 // Circuit breaker for Google Vision API
 const visionCircuitBreaker = getCircuitBreaker('google-vision', {
@@ -66,9 +66,22 @@ serve(async (req) => {
 
     const userId = user.id;
 
-    // Check rate limit: 50 requests per hour
+    // Get user tier configuration
+    const { data: tierConfig } = await supabase
+      .from('user_tier_config')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    const dailyCostLimit = tierConfig?.daily_cost_limit || DEFAULT_DAILY_COST_LIMIT;
+    const hourlyRequestLimit = tierConfig?.hourly_request_limit || DEFAULT_HOURLY_REQUEST_LIMIT;
+    const costPerRequest = DEFAULT_COST_PER_REQUEST;
+
+    console.log(`[GoogleVision] User tier: ${tierConfig?.tier || 'default'}, Limits: $${dailyCostLimit}/day, ${hourlyRequestLimit} req/hour`);
+
+    // Check rate limit: per-user hourly limit
     const rateLimitResult = await checkRateLimit(userId, 'google-vision-ocr', {
-      requests: HOURLY_REQUEST_LIMIT,
+      requests: hourlyRequestLimit,
       windowMinutes: 60,
     });
 
@@ -90,11 +103,11 @@ serve(async (req) => {
 
     const todayTotal = todayCosts?.reduce((sum, row) => sum + (row.estimated_cost_usd || 0), 0) || 0;
 
-    if (todayTotal >= DAILY_COST_LIMIT) {
+    if (todayTotal >= dailyCostLimit) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Daily cost limit exceeded ($${DAILY_COST_LIMIT}). Current: $${todayTotal.toFixed(4)}`,
+          error: `Daily cost limit exceeded ($${dailyCostLimit}). Current: $${todayTotal.toFixed(4)}`,
           resetAt: new Date(new Date().setHours(24, 0, 0, 0)).toISOString(),
         }),
         {
@@ -123,7 +136,7 @@ serve(async (req) => {
     }
 
     console.log('[GoogleVision] Processing receipt...');
-    console.log(`[GoogleVision] User: ${userId}, Daily cost: $${todayTotal.toFixed(4)}/${DAILY_COST_LIMIT}`);
+    console.log(`[GoogleVision] User: ${userId}, Daily cost: $${todayTotal.toFixed(4)}/${dailyCostLimit}`);
 
     // Use circuit breaker with retry logic to call Google Vision API
     const retryResult = await withRetry(
@@ -170,7 +183,7 @@ serve(async (req) => {
         await supabase.from('google_vision_cost_tracking').insert({
           user_id: userId,
           endpoint: 'images:annotate',
-          estimated_cost_usd: COST_PER_REQUEST,
+          estimated_cost_usd: costPerRequest,
           success: false,
           error_message: `HTTP ${visionResponse.status}: ${errorText}`,
         });
@@ -185,7 +198,7 @@ serve(async (req) => {
         await supabase.from('google_vision_cost_tracking').insert({
           user_id: userId,
           endpoint: 'images:annotate',
-          estimated_cost_usd: COST_PER_REQUEST,
+          estimated_cost_usd: costPerRequest,
           success: false,
           error_message: visionData.responses[0].error.message,
         });
@@ -222,12 +235,12 @@ serve(async (req) => {
     await supabase.from('google_vision_cost_tracking').insert({
       user_id: userId,
       endpoint: 'images:annotate',
-      estimated_cost_usd: COST_PER_REQUEST,
+      estimated_cost_usd: costPerRequest,
       success: true,
     });
 
     console.log('[GoogleVision] Receipt parsed successfully');
-    console.log(`[GoogleVision] Response time: ${responseTime}ms, Cost: $${COST_PER_REQUEST}`);
+    console.log(`[GoogleVision] Response time: ${responseTime}ms, Cost: $${costPerRequest}`);
 
     // Get circuit breaker status for monitoring
     const circuitStatus = visionCircuitBreaker.getStats();
@@ -240,9 +253,10 @@ serve(async (req) => {
         rawText: result,
         meta: {
           responseTime,
-          costUsd: COST_PER_REQUEST,
+          costUsd: costPerRequest,
           remainingRequests: rateLimitResult.remaining,
           circuitStatus: circuitStatus.state,
+          tier: tierConfig?.tier || 'default',
         },
       }),
       { 
