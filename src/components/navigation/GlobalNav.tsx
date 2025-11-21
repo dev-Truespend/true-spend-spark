@@ -79,15 +79,14 @@ export function GlobalNav() {
   });
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
-      <div className="container mx-auto px-6">
-        <div className="flex items-center gap-6 h-14">
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
+      <div className="container mx-auto px-8">
+        <div className="flex items-center gap-8 h-16">
+          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <Logo variant="horizontal" />
-            <VersionDisplay />
           </Link>
-          <nav className="flex gap-2 ml-auto items-center">
-            {accessibleItems.map(item => {
+          <nav className="flex gap-1 ml-auto items-center">
+            {accessibleItems.slice(0, 5).map(item => {
               const Icon = item.icon;
               const isActive = location.pathname.startsWith(item.route) && item.route !== '/' 
                             || (item.route === '/' && location.pathname === '/');
@@ -97,7 +96,7 @@ export function GlobalNav() {
                   <Button 
                     variant={isActive ? 'default' : 'ghost'}
                     size="sm"
-                    className="gap-2"
+                    className="gap-2 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
                   >
                     <Icon className="w-4 h-4" />
                     {item.label}
@@ -105,6 +104,17 @@ export function GlobalNav() {
                 </Link>
               );
             })}
+            
+            {!user && (
+              <Link to="/auth">
+                <Button 
+                  size="sm"
+                  className="gap-2 bg-gradient-to-r from-[#3882F6] to-[#9333EA] hover:opacity-90 text-white shadow-lg hover:shadow-[#3882F6]/30 transition-all ml-2"
+                >
+                  Get Premium
+                </Button>
+              </Link>
+            )}
             
             {showDebug && (
               <Button 
