@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Receipt, Wallet, TrendingUp, Settings, User, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
+import { useAdaptiveContent } from "@/hooks/useAdaptiveContent";
+import { LowDataModeIndicator } from "@/components/ui/LowDataModeIndicator";
 import { UnverifiedBanner } from "@/components/auth/UnverifiedBanner";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +13,7 @@ export default function UserDashboard() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { shouldAnimate, imageQuality } = useAdaptiveContent();
 
   // Restrict actions if unverified
   const isRestricted = profile?.status === 'pending_verification';
@@ -30,6 +32,7 @@ export default function UserDashboard() {
       <div className="container mx-auto px-6 py-8">
         {/* Unverified Banner */}
         <UnverifiedBanner />
+        <LowDataModeIndicator />
 
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -84,7 +87,7 @@ export default function UserDashboard() {
         {/* Feature Cards */}
         <div className="grid md:grid-cols-2 gap-6">
           <Card className={cn(
-            "hover:border-primary/50 transition-colors",
+            shouldAnimate ? "hover:border-primary/50 transition-colors" : "",
             isRestricted ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
           )}>
             <CardHeader>
@@ -110,7 +113,10 @@ export default function UserDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+          <Card className={cn(
+            shouldAnimate ? "hover:border-primary/50 transition-colors" : "",
+            "cursor-pointer"
+          )}>
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -127,7 +133,10 @@ export default function UserDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+          <Card className={cn(
+            shouldAnimate ? "hover:border-primary/50 transition-colors" : "",
+            "cursor-pointer"
+          )}>
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -144,7 +153,10 @@ export default function UserDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+          <Card className={cn(
+            shouldAnimate ? "hover:border-primary/50 transition-colors" : "",
+            "cursor-pointer"
+          )}>
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
