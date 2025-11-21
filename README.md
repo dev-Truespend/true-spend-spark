@@ -1,132 +1,265 @@
-# TrueSpend v4.2 - Production Financial Intelligence Platform
+# TrueSpend - Smart Budget Tracking
 
-[![Known Vulnerabilities](https://snyk.io/test/github/yourusername/truespend/badge.svg)](https://snyk.io/test/github/yourusername/truespend)
+A production-ready, offline-first budget tracking application with AI-powered features and intelligent geofencing.
 
-**Status:** 🟢 **95% Production Ready - MVP Approved for Launch**
+## 🚀 Features
 
-**Phase Completion:** 9/16 Phases Complete (1-5, 7-10) | 5 Phases In Progress (6, 11-14) | 2 Phases Planned (15-16)  
-**Infrastructure:** 103 Tables • 86 Edge Functions • 23 Secrets • 5 Storage Buckets  
-**Web App MVP:** ✅ Ready for Deployment  
-**Total Story Points:** 677 SP
+### Phase 1 (Production Ready) ✅
+- **Offline-First Architecture**: Full CRUD operations work offline with automatic sync
+- **OCR Receipt Scanning**: Camera integration with Google Vision OCR
+- **Adaptive Loading**: Network-aware content delivery with skeleton loaders
+- **Performance Monitoring**: Built-in metrics tracking and optimization
+- **Batch Operations**: Efficient bulk data processing
+- **Manual Sync Controls**: User-controlled synchronization with status panel
+- **Data Management**: GDPR-compliant export/import and storage monitoring
+- **Comprehensive Error Handling**: User-friendly error messages and recovery
+- **Security Hardened**: RLS policies, mutable search_path fixes, sanitized triggers
 
-## What's New in v4.2
+### Core Functionality
+- 🔐 Secure authentication with Supabase Auth
+- 💳 Transaction tracking with categories and merchants
+- 📊 Budget management with alerts and geofencing
+- 🗺️ Location-based spending insights
+- 🤖 AI-powered transaction categorization
+- 📱 Mobile-responsive PWA-ready design
+- 🌐 Offline-first with IndexedDB storage
+- ⚡ Real-time sync with conflict resolution
 
-**Production Status: 95% Ready** 🚀
+## 🏗️ Architecture
 
-### Phase Completion Status
-- ✅ **Phases 1-5, 7-10:** 100% Complete (Core Platform)
-- 🟡 **Phase 6:** 70% (Email + Webhooks complete, SMS optional)
-- 🟡 **Phase 10:** 95% (All observability systems live, Cloudflare manual config pending)
-- 🟡 **Phase 13:** 40% (Read Replica routing, Redis L1 cache, 2 BFF endpoints - GraphQL pending)
-- 🟡 **Phase 14:** 80% (ML Training dashboard complete, needs production testing)
-- 🟡 **Phases 11-12:** 20-30% (Extension/Mobile basic setup, not production-ready)
-- ❌ **Phases 15-16:** 0% (Advanced ML & Cost optimization planned for Q1-Q2 2026)
+### Tech Stack
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS, shadcn/ui components
+- **State Management**: TanStack Query (React Query)
+- **Database**: Supabase (PostgreSQL)
+- **Storage**: IndexedDB for offline data
+- **OCR**: Google Vision API via Edge Functions
+- **Maps**: Google Maps & Foursquare Places API
+- **Testing**: Playwright E2E tests
 
-### Performance Improvements
-- **57% faster API responses** (150ms → 65ms p95)
-- **73% faster database queries** (30ms → 8ms p95)
-- **47% faster page loads** (1.5s → 0.8s)
-- **93% cache hit rate** (+8 points from v4.1)
+### Key Components
 
-### Cost Optimization
-- **52% monthly cost reduction** ($1,400 → $680/month)
-- Multi-tier cache (L1/L2/L3) with RL-based admission
-- R-Tree spatial indexes, Bloom filters, Gorilla compression
-- Adaptive query batching and connection pooling
+#### Offline Storage
+- `src/lib/db/indexedDB.ts` - Core storage layer
+- `src/lib/db/batchOperations.ts` - Optimized bulk operations
+- `src/services/syncManager.ts` - Intelligent sync with retry logic
+- `src/services/offlineSync.ts` - Background sync coordination
 
-### Revenue Generation (Layer 10B)
-- **Deals & Cashback Gateway** integration
-- Unified OffersService for affiliate networks
-- Impact, CJ, Rakuten, Capital One, Honey, Amazon adapters
-- Attribution tracking and fraud prevention
+#### Performance
+- `src/lib/performance/performanceMonitor.ts` - Metrics collection
+- `src/hooks/useAdaptiveContent.tsx` - Network-aware rendering
+- `src/components/ui/SkeletonLoader.tsx` - Loading states
+- `src/components/ui/LowDataModeIndicator.tsx` - Network status
 
-### ML Intelligence (8 Models)
-- **Predictive Caching** (RL-based, 93% hit rate)
-- **LSTM Anomaly Detection** (90% accuracy)
-- **LambdaMART Ranking** (+25% CTR)
-- **Prophet Time Series Forecasting** (85% accuracy)
-- **Multi-Armed Bandit** budget allocation (+18% savings)
-- Collaborative filtering for recommendations
+#### Features
+- `src/components/receipts/ReceiptCapture.tsx` - OCR integration
+- `src/components/sync/SyncControlPanel.tsx` - Manual sync UI
+- `src/components/settings/DataManagement.tsx` - Data export/import
+- `src/components/errors/ErrorBoundary.tsx` - Error handling
 
-### Architecture Enhancements
-- **GraphQL BFF Layer** (-20% over-fetching)
-- Database read replicas (73% faster)
-- Request deduplication (-30% redundant calls)
-- Response compression with Brotli (-60% bandwidth)
-- CDN prewarming (2x faster cold starts)
+## 🧪 Testing
 
-## Original Content
+### E2E Test Coverage (37 tests)
+```bash
+npm run test:e2e
+```
 
-# Welcome to TrueSpend
+**Test Suites:**
+- ✅ Authentication (6 tests)
+- ✅ Camera/OCR Integration (6 tests)
+- ✅ Adaptive Loading (5 tests)
+- ✅ Offline CRUD Operations (7 tests)
+- ✅ IndexedDB Migration (3 tests)
+- ✅ Stress & Performance (8 tests)
+- ⚠️ Sync Conflicts (2 tests - requires UI)
 
-## Project info
+### Performance Benchmarks
+- Bulk operations: < 60s for 20 items
+- Page navigation: < 30s for 15 transitions
+- Scrolling stress: < 10s
+- Memory pressure: < 2min for 50 items
+- Offline/online cycling: 5+ cycles
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+
+- npm or bun
+- Supabase account (for backend)
+- Google Cloud account (for Maps & Vision APIs)
+
+### Installation
+```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your API keys
+
+# Run development server
+npm run dev
+
+# Run tests
+npm run test:e2e
+```
+
+### Environment Variables
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key
+VITE_GOOGLE_MAPS_API_KEY=your_maps_key
+```
+
+## 📖 Documentation
+
+### Implementation Docs
+- [Phase 1 Production Plan](docs/PHASE1_PRODUCTION_PLAN.md)
+- [Day 1: Bugs & Security](docs/DAY1_IMPLEMENTATION_COMPLETE.md)
+- [Day 2: OCR & Controls](docs/DAY2_IMPLEMENTATION_COMPLETE.md)
+- [Day 3: Performance](docs/DAY3_IMPLEMENTATION_COMPLETE.md)
+- [Day 4: Testing & Polish](docs/DAY4_IMPLEMENTATION_COMPLETE.md)
+
+### Key Concepts
+
+#### Offline-First Flow
+1. User makes changes → Saved to IndexedDB
+2. Changes queued for sync
+3. Background sync attempts when online
+4. Retry logic with exponential backoff
+5. Manual sync available via control panel
+
+#### Performance Optimization
+1. Network quality detection
+2. Adaptive content loading
+3. Skeleton loaders on slow connections
+4. Batch operations for bulk data
+5. Performance metrics tracking
+
+#### Error Handling
+1. React Error Boundary catches crashes
+2. ErrorHandler provides user-friendly messages
+3. Specific error messages for common issues
+4. Silent logging for debugging
+5. Toast notifications for user feedback
+
+## 🔒 Security
+
+### Implemented
+- ✅ Row Level Security (RLS) on all tables
+- ✅ Mutable search_path fixes
+- ✅ Input sanitization
+- ✅ Secure error messages (no data leaks)
+- ✅ HTTPS-only in production
+- ✅ CSP violation monitoring
+
+### Best Practices
+- Never expose sensitive data in error messages
+- Always use parameterized queries
+- Validate and sanitize user input
+- Use secure session management
+- Regular security audits
+
+## 📊 Performance
+
+### Monitoring
+```typescript
+import { performanceMonitor } from '@/lib/performance/performanceMonitor';
+
+// View all metrics
+console.log(performanceMonitor.getAllMetrics());
+
+// Export for analysis
+const metricsJson = performanceMonitor.exportMetrics();
+```
+
+### Optimization Tips
+1. Use batch operations for bulk data
+2. Enable adaptive loading on slow connections
+3. Monitor sync queue size
+4. Clear old data periodically
+5. Use skeleton loaders for perceived performance
+
+## 🤝 Contributing
+
+### Development Workflow
+1. Create feature branch
+2. Implement with tests
+3. Run E2E tests
+4. Update documentation
+5. Submit pull request
+
+### Code Style
+- TypeScript strict mode
+- ESLint + Prettier
+- Semantic component names
+- Comprehensive error handling
+- Performance-conscious coding
+
+## 📝 License
+
+MIT License - see LICENSE file for details
+
+## 🎯 Roadmap
+
+### Phase 2 (Planned)
+- [ ] Conflict resolution UI
+- [ ] Advanced analytics dashboard
+- [ ] Push notifications
+- [ ] Merchant intelligence
+- [ ] Budget optimization AI
+- [ ] Multi-currency support
+- [ ] Team/family budgets
+
+### Phase 3 (Future)
+- [ ] Bank API integration
+- [ ] Investment tracking
+- [ ] Bill payment reminders
+- [ ] Financial goal planning
+- [ ] Tax document generation
+
+## 📞 Support
+
+- Documentation: `/docs`
+- Issues: GitHub Issues
+- E2E Tests: `npm run test:e2e`
+- Performance: Check `performanceMonitor.getAllMetrics()`
+
+---
+
+**Status**: ✅ Production Ready (Phase 1 Complete)
+**Last Updated**: 2024-11-21
+
+## Original Lovable Project Info
 
 **URL**: https://lovable.dev/projects/d4487a59-0405-4f34-88da-4c7979cc73d3
 
 ## How can I edit this code?
 
-There are several ways of editing your application.
-
 **Use Lovable**
 
 Simply visit the [Lovable Project](https://lovable.dev/projects/d4487a59-0405-4f34-88da-4c7979cc73d3) and start prompting.
 
-Changes made via Lovable will be committed automatically to this repo.
-
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone and install
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
 npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
 **Use GitHub Codespaces**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Navigate to the main page → Click "Code" button → Select "Codespaces" → "New codespace"
 
-## What technologies are used for this project?
+## Deployment
 
-This project is built with:
+Simply open [Lovable](https://lovable.dev/projects/d4487a59-0405-4f34-88da-4c7979cc73d3) and click Share → Publish.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Custom Domain
 
-## How can I deploy this project?
+Navigate to Project > Settings > Domains → Connect Domain
 
-Simply open [Lovable](https://lovable.dev/projects/d4487a59-0405-4f34-88da-4c7979cc73d3) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Read more: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
