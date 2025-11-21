@@ -6,6 +6,8 @@ import { TrainingJobTrigger } from "@/components/admin/TrainingJobTrigger";
 import { MLTrainingAlerts } from "@/components/admin/MLTrainingAlerts";
 import { MLCostTracker } from "@/components/admin/MLCostTracker";
 import { ModelPerformanceTracker } from "@/components/admin/ModelPerformanceTracker";
+import { MLABTestManager } from "@/components/admin/MLABTestManager";
+import { ModelDeploymentPipeline } from "@/components/admin/ModelDeploymentPipeline";
 
 export default function MLTraining() {
   return (

@@ -2258,6 +2258,51 @@ export type Database = {
           },
         ]
       }
+      ml_ab_tests: {
+        Row: {
+          created_at: string | null
+          ended_at: string | null
+          id: string
+          metrics: Json | null
+          model_a_id: string
+          model_b_id: string
+          started_at: string | null
+          status: string | null
+          test_name: string
+          traffic_split: number | null
+          updated_at: string | null
+          winner: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          ended_at?: string | null
+          id?: string
+          metrics?: Json | null
+          model_a_id: string
+          model_b_id: string
+          started_at?: string | null
+          status?: string | null
+          test_name: string
+          traffic_split?: number | null
+          updated_at?: string | null
+          winner?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          ended_at?: string | null
+          id?: string
+          metrics?: Json | null
+          model_a_id?: string
+          model_b_id?: string
+          started_at?: string | null
+          status?: string | null
+          test_name?: string
+          traffic_split?: number | null
+          updated_at?: string | null
+          winner?: string | null
+        }
+        Relationships: []
+      }
       ml_model_registry: {
         Row: {
           artifact_url: string
