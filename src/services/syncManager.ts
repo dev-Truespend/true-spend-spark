@@ -2,6 +2,7 @@
 import { SyncQueueRecord, addToSyncQueue, getSyncQueue, removeSyncQueueItem, incrementSyncRetries } from '@/lib/db/indexedDB';
 import { supabase } from '@/integrations/supabase/client';
 import { ErrorHandler } from '@/lib/errors/errorHandler';
+import { measureAsync, performanceMonitor } from '@/lib/performance/performanceMonitor';
 
 export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline';
 
@@ -68,40 +69,42 @@ class SyncManager {
   }
 
   private async processQueueItem(item: SyncQueueRecord): Promise<boolean> {
-    try {
-      const { action, table, data } = item;
-      console.log(`[SyncManager] Processing ${action} on ${table}`, data);
+    return measureAsync(`sync-${item.action}-${item.table}`, async () => {
+      try {
+        const { action, table, data } = item;
+        console.log(`[SyncManager] Processing ${action} on ${table}`, data);
 
-      switch (action) {
-        case 'CREATE':
-          const { error: createError } = await supabase
-            .from(table as any)
-            .insert(data);
-          if (createError) throw createError;
-          break;
+        switch (action) {
+          case 'CREATE':
+            const { error: createError } = await supabase
+              .from(table as any)
+              .insert(data);
+            if (createError) throw createError;
+            break;
 
-        case 'UPDATE':
-          const { error: updateError } = await supabase
-            .from(table as any)
-            .update(data)
-            .eq('id', data.id);
-          if (updateError) throw updateError;
-          break;
+          case 'UPDATE':
+            const { error: updateError } = await supabase
+              .from(table as any)
+              .update(data)
+              .eq('id', data.id);
+            if (updateError) throw updateError;
+            break;
 
-        case 'DELETE':
-          const { error: deleteError } = await supabase
-            .from(table as any)
-            .delete()
-            .eq('id', data.id);
-          if (deleteError) throw deleteError;
-          break;
+          case 'DELETE':
+            const { error: deleteError } = await supabase
+              .from(table as any)
+              .delete()
+              .eq('id', data.id);
+            if (deleteError) throw deleteError;
+            break;
+        }
+
+        return true;
+      } catch (error) {
+        console.error('[SyncManager] Failed to process queue item:', error);
+        return false;
       }
-
-      return true;
-    } catch (error) {
-      console.error('[SyncManager] Failed to process queue item:', error);
-      return false;
-    }
+    });
   }
 
   public async sync(): Promise<{ success: number; failed: number }> {

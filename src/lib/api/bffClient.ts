@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { AdaptiveClient } from './adaptiveClient';
 import { NetworkQuality } from '@/hooks/useNetworkQuality';
+import { measureAsync } from '@/lib/performance/performanceMonitor';
 
 export interface DashboardData {
   transactions: any[];
@@ -78,50 +79,52 @@ class BFFClient {
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
     body?: any
   ): Promise<T> {
-    const correlationId = generateCorrelationId();
-    const requestId = crypto.randomUUID();
-    
-    // Apply adaptive timeout if available
-    const timeout = this.adaptiveClient?.getRequestTimeout() || 30000;
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Request timeout')), timeout)
-    );
+    return measureAsync(`bff-${functionName}`, async () => {
+      const correlationId = generateCorrelationId();
+      const requestId = crypto.randomUUID();
+      
+      // Apply adaptive timeout if available
+      const timeout = this.adaptiveClient?.getRequestTimeout() || 30000;
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), timeout)
+      );
 
-    const requestPromise = supabase.functions.invoke(functionName, {
-      body,
-      method,
-      headers: {
-        'x-request-id': requestId,
-        'x-correlation-id': correlationId,
-      },
+      const requestPromise = supabase.functions.invoke(functionName, {
+        body,
+        method,
+        headers: {
+          'x-request-id': requestId,
+          'x-correlation-id': correlationId,
+        },
+      });
+
+      const { data, error } = await Promise.race([
+        requestPromise,
+        timeoutPromise
+      ]) as any;
+
+      if (error) {
+        console.error(`BFF ${functionName} error [${correlationId}]:`, error);
+        
+        // Normalize error into standardized format
+        const bffError: BFFError = {
+          code: error.status?.toString() || 'UNKNOWN_ERROR',
+          message: error.message || 'Request failed',
+          correlationId,
+          details: error,
+        };
+        
+        throw new Error(bffError.message);
+      }
+
+      // Check if response has standardized error format
+      if (data && !data.ok && data.error) {
+        console.error(`BFF ${functionName} error [${correlationId}]:`, data.error);
+        throw new Error(data.error.message);
+      }
+
+      return data as T;
     });
-
-    const { data, error } = await Promise.race([
-      requestPromise,
-      timeoutPromise
-    ]) as any;
-
-    if (error) {
-      console.error(`BFF ${functionName} error [${correlationId}]:`, error);
-      
-      // Normalize error into standardized format
-      const bffError: BFFError = {
-        code: error.status?.toString() || 'UNKNOWN_ERROR',
-        message: error.message || 'Request failed',
-        correlationId,
-        details: error,
-      };
-      
-      throw new Error(bffError.message);
-    }
-
-    // Check if response has standardized error format
-    if (data && !data.ok && data.error) {
-      console.error(`BFF ${functionName} error [${correlationId}]:`, data.error);
-      throw new Error(data.error.message);
-    }
-
-    return data as T;
   }
 
   async getDashboard(): Promise<DashboardData> {
