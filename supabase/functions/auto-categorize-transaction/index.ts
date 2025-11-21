@@ -43,9 +43,53 @@ Respond with ONLY the category name in lowercase, nothing else.`;
       },
     });
 
+    // Check if Lovable AI failed due to rate limiting
+    const isRateLimited = aiError && (aiError.message?.includes('429') || aiError.message?.includes('rate limit'));
+    const isOutOfCredits = aiError && (aiError.message?.includes('402') || aiError.message?.includes('credits'));
+
+    if (isRateLimited || isOutOfCredits) {
+      console.log('Lovable AI rate limited or out of credits, trying HF fallback...');
+      
+      // Try Hugging Face as fallback
+      const { data: hfResponse, error: hfError } = await supabaseClient.functions.invoke('huggingface-categorize', {
+        body: {
+          merchantName: merchantName || '',
+          description: description || '',
+          amount: amount || 0,
+        },
+      });
+
+      if (!hfError && hfResponse?.success) {
+        const category = hfResponse.data.category;
+        const confidence = hfResponse.data.confidence;
+        
+        if (transactionId) {
+          await supabaseClient
+            .from('transactions')
+            .update({ 
+              category,
+              metadata: { auto_categorized: true, method: 'hf-server', confidence }
+            })
+            .eq('id', transactionId);
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            category, 
+            method: 'hf-server',
+            confidence,
+            fallback: true 
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('HF fallback also failed, using rule-based');
+    }
+
     if (aiError) {
       console.error('AI categorization error:', aiError);
-      // Fallback to rule-based categorization
+      // Final fallback to rule-based categorization
       const category = ruleBasedCategorization(merchantName || '', description || '');
       
       if (transactionId) {
