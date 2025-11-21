@@ -24,6 +24,7 @@ import {
   Network,
   Database,
   Bell,
+  Brain,
   LogOut
 } from "lucide-react";
 
@@ -40,6 +41,7 @@ const navigation = [
   { name: "Testing", href: "/admin/testing", icon: TestTube },
   { name: "Security", href: "/admin/security", icon: Shield },
   { name: "Architecture", href: "/admin/architecture", icon: Layers },
+  { name: "ML Training", href: "/admin/ml-training", icon: Brain },
   { name: "Webhook Analytics", href: "/admin/webhook-analytics", icon: Webhook },
   { name: "Anomaly Detection", href: "/admin/anomaly-detection", icon: Activity },
   { name: "A/B Testing", href: "/admin/ab-testing", icon: FlaskConical },
