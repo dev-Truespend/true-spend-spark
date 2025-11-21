@@ -507,6 +507,51 @@ export type Database = {
           },
         ]
       }
+      budget_optimization_history: {
+        Row: {
+          actual_spent: number | null
+          allocated_amount: number
+          alpha_param: number
+          beta_param: number
+          category: string
+          confidence_score: number
+          created_at: string | null
+          id: string
+          period_end: string
+          period_start: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          actual_spent?: number | null
+          allocated_amount: number
+          alpha_param: number
+          beta_param: number
+          category: string
+          confidence_score: number
+          created_at?: string | null
+          id?: string
+          period_end: string
+          period_start: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          actual_spent?: number | null
+          allocated_amount?: number
+          alpha_param?: number
+          beta_param?: number
+          category?: string
+          confidence_score?: number
+          created_at?: string | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       budgets: {
         Row: {
           active: boolean | null
@@ -1444,6 +1489,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      geofence_suggestions: {
+        Row: {
+          center_lat: number
+          center_lng: number
+          cluster_id: number
+          confidence_score: number
+          created_at: string | null
+          id: string
+          radius_meters: number
+          status: string | null
+          top_categories: Json | null
+          total_spent: number | null
+          transaction_count: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          center_lat: number
+          center_lng: number
+          cluster_id: number
+          confidence_score: number
+          created_at?: string | null
+          id?: string
+          radius_meters: number
+          status?: string | null
+          top_categories?: Json | null
+          total_spent?: number | null
+          transaction_count?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          center_lat?: number
+          center_lng?: number
+          cluster_id?: number
+          confidence_score?: number
+          created_at?: string | null
+          id?: string
+          radius_meters?: number
+          status?: string | null
+          top_categories?: Json | null
+          total_spent?: number | null
+          transaction_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       geofences: {
         Row: {
@@ -3333,6 +3426,36 @@ export type Database = {
         }
         Relationships: []
       }
+      semantic_search_history: {
+        Row: {
+          avg_similarity: number | null
+          created_at: string | null
+          id: string
+          query_embedding: string
+          query_text: string
+          results_count: number | null
+          user_id: string
+        }
+        Insert: {
+          avg_similarity?: number | null
+          created_at?: string | null
+          id?: string
+          query_embedding: string
+          query_text: string
+          results_count?: number | null
+          user_id: string
+        }
+        Update: {
+          avg_similarity?: number | null
+          created_at?: string | null
+          id?: string
+          query_embedding?: string
+          query_text?: string
+          results_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       service_health_history: {
         Row: {
           checked_at: string | null
@@ -4035,6 +4158,7 @@ export type Database = {
           category: string
           created_at: string | null
           description: string | null
+          embedding: string | null
           geofence_id: string | null
           id: string
           location_lat: number | null
@@ -4051,6 +4175,7 @@ export type Database = {
           category: string
           created_at?: string | null
           description?: string | null
+          embedding?: string | null
           geofence_id?: string | null
           id?: string
           location_lat?: number | null
@@ -4067,6 +4192,7 @@ export type Database = {
           category?: string
           created_at?: string | null
           description?: string | null
+          embedding?: string | null
           geofence_id?: string | null
           id?: string
           location_lat?: number | null
