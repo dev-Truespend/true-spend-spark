@@ -1,4 +1,4 @@
-// OCR Service - Receipt text extraction using Lovable AI vision
+// OCR Service - Receipt text extraction with HF fallback
 import { supabase } from '@/integrations/supabase/client';
 import { prepareImageForOCR } from './ocrPreparation';
 
@@ -19,11 +19,9 @@ export interface OCRResult {
 }
 
 /**
- * Extract structured data from receipt image using Lovable AI
+ * Extract structured data from receipt image with intelligent fallback
  */
-export async function extractReceiptData(
-  imageBlob: Blob
-): Promise<OCRResult> {
+export async function extractReceiptData(imageBlob: Blob): Promise<OCRResult> {
   try {
     console.log('[OCRService] Starting receipt extraction...');
 
@@ -31,7 +29,7 @@ export async function extractReceiptData(
     const optimized = await prepareImageForOCR(imageBlob);
     console.log('[OCRService] Image optimized:', optimized.metadata);
 
-    // Step 2: Upload image to storage (convert data URL back to blob)
+    // Step 2: Upload image to storage
     const fileName = `receipt_${Date.now()}.jpg`;
     const response = await fetch(optimized.dataUrl);
     const blob = await response.blob();
@@ -56,25 +54,81 @@ export async function extractReceiptData(
       .from('receipts')
       .getPublicUrl(uploadData.path);
 
-    // Step 4: Call OCR processing edge function
-    const { data, error } = await supabase.functions.invoke('ocr-process-receipt', {
-      body: {
-        imageUrl: urlData.publicUrl,
-      },
-    });
+    // Step 4: Check if HF should be primary
+    const { data: hfPrimaryFlag } = await supabase
+      .from('feature_flags')
+      .select('enabled')
+      .eq('flag_name', 'hf_primary_for_ocr')
+      .single();
 
-    if (error) {
-      console.error('[OCRService] OCR processing error:', error);
-      return {
-        success: false,
-        error: `OCR failed: ${error.message}`,
-      };
+    const useHFPrimary = hfPrimaryFlag?.enabled === true;
+
+    let ocrResult;
+    let primaryError;
+
+    // Step 5: Try primary OCR provider
+    if (useHFPrimary) {
+      console.log('[OCRService] Trying HF OCR as primary...');
+      const { data: hfData, error: hfError } = await supabase.functions.invoke(
+        'huggingface-ocr-receipt',
+        { body: { imageUrl: urlData.publicUrl } }
+      );
+
+      if (!hfError && hfData?.success) {
+        ocrResult = hfData.data;
+      } else {
+        primaryError = hfError?.message || hfData?.error;
+        console.log('[OCRService] HF OCR primary failed:', primaryError);
+      }
+    }
+
+    // Try Lovable AI as primary or fallback
+    if (!ocrResult) {
+      console.log('[OCRService] Trying Lovable AI OCR...');
+      const { data: lovableData, error: lovableError } = await supabase.functions.invoke(
+        'ocr-process-receipt',
+        { body: { imageUrl: urlData.publicUrl } }
+      );
+
+      if (!lovableError && lovableData) {
+        ocrResult = lovableData;
+      } else {
+        primaryError = lovableError?.message || lovableData?.error;
+        console.log('[OCRService] Lovable AI OCR failed:', primaryError);
+      }
+    }
+
+    // Step 6: Try HF as fallback if Lovable AI was primary and failed
+    if (!ocrResult && !useHFPrimary) {
+      const { data: hfFallbackFlag } = await supabase
+        .from('feature_flags')
+        .select('enabled')
+        .eq('flag_name', 'hf_server_ocr_fallback')
+        .single();
+
+      if (hfFallbackFlag?.enabled === true) {
+        console.log('[OCRService] Trying HF OCR as fallback...');
+        const { data: hfData, error: hfError } = await supabase.functions.invoke(
+          'huggingface-ocr-receipt',
+          { body: { imageUrl: urlData.publicUrl } }
+        );
+
+        if (!hfError && hfData?.success) {
+          ocrResult = hfData.data;
+        } else {
+          console.log('[OCRService] HF OCR fallback failed:', hfError?.message || hfData?.error);
+        }
+      }
+    }
+
+    if (!ocrResult) {
+      throw new Error(`All OCR providers failed. Last error: ${primaryError}`);
     }
 
     console.log('[OCRService] Receipt extracted successfully');
     return {
       success: true,
-      data: data as ReceiptData,
+      data: ocrResult as ReceiptData,
     };
   } catch (error) {
     console.error('[OCRService] Unexpected error:', error);

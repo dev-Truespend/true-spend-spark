@@ -60,6 +60,12 @@ verify_jwt = false
 
 [functions.cleanup-unverified-accounts]
 verify_jwt = false
+
+[functions.huggingface-ocr-receipt]
+verify_jwt = true
+
+[functions.huggingface-categorize]
+verify_jwt = true
 schedule = "0 */6 * * *"
 
 [functions.verify-current-password]
