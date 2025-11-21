@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
 import { SyncControlPanel } from "@/components/sync/SyncControlPanel";
+import { DataManagement } from "@/components/settings/DataManagement";
 import { MFASetup } from "@/components/auth/MFASetup";
 import { SessionsAndDevices } from "@/components/auth/SessionsAndDevices";
 import { UserProfileDropdown } from "@/components/auth/UserProfileDropdown";
@@ -90,12 +91,13 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="privacy">
-          <div className="space-y-6">
+          <DataManagement />
+          <div className="space-y-6 mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Privacy & Data</CardTitle>
+                <CardTitle>Privacy & Data Export</CardTitle>
                 <CardDescription>
-                  Export your data and manage your privacy preferences (GDPR compliant)
+                  Export your data for compliance (GDPR/CCPA)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

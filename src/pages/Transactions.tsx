@@ -12,10 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Plus, TrendingDown, TrendingUp, RefreshCw, WifiOff, MapPin } from "lucide-react";
+import { Loader2, Plus, TrendingDown, TrendingUp, RefreshCw, WifiOff, MapPin, Camera } from "lucide-react";
 import { format } from "date-fns";
 import { OfflineIndicator } from "@/components/network/OfflineIndicator";
 import { SyncStatusBadge } from "@/components/sync/SyncStatusBadge";
+import { ReceiptCapture } from "@/components/receipts/ReceiptCapture";
+import { LowDataModeIndicator } from "@/components/ui/LowDataModeIndicator";
 
 const CATEGORIES = [
   "Dining",
@@ -41,6 +43,7 @@ export default function Transactions() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [geofenceFilter, setGeofenceFilter] = useState<string>("all");
   const [currentGeofence, setCurrentGeofence] = useState<any>(null);
+  const [isReceiptCaptureOpen, setIsReceiptCaptureOpen] = useState(false);
 
   // Fetch user's geofences for filtering
   const { data: userGeofences } = useQuery({
@@ -281,9 +284,28 @@ export default function Transactions() {
     }
   };
 
+  const handleReceiptExtracted = (transaction: {
+    amount: number;
+    description: string;
+    merchant?: string;
+    category?: string;
+    timestamp: string;
+  }) => {
+    // Pre-fill the add transaction form with OCR data
+    setNewTransaction({
+      amount: transaction.amount,
+      description: transaction.description,
+      category: transaction.category || 'Other',
+      timestamp: transaction.timestamp,
+    });
+    setIsReceiptCaptureOpen(false);
+    setIsAddOpen(true);
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <OfflineIndicator />
+      <LowDataModeIndicator />
       
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -337,6 +359,20 @@ export default function Transactions() {
               )}
             </Button>
           )}
+          <Dialog open={isReceiptCaptureOpen} onOpenChange={setIsReceiptCaptureOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" data-testid="camera-button">
+                <Camera className="mr-2 h-4 w-4" />
+                Scan Receipt
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <ReceiptCapture
+                onTransactionExtracted={handleReceiptExtracted}
+                onCancel={() => setIsReceiptCaptureOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button>
