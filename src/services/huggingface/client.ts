@@ -18,7 +18,7 @@ class HuggingFaceClient {
     requestCount: 0,
     successCount: 0,
     errorCount: 0,
-    avgResponseTime: 0,
+    avgLatencyMs: 0,
     cacheHitRate: 0,
   };
   private options: HFClientOptions;
@@ -124,10 +124,10 @@ class HuggingFaceClient {
       this.metrics.errorCount++;
     }
 
-    // Update average response time
+    // Update average latency
     const count = this.metrics.requestCount;
-    this.metrics.avgResponseTime =
-      (this.metrics.avgResponseTime * (count - 1) + responseTime) / count;
+    this.metrics.avgLatencyMs =
+      (this.metrics.avgLatencyMs * (count - 1) + responseTime) / count;
   }
 
   async dispose(): Promise<void> {

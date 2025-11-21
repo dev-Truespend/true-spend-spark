@@ -45,12 +45,13 @@ import LocationMetrics from "./pages/dashboard/LocationMetrics";
 import NotFound from "./pages/NotFound";
 import FavoriteMerchants from "./pages/FavoriteMerchants";
 import Settings from "./pages/Settings";
+import Workflows from "./pages/dashboard/Workflows";
 import WebhookAnalytics from "./pages/dashboard/WebhookAnalytics";
 import AnomalyDetection from "./pages/dashboard/AnomalyDetection";
 import ABTesting from "./pages/dashboard/ABTesting";
+import HuggingFace from "./pages/dashboard/HuggingFace";
 import RealtimeEvents from "./pages/dashboard/RealtimeEvents";
 import FeatureFlags from "./pages/dashboard/FeatureFlags";
-import Workflows from "./pages/dashboard/Workflows";
 import DistributedTracing from "./pages/dashboard/DistributedTracing";
 import DataPlanes from "./pages/dashboard/DataPlanes";
 import SystemLogs from "./pages/dashboard/SystemLogs";
@@ -379,6 +380,7 @@ function App() {
                 <Route path="webhook-analytics" element={<WebhookAnalytics />} />
                 <Route path="anomaly-detection" element={<AnomalyDetection />} />
                 <Route path="ab-testing" element={<ABTesting />} />
+                <Route path="huggingface" element={<HuggingFace />} />
                 <Route path="realtime-events" element={<RealtimeEvents />} />
                 <Route path="feature-flags" element={<FeatureFlags />} />
                 <Route path="workflows" element={<Workflows />} />
