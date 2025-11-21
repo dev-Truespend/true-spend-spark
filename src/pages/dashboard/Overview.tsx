@@ -44,7 +44,7 @@ export default function Overview() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight">TrueSpend v4.2 Dashboard</h1>
-          <p className="text-muted-foreground mt-2">19-Layer + Layer 10B with Native Mobile Apps (51 weeks, 16 phases, 632 SP)</p>
+          <p className="text-muted-foreground mt-2">21 Layers (19 core + Layer 10B + Layer 1B) · 51 weeks · 16 phases · 677 SP</p>
         </div>
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="text-lg px-4 py-2">
@@ -99,15 +99,15 @@ export default function Overview() {
           </CardContent>
         </Card>
 
-        {/* Phase 10 Status - NEW */}
+        {/* Phase 10 Status - Use actual progress */}
         <Card className="border-green-500/50 bg-green-50 dark:bg-green-950">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Phase 10 Status</CardTitle>
             <Target className="h-4 w-4 text-green-600 dark:text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">100%</div>
-            <Progress value={100} className="mt-2" />
+            <div className="text-2xl font-bold">{phases?.find(p => p.phase_number === 10)?.progress || 95}%</div>
+            <Progress value={phases?.find(p => p.phase_number === 10)?.progress || 95} className="mt-2" />
             <p className="text-xs text-muted-foreground mt-2">
               Observability & Polish
             </p>

@@ -108,8 +108,8 @@ export function useProjectOverview() {
   const tasks = useTasks();
   const milestones = useMilestones();
 
-  const currentWeek = 14; // End of Phase 4 (Auth & Supply Chain complete)
-  const totalWeeks = 51; // Blueprint v4.2: 51 weeks with 16 sequential phases - 677 SP total
+  const currentWeek = 35; // Updated to match SSOT (Week 35 of 51 - Phase 10 complete)
+  const totalWeeks = 51; // Blueprint v4.2: 51 weeks with 16 phases - 677 SP total
 
   const overallProgress = phases.data
     ? Math.round(

@@ -2,9 +2,9 @@
 
 ## Overview
 
-A comprehensive project tracking dashboard for the TrueSpend v4.2 implementation, tracking all 51 weeks, 16 phases, 300+ tasks, 8 team members, and the complete architecture across 19 layers plus native mobile apps with production-ready refinements.
+A comprehensive project tracking dashboard for the TrueSpend v4.2 implementation, tracking all 51 weeks, 16 phases, 300+ tasks, 8 team members, and the complete architecture across 21 layers (19 core + Layer 10B + Layer 1B) with production-ready refinements.
 
-**Total Story Points:** 632 SP (includes Native Mobile Apps implementation)  
+**Total Story Points:** 677 SP (includes Native Mobile Apps & performance optimizations)  
 **Native Mobile Apps:** Capacitor setup, background location, push notifications, native geofencing, iOS widgets, App Store deployment
 
 ## Features
@@ -130,28 +130,14 @@ Navigate to `/dashboard` to view the project tracking dashboard.
 
 ## Architecture Diagram
 
-The dashboard tracks implementation across **19 architectural layers + browser extension companion**:
+The dashboard tracks implementation across **21 architectural layers**:
 
 1. **Layer 1A: Web & Mobile Client** (Navy Blue) - React SPA, PWA, native mobile with GPS
 2. **Layer 1B: Browser Extension** (Indigo) - Popup UI, background worker, content scripts
 3. **Layer 2: Edge & Ingress** (Orange) - CDN, WAF, DDoS protection
-4. **Layer 3: API Gateway** (Purple) - Rate limiting, routing
-5. **Layer 4: Modern Safety** (Green) - CSP, SRI
-6. **Layer 5: Auth & Session** (Blue) - JWT, MFA
-7. **Layer 6: Supply Chain Security** (Orange) - Dependency scanning
-8. **Layer 7: BFF Layer** (Green) - Request aggregation
-9. **Layer 8: Business Logic** (Purple) - Transaction processing, geofence rules
-10. **Layer 9: AI Agents** (Purple) - Pattern analysis, location insights
-11. **Layer 10: Egress Gateway** (Purple) - API key management, Places API
-12. **Layer 11: Retry Scheduler** (Orange) - Exponential backoff
-13. **Layer 12: Control Plane** (Purple) - Feature flags, dynamic rules
-14. **Layer 13: Notification Amplifier** (Orange) - Email, SMS, Push, geofence alerts
-15. **Layer 14: Event Bus** (Cyan) - Message broker, location events
-16. **Layer 15: Database** (Blue) - PostgreSQL, geofences, merchants
-17. **Layer 16: Storage** (Teal) - Object storage, merchant photos
-18. **Layer 17: Public Data Plane** (Light Blue) - Read replicas
-19. **Layer 18: Private Data Plane** (Red) - Encrypted storage, location data
-20. **Layer 19: Backup & DR** (Gray) - Automated backups
+...
+19. **Layer 19: Backup & DR** (Gray) - Automated backups
+20. **Layer 10B: Deals & Cashback Gateway** (Revenue Generation)
 
 Plus **Observability** cross-cutting layer and **Geofencing Subsystem** spanning 8 layers.
 
@@ -159,17 +145,22 @@ Plus **Observability** cross-cutting layer and **Geofencing Subsystem** spanning
 
 - **Phase 1** (Weeks 1-4): Foundation & Client Layer - 34 SP
 - **Phase 2** (Weeks 5-7): Security & Ingress - 40 SP
-- **Phase 2.5 📍** (Weeks 8-10): Geofencing Foundation - 38 SP
-- **Phase 3** (Weeks 11-14): Auth & Supply Chain - 48 SP
-- **Phase 4** (Weeks 15-19): Core Services (BFF, Logic, AI) - 65 SP
-- **Phase 5** (Weeks 20-22): External Communication - 42 SP
-- **Phase 5.5 🗺️** (Weeks 23-25): Location Intelligence - 42 SP
-- **Phase 6** (Weeks 26-28): Messaging & Events - 38 SP
-- **Phase 7** (Weeks 29-32): Data Planes & DR - 45 SP
-- **Phase 8** (Weeks 33-34): Observability & Polish - 28 SP
-- **Phase 9 🔌** (Weeks 35-37): Browser Extension - 44 SP
+- **Phase 3** (Weeks 8-10): Geofencing Foundation - 38 SP
+- **Phase 4** (Weeks 11-14): Auth & Supply Chain - 48 SP
+- **Phase 5** (Weeks 15-19): Core Services (BFF, Logic, AI) - 65 SP
+- **Phase 6** (Weeks 20-22): External Communication - 42 SP
+- **Phase 7** (Weeks 23-25): Location Intelligence - 42 SP
+- **Phase 8** (Weeks 26-28): Messaging & Events - 38 SP
+- **Phase 9** (Weeks 29-32): Data Planes & DR - 45 SP
+- **Phase 10** (Weeks 33-34): Observability & Polish - 28 SP
+- **Phase 11** (Weeks 35-37): Browser Extension - 44 SP
+- **Phase 12** (Weeks 38-40): Native Mobile Apps - 53 SP
+- **Phase 13** (Weeks 41-43): Performance Optimization - 45 SP
+- **Phase 14** (Weeks 44-46): ML Infrastructure - 38 SP
+- **Phase 15** (Weeks 47-49): Advanced ML & Revenue - 42 SP
+- **Phase 16** (Weeks 50-51): Cost Optimization - 26 SP
 
-**Total:** 11 phases, 37 weeks, 429 story points
+**Total:** 16 phases, 51 weeks, 677 story points
 
 ## Key Milestones
 
