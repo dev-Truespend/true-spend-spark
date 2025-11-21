@@ -62,7 +62,6 @@ import Performance from "./pages/dashboard/Performance";
 import RealTimeMetrics from "./pages/dashboard/RealTimeMetrics";
 import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
 import { RateLimitStatus } from "./components/api/RateLimitStatus";
-import { useNotificationTriggers } from "./hooks/useNotificationTriggers";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -76,12 +75,6 @@ const queryClient = new QueryClient({
 });
 
 const persister = createSyncPersister();
-
-function NotificationTriggersWrapper() {
-  // Initialize notification triggers for automatic push notifications
-  useNotificationTriggers();
-  return null;
-}
 
 function SyncManagerWrapper() {
   const { storage, status, resolveConflict } = useOfflineStorage();
@@ -251,7 +244,6 @@ function App() {
           <ErrorBoundary>
             <BrowserRouter>
               <AuthProvider>
-                <NotificationTriggersWrapper />
                 <SyncManagerWrapper />
                 <Toaster />
                 <Sonner />
