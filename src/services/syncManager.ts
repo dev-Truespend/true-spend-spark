@@ -1,6 +1,7 @@
 // Sync Manager - Handles background sync with exponential backoff retry
-import { SyncQueueRecord, addToSyncQueue, getSyncQueue, removeSyncQueueItem } from '@/lib/db/indexedDB';
+import { SyncQueueRecord, addToSyncQueue, getSyncQueue, removeSyncQueueItem, incrementSyncRetries } from '@/lib/db/indexedDB';
 import { supabase } from '@/integrations/supabase/client';
+import { ErrorHandler } from '@/lib/errors/errorHandler';
 
 export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline';
 
@@ -148,13 +149,18 @@ class SyncManager {
           await removeSyncQueueItem(item.id!);
           successCount++;
         } else {
-          // Increment retry count - re-add to queue with incremented retry
-          await addToSyncQueue(
-            item.action,
-            item.table,
-            item.data
-          );
-          failedCount++;
+          // Increment retry count for this item
+          const maxRetries = 5;
+          if (item.retries >= maxRetries) {
+            console.error(`[SyncManager] Max retries (${maxRetries}) exceeded for item ${item.id}, moving to failed state`);
+            // Remove from queue - exceeded max retries
+            await removeSyncQueueItem(item.id!);
+            failedCount++;
+          } else {
+            // Increment retry count on the existing item
+            await incrementSyncRetries(item.id!);
+            console.log(`[SyncManager] Item ${item.id} retry count: ${item.retries + 1}/${maxRetries}`);
+          }
         }
       }
 
@@ -163,6 +169,7 @@ class SyncManager {
       return { success: successCount, failed: failedCount };
     } catch (error) {
       console.error('[SyncManager] Sync error:', error);
+      ErrorHandler.handle(error, 'Sync Manager');
       this.updateStatus('error', error instanceof Error ? error.message : 'Unknown error');
       return { success: 0, failed: 0 };
     } finally {

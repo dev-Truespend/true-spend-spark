@@ -98,6 +98,7 @@ class OfflineSyncService {
       return { pulled: pulledCount, conflicts };
     } catch (error) {
       console.error('[OfflineSync] Pull error:', error);
+      ErrorHandler.handleSilent(error, 'Offline Sync - Pull');
       throw error;
     }
   }
@@ -130,6 +131,7 @@ class OfflineSyncService {
       return unsyncedRecords.length;
     } catch (error) {
       console.error('[OfflineSync] Push error:', error);
+      ErrorHandler.handleSilent(error, 'Offline Sync - Push');
       throw error;
     }
   }
@@ -154,6 +156,7 @@ class OfflineSyncService {
       return { pushed, pulled, conflicts };
     } catch (error) {
       console.error('[OfflineSync] Sync error:', error);
+      ErrorHandler.handle(error, 'Offline Sync');
       throw error;
     }
   }
