@@ -2,7 +2,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BudgetOptimizer } from '@/components/ml/BudgetOptimizer';
 import { GeofenceOptimizer } from '@/components/ml/GeofenceOptimizer';
 import { SemanticSearchBar } from '@/components/ml/SemanticSearchBar';
-import { Brain, Target, Search } from 'lucide-react';
+import { LambdaMARTTrainer } from '@/components/admin/LambdaMARTTrainer';
+import { ProphetForecaster } from '@/components/admin/ProphetForecaster';
+import { ALSRecommender } from '@/components/admin/ALSRecommender';
+import { DQNCacheOptimizer } from '@/components/admin/DQNCacheOptimizer';
+import { TrainingJobMonitor } from '@/components/admin/TrainingJobMonitor';
+import { Brain, Target, Search, TrendingUp, Calendar, Store, Zap } from 'lucide-react';
 
 export default function Phase15ML() {
   return (
@@ -14,19 +19,37 @@ export default function Phase15ML() {
         </p>
       </div>
 
+      <TrainingJobMonitor />
+
       <Tabs defaultValue="budget" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-7 h-auto flex-wrap">
           <TabsTrigger value="budget" className="flex items-center gap-2">
             <Brain className="h-4 w-4" />
-            Budget Optimizer
+            Budget
           </TabsTrigger>
           <TabsTrigger value="geofence" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
-            Geofence Optimizer
+            Geofence
           </TabsTrigger>
           <TabsTrigger value="search" className="flex items-center gap-2">
             <Search className="h-4 w-4" />
-            Semantic Search
+            Search
+          </TabsTrigger>
+          <TabsTrigger value="lambdamart" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            LambdaMART
+          </TabsTrigger>
+          <TabsTrigger value="prophet" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Prophet
+          </TabsTrigger>
+          <TabsTrigger value="als" className="flex items-center gap-2">
+            <Store className="h-4 w-4" />
+            ALS
+          </TabsTrigger>
+          <TabsTrigger value="dqn" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            DQN Cache
           </TabsTrigger>
         </TabsList>
 
@@ -40,6 +63,22 @@ export default function Phase15ML() {
 
         <TabsContent value="search">
           <SemanticSearchBar />
+        </TabsContent>
+
+        <TabsContent value="lambdamart">
+          <LambdaMARTTrainer />
+        </TabsContent>
+
+        <TabsContent value="prophet">
+          <ProphetForecaster />
+        </TabsContent>
+
+        <TabsContent value="als">
+          <ALSRecommender />
+        </TabsContent>
+
+        <TabsContent value="dqn">
+          <DQNCacheOptimizer />
         </TabsContent>
       </Tabs>
     </div>
