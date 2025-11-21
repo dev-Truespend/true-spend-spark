@@ -25,6 +25,8 @@ export default function MLTraining() {
           <TabsTrigger value="alerts">Alerts</TabsTrigger>
           <TabsTrigger value="costs">Costs</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="ab-testing">A/B Testing</TabsTrigger>
+          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="registry">Model Registry</TabsTrigger>
           <TabsTrigger value="data">Training Data</TabsTrigger>
           <TabsTrigger value="trigger">Start Training</TabsTrigger>
@@ -44,6 +46,14 @@ export default function MLTraining() {
 
         <TabsContent value="performance" className="space-y-4">
           <ModelPerformanceTracker />
+        </TabsContent>
+
+        <TabsContent value="ab-testing" className="space-y-4">
+          <MLABTestManager />
+        </TabsContent>
+
+        <TabsContent value="pipeline" className="space-y-4">
+          <ModelDeploymentPipeline />
         </TabsContent>
 
         <TabsContent value="registry" className="space-y-4">
