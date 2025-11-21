@@ -253,7 +253,15 @@ function App() {
                 <div className="pt-14">
             <Routes>
               {/* Root shows Home page */}
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={
+                <Suspense fallback={
+                  <div className="min-h-screen flex items-center justify-center bg-background">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                }>
+                  {React.createElement(lazy(() => import('@/pages/HomeNew')))}
+                </Suspense>
+              } />
               
               {/* Legacy Login Route Redirects - Force consistency to /auth */}
               <Route path="/login" element={<Navigate to="/auth" replace />} />
