@@ -54,36 +54,24 @@ export async function extractReceiptData(imageBlob: Blob): Promise<OCRResult> {
       .from('receipts')
       .getPublicUrl(uploadData.path);
 
-    // Step 4: Check if HF should be primary
-    const { data: hfPrimaryFlag } = await supabase
-      .from('feature_flags')
-      .select('enabled')
-      .eq('flag_name', 'hf_primary_for_ocr')
-      .single();
-
-    const useHFPrimary = hfPrimaryFlag?.enabled === true;
-
     let ocrResult;
     let primaryError;
 
-    // Step 5: Try primary OCR provider
-    if (useHFPrimary) {
-      console.log('[OCRService] Trying HF OCR as primary...');
-      const { data: hfData, error: hfError } = await supabase.functions.invoke(
-        'huggingface-ocr-receipt',
-        { body: { imageUrl: urlData.publicUrl } }
-      );
+    // Step 4: Try Google Vision API as primary
+    console.log('[OCRService] Trying Google Vision API...');
+    const { data: visionData, error: visionError } = await supabase.functions.invoke(
+      'google-vision-ocr',
+      { body: { imageUrl: urlData.publicUrl } }
+    );
 
-      if (!hfError && hfData?.success) {
-        ocrResult = hfData.data;
-      } else {
-        primaryError = hfError?.message || hfData?.error;
-        console.log('[OCRService] HF OCR primary failed:', primaryError);
-      }
-    }
-
-    // Try Lovable AI as primary or fallback
-    if (!ocrResult) {
+    if (!visionError && visionData?.success) {
+      ocrResult = visionData.data;
+      console.log('[OCRService] Google Vision succeeded');
+    } else {
+      primaryError = visionError?.message || visionData?.error;
+      console.log('[OCRService] Google Vision failed, trying fallback:', primaryError);
+      
+      // Step 5: Fallback to Lovable AI
       console.log('[OCRService] Trying Lovable AI OCR...');
       const { data: lovableData, error: lovableError } = await supabase.functions.invoke(
         'ocr-process-receipt',
@@ -92,31 +80,31 @@ export async function extractReceiptData(imageBlob: Blob): Promise<OCRResult> {
 
       if (!lovableError && lovableData) {
         ocrResult = lovableData;
+        console.log('[OCRService] Lovable AI succeeded');
       } else {
         primaryError = lovableError?.message || lovableData?.error;
-        console.log('[OCRService] Lovable AI OCR failed:', primaryError);
-      }
-    }
+        console.log('[OCRService] Lovable AI failed, trying final fallback:', primaryError);
+        
+        // Step 6: Final fallback to Hugging Face (if enabled)
+        const { data: hfFallbackFlag } = await supabase
+          .from('feature_flags')
+          .select('enabled')
+          .eq('flag_name', 'hf_server_ocr_fallback')
+          .single();
 
-    // Step 6: Try HF as fallback if Lovable AI was primary and failed
-    if (!ocrResult && !useHFPrimary) {
-      const { data: hfFallbackFlag } = await supabase
-        .from('feature_flags')
-        .select('enabled')
-        .eq('flag_name', 'hf_server_ocr_fallback')
-        .single();
+        if (hfFallbackFlag?.enabled === true) {
+          console.log('[OCRService] Trying HF OCR as final fallback...');
+          const { data: hfData, error: hfError } = await supabase.functions.invoke(
+            'huggingface-ocr-receipt',
+            { body: { imageUrl: urlData.publicUrl } }
+          );
 
-      if (hfFallbackFlag?.enabled === true) {
-        console.log('[OCRService] Trying HF OCR as fallback...');
-        const { data: hfData, error: hfError } = await supabase.functions.invoke(
-          'huggingface-ocr-receipt',
-          { body: { imageUrl: urlData.publicUrl } }
-        );
-
-        if (!hfError && hfData?.success) {
-          ocrResult = hfData.data;
-        } else {
-          console.log('[OCRService] HF OCR fallback failed:', hfError?.message || hfData?.error);
+          if (!hfError && hfData?.success) {
+            ocrResult = hfData.data;
+            console.log('[OCRService] HF OCR succeeded');
+          } else {
+            console.log('[OCRService] HF OCR fallback failed:', hfError?.message || hfData?.error);
+          }
         }
       }
     }
