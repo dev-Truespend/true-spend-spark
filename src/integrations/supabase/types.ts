@@ -1715,6 +1715,39 @@ export type Database = {
         }
         Relationships: []
       }
+      google_vision_cost_tracking: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          error_message: string | null
+          estimated_cost_usd: number | null
+          id: string
+          request_count: number | null
+          success: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          error_message?: string | null
+          estimated_cost_usd?: number | null
+          id?: string
+          request_count?: number | null
+          success?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          error_message?: string | null
+          estimated_cost_usd?: number | null
+          id?: string
+          request_count?: number | null
+          success?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       incident_alerts: {
         Row: {
           channel: string
