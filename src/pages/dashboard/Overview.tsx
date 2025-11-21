@@ -44,7 +44,9 @@ export default function Overview() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight">TrueSpend v4.2 Dashboard</h1>
-          <p className="text-muted-foreground mt-2">19 Layers · 51 weeks · 16 phases · 677 SP · 58% Complete</p>
+          <p className="text-muted-foreground mt-2">
+            19 Layers · {totalWeeks} weeks · {phases?.length || 0} phases · 677 SP · {overallProgress}% Complete
+          </p>
         </div>
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="text-lg px-4 py-2">
@@ -227,7 +229,7 @@ export default function Overview() {
             Phase Status Overview
           </CardTitle>
           <CardDescription>
-            9/16 phases production-ready · 2 critical blockers: Plaid/Stripe (0%) · GraphQL Gateway missing
+            {phases?.filter(p => p.status === 'Completed').length || 0}/{phases?.length || 0} phases production-ready · 2 critical blockers: Plaid/Stripe (0%) · GraphQL Gateway missing
           </CardDescription>
         </CardHeader>
         <CardContent>

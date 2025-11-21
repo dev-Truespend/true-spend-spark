@@ -108,7 +108,7 @@ export function useProjectOverview() {
   const tasks = useTasks();
   const milestones = useMilestones();
 
-  const currentWeek = 35; // CURRENT STATUS 21-NOV-2025: Phase 10 complete (95%), 58% overall
+  const currentWeek = 35; // CURRENT STATUS: Phase 10 complete (95%), Phase 15 at 60% - ML models in progress
   const totalWeeks = 51; // 16 phases, 677 SP total - Critical blockers: Plaid/Stripe (0%), GraphQL missing
 
   const overallProgress = phases.data
