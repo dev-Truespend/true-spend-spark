@@ -47,7 +47,7 @@ class HuggingFaceClient {
     console.log('[HF Client] Initialized successfully');
   }
 
-  async getPipeline(modelId: string, task: string): Promise<any> {
+  async getPipeline(modelId: string, task: any): Promise<any> {
     const key = `${task}:${modelId}`;
 
     // Return existing pipeline if available

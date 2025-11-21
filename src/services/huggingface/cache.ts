@@ -44,8 +44,7 @@ async function getDB(): Promise<IDBPDatabase<HFCacheDB>> {
 
       // Store for inference responses
       if (!database.objectStoreNames.contains('responses')) {
-        const store = database.createObjectStore('responses', { keyPath: 'input' });
-        store.createIndex('timestamp', 'timestamp');
+        database.createObjectStore('responses', { keyPath: 'input' });
       }
     },
   });

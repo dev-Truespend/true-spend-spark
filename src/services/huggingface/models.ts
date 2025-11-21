@@ -39,13 +39,13 @@ export const HF_SERVER_MODELS = {
 
 // Check if WebGPU is available
 export async function checkWebGPUSupport(): Promise<boolean> {
-  if (!navigator.gpu) {
+  if (!(navigator as any).gpu) {
     console.warn('[HF] WebGPU not available, will fallback to WASM/CPU');
     return false;
   }
 
   try {
-    const adapter = await navigator.gpu.requestAdapter();
+    const adapter = await (navigator as any).gpu.requestAdapter();
     return adapter !== null;
   } catch (error) {
     console.warn('[HF] WebGPU adapter request failed:', error);
