@@ -50,10 +50,12 @@ export default function UserDashboard() {
 
         {/* Quick Stats */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card>
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-[#3882F6]/10 to-[#3882F6]/5">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-              <Wallet className="h-4 w-4 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-lg bg-[#3882F6]/10 flex items-center justify-center">
+                <Wallet className="h-5 w-5 text-[#3882F6]" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">$0.00</div>
@@ -61,10 +63,12 @@ export default function UserDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-[#9333EA]/10 to-[#9333EA]/5">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Receipts</CardTitle>
-              <Receipt className="h-4 w-4 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-lg bg-[#9333EA]/10 flex items-center justify-center">
+                <Receipt className="h-5 w-5 text-[#9333EA]" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">0</div>
@@ -72,10 +76,12 @@ export default function UserDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-[#1488A6]/10 to-[#1488A6]/5">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Budget Status</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-lg bg-[#1488A6]/10 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-[#1488A6]" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">--</div>
@@ -87,13 +93,13 @@ export default function UserDashboard() {
         {/* Feature Cards */}
         <div className="grid md:grid-cols-2 gap-6">
           <Card className={cn(
-            shouldAnimate ? "hover:border-primary/50 transition-colors" : "",
+            "border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#3882F6] border-2 border-transparent",
             isRestricted ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
           )}>
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Receipt className="w-5 h-5 text-primary" />
+                <div className="w-12 h-12 rounded-xl bg-[#3882F6]/10 flex items-center justify-center">
+                  <Receipt className="w-6 h-6 text-[#3882F6]" />
                 </div>
                 <div>
                   <CardTitle>Receipts & Expenses</CardTitle>
@@ -107,20 +113,23 @@ export default function UserDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full" disabled={isRestricted}>
+              <Button 
+                variant="outline" 
+                className="w-full border-[#3882F6]/20 hover:bg-[#3882F6]/10 hover:text-[#3882F6] hover:border-[#3882F6]" 
+                disabled={isRestricted}
+              >
                 {isRestricted ? "🔒 Locked" : "Coming Soon"}
               </Button>
             </CardContent>
           </Card>
 
           <Card className={cn(
-            shouldAnimate ? "hover:border-primary/50 transition-colors" : "",
-            "cursor-pointer"
+            "border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#9333EA] border-2 border-transparent cursor-pointer"
           )}>
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-primary" />
+                <div className="w-12 h-12 rounded-xl bg-[#9333EA]/10 flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-[#9333EA]" />
                 </div>
                 <div>
                   <CardTitle>Budgets</CardTitle>
@@ -129,18 +138,22 @@ export default function UserDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full">Coming Soon</Button>
+              <Button 
+                variant="outline" 
+                className="w-full border-[#9333EA]/20 hover:bg-[#9333EA]/10 hover:text-[#9333EA] hover:border-[#9333EA]"
+              >
+                Coming Soon
+              </Button>
             </CardContent>
           </Card>
 
           <Card className={cn(
-            shouldAnimate ? "hover:border-primary/50 transition-colors" : "",
-            "cursor-pointer"
+            "border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#1488A6] border-2 border-transparent cursor-pointer"
           )}>
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <User className="w-5 h-5 text-primary" />
+                <div className="w-12 h-12 rounded-xl bg-[#1488A6]/10 flex items-center justify-center">
+                  <User className="w-6 h-6 text-[#1488A6]" />
                 </div>
                 <div>
                   <CardTitle>Profile</CardTitle>
@@ -149,18 +162,22 @@ export default function UserDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full">Coming Soon</Button>
+              <Button 
+                variant="outline" 
+                className="w-full border-[#1488A6]/20 hover:bg-[#1488A6]/10 hover:text-[#1488A6] hover:border-[#1488A6]"
+              >
+                Coming Soon
+              </Button>
             </CardContent>
           </Card>
 
           <Card className={cn(
-            shouldAnimate ? "hover:border-primary/50 transition-colors" : "",
-            "cursor-pointer"
+            "border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#3882F6] border-2 border-transparent cursor-pointer"
           )}>
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Settings className="w-5 h-5 text-primary" />
+                <div className="w-12 h-12 rounded-xl bg-[#3882F6]/10 flex items-center justify-center">
+                  <Settings className="w-6 h-6 text-[#3882F6]" />
                 </div>
                 <div>
                   <CardTitle>Settings</CardTitle>
@@ -169,7 +186,12 @@ export default function UserDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full">Coming Soon</Button>
+              <Button 
+                variant="outline" 
+                className="w-full border-[#3882F6]/20 hover:bg-[#3882F6]/10 hover:text-[#3882F6] hover:border-[#3882F6]"
+              >
+                Coming Soon
+              </Button>
             </CardContent>
           </Card>
         </div>

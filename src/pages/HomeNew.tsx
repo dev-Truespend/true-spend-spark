@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Shield, Lock, Eye, Database, KeyRound, FileCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
@@ -35,28 +36,18 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-white dark:from-blue-950/20 dark:via-purple-950/20 dark:to-black opacity-60"></div>
         
         <div className="relative z-10 max-w-5xl mx-auto text-center space-y-8">
-          {/* Logo with float animation */}
-          <div className="flex justify-center mb-8 animate-float">
-            <img 
-              src={logoGradient} 
-              alt="TrueSpend" 
-              className="h-32 w-32 md:h-40 md:w-40 drop-shadow-2xl"
-            />
-          </div>
-          
           {/* Hero Text */}
           <div className="space-y-6 animate-fade-in-up">
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight">
-              Every Purchase.
+              Track Every Purchase.
               <br />
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Perfectly Rewarded.
+              <span className="bg-gradient-to-r from-[#3882F6] to-[#9333EA] bg-clip-text text-transparent">
+                Maximize Every Reward.
               </span>
             </h1>
             
             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto font-light leading-relaxed">
-              The intelligent expense tracker that puts your privacy first. 
-              Your data stays yours. Always.
+              Smart expense tracking. Uncompromising privacy.
             </p>
           </div>
 
@@ -65,19 +56,24 @@ export default function Home() {
             <Link to="/auth">
               <Button 
                 size="lg" 
-                className="text-lg px-12 py-7 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105"
+                className="text-lg px-12 py-7 rounded-full bg-gradient-to-r from-[#3882F6] to-[#9333EA] hover:opacity-90 shadow-2xl hover:shadow-[#3882F6]/30 transition-all duration-300 hover:scale-105 text-white"
               >
-                Get Started
+                Start 7-Day Free Trial
               </Button>
             </Link>
             <Button 
               size="lg" 
               variant="outline"
-              className="text-lg px-12 py-7 rounded-full border-2 border-gray-300 dark:border-gray-700 hover:border-blue-600 dark:hover:border-blue-400 transition-all duration-300"
+              className="text-lg px-12 py-7 rounded-full border-2 border-gray-300 dark:border-gray-700 hover:border-[#3882F6] dark:hover:border-[#3882F6] transition-all duration-300"
             >
-              Learn More
+              Try Demo First
             </Button>
           </div>
+
+          {/* Trust Badges */}
+          <p className="text-sm text-gray-500 dark:text-gray-500 pt-4">
+            No credit card required • Cancel anytime
+          </p>
         </div>
 
         {/* Scroll indicator */}
@@ -88,53 +84,197 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Privacy First Section */}
+      {/* Privacy Commitment - Pill Badges Section */}
+      <section className="py-20 px-6 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-5xl mx-auto text-center space-y-8">
+          <div className="inline-flex items-center gap-2 text-4xl mb-4">
+            <Shield className="w-10 h-10 text-[#3882F6]" />
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+              Your Data is <span className="text-[#3882F6]">NEVER</span> Sold or Shared
+            </h2>
+          </div>
+          
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
+            Unlike Honey, Rakuten, and other "free" tools that profit from your data, 
+            TrueSpend makes money from subscriptions—<span className="font-semibold text-gray-900 dark:text-white">not surveillance</span>.
+          </p>
+
+          {/* Pill Badges */}
+          <div className="flex flex-wrap justify-center gap-3 pt-6">
+            <div className="rounded-full bg-white dark:bg-gray-900 px-6 py-3 border border-gray-200 dark:border-gray-800 shadow-sm">
+              <span className="text-sm font-medium text-gray-900 dark:text-white">✓ No tracking pixels</span>
+            </div>
+            <div className="rounded-full bg-white dark:bg-gray-900 px-6 py-3 border border-gray-200 dark:border-gray-800 shadow-sm">
+              <span className="text-sm font-medium text-gray-900 dark:text-white">✓ No data brokers</span>
+            </div>
+            <div className="rounded-full bg-white dark:bg-gray-900 px-6 py-3 border border-gray-200 dark:border-gray-800 shadow-sm">
+              <span className="text-sm font-medium text-gray-900 dark:text-white">✓ No targeted ads</span>
+            </div>
+            <div className="rounded-full bg-white dark:bg-gray-900 px-6 py-3 border border-gray-200 dark:border-gray-800 shadow-sm">
+              <span className="text-sm font-medium text-gray-900 dark:text-white">✓ No data selling. Ever.</span>
+            </div>
+          </div>
+
+          <Link to="/privacy" className="inline-block text-[#3882F6] hover:text-[#9333EA] font-medium text-sm transition-colors">
+            Read our Privacy Policy →
+          </Link>
+        </div>
+      </section>
+
+      {/* Your Money is Safe Section */}
       <section className="py-32 px-6 bg-gray-50 dark:bg-gray-950">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#3882F6] to-[#9333EA] flex items-center justify-center">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
+                Your Money is Safe
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-900">
+              <CardContent className="pt-8 pb-8 px-6">
+                <div className="w-14 h-14 rounded-2xl bg-[#3882F6]/10 flex items-center justify-center mb-4">
+                  <Lock className="w-7 h-7 text-[#3882F6]" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Bank-Grade 256-bit Encryption</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Military-grade encryption protects your financial data at rest and in transit.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-900">
+              <CardContent className="pt-8 pb-8 px-6">
+                <div className="w-14 h-14 rounded-2xl bg-[#9333EA]/10 flex items-center justify-center mb-4">
+                  <Eye className="w-7 h-7 text-[#9333EA]" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Read-Only Access</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  We can only view your transactions—never move money or make changes.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-900">
+              <CardContent className="pt-8 pb-8 px-6">
+                <div className="w-14 h-14 rounded-2xl bg-[#1488A6]/10 flex items-center justify-center mb-4">
+                  <Lock className="w-7 h-7 text-[#1488A6]" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Zero Credit Card Numbers Stored</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  We never store full card numbers. Only encrypted transaction metadata.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-900">
+              <CardContent className="pt-8 pb-8 px-6">
+                <div className="w-14 h-14 rounded-2xl bg-[#3882F6]/10 flex items-center justify-center mb-4">
+                  <Database className="w-7 h-7 text-[#3882F6]" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">No Data Selling. Ever.</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Your financial data will never be sold, shared, or monetized. Period.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-900">
+              <CardContent className="pt-8 pb-8 px-6">
+                <div className="w-14 h-14 rounded-2xl bg-[#9333EA]/10 flex items-center justify-center mb-4">
+                  <FileCheck className="w-7 h-7 text-[#9333EA]" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">SOC 2 Compliant Infrastructure</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Enterprise-grade security standards with regular third-party audits.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-900">
+              <CardContent className="pt-8 pb-8 px-6">
+                <div className="w-14 h-14 rounded-2xl bg-[#1488A6]/10 flex items-center justify-center mb-4">
+                  <Shield className="w-7 h-7 text-[#1488A6]" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Trusted by 50,000+ Users</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Join thousands who trust us with their financial privacy.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex justify-center gap-4 pt-8">
+            <div className="rounded-full bg-white dark:bg-gray-900 px-6 py-3 border border-gray-200 dark:border-gray-800 shadow-sm">
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">🔒 SOC 2 Compliant</span>
+            </div>
+            <div className="rounded-full bg-white dark:bg-gray-900 px-6 py-3 border border-gray-200 dark:border-gray-800 shadow-sm">
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">🛡️ AES-256 Encryption</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Privacy First Section */}
+      <section className="py-32 px-6 bg-white dark:bg-black">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-              Privacy. At our core.
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              One Subscription. <span className="bg-gradient-to-r from-[#3882F6] to-[#9333EA] bg-clip-text text-transparent">Every Platform.</span>
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto font-light">
-              We believe privacy isn't just a feature. It's a fundamental human right. 
-              That's why we built TrueSpend from the ground up with privacy as the foundation.
+              Your complete financial command center synchronized across web, mobile, Chrome & Safari—seamlessly working together as one powerful ecosystem.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
-            <Card className="border-0 shadow-2xl bg-white dark:bg-gray-900 hover:shadow-blue-500/20 transition-all duration-500 hover:-translate-y-2">
+            <Card className="border-0 shadow-xl bg-white dark:bg-gray-900 hover:shadow-[#3882F6]/20 transition-all duration-500 hover:-translate-y-2">
               <CardContent className="pt-12 pb-12 px-8 text-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mb-8 mx-auto">
-                  <Lock className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">End-to-End Encryption</h3>
-                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Your financial data is encrypted on your device before it ever reaches our servers. Not even we can read it.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-2xl bg-white dark:bg-gray-900 hover:shadow-purple-500/20 transition-all duration-500 hover:-translate-y-2">
-              <CardContent className="pt-12 pb-12 px-8 text-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-8 mx-auto">
-                  <Eye className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Zero Data Sharing</h3>
-                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  We don't sell, share, or monetize your data. Ever. Your information is yours and yours alone.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-2xl bg-white dark:bg-gray-900 hover:shadow-indigo-500/20 transition-all duration-500 hover:-translate-y-2">
-              <CardContent className="pt-12 pb-12 px-8 text-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center mb-8 mx-auto">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#3882F6] to-[#9333EA] flex items-center justify-center mb-8 mx-auto shadow-lg">
                   <Database className="w-10 h-10 text-white" />
                 </div>
-                <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Local-First Storage</h3>
-                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Your data lives on your device. Sync is optional, and you control what gets backed up.
+                <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">🚀 Web App</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+                  Full-featured dashboard with advanced analytics and reporting.
                 </p>
+                <Badge className="bg-[#3882F6]/10 text-[#3882F6] hover:bg-[#3882F6]/20 border-0">
+                  15 Features
+                </Badge>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-xl bg-white dark:bg-gray-900 hover:shadow-[#9333EA]/20 transition-all duration-500 hover:-translate-y-2">
+              <CardContent className="pt-12 pb-12 px-8 text-center">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#9333EA] to-[#1488A6] flex items-center justify-center mb-8 mx-auto shadow-lg">
+                  <Eye className="w-10 h-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">📱 Mobile App</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+                  Capture receipts on-the-go. iOS & Android native experience.
+                </p>
+                <Badge className="bg-[#9333EA]/10 text-[#9333EA] hover:bg-[#9333EA]/20 border-0">
+                  13 Features
+                </Badge>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-xl bg-white dark:bg-gray-900 hover:shadow-[#1488A6]/20 transition-all duration-500 hover:-translate-y-2">
+              <CardContent className="pt-12 pb-12 px-8 text-center">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#1488A6] to-[#3882F6] flex items-center justify-center mb-8 mx-auto shadow-lg">
+                  <Lock className="w-10 h-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">🔌 Browser Extensions</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+                  Track spending seamlessly as you browse. Chrome & Safari support.
+                </p>
+                <Badge className="bg-[#1488A6]/10 text-[#1488A6] hover:bg-[#1488A6]/20 border-0">
+                  11 Features
+                </Badge>
               </CardContent>
             </Card>
           </div>
