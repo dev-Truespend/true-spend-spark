@@ -8,6 +8,8 @@ import { MLCostTracker } from "@/components/admin/MLCostTracker";
 import { ModelPerformanceTracker } from "@/components/admin/ModelPerformanceTracker";
 import { MLABTestManager } from "@/components/admin/MLABTestManager";
 import { ModelDeploymentPipeline } from "@/components/admin/ModelDeploymentPipeline";
+import { MLModelHealthMonitor } from "@/components/admin/MLModelHealthMonitor";
+import { TrainingDataQualityChecker } from "@/components/admin/TrainingDataQualityChecker";
 
 export default function MLTraining() {
   return (
@@ -22,6 +24,8 @@ export default function MLTraining() {
       <Tabs defaultValue="jobs" className="space-y-6">
         <TabsList>
           <TabsTrigger value="jobs">Training Jobs</TabsTrigger>
+          <TabsTrigger value="health">Health</TabsTrigger>
+          <TabsTrigger value="quality">Data Quality</TabsTrigger>
           <TabsTrigger value="alerts">Alerts</TabsTrigger>
           <TabsTrigger value="costs">Costs</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
@@ -34,6 +38,14 @@ export default function MLTraining() {
 
         <TabsContent value="jobs" className="space-y-4">
           <TrainingJobMonitor />
+        </TabsContent>
+
+        <TabsContent value="health" className="space-y-4">
+          <MLModelHealthMonitor />
+        </TabsContent>
+
+        <TabsContent value="quality" className="space-y-4">
+          <TrainingDataQualityChecker />
         </TabsContent>
 
         <TabsContent value="alerts" className="space-y-4">
