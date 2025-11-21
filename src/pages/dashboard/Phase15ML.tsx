@@ -7,7 +7,8 @@ import { ProphetForecaster } from '@/components/admin/ProphetForecaster';
 import { ALSRecommender } from '@/components/admin/ALSRecommender';
 import { DQNCacheOptimizer } from '@/components/admin/DQNCacheOptimizer';
 import { TrainingJobMonitor } from '@/components/admin/TrainingJobMonitor';
-import { Brain, Target, Search, TrendingUp, Calendar, Store, Zap } from 'lucide-react';
+import { Phase15CompletionPlan } from '@/components/ml/Phase15CompletionPlan';
+import { Brain, Target, Search, TrendingUp, Calendar, Store, Zap, Map } from 'lucide-react';
 
 export default function Phase15ML() {
   return (
@@ -21,8 +22,12 @@ export default function Phase15ML() {
 
       <TrainingJobMonitor />
 
-      <Tabs defaultValue="budget" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7 h-auto flex-wrap">
+      <Tabs defaultValue="roadmap" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-8 h-auto flex-wrap">
+          <TabsTrigger value="roadmap" className="flex items-center gap-2">
+            <Map className="h-4 w-4" />
+            Roadmap
+          </TabsTrigger>
           <TabsTrigger value="budget" className="flex items-center gap-2">
             <Brain className="h-4 w-4" />
             Budget
@@ -52,6 +57,10 @@ export default function Phase15ML() {
             DQN Cache
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="roadmap">
+          <Phase15CompletionPlan />
+        </TabsContent>
 
         <TabsContent value="budget">
           <BudgetOptimizer />
