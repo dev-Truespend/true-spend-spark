@@ -15,7 +15,16 @@ serve(async (req) => {
     const { model_type, training_data_id, config } = await req.json();
 
     // Validate model type
-    const validTypes = ['dqn_cache', 'lstm_anomaly', 'distilbert_classifier', 'als_recommender'];
+    const validTypes = [
+      'dqn_cache', 
+      'lstm_anomaly', 
+      'distilbert_classifier', 
+      'als_recommender',
+      'lambdamart_ranking',
+      'prophet_forecast',
+      'als_collab_filter',
+      'dqn_cache_policy'
+    ];
     if (!validTypes.includes(model_type)) {
       return new Response(
         JSON.stringify({ error: 'Invalid model type', valid_types: validTypes }),
@@ -57,6 +66,10 @@ serve(async (req) => {
       'lstm_anomaly': 'train-lstm-anomaly-detector',
       'distilbert_classifier': 'train-distilbert-classifier',
       'als_recommender': 'train-als-recommender',
+      'lambdamart_ranking': 'train-lambdamart-model',
+      'prophet_forecast': 'train-prophet-forecast',
+      'als_collab_filter': 'train-als-recommender',
+      'dqn_cache_policy': 'train-dqn-cache-policy',
     };
 
     // Trigger Modal training job
