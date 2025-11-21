@@ -1,6 +1,7 @@
 // Offline Sync Service - Bidirectional sync with conflict resolution
 import { supabase } from '@/integrations/supabase/client';
 import { addToSyncQueue } from '@/lib/db/indexedDB';
+import { ErrorHandler } from '@/lib/errors/errorHandler';
 
 export interface SyncConflict {
   table: string;
