@@ -2258,6 +2258,113 @@ export type Database = {
           },
         ]
       }
+      ml_model_registry: {
+        Row: {
+          artifact_url: string
+          created_at: string | null
+          deployed_at: string | null
+          id: string
+          metrics: Json | null
+          model_id: string
+          model_type: string
+          status: string
+          storage_bucket: string | null
+          storage_path: string | null
+          trained_at: string | null
+          training_config: Json | null
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          artifact_url: string
+          created_at?: string | null
+          deployed_at?: string | null
+          id?: string
+          metrics?: Json | null
+          model_id: string
+          model_type: string
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          trained_at?: string | null
+          training_config?: Json | null
+          updated_at?: string | null
+          version: string
+        }
+        Update: {
+          artifact_url?: string
+          created_at?: string | null
+          deployed_at?: string | null
+          id?: string
+          metrics?: Json | null
+          model_id?: string
+          model_type?: string
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          trained_at?: string | null
+          training_config?: Json | null
+          updated_at?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
+      ml_training_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          error_message: string | null
+          id: string
+          logs_url: string | null
+          modal_job_id: string | null
+          model_type: string
+          resulting_model_id: string | null
+          started_at: string | null
+          status: string
+          training_data_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          logs_url?: string | null
+          modal_job_id?: string | null
+          model_type: string
+          resulting_model_id?: string | null
+          started_at?: string | null
+          status?: string
+          training_data_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          logs_url?: string | null
+          modal_job_id?: string | null
+          model_type?: string
+          resulting_model_id?: string | null
+          started_at?: string | null
+          status?: string
+          training_data_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ml_training_jobs_resulting_model_id_fkey"
+            columns: ["resulting_model_id"]
+            isOneToOne: false
+            referencedRelation: "ml_model_registry"
+            referencedColumns: ["model_id"]
+          },
+        ]
+      }
       notification_categories: {
         Row: {
           category_description: string | null
