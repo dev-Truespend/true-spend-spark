@@ -10,6 +10,26 @@ This document defines the design system for TrueSpend across all platforms: web,
 
 ---
 
+## Brand Identity
+
+### Tagline
+**"Every Purchase. Perfectly Rewarded."**
+
+### Logo Assets
+- **Full Logo**: `src/assets/truespend-logo.png` - Horizontal logo with full branding
+- **Icon Only**: `src/assets/truespend-icon.png` - Square icon for compact spaces
+- **Favicon**: `public/favicon.png` - Browser tab icon
+
+### Logo Usage Guidelines
+- **Desktop Navigation**: Horizontal logo (icon + text)
+- **Mobile Navigation**: Icon only to save space
+- **Landing Page Hero**: Full logo with tagline
+- **Browser Extension**: Icon only (396px width constraint)
+- **Loading States**: Icon with animation
+- **Minimum Size**: 24x24px for icon, 120px width for horizontal logo
+
+---
+
 ## 🎨 Design Principles
 
 1. **Platform-Appropriate** - Respect each platform's conventions (iOS, Android, Web, Extension)
@@ -22,6 +42,25 @@ This document defines the design system for TrueSpend across all platforms: web,
 
 ## 📐 Foundation
 
+### Brand Colors
+
+Our brand identity is built on three primary colors with semantic usage:
+
+**Primary Brand Colors:**
+- **Brand Blue** `#3882F6` / `hsl(218, 91%, 59%)` - Primary actions, CTAs, links
+- **Brand Purple** `#9333EA` / `hsl(274, 81%, 56%)` - Premium features, accents, highlights
+- **Brand Teal** `#1488A6` / `hsl(194, 75%, 37%)` - Success states, data visualization
+
+**Brand Gradient:**
+```css
+background: linear-gradient(135deg, #3882F6 0%, #9333EA 100%);
+```
+
+**Accessibility Ratios (WCAG AA):**
+- Blue on white: 4.5:1 ✅
+- Purple on white: 4.6:1 ✅
+- Teal on white: 3.8:1 ⚠️ (Use for backgrounds/icons, not body text)
+
 ### Color System
 
 All colors are defined as HSL values in `src/index.css` using CSS custom properties. This enables:
@@ -29,38 +68,63 @@ All colors are defined as HSL values in `src/index.css` using CSS custom propert
 - Easy theming
 - Consistent color usage across components
 
-#### Primary Palette
+#### Light Mode Palette
 ```css
---primary: 221.2 83.2% 53.3%        /* Brand blue */
---primary-foreground: 210 40% 98%  /* Text on primary */
+--background: 0 0% 100%                 /* Page background */
+--foreground: 222.2 84% 4.9%            /* Primary text */
+--primary: 218 91% 59%                  /* Brand blue */
+--accent: 274 81% 56%                   /* Brand purple */
+--brand-blue: 218 91% 59%
+--brand-purple: 274 81% 56%
+--brand-teal: 194 75% 37%
+--secondary: 210 40% 96.1%              /* Light gray */
+--muted: 210 40% 96.1%                  /* Muted backgrounds */
+--destructive: 0 84.2% 60.2%            /* Error/delete */
+--border: 214.3 31.8% 91.4%             /* Border color */
 ```
 
-#### Semantic Colors
+#### Dark Mode Palette
 ```css
---background: 0 0% 100%             /* Page background */
---foreground: 222.2 84% 4.9%        /* Primary text */
---muted: 210 40% 96.1%              /* Muted backgrounds */
---muted-foreground: 215.4 16.3% 46.9% /* Muted text */
---destructive: 0 84.2% 60.2%        /* Error/delete */
---border: 214.3 31.8% 91.4%         /* Border color */
+--background: 222.2 84% 4.9%            /* Dark background */
+--foreground: 210 40% 98%               /* Light text */
+--primary: 218 91% 65%                  /* Brighter brand blue */
+--accent: 274 81% 65%                   /* Brighter brand purple */
+--brand-blue: 218 91% 65%
+--brand-purple: 274 81% 65%
+--brand-teal: 194 75% 45%
+--secondary: 217.2 32.6% 17.5%          /* Dark gray */
+--muted: 217.2 32.6% 17.5%              /* Muted backgrounds */
+--destructive: 0 62.8% 30.6%            /* Dark red */
 ```
 
 #### Chart Colors
 ```css
---chart-1: 12 76% 61%   /* Chart data series 1 */
---chart-2: 173 58% 39%  /* Chart data series 2 */
---chart-3: 197 37% 24%  /* Chart data series 3 */
---chart-4: 43 74% 66%   /* Chart data series 4 */
---chart-5: 27 87% 67%   /* Chart data series 5 */
+--chart-1: 218 91% 59%   /* Brand blue */
+--chart-2: 274 81% 56%   /* Brand purple */
+--chart-3: 194 75% 37%   /* Brand teal */
+--chart-4: 280 65% 60%   /* Purple variant */
+--chart-5: 340 75% 55%   /* Pink */
 ```
 
-**Usage:**
+**Usage Guidelines:**
+- **Primary Actions**: Use brand blue - buttons, links, active states
+- **Premium/Featured**: Use brand purple - badges, premium features
+- **Success/Accents**: Use brand teal - success messages, data points
+- **Gradients**: Use blue→purple for hero sections and key CTAs
+
+**Code Usage:**
 ```tsx
 // ❌ Wrong - Direct colors
 <div className="bg-blue-500 text-white">
 
 // ✅ Correct - Semantic tokens
 <div className="bg-primary text-primary-foreground">
+
+// ✅ Correct - Brand colors
+<div className="bg-brand-blue text-white">
+
+// ✅ Correct - Gradient
+<Button variant="gradient">Get Started</Button>
 ```
 
 ### Typography

@@ -3,6 +3,14 @@
  * Central source of truth for design decisions across all platforms
  */
 
+// Brand Colors
+export const brandColors = {
+  blue: '#3882F6',      // Primary Blue - HSL: 218, 91%, 59%
+  purple: '#9333EA',    // Primary Purple - HSL: 274, 81%, 56%
+  teal: '#1488A6',      // Accent Teal - HSL: 194, 75%, 37%
+  gradient: 'linear-gradient(135deg, #3882F6 0%, #9333EA 100%)',
+} as const;
+
 // Spacing System (4px grid)
 export const spacing = {
   xs: '0.25rem',  // 4px
