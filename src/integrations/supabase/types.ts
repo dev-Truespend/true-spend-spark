@@ -5023,6 +5023,16 @@ export type Database = {
       }
     }
     Views: {
+      extension_telemetry_stats: {
+        Row: {
+          active_records: number | null
+          expired_records: number | null
+          newest_record: string | null
+          oldest_record: string | null
+          total_records: number | null
+        }
+        Relationships: []
+      }
       ocr_operational_metrics: {
         Row: {
           avg_cost_per_request: number | null
