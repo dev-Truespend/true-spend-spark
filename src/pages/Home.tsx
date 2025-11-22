@@ -230,7 +230,7 @@ export default function Home() {
               <img 
                 src={heroPremium} 
                 alt="Smart AI-powered rewards with credit cards" 
-                className="relative w-64 h-64 object-contain drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
+                className="relative w-64 h-64 object-cover rounded-2xl drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
               />
               </div>
               <div>
@@ -251,7 +251,7 @@ export default function Home() {
                 <img 
                   src={multiDevice} 
                   alt="Everywhere You Shop" 
-                  className="relative w-64 h-64 object-contain drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
+                  className="relative w-64 h-64 object-cover rounded-2xl drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
                   style={{ animationDelay: '1s' }}
                 />
               </div>
@@ -273,7 +273,7 @@ export default function Home() {
                 <img 
                   src={localData} 
                   alt="Privacy First" 
-                  className="relative w-64 h-64 object-contain drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
+                  className="relative w-64 h-64 object-cover rounded-2xl drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
                   style={{ animationDelay: '2s' }}
                 />
               </div>
