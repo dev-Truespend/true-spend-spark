@@ -152,64 +152,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Comparison Table */}
-          <Card className="border-2 shadow-premium">
-            <CardContent className="pt-8">
-              <div className="grid md:grid-cols-3 gap-8 text-center">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-4">Other Apps</p>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-center gap-2 text-destructive">
-                      <X className="w-5 h-5" />
-                      <span className="text-sm">Sell your data</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2 text-destructive">
-                      <X className="w-5 h-5" />
-                      <span className="text-sm">Track spending habits</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2 text-destructive">
-                      <X className="w-5 h-5" />
-                      <span className="text-sm">Share with advertisers</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="border-x">
-                  <p className="text-sm font-semibold text-brand-purple mb-4">TrueSpend</p>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-center gap-2 text-brand-teal">
-                      <Check className="w-5 h-5" />
-                      <span className="text-sm font-medium">Your data stays yours</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2 text-brand-teal">
-                      <Check className="w-5 h-5" />
-                      <span className="text-sm font-medium">Zero tracking</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2 text-brand-teal">
-                      <Check className="w-5 h-5" />
-                      <span className="text-sm font-medium">Complete privacy</span>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-4">Banks</p>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <X className="w-5 h-5" />
-                      <span className="text-sm">Limited insights</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <X className="w-5 h-5" />
-                      <span className="text-sm">No AI optimization</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <X className="w-5 h-5" />
-                      <span className="text-sm">Single account view</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </section>
 
