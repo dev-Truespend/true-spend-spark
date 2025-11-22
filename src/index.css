@@ -447,3 +447,29 @@ html {
     hsl(var(--brand-purple) / 0.1) 50%, 
     hsl(var(--brand-teal) / 0.1) 100%);
 }
+
+/* 3D Card Effects */
+.card-3d {
+  transform: perspective(1000px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-3d:hover {
+  transform: perspective(1000px) rotateY(2deg) rotateX(2deg);
+}
+
+/* Particle Float Animation */
+@keyframes particle-float {
+  0%, 100% { 
+    transform: translateY(0) translateX(0); 
+    opacity: 0.2;
+  }
+  50% { 
+    transform: translateY(-20px) translateX(10px); 
+    opacity: 0.6;
+  }
+}
+
+.animate-particle-float {
+  animation: particle-float 4s ease-in-out infinite;
+}
