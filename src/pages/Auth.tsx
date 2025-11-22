@@ -16,9 +16,10 @@ import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { ConsentBlock } from "@/components/auth/ConsentBlock";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Loader2, Shield, Lock, Eye, CheckCircle, Smartphone, KeyRound } from "lucide-react";
+import { Loader2, Shield, Lock, Eye, CheckCircle, Smartphone, KeyRound, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import authSecurityShield from "@/assets/auth-security-shield.png";
+import { Link } from "react-router-dom";
+import authEnterprise from "@/assets/auth-enterprise.png";
 
 const passwordValidation = z
   .string()
@@ -262,79 +263,76 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Left Side - Premium Security Visual */}
-      <div className="hidden lg:flex flex-col justify-center items-center bg-gradient-to-br from-brand-blue via-brand-purple to-brand-teal p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
+      {/* Left Side - Enterprise Security Visual */}
+      <div className="hidden lg:flex flex-col justify-center items-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/5 via-brand-purple/5 to-brand-teal/5"></div>
         
-        {/* Animated particles */}
-        <div className="absolute inset-0">
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-2 h-2 bg-white/20 rounded-full animate-particle-float"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${3 + Math.random() * 2}s`
-              }}
+        <div className="relative z-10 w-full max-w-lg space-y-12">
+          <div className="text-center">
+            <img 
+              src={authEnterprise} 
+              alt="Enterprise Security Architecture" 
+              className="w-full h-auto mx-auto drop-shadow-2xl"
             />
-          ))}
-        </div>
-
-        <div className="relative z-10 max-w-lg text-center space-y-8">
-          <img 
-            src={authSecurityShield} 
-            alt="Bank-Level Security" 
-            className="w-64 h-64 mx-auto drop-shadow-2xl animate-float-slow"
-          />
+          </div>
           
-          <div className="space-y-4 text-white">
-            <h1 className="text-4xl font-bold">Bank-Level Security</h1>
-            <p className="text-xl text-white/90">
-              Your financial data is protected with enterprise-grade encryption and zero-trust architecture
+          <div className="space-y-6 text-center">
+            <h1 className="text-4xl font-bold text-white">Enterprise-Grade Security</h1>
+            <p className="text-lg text-gray-300">
+              Bank-level encryption and zero-trust architecture protecting your financial data
             </p>
           </div>
 
-          {/* Trust Badges */}
-          <div className="grid grid-cols-2 gap-4 pt-8">
-            <div className="glass p-4 rounded-xl text-white">
-              <Lock className="w-8 h-8 mb-2 mx-auto" />
-              <div className="font-semibold">256-bit Encryption</div>
-              <div className="text-sm text-white/80">Military Grade</div>
+          {/* Trust Badges Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-xl hover:bg-white/10 transition-all">
+              <Lock className="w-8 h-8 mb-3 text-brand-blue" />
+              <div className="font-semibold text-white text-sm">AES-256 Encryption</div>
+              <div className="text-xs text-gray-400 mt-1">Military-grade security</div>
             </div>
-            <div className="glass p-4 rounded-xl text-white">
-              <Eye className="w-8 h-8 mb-2 mx-auto" />
-              <div className="font-semibold">Zero Tracking</div>
-              <div className="text-sm text-white/80">Private by Design</div>
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-xl hover:bg-white/10 transition-all">
+              <Shield className="w-8 h-8 mb-3 text-brand-purple" />
+              <div className="font-semibold text-white text-sm">SOC 2 Type II</div>
+              <div className="text-xs text-gray-400 mt-1">Certified secure</div>
             </div>
-            <div className="glass p-4 rounded-xl text-white">
-              <Shield className="w-8 h-8 mb-2 mx-auto" />
-              <div className="font-semibold">SOC 2 Type II</div>
-              <div className="text-sm text-white/80">Certified Secure</div>
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-xl hover:bg-white/10 transition-all">
+              <Eye className="w-8 h-8 mb-3 text-brand-teal" />
+              <div className="font-semibold text-white text-sm">Zero Knowledge</div>
+              <div className="text-xs text-gray-400 mt-1">Private by design</div>
             </div>
-            <div className="glass p-4 rounded-xl text-white">
-              <CheckCircle className="w-8 h-8 mb-2 mx-auto" />
-              <div className="font-semibold">GDPR Compliant</div>
-              <div className="text-sm text-white/80">EU Standard</div>
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-xl hover:bg-white/10 transition-all">
+              <CheckCircle className="w-8 h-8 mb-3 text-brand-blue" />
+              <div className="font-semibold text-white text-sm">GDPR Compliant</div>
+              <div className="text-xs text-gray-400 mt-1">EU standards</div>
             </div>
           </div>
 
-          <div className="pt-8 text-white/70 text-sm">
-            Trusted by 10,000+ users worldwide
+          <div className="text-center pt-4">
+            <p className="text-sm text-gray-400">Trusted by 10,000+ users worldwide</p>
           </div>
         </div>
       </div>
 
       {/* Right Side - Authentication Form */}
-      <div className="flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-md space-y-8">
-          {/* Logo & Tagline */}
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal bg-clip-text text-transparent">
-              TrueSpend
-            </h1>
-            <p className="text-muted-foreground">Privacy-first expense tracking</p>
+      <div className="flex flex-col min-h-screen bg-background">
+        {/* Back to Home Button */}
+        <div className="p-6">
+          <Link to="/">
+            <Button variant="ghost" size="sm" className="gap-2 hover:bg-muted">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </Button>
+          </Link>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-full max-w-md space-y-8">
+            {/* Logo & Tagline */}
+            <div className="text-center space-y-3">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal bg-clip-text text-transparent">
+                TrueSpend
+              </h1>
+              <p className="text-lg text-muted-foreground">Secure access to your financial data</p>
             {isExtensionMode && (
               <Badge variant="secondary" className="mt-2">
                 <Shield className="w-3 h-3 mr-1" />
@@ -529,6 +527,7 @@ export default function Auth() {
               Your data never leaves your control
             </p>
             <p>Protected by end-to-end encryption • GDPR compliant • No tracking</p>
+          </div>
           </div>
         </div>
       </div>

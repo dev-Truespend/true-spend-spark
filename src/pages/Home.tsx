@@ -7,9 +7,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { GetInTouch } from "@/components/GetInTouch";
 import heroPremium from "@/assets/hero-premium.png";
-import privacyShield from "@/assets/privacy-shield.png";
+import privacyPremium from "@/assets/privacy-premium.png";
 import multiDevice from "@/assets/multi-device-ecosystem.png";
-import aiCards from "@/assets/ai-card-recommendations.png";
+import rewardsPremium from "@/assets/rewards-premium.png";
 import localData from "@/assets/local-first-data.png";
 
 export default function Home() {
@@ -114,11 +114,11 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 gap-8 items-center mb-16">
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-brand-purple/20 to-brand-blue/20 blur-3xl rounded-full animate-pulse-slow"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/20 via-brand-purple/20 to-brand-teal/20 blur-3xl animate-pulse-slow"></div>
               <img 
-                src={privacyShield} 
-                alt="Privacy Protection" 
-                className="relative w-full h-auto drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
+                src={privacyPremium} 
+                alt="Enterprise-grade privacy and security" 
+                className="relative w-full h-auto drop-shadow-2xl transform group-hover:scale-[1.02] transition-all duration-700"
               />
             </div>
             <div className="space-y-6">
@@ -228,8 +228,8 @@ export default function Home() {
               <div className="relative mx-auto w-64 h-64 group">
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/20 to-brand-purple/20 blur-2xl rounded-full animate-pulse-slow"></div>
                 <img 
-                  src={aiCards} 
-                  alt="Smart Rewards" 
+                  src={rewardsPremium} 
+                  alt="Smart AI-powered rewards" 
                   className="relative w-full h-full object-contain drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
                 />
               </div>
