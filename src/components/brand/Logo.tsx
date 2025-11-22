@@ -14,7 +14,7 @@ export const Logo = ({ className = '', onClick }: LogoProps) => {
       <img 
         src={logoIcon} 
         alt="TrueSpend" 
-        className="h-8 w-8"
+        className="h-8 w-8 animate-logo-bounce"
       />
       <span className="text-xl font-bold bg-gradient-to-r from-[#3882F6] to-[#9333EA] bg-clip-text text-transparent">
         TrueSpend

@@ -473,3 +473,34 @@ html {
 .animate-particle-float {
   animation: particle-float 4s ease-in-out infinite;
 }
+
+/* Floating Animation */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+/* Pulse Slow Animation */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Logo Bounce */
+@keyframes logo-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-logo-bounce {
+  animation: logo-bounce 3s ease-in-out infinite;
+}
+
