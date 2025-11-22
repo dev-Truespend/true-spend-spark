@@ -83,38 +83,47 @@ export function GlobalNav() {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-black/70 backdrop-blur-2xl border-b border-border/50 shadow-sm">
       <div className="container mx-auto px-8">
-        <div className="flex items-center gap-8 h-16">
+        <div className="flex items-center justify-between h-20">
           <Logo onClick={handleLogoClick} />
-          <nav className="flex gap-1 ml-auto items-center">
-            {accessibleItems.slice(0, 5).map(item => {
-              const Icon = item.icon;
-              const isActive = location.pathname.startsWith(item.route) && item.route !== '/' 
-                            || (item.route === '/' && location.pathname === '/');
-              
-              return (
-                <Link key={item.id} to={item.route}>
-                  <Button 
-                    variant={isActive ? 'default' : 'ghost'}
-                    size="sm"
-                    className="gap-2 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
+          
+          <nav className="flex items-center gap-8">
+            {/* Navigation Links */}
+            <div className="hidden md:flex items-center gap-8">
+              {accessibleItems.slice(0, 5).map(item => {
+                const Icon = item.icon;
+                const isActive = location.pathname.startsWith(item.route) && item.route !== '/' 
+                              || (item.route === '/' && location.pathname === '/');
+                
+                return (
+                  <Link 
+                    key={item.id} 
+                    to={item.route}
+                    className="relative group"
                   >
-                    <Icon className="w-4 h-4" />
-                    {item.label}
-                  </Button>
-                </Link>
-              );
-            })}
+                    <span className={`text-sm font-semibold transition-all duration-300 ${
+                      isActive 
+                        ? 'text-foreground' 
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}>
+                      {item.label}
+                    </span>
+                    <span className={`absolute -bottom-1 left-0 h-[2px] bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal transition-all duration-300 ${
+                      isActive ? 'w-full' : 'w-0 group-hover:w-full'
+                    }`}></span>
+                  </Link>
+                );
+              })}
+            </div>
             
             {!user && (
               <Link to="/auth">
                 <Button 
-                  size="sm"
-                  variant="outline"
-                  className="gap-2 border-2 border-gray-300 dark:border-gray-700 hover:border-[#3882F6] hover:text-[#3882F6] transition-all ml-2"
+                  size="lg"
+                  className="bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal hover:opacity-90 text-white font-semibold px-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                 >
-                  Sign In / Sign Up
+                  Get Started
                 </Button>
               </Link>
             )}

@@ -366,6 +366,183 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section className="py-32 px-6 bg-white dark:bg-black">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center space-y-6 mb-20">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#3882F6]/10 via-[#9333EA]/10 to-[#1488A6]/10 border border-gray-200 dark:border-gray-800">
+              <Sparkles className="w-4 h-4 text-[#3882F6]" />
+              <span className="text-sm font-semibold bg-gradient-to-r from-[#3882F6] via-[#9333EA] to-[#1488A6] bg-clip-text text-transparent">Simple Pricing</span>
+            </div>
+            
+            <h2 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white">
+              Choose Your Plan
+            </h2>
+            
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              Start free, upgrade anytime. All plans include unlimited transactions and cross-platform sync.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Basic Plan */}
+            <Card className="relative border-2 border-gray-200 dark:border-gray-800 hover:border-[#3882F6]/50 transition-all duration-300 bg-white dark:bg-gray-900">
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Basic</h3>
+                    <p className="text-gray-600 dark:text-gray-400">Perfect for getting started</p>
+                  </div>
+                  
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-5xl font-bold text-gray-900 dark:text-white">Free</span>
+                  </div>
+
+                  <div className="space-y-4 pt-6">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#3882F6] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Up to 100 transactions/month</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#3882F6] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Basic receipt scanning</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#3882F6] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Manual transaction entry</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#3882F6] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Mobile & web access</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#3882F6] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Basic budgeting tools</span>
+                    </div>
+                  </div>
+
+                  <Link to="/auth" className="block">
+                    <Button variant="outline" className="w-full mt-8 border-2 hover:bg-gray-100 dark:hover:bg-gray-800">
+                      Get Started Free
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Plus Plan - Featured */}
+            <Card className="relative border-2 border-[#9333EA] shadow-2xl shadow-[#9333EA]/20 scale-105 bg-gradient-to-br from-white to-[#9333EA]/5 dark:from-gray-900 dark:to-[#9333EA]/10">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-gradient-to-r from-[#3882F6] via-[#9333EA] to-[#1488A6] rounded-full">
+                <span className="text-xs font-bold text-white">MOST POPULAR</span>
+              </div>
+              
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Plus</h3>
+                    <p className="text-gray-600 dark:text-gray-400">For serious savers</p>
+                  </div>
+                  
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-5xl font-bold bg-gradient-to-r from-[#3882F6] via-[#9333EA] to-[#1488A6] bg-clip-text text-transparent">$9.99</span>
+                    <span className="text-gray-600 dark:text-gray-400">/month</span>
+                  </div>
+
+                  <div className="space-y-4 pt-6">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#9333EA] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-900 dark:text-white font-medium">Unlimited transactions</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#9333EA] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-900 dark:text-white font-medium">AI-powered receipt scanning</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#9333EA] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-900 dark:text-white font-medium">Smart card recommendations</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#9333EA] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-900 dark:text-white font-medium">Basic geofencing (5 zones)</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#9333EA] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-900 dark:text-white font-medium">Priority support</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#9333EA] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-900 dark:text-white font-medium">Advanced analytics</span>
+                    </div>
+                  </div>
+
+                  <Link to="/auth" className="block">
+                    <Button className="w-full mt-8 bg-gradient-to-r from-[#3882F6] via-[#9333EA] to-[#1488A6] hover:opacity-90 text-white font-semibold shadow-lg">
+                      Start Plus Trial
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Elite Plan */}
+            <Card className="relative border-2 border-gray-200 dark:border-gray-800 hover:border-[#1488A6]/50 transition-all duration-300 bg-white dark:bg-gray-900">
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Elite</h3>
+                    <p className="text-gray-600 dark:text-gray-400">Maximum rewards & insights</p>
+                  </div>
+                  
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-5xl font-bold bg-gradient-to-r from-[#1488A6] to-[#3882F6] bg-clip-text text-transparent">$18.99</span>
+                    <span className="text-gray-600 dark:text-gray-400">/month</span>
+                  </div>
+
+                  <div className="space-y-4 pt-6">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#1488A6] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-900 dark:text-white font-medium">Everything in Plus</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#1488A6] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-900 dark:text-white font-medium">Unlimited geofencing zones</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#1488A6] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-900 dark:text-white font-medium">Real-time spending alerts</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#1488A6] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-900 dark:text-white font-medium">Dedicated account manager</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#1488A6] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-900 dark:text-white font-medium">API access & integrations</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-[#1488A6] flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-900 dark:text-white font-medium">White-label options</span>
+                    </div>
+                  </div>
+
+                  <Link to="/auth" className="block">
+                    <Button variant="outline" className="w-full mt-8 border-2 border-[#1488A6] text-[#1488A6] hover:bg-[#1488A6] hover:text-white">
+                      Start Elite Trial
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center mt-16">
+            <p className="text-gray-600 dark:text-gray-400">
+              All plans include 14-day free trial • Cancel anytime • No credit card required
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Security Section */}
       <section className="py-32 px-6 bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-black border-y border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto">
