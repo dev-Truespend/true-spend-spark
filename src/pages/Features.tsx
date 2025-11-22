@@ -7,7 +7,7 @@ import {
   ShoppingCart, Zap, RefreshCw, Camera, ScanLine, Bot,
   CloudOff, MapPin, Bell
 } from "lucide-react";
-import multiDevice from "@/assets/multi-device-ecosystem.png";
+import ecosystemDiagram from "@/assets/ecosystem-diagram.png";
 import aiCards from "@/assets/ai-card-recommendations.png";
 import localData from "@/assets/local-first-data.png";
 import browserShoppingTracker from "@/assets/browser-shopping-tracker.png";
@@ -39,13 +39,13 @@ export default function Features() {
             </p>
           </div>
           
-          {/* Multi-Device Hero Image */}
-          <div className="relative group max-w-4xl mx-auto">
-            <div className="absolute inset-0 bg-gradient-to-r from-brand-blue/20 via-brand-purple/20 to-brand-teal/20 blur-3xl rounded-full group-hover:blur-2xl transition-all animate-pulse-slow"></div>
+          {/* Ecosystem Diagram */}
+          <div className="relative group max-w-5xl mx-auto">
+            <div className="absolute inset-0 bg-gradient-to-r from-brand-blue/10 via-brand-purple/10 to-brand-teal/10 blur-3xl rounded-full animate-pulse-slow"></div>
             <img 
-              src={multiDevice} 
-              alt="Multi-device ecosystem" 
-              className="relative w-full h-auto drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
+              src={ecosystemDiagram} 
+              alt="TrueSpend ecosystem across all platforms" 
+              className="relative w-full h-auto drop-shadow-2xl transform group-hover:scale-[1.02] transition-transform duration-700"
             />
           </div>
         </div>
