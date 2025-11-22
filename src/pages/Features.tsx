@@ -8,8 +8,6 @@ import {
   CloudOff, MapPin, Bell
 } from "lucide-react";
 import ecosystemProfessional from "@/assets/ecosystem-professional.png";
-import aiCards from "@/assets/ai-card-recommendations.png";
-import localData from "@/assets/local-first-data.png";
 import browserShoppingTracker from "@/assets/browser-shopping-tracker.png";
 import browserMerchantDetect from "@/assets/browser-merchant-detect.png";
 import browserAutoSync from "@/assets/browser-auto-sync.png";
@@ -256,110 +254,6 @@ export default function Features() {
         </div>
       </section>
 
-      {/* Feature Showcase with Animated Images */}
-      <section className="py-24 px-6 bg-gradient-to-br from-brand-purple/5 via-background to-brand-blue/5">
-        <div className="container mx-auto max-w-6xl">
-          <div className="space-y-24">
-            {/* AI Features Section */}
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6 order-2 lg:order-1">
-                <Badge variant="secondary" className="text-sm px-4 py-1">AI-Powered</Badge>
-                <h3 className="text-3xl font-bold">Smart Recommendations That Save You Money</h3>
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  Our AI analyzes your spending patterns and recommends the best credit cards for maximum rewards on every purchase. Stop leaving money on the table.
-                </p>
-                <ul className="space-y-4">
-                  <li className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-blue/10 flex items-center justify-center flex-shrink-0">
-                      <Brain className="w-5 h-5 text-brand-blue" />
-                    </div>
-                    <div>
-                      <div className="font-semibold mb-1">Personalized Card Matching</div>
-                      <div className="text-sm text-muted-foreground">Get recommendations based on your unique spending habits</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-purple/10 flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="w-5 h-5 text-brand-purple" />
-                    </div>
-                    <div>
-                      <div className="font-semibold mb-1">Maximize Rewards</div>
-                      <div className="text-sm text-muted-foreground">Earn 2-5x more cashback and points automatically</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="w-5 h-5 text-brand-teal" />
-                    </div>
-                    <div>
-                      <div className="font-semibold mb-1">Real-Time Optimization</div>
-                      <div className="text-sm text-muted-foreground">Instantly know which card to use for every transaction</div>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-              <div className="relative group order-1 lg:order-2">
-                <div className="absolute inset-0 bg-gradient-to-r from-brand-purple/20 to-brand-teal/20 blur-3xl rounded-full group-hover:blur-2xl transition-all"></div>
-                <img 
-                  src={aiCards} 
-                  alt="AI card recommendations" 
-                  className="relative w-full h-auto drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
-                  style={{ animationDelay: '1s' }}
-                />
-              </div>
-            </div>
-
-            {/* Privacy Section */}
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-brand-teal/20 to-brand-blue/20 blur-3xl rounded-full group-hover:blur-2xl transition-all"></div>
-                <img 
-                  src={localData} 
-                  alt="Local-first data flow" 
-                  className="relative w-full h-auto drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
-                  style={{ animationDelay: '2s' }}
-                />
-              </div>
-              <div className="space-y-6">
-                <Badge variant="secondary" className="text-sm px-4 py-1">Privacy-First</Badge>
-                <h3 className="text-3xl font-bold">Your Data Never Leaves Your Control</h3>
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  Unlike other apps, we don't sell your data. Everything is encrypted end-to-end and stored locally on your device first. Cloud sync is optional and always private.
-                </p>
-                <ul className="space-y-4">
-                  <li className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-blue/10 flex items-center justify-center flex-shrink-0">
-                      <Lock className="w-5 h-5 text-brand-blue" />
-                    </div>
-                    <div>
-                      <div className="font-semibold mb-1">End-to-End Encryption</div>
-                      <div className="text-sm text-muted-foreground">Military-grade encryption for all your data</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-purple/10 flex items-center justify-center flex-shrink-0">
-                      <Eye className="w-5 h-5 text-brand-purple" />
-                    </div>
-                    <div>
-                      <div className="font-semibold mb-1">Zero Data Tracking</div>
-                      <div className="text-sm text-muted-foreground">We don't track, analyze, or sell your information</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
-                      <Database className="w-5 h-5 text-brand-teal" />
-                    </div>
-                    <div>
-                      <div className="font-semibold mb-1">Local-First Storage</div>
-                      <div className="text-sm text-muted-foreground">Your data lives on your device, backed up optionally</div>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
     </div>
   );

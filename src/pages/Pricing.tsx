@@ -7,9 +7,6 @@ import {
   Laptop, Tablet, Globe, Zap, TrendingUp, Brain, 
   Lock, Database, MapPin, Receipt, Camera, BarChart3
 } from "lucide-react";
-import multiDevice from "@/assets/multi-device-ecosystem.png";
-import aiCards from "@/assets/ai-card-recommendations.png";
-import localData from "@/assets/local-first-data.png";
 
 export default function Pricing() {
   const features = {
@@ -289,33 +286,6 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-24 px-6 bg-gradient-to-br from-brand-blue/10 via-brand-purple/10 to-brand-teal/10">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Ready to Start Saving More?
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join thousands of users who trust TrueSpend to maximize their rewards while keeping their data private.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth">
-              <Button size="lg" className="bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal hover:opacity-90 text-white font-semibold px-12 h-16 text-lg shadow-premium">
-                Start Free Trial
-                <ArrowRight className="ml-2 h-6 w-6" />
-              </Button>
-            </Link>
-            <Link to="/">
-              <Button size="lg" variant="outline" className="h-16 px-12 text-lg">
-                Learn More
-              </Button>
-            </Link>
-          </div>
-          <p className="text-sm text-muted-foreground mt-6">
-            14-day free trial • No credit card required • Cancel anytime
-          </p>
-        </div>
-      </section>
     </div>
   );
 }
