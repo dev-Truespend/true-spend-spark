@@ -83,78 +83,90 @@ export function GlobalNav() {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-black/70 backdrop-blur-2xl border-b border-border/50 shadow-sm">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
       <div className="container mx-auto px-8">
         <div className="flex items-center justify-between h-20">
           <Logo onClick={handleLogoClick} />
           
           <nav className="flex items-center gap-8">
-            {/* Navigation Links */}
-            <div className="hidden md:flex items-center gap-8">
-              {accessibleItems.slice(0, 5).map(item => {
-                const Icon = item.icon;
-                const isActive = location.pathname.startsWith(item.route) && item.route !== '/' 
-                              || (item.route === '/' && location.pathname === '/');
-                
-                return (
-                  <Link 
-                    key={item.id} 
-                    to={item.route}
-                    className="relative group"
-                  >
-                    <span className={`text-sm font-semibold transition-all duration-300 ${
-                      isActive 
-                        ? 'text-foreground' 
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}>
-                      {item.label}
-                    </span>
-                    <span className={`absolute -bottom-1 left-0 h-[2px] bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal transition-all duration-300 ${
-                      isActive ? 'w-full' : 'w-0 group-hover:w-full'
-                    }`}></span>
-                  </Link>
-                );
-              })}
-            </div>
-            
             {!user && (
-              <Link to="/auth">
-                <Button 
-                  size="lg"
-                  className="bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal hover:opacity-90 text-white font-semibold px-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                >
-                  Get Started
-                </Button>
-              </Link>
+              <>
+                <div className="hidden md:flex items-center gap-8">
+                  <Link to="/pricing" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
+                    Pricing
+                  </Link>
+                  <Link to="/blog" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
+                    Blog
+                  </Link>
+                </div>
+                <Link to="/auth">
+                  <Button 
+                    size="lg"
+                    className="bg-gradient-to-r from-brand-blue to-brand-purple hover:opacity-90 text-white font-semibold px-8 shadow-premium"
+                  >
+                    Get Started
+                  </Button>
+                </Link>
+              </>
             )}
             
-            {showDebug && (
-              <Button 
-                onClick={handleForceRefresh} 
-                variant="destructive" 
-                size="sm"
-                className="gap-2 animate-pulse"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Force Refresh
-              </Button>
+            {user && (
+              <>
+                <div className="hidden md:flex items-center gap-8">
+                  {accessibleItems.slice(0, 5).map(item => {
+                    const isActive = location.pathname.startsWith(item.route) && item.route !== '/' 
+                                  || (item.route === '/' && location.pathname === '/');
+                    
+                    return (
+                      <Link 
+                        key={item.id} 
+                        to={item.route}
+                        className="relative group"
+                      >
+                        <span className={`text-sm font-semibold transition-all duration-300 ${
+                          isActive 
+                            ? 'text-foreground' 
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}>
+                          {item.label}
+                        </span>
+                        <span className={`absolute -bottom-1 left-0 h-[2px] bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal transition-all duration-300 ${
+                          isActive ? 'w-full' : 'w-0 group-hover:w-full'
+                        }`}></span>
+                      </Link>
+                    );
+                  })}
+                </div>
+                
+                {showDebug && (
+                  <Button 
+                    onClick={handleForceRefresh} 
+                    variant="destructive" 
+                    size="sm"
+                    className="gap-2 animate-pulse"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Force Refresh
+                  </Button>
+                )}
+                
+                {status.conflicts.length > 0 && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="gap-2 border-destructive text-destructive hover:bg-destructive/10"
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                    <Badge variant="destructive" className="px-1.5 py-0">
+                      {status.conflicts.length}
+                    </Badge>
+                    Conflicts
+                  </Button>
+                )}
+                
+                <UserProfileDropdown />
+              </>
             )}
-            
-            {user && status.conflicts.length > 0 && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="gap-2 border-destructive text-destructive hover:bg-destructive/10"
-              >
-                <AlertTriangle className="w-4 h-4" />
-                <Badge variant="destructive" className="px-1.5 py-0">
-                  {status.conflicts.length}
-                </Badge>
-                Conflicts
-              </Button>
-            )}
-            
-            {user && <UserProfileDropdown />}
           </nav>
         </div>
       </div>

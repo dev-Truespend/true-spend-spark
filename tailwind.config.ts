@@ -15,6 +15,14 @@ export default {
     extend: {
       fontFamily: {
         inter: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        display: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        soft: '0 2px 8px -2px rgba(0, 0, 0, 0.08)',
+        medium: '0 8px 24px -4px rgba(0, 0, 0, 0.12)',
+        large: '0 16px 48px -8px rgba(0, 0, 0, 0.16)',
+        premium: '0 24px 64px -12px rgba(56, 130, 246, 0.15)',
+        glow: '0 0 32px rgba(147, 51, 234, 0.25)',
       },
       colors: {
         border: "hsl(var(--border))",
