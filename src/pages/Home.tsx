@@ -328,158 +328,41 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Simple Pricing */}
-      <section className="py-24 px-6">
-        <div className="container mx-auto max-w-5xl">
+      {/* Trust Indicators */}
+      <section className="py-24 px-6 bg-muted/20">
+        <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Simple, Transparent Pricing
+              Trusted by Thousands
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Start free, upgrade when you're ready
-            </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Free Plan */}
-            <Card className="border-2 hover:border-primary/50 transition-all">
-              <CardContent className="pt-8 space-y-6">
-                <div>
-                  <h3 className="text-2xl font-bold mb-2">Free</h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold">$0</span>
-                    <span className="text-muted-foreground">/month</span>
-                  </div>
-                </div>
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-teal" />
-                    <span>Track unlimited expenses</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-teal" />
-                    <span>Receipt scanning</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-teal" />
-                    <span>Basic budgets</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-teal" />
-                    <span>End-to-end encryption</span>
-                  </li>
-                </ul>
-                <Link to="/auth" className="block">
-                  <Button variant="outline" className="w-full">Get Started</Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Plus Plan */}
-            <Card className="border-2 border-brand-purple shadow-premium relative">
-              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-brand-blue to-brand-purple text-white">
-                Most Popular
-              </Badge>
-              <CardContent className="pt-8 space-y-6">
-                <div>
-                  <h3 className="text-2xl font-bold mb-2">Plus</h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold">$9</span>
-                    <span className="text-muted-foreground">/month</span>
-                  </div>
-                  <p className="text-sm text-brand-purple font-medium mt-2">Average savings: $250/month</p>
-                </div>
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-purple" />
-                    <span className="font-medium">Everything in Free, plus:</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-purple" />
-                    <span>AI card recommendations</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-purple" />
-                    <span>Smart budgets with alerts</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-purple" />
-                    <span>Advanced analytics</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-purple" />
-                    <span>Priority support</span>
-                  </li>
-                </ul>
-                <Link to="/auth" className="block">
-                  <Button className="w-full bg-gradient-to-r from-brand-blue to-brand-purple hover:opacity-90 text-white shadow-large">
-                    Start Free Trial
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Pro Plan */}
-            <Card className="border-2 hover:border-primary/50 transition-all">
-              <CardContent className="pt-8 space-y-6">
-                <div>
-                  <h3 className="text-2xl font-bold mb-2">Pro</h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold">$19</span>
-                    <span className="text-muted-foreground">/month</span>
-                  </div>
-                </div>
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-teal" />
-                    <span className="font-medium">Everything in Plus, plus:</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-teal" />
-                    <span>Location-based budgets</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-teal" />
-                    <span>Custom categories</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-teal" />
-                    <span>Export & integrations</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-brand-teal" />
-                    <span>White-glove onboarding</span>
-                  </li>
-                </ul>
-                <Link to="/auth" className="block">
-                  <Button variant="outline" className="w-full">Get Started</Button>
-                </Link>
-              </CardContent>
-            </Card>
+          <div className="grid md:grid-cols-3 gap-12 text-center">
+            <div>
+              <div className="text-5xl font-bold bg-gradient-to-r from-brand-blue to-brand-purple bg-clip-text text-transparent mb-3">
+                50K+
+              </div>
+              <p className="text-xl text-muted-foreground">Active Users</p>
+            </div>
+            <div>
+              <div className="text-5xl font-bold bg-gradient-to-r from-brand-purple to-brand-teal bg-clip-text text-transparent mb-3">
+                $12M+
+              </div>
+              <p className="text-xl text-muted-foreground">In Rewards Earned</p>
+            </div>
+            <div>
+              <div className="text-5xl font-bold bg-gradient-to-r from-brand-teal to-brand-blue bg-clip-text text-transparent mb-3">
+                99.9%
+              </div>
+              <p className="text-xl text-muted-foreground">Data Security</p>
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* Trust Indicators */}
-      <section className="py-16 px-6 bg-muted/30">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold text-brand-blue mb-2">10K+</div>
-              <p className="text-sm text-muted-foreground">Active Users</p>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-brand-purple mb-2">$2M+</div>
-              <p className="text-sm text-muted-foreground">Rewards Earned</p>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-brand-teal mb-2">99.9%</div>
-              <p className="text-sm text-muted-foreground">Uptime SLA</p>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-brand-blue mb-2">SOC 2</div>
-              <p className="text-sm text-muted-foreground">Certified Security</p>
-            </div>
+          <div className="flex flex-wrap justify-center gap-8 mt-16 opacity-60">
+            <Badge variant="outline" className="text-sm px-4 py-2">SOC 2 Certified</Badge>
+            <Badge variant="outline" className="text-sm px-4 py-2">GDPR Compliant</Badge>
+            <Badge variant="outline" className="text-sm px-4 py-2">256-bit Encryption</Badge>
+            <Badge variant="outline" className="text-sm px-4 py-2">ISO 27001</Badge>
           </div>
         </div>
       </section>
@@ -488,10 +371,10 @@ export default function Home() {
       <section className="py-24 px-6">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Ready to Take Control of Your Finances?
+            Start Earning More <span className="text-brand-purple">Today</span>
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join thousands of users who trust TrueSpend with their financial privacy.
+            Join thousands of smart spenders who are maximizing their rewards with TrueSpend.
           </p>
           <Link to="/auth">
             <Button size="lg" className="bg-gradient-to-r from-brand-blue to-brand-purple hover:opacity-90 text-white font-semibold px-12 h-16 text-lg shadow-premium">
@@ -500,7 +383,7 @@ export default function Home() {
             </Button>
           </Link>
           <p className="text-sm text-muted-foreground mt-6">
-            No credit card required • Free forever • Cancel anytime
+            No credit card required • Free forever • 2 minutes to set up
           </p>
         </div>
       </section>
