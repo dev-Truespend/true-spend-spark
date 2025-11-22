@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Shield, Sparkles, Smartphone, Check, X, ArrowRight, Lock, Eye, Database } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
+import { GetInTouch } from "@/components/GetInTouch";
 import heroDevice from "@/assets/hero-device-mockup.png";
 import privacyShield from "@/assets/privacy-shield.png";
 import multiDevice from "@/assets/multi-device-ecosystem.png";
@@ -75,12 +76,12 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-brand-blue/20 to-brand-purple/20 blur-3xl rounded-full"></div>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-brand-blue/20 via-brand-purple/20 to-brand-teal/20 blur-3xl rounded-full animate-pulse-slow"></div>
               <img 
                 src={heroDevice} 
                 alt="TrueSpend App Dashboard" 
-                className="relative w-full h-auto drop-shadow-2xl"
+                className="relative w-full h-auto drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
               />
             </div>
           </div>
@@ -101,11 +102,12 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 items-center mb-16">
-            <div className="relative">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-brand-purple/20 to-brand-blue/20 blur-3xl rounded-full animate-pulse-slow"></div>
               <img 
                 src={privacyShield} 
                 alt="Privacy Protection" 
-                className="w-full h-auto drop-shadow-2xl"
+                className="relative w-full h-auto drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
               />
             </div>
             <div className="space-y-6">
@@ -212,12 +214,12 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-12">
             {/* Feature 1 */}
             <div className="text-center space-y-6">
-              <div className="relative mx-auto w-64 h-64">
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/20 to-brand-purple/20 blur-2xl rounded-full"></div>
+              <div className="relative mx-auto w-64 h-64 group">
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/20 to-brand-purple/20 blur-2xl rounded-full animate-pulse-slow"></div>
                 <img 
                   src={aiCards} 
                   alt="Smart Rewards" 
-                  className="relative w-full h-full object-contain drop-shadow-2xl"
+                  className="relative w-full h-full object-contain drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
                 />
               </div>
               <div>
@@ -233,12 +235,13 @@ export default function Home() {
 
             {/* Feature 2 */}
             <div className="text-center space-y-6">
-              <div className="relative mx-auto w-64 h-64">
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-purple/20 to-brand-teal/20 blur-2xl rounded-full"></div>
+              <div className="relative mx-auto w-64 h-64 group">
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-purple/20 to-brand-teal/20 blur-2xl rounded-full animate-pulse-slow"></div>
                 <img 
                   src={localData} 
                   alt="Privacy First" 
-                  className="relative w-full h-full object-contain drop-shadow-2xl"
+                  className="relative w-full h-full object-contain drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
+                  style={{ animationDelay: '1s' }}
                 />
               </div>
               <div>
@@ -254,12 +257,13 @@ export default function Home() {
 
             {/* Feature 3 */}
             <div className="text-center space-y-6">
-              <div className="relative mx-auto w-64 h-64">
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-teal/20 to-brand-blue/20 blur-2xl rounded-full"></div>
+              <div className="relative mx-auto w-64 h-64 group">
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-teal/20 to-brand-blue/20 blur-2xl rounded-full animate-pulse-slow"></div>
                 <img 
                   src={multiDevice} 
                   alt="Everywhere You Shop" 
-                  className="relative w-full h-full object-contain drop-shadow-2xl"
+                  className="relative w-full h-full object-contain drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
+                  style={{ animationDelay: '2s' }}
                 />
               </div>
               <div>
@@ -366,6 +370,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Get In Touch */}
+      <GetInTouch />
 
       {/* Final CTA */}
       <section className="py-24 px-6">
