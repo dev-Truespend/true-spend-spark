@@ -7,7 +7,7 @@ import {
   ShoppingCart, Zap, RefreshCw, Camera, ScanLine, Bot,
   CloudOff, MapPin, Bell
 } from "lucide-react";
-import ecosystemDiagram from "@/assets/ecosystem-diagram.png";
+import ecosystemEnhanced from "@/assets/ecosystem-enhanced.png";
 import aiCards from "@/assets/ai-card-recommendations.png";
 import localData from "@/assets/local-first-data.png";
 import browserShoppingTracker from "@/assets/browser-shopping-tracker.png";
@@ -28,9 +28,6 @@ export default function Features() {
       <section className="pt-32 pb-16 px-6">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-6 text-base px-6 py-2">
-              Platform Features
-            </Badge>
             <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
               Works <span className="bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal bg-clip-text text-transparent">Everywhere</span> You Need It
             </h1>
@@ -43,66 +40,20 @@ export default function Features() {
           <div className="relative group max-w-5xl mx-auto">
             <div className="absolute inset-0 bg-gradient-to-r from-brand-blue/10 via-brand-purple/10 to-brand-teal/10 blur-3xl rounded-full animate-pulse-slow"></div>
             <img 
-              src={ecosystemDiagram} 
-              alt="TrueSpend ecosystem across all platforms" 
+              src={ecosystemEnhanced} 
+              alt="TrueSpend comprehensive ecosystem across all platforms" 
               className="relative w-full h-auto drop-shadow-2xl transform group-hover:scale-[1.02] transition-transform duration-700"
             />
           </div>
         </div>
       </section>
 
-      {/* Platform Overview */}
-      <section className="py-16 px-6">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 hover:from-brand-blue/10 hover:to-brand-purple/10 transition-all duration-300 hover:scale-105 hover:shadow-medium">
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-brand-blue/20 to-brand-purple/20 flex items-center justify-center">
-                <Smartphone className="w-8 h-8 text-brand-purple" />
-              </div>
-              <div className="text-center">
-                <div className="font-bold text-lg mb-1">iOS & Android</div>
-                <div className="text-sm text-muted-foreground">Native mobile apps</div>
-              </div>
-            </div>
-            
-            <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 hover:from-brand-purple/10 hover:to-brand-teal/10 transition-all duration-300 hover:scale-105 hover:shadow-medium">
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-brand-purple/20 to-brand-teal/20 flex items-center justify-center">
-                <Laptop className="w-8 h-8 text-brand-teal" />
-              </div>
-              <div className="text-center">
-                <div className="font-bold text-lg mb-1">Desktop</div>
-                <div className="text-sm text-muted-foreground">Windows, Mac, Linux</div>
-              </div>
-            </div>
-            
-            <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 hover:from-brand-teal/10 hover:to-brand-blue/10 transition-all duration-300 hover:scale-105 hover:shadow-medium">
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-brand-teal/20 to-brand-blue/20 flex items-center justify-center">
-                <Tablet className="w-8 h-8 text-brand-blue" />
-              </div>
-              <div className="text-center">
-                <div className="font-bold text-lg mb-1">Tablet</div>
-                <div className="text-sm text-muted-foreground">iPad & Android tablets</div>
-              </div>
-            </div>
-            
-            <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 hover:from-brand-blue/10 hover:to-brand-purple/10 transition-all duration-300 hover:scale-105 hover:shadow-medium">
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-brand-blue/20 to-brand-purple/20 flex items-center justify-center">
-                <Globe className="w-8 h-8 text-brand-purple" />
-              </div>
-              <div className="text-center">
-                <div className="font-bold text-lg mb-1">Web</div>
-                <div className="text-sm text-muted-foreground">Any modern browser</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Platform-Specific Features */}
       <section className="py-24 px-6 bg-gradient-to-br from-brand-blue/5 via-background to-brand-purple/5">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
-            <Badge variant="secondary" className="mb-4 text-base px-6 py-2">Platform Features</Badge>
+            
             <h2 className="text-4xl font-bold mb-4">Powerful Features on Every Platform</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Experience the full power of TrueSpend on your favorite device with platform-optimized features
