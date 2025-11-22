@@ -30,12 +30,6 @@ export function Footer() {
       { label: "Contact Support", href: "mailto:support@truespend.org" },
       { label: "Brand Assets", href: "/brand" },
     ],
-    resources: [
-      { label: "Documentation", href: "/docs" },
-      { label: "API Reference", href: "/api" },
-      { label: "Community Forum", href: "/community" },
-      { label: "Status Page", href: "/status" },
-    ],
     legal: [
       { label: "Terms of Service", href: "/legal/terms" },
       { label: "Privacy Policy", href: "/legal/privacy" },
@@ -85,7 +79,7 @@ export function Footer() {
         </div>
 
         {/* Main Footer Content - 4 Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           
           {/* Column 1 - Brand */}
           <div className="lg:col-span-1">
@@ -143,24 +137,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Column 4 - Resources */}
-          <div>
-            <h4 className="font-semibold text-foreground mb-4">Resources</h4>
-            <ul className="space-y-3 text-sm">
-              {footerLinks.resources.map((link, idx) => (
-                <li key={idx}>
-                  <Link 
-                    to={link.href} 
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Column 5 - Legal */}
+          {/* Column 4 - Legal */}
           <div>
             <h4 className="font-semibold text-foreground mb-4">Legal</h4>
             <ul className="space-y-3 text-sm">
