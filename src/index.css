@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Premium SF Pro Display Font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -394,4 +397,53 @@ html {
   font-weight: 600;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+}
+
+/* Premium Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Premium Card Hover Effects */
+.premium-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 64px -12px rgba(56, 130, 246, 0.15);
+}
+
+/* Smooth Transitions */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-bounce {
+  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Premium Gradient Backgrounds */
+.bg-premium-gradient {
+  background: linear-gradient(135deg, 
+    hsl(var(--brand-blue)) 0%, 
+    hsl(var(--brand-purple)) 50%, 
+    hsl(var(--brand-teal)) 100%);
+}
+
+.bg-premium-gradient-soft {
+  background: linear-gradient(135deg, 
+    hsl(var(--brand-blue) / 0.1) 0%, 
+    hsl(var(--brand-purple) / 0.1) 50%, 
+    hsl(var(--brand-teal) / 0.1) 100%);
 }

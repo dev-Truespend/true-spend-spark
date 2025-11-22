@@ -19,6 +19,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- SF Pro Display (via system fonts fallback) -->
+    <style>
+      @supports (font: -apple-system-body) {
+        :root {
+          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+        }
+      }
+    </style>
 
     <meta property="og:title" content="TrueSpend - Smart Budget Tracker" />
     <meta property="og:description" content="Location-aware budget tracking with geofencing and receipt management" />
