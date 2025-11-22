@@ -247,34 +247,12 @@ export default function Home() {
             {/* Feature 2 */}
             <div className="text-center space-y-6">
               <div className="relative mx-auto w-64 h-64 min-h-64 min-w-64 group">
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-purple/20 to-brand-teal/20 blur-2xl rounded-full animate-pulse-slow"></div>
-                <img 
-                  src={localData} 
-                  alt="Privacy First" 
-                  className="relative w-64 h-64 object-contain drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
-                  style={{ animationDelay: '1s' }}
-                />
-              </div>
-              <div>
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-brand-purple/10 mb-4">
-                  <Shield className="w-6 h-6 text-brand-purple" />
-                </div>
-                <h3 className="text-2xl font-bold mb-3">Privacy-First</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Your financial data never leaves your device unencrypted. We can't see it, sell it, or share it. Period.
-                </p>
-              </div>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="text-center space-y-6">
-              <div className="relative mx-auto w-64 h-64 min-h-64 min-w-64 group">
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-teal/20 to-brand-blue/20 blur-2xl rounded-full animate-pulse-slow"></div>
                 <img 
                   src={multiDevice} 
                   alt="Everywhere You Shop" 
                   className="relative w-64 h-64 object-contain drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
-                  style={{ animationDelay: '2s' }}
+                  style={{ animationDelay: '1s' }}
                 />
               </div>
               <div>
@@ -284,6 +262,28 @@ export default function Home() {
                 <h3 className="text-2xl font-bold mb-3">Everywhere You Shop</h3>
                 <p className="text-muted-foreground leading-relaxed">
                   Works seamlessly across mobile, desktop, and browser. Your data syncs securely in real-time.
+                </p>
+              </div>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="text-center space-y-6">
+              <div className="relative mx-auto w-64 h-64 min-h-64 min-w-64 group">
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-purple/20 to-brand-teal/20 blur-2xl rounded-full animate-pulse-slow"></div>
+                <img 
+                  src={localData} 
+                  alt="Privacy First" 
+                  className="relative w-64 h-64 object-contain drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
+                  style={{ animationDelay: '2s' }}
+                />
+              </div>
+              <div>
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-brand-purple/10 mb-4">
+                  <Shield className="w-6 h-6 text-brand-purple" />
+                </div>
+                <h3 className="text-2xl font-bold mb-3">Privacy-First</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Your financial data never leaves your device unencrypted. We can't see it, sell it, or share it. Period.
                 </p>
               </div>
             </div>
