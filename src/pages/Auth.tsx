@@ -267,7 +267,7 @@ export default function Auth() {
         {/* Back to Home Button */}
         <div className="p-6">
           <Link to="/">
-            <Button variant="ghost" size="sm" className="gap-2 hover:bg-muted">
+            <Button className="gap-2 bg-gradient-to-r from-brand-blue to-brand-purple hover:opacity-90 text-white font-semibold shadow-premium">
               <ArrowLeft className="w-4 h-4" />
               Back to Home
             </Button>
