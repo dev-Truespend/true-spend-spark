@@ -53,7 +53,7 @@ export default function Pricing() {
             Simple, Transparent Pricing
           </Badge>
           <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-            Choose Your <span className="bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal bg-clip-text text-transparent">Perfect Plan</span>
+            It's an <span className="bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal bg-clip-text text-transparent">Investment</span>, Not a Subscription
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
             Start free forever. Upgrade when you need advanced features. All plans include privacy-first architecture and work seamlessly across all your devices.

@@ -218,7 +218,7 @@ export default function Home() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Three Things We Do <span className="text-brand-blue">Exceptionally Well</span>
+              Built for People Who <span className="text-brand-blue">Value Every Dollar</span>
             </h2>
           </div>
 
@@ -296,7 +296,7 @@ export default function Home() {
         <div className="container mx-auto max-w-5xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Getting Started is <span className="text-brand-purple">Simple</span>
+              Your Best Financial Decision <span className="text-brand-purple">Takes 60 Seconds</span>
             </h2>
             <p className="text-xl text-muted-foreground">
               Three easy steps to smarter spending

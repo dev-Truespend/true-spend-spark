@@ -26,11 +26,7 @@ export default function Features() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-5xl md:text-6xl font-bold leading-tight tracking-tight mb-4">
-              Powerful Features.
-              <br />
-              <span className="bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal bg-clip-text text-transparent">
-                On Every Platform
-              </span>
+              Built Once. <span className="bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal bg-clip-text text-transparent">Works</span> Everywhere.
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               One account. All your devices. Seamlessly synced in real-time with bank-level security. Available on mobile, desktop, tablet, and web.
