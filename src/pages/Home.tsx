@@ -9,7 +9,7 @@ import { GetInTouch } from "@/components/GetInTouch";
 import heroPremium from "@/assets/hero-premium.png";
 import privacyPremium from "@/assets/privacy-premium.png";
 import multiDevice from "@/assets/multi-device-ecosystem.png";
-import rewardsPremium from "@/assets/rewards-premium.png";
+import heroCardsPhone from "@/assets/hero-cards-phone.png";
 import localData from "@/assets/local-first-data.png";
 
 export default function Home() {
@@ -228,8 +228,8 @@ export default function Home() {
               <div className="relative mx-auto w-64 h-64 group">
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/20 to-brand-purple/20 blur-2xl rounded-full animate-pulse-slow"></div>
                 <img 
-                  src={rewardsPremium} 
-                  alt="Smart AI-powered rewards" 
+                  src={heroCardsPhone} 
+                  alt="Smart AI-powered rewards with credit cards" 
                   className="relative w-full h-full object-contain drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
                 />
               </div>
@@ -385,26 +385,6 @@ export default function Home() {
       {/* Get In Touch */}
       <GetInTouch />
 
-      {/* Final CTA */}
-      <section className="py-24 px-6">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Start Earning More <span className="text-brand-purple">Today</span>
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join thousands of smart spenders who are maximizing their rewards with TrueSpend.
-          </p>
-          <Link to="/auth">
-            <Button size="lg" className="bg-gradient-to-r from-brand-blue to-brand-purple hover:opacity-90 text-white font-semibold px-12 h-16 text-lg shadow-premium">
-              Get Started Free
-              <ArrowRight className="ml-2 h-6 w-6" />
-            </Button>
-          </Link>
-          <p className="text-sm text-muted-foreground mt-6">
-            No credit card required • Free forever • 2 minutes to set up
-          </p>
-        </div>
-      </section>
     </div>
   );
 }
