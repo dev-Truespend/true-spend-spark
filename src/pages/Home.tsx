@@ -6,7 +6,7 @@ import { Shield, Sparkles, Smartphone, Check, X, ArrowRight, Lock, Eye, Database
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { GetInTouch } from "@/components/GetInTouch";
-import heroWithLabels from "@/assets/hero-with-labels.png";
+import heroCardsPhone from "@/assets/hero-cards-phone.png";
 import privacyPremium from "@/assets/privacy-premium.png";
 import multiDevice from "@/assets/multi-device-ecosystem.png";
 import heroPremium from "@/assets/hero-premium.png";
@@ -76,14 +76,24 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="relative min-h-[650px] flex items-center justify-center group perspective-1000">
+            <div className="relative min-h-[600px] flex items-center justify-center group perspective-1000">
               <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/30 via-brand-purple/30 to-brand-teal/30 blur-3xl animate-pulse-slow"></div>
               <div className="absolute -inset-4 bg-gradient-to-r from-brand-blue/20 to-brand-purple/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
               <img 
-                src={heroWithLabels} 
+                src={heroCardsPhone} 
                 alt="TrueSpend - Smart expense tracking with AI-powered rewards" 
-                className="relative w-full h-auto max-h-[650px] drop-shadow-2xl transform group-hover:scale-[1.03] group-hover:rotate-1 transition-all duration-700 animate-float-slow"
+                className="relative w-full h-auto max-h-[600px] drop-shadow-2xl transform group-hover:scale-[1.03] group-hover:rotate-1 transition-all duration-700 animate-float-slow"
               />
+              {/* Floating badges */}
+              <div className="absolute top-8 -left-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-premium text-sm font-semibold text-brand-blue border border-brand-blue/20 animate-float-slow">
+                🤖 AI Powered
+              </div>
+              <div className="absolute bottom-12 -right-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-premium text-sm font-semibold text-brand-purple border border-brand-purple/20 animate-float-slow" style={{ animationDelay: '1s' }}>
+                🔒 100% Private
+              </div>
+              <div className="absolute top-1/2 -right-8 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-premium text-sm font-semibold text-brand-teal border border-brand-teal/20 animate-float-slow" style={{ animationDelay: '2s' }}>
+                ✨ Smart Rewards
+              </div>
             </div>
           </div>
         </div>
