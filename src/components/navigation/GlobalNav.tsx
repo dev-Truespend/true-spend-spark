@@ -95,9 +95,6 @@ export function GlobalNav() {
                   <Link to="/pricing" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
                     Pricing
                   </Link>
-                  <Link to="/blog" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-                    Blog
-                  </Link>
                 </div>
                 <Link to="/auth">
                   <Button 
