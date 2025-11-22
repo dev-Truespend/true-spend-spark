@@ -287,6 +287,73 @@ function App() {
                 </Suspense>
               } />
               
+              {/* About & Company Pages */}
+              <Route path="/about" element={
+                <Suspense fallback={
+                  <div className="min-h-screen flex items-center justify-center bg-background">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                }>
+                  {React.createElement(lazy(() => import('@/pages/About')))}
+                </Suspense>
+              } />
+              <Route path="/careers" element={
+                <Suspense fallback={
+                  <div className="min-h-screen flex items-center justify-center bg-background">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                }>
+                  {React.createElement(lazy(() => import('@/pages/Careers')))}
+                </Suspense>
+              } />
+              <Route path="/brand" element={
+                <Suspense fallback={
+                  <div className="min-h-screen flex items-center justify-center bg-background">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                }>
+                  {React.createElement(lazy(() => import('@/pages/BrandAssets')))}
+                </Suspense>
+              } />
+              
+              {/* Resources Pages */}
+              <Route path="/docs" element={
+                <Suspense fallback={
+                  <div className="min-h-screen flex items-center justify-center bg-background">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                }>
+                  {React.createElement(lazy(() => import('@/pages/Documentation')))}
+                </Suspense>
+              } />
+              <Route path="/api" element={
+                <Suspense fallback={
+                  <div className="min-h-screen flex items-center justify-center bg-background">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                }>
+                  {React.createElement(lazy(() => import('@/pages/ApiReference')))}
+                </Suspense>
+              } />
+              <Route path="/community" element={
+                <Suspense fallback={
+                  <div className="min-h-screen flex items-center justify-center bg-background">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                }>
+                  {React.createElement(lazy(() => import('@/pages/Community')))}
+                </Suspense>
+              } />
+              <Route path="/status" element={
+                <Suspense fallback={
+                  <div className="min-h-screen flex items-center justify-center bg-background">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                }>
+                  {React.createElement(lazy(() => import('@/pages/Status')))}
+                </Suspense>
+              } />
+              
               {/* Legacy Login Route Redirects - Force consistency to /auth */}
               <Route path="/login" element={<Navigate to="/auth" replace />} />
               <Route path="/signin" element={<Navigate to="/auth" replace />} />
