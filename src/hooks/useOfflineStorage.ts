@@ -85,7 +85,7 @@ export function useOfflineStorage() {
     return () => {
       mounted = false;
       clearInterval(interval);
-      storage.close();
+      // Don't close the shared DB - it should stay open for other consumers
     };
   }, [quality, storage, isInitialized]);
 
