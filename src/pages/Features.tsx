@@ -7,7 +7,7 @@ import {
   ShoppingCart, Zap, RefreshCw, Camera, ScanLine, Bot,
   CloudOff, MapPin, Bell
 } from "lucide-react";
-import ecosystemPremium from "@/assets/ecosystem-premium.png";
+import ecosystemProfessional from "@/assets/ecosystem-professional.png";
 import aiCards from "@/assets/ai-card-recommendations.png";
 import localData from "@/assets/local-first-data.png";
 import browserShoppingTracker from "@/assets/browser-shopping-tracker.png";
@@ -40,7 +40,7 @@ export default function Features() {
           <div className="relative group max-w-5xl mx-auto">
             <div className="absolute inset-0 bg-gradient-to-r from-brand-blue/10 via-brand-purple/10 to-brand-teal/10 blur-3xl rounded-full animate-pulse-slow"></div>
             <img 
-              src={ecosystemPremium} 
+              src={ecosystemProfessional} 
               alt="TrueSpend comprehensive ecosystem across all platforms" 
               className="relative w-full h-auto drop-shadow-2xl transform group-hover:scale-[1.02] transition-transform duration-700"
             />

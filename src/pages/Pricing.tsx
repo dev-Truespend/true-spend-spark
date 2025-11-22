@@ -85,7 +85,7 @@ export default function Pricing() {
       {/* Pricing Cards */}
       <section className="py-16 px-6">
         <div className="container mx-auto max-w-7xl">
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-10">
             
             {/* Free Plan */}
             <Card className="border-2 hover:border-brand-blue/50 transition-all duration-300 hover:shadow-large group">
@@ -136,7 +136,7 @@ export default function Pricing() {
             </Card>
 
             {/* Plus Plan */}
-            <Card className="border-2 border-brand-purple shadow-premium relative group scale-105 lg:scale-110">
+            <Card className="border-2 border-brand-purple shadow-premium relative group scale-[1.02] lg:scale-[1.05]">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                 <Badge className="bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal text-white px-6 py-2 text-sm font-semibold shadow-large">
                   🔥 Most Popular
