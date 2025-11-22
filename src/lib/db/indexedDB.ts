@@ -61,6 +61,7 @@ const DB_NAME = 'truespend-offline';
 const DB_VERSION = 1;
 
 let dbInstance: IDBPDatabase | null = null;
+let isClosing = false;
 
 // Migration handlers for version upgrades
 type MigrationHandler = (db: IDBPDatabase, oldVersion: number, newVersion: number) => Promise<void>;
@@ -78,9 +79,16 @@ const migrations: Record<number, MigrationHandler> = {
 };
 
 export async function initDB(): Promise<IDBPDatabase> {
-  if (dbInstance) {
+  // If we have an instance and it's not closing, use it
+  if (dbInstance && !isClosing) {
     console.log('[IndexedDB] Using existing database instance');
     return dbInstance;
+  }
+
+  // If closing or no instance, reset and create new
+  if (isClosing || !dbInstance) {
+    isClosing = false;
+    dbInstance = null;
   }
 
   console.log('[IndexedDB] Initializing database...');
@@ -309,4 +317,15 @@ export async function importData(data: Record<string, any[]>): Promise<void> {
 export function registerMigration(version: number, handler: MigrationHandler): void {
   migrations[version] = handler;
   console.log(`[IndexedDB] Migration registered for version ${version}`);
+}
+
+// Close database connection
+export async function closeDB(): Promise<void> {
+  if (dbInstance) {
+    console.log('[IndexedDB] Closing database connection');
+    isClosing = true;
+    dbInstance.close();
+    dbInstance = null;
+    isClosing = false;
+  }
 }

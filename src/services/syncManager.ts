@@ -119,6 +119,19 @@ class SyncManager {
       return { success: 0, failed: 0 };
     }
 
+    // Check DB health before syncing
+    try {
+      const { initDB } = await import('@/lib/db/indexedDB');
+      const db = await initDB();
+      if (!db || db.version === 0) {
+        console.warn('[SyncManager] Database not properly initialized');
+        return { success: 0, failed: 0 };
+      }
+    } catch (error) {
+      console.error('[SyncManager] Database health check failed:', error);
+      return { success: 0, failed: 0 };
+    }
+
     this.isSyncing = true;
     this.updateStatus('syncing');
 

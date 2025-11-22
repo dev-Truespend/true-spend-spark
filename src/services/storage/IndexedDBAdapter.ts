@@ -4,7 +4,6 @@ import { initDB } from '@/lib/db/indexedDB';
 import { IDBPDatabase } from 'idb';
 
 export class IndexedDBAdapter implements StorageAdapter {
-  private db: IDBPDatabase | null = null;
   private config: StorageConfig;
   private isClosing = false;
 
@@ -15,32 +14,31 @@ export class IndexedDBAdapter implements StorageAdapter {
   async init(): Promise<void> {
     console.log('[IndexedDBAdapter] Initializing...');
     this.isClosing = false;
-    this.db = await initDB();
+    // Use shared initDB to ensure single connection
+    await initDB();
   }
 
-  private ensureDB(): IDBPDatabase {
+  private async ensureDB(): Promise<IDBPDatabase> {
     if (this.isClosing) {
       throw new Error('IndexedDBAdapter is closing. Cannot perform operations.');
     }
-    if (!this.db) {
-      throw new Error('IndexedDBAdapter not initialized. Call init() first.');
-    }
-    return this.db;
+    // Always get the shared instance
+    return await initDB();
   }
 
   async get<T>(storeName: string, key: string): Promise<T | null> {
-    const db = this.ensureDB();
+    const db = await this.ensureDB();
     const value = await db.get(storeName, key);
     return value || null;
   }
 
   async set<T>(storeName: string, key: string, value: T): Promise<void> {
-    const db = this.ensureDB();
+    const db = await this.ensureDB();
     await db.put(storeName, value);
   }
 
   async getAll<T>(storeName: string): Promise<T[]> {
-    const db = this.ensureDB();
+    const db = await this.ensureDB();
     return await db.getAll(storeName);
   }
 
@@ -54,24 +52,24 @@ export class IndexedDBAdapter implements StorageAdapter {
   }
 
   async delete(storeName: string, key: string): Promise<void> {
-    const db = this.ensureDB();
+    const db = await this.ensureDB();
     await db.delete(storeName, key);
   }
 
   async deleteMany(storeName: string, keys: string[]): Promise<void> {
-    const db = this.ensureDB();
+    const db = await this.ensureDB();
     const tx = db.transaction(storeName, 'readwrite');
     await Promise.all(keys.map(key => tx.store.delete(key)));
     await tx.done;
   }
 
   async clear(storeName: string): Promise<void> {
-    const db = this.ensureDB();
+    const db = await this.ensureDB();
     await db.clear(storeName);
   }
 
   async count(storeName: string): Promise<number> {
-    const db = this.ensureDB();
+    const db = await this.ensureDB();
     return await db.count(storeName);
   }
 
@@ -79,7 +77,7 @@ export class IndexedDBAdapter implements StorageAdapter {
     storeName: string,
     items: Array<{ key: string; value: T }>
   ): Promise<void> {
-    const db = this.ensureDB();
+    const db = await this.ensureDB();
     const tx = db.transaction(storeName, 'readwrite');
     await Promise.all(items.map(item => tx.store.put(item.value)));
     await tx.done;
@@ -87,14 +85,12 @@ export class IndexedDBAdapter implements StorageAdapter {
 
   async close(): Promise<void> {
     this.isClosing = true;
-    if (this.db) {
-      this.db.close();
-      this.db = null;
-    }
+    // DON'T close the shared connection, just mark adapter as closing
+    console.log('[IndexedDBAdapter] Adapter marked as closing (shared DB remains open)');
   }
 
   isActive(): boolean {
-    return !this.isClosing && this.db !== null;
+    return !this.isClosing;
   }
 }
 
