@@ -14,6 +14,10 @@ const badgeVariants = cva(
         outline: "text-foreground",
         accent: "border-transparent bg-accent text-accent-foreground hover:bg-accent/80",
         teal: "border-transparent bg-chart-3 text-primary-foreground hover:bg-chart-3/80",
+        new: "border-transparent bg-brand-blue text-white hover:bg-brand-blue/90 animate-pulse shadow-sm",
+        popular: "border-transparent bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal text-white hover:opacity-90 shadow-premium",
+        comingSoon: "border-2 border-muted bg-muted/50 text-muted-foreground hover:bg-muted/70",
+        availableNow: "border-transparent bg-brand-teal/10 text-brand-teal hover:bg-brand-teal/20",
       },
     },
     defaultVariants: {

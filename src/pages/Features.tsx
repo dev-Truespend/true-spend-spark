@@ -22,7 +22,7 @@ export default function Features() {
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/10">
       
       {/* Platform-Specific Features */}
-      <section className="pt-32 px-6 bg-gradient-to-br from-brand-blue/5 via-background to-brand-purple/5">
+      <section className="pt-32 pb-24 px-6 bg-gradient-to-br from-brand-blue/5 via-background to-brand-purple/5">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-5xl md:text-6xl font-bold leading-tight tracking-tight mb-4">
@@ -33,7 +33,7 @@ export default function Features() {
             </p>
           </div>
 
-          <div className="space-y-32">
+          <div className="space-y-24">
             {/* Browser Extension Features */}
             <div className="space-y-12">
               <div className="text-center">
@@ -55,12 +55,12 @@ export default function Features() {
                       <div className="w-10 h-10 rounded-xl bg-brand-blue/10 flex items-center justify-center">
                         <ShoppingCart className="w-5 h-5 text-brand-blue" />
                       </div>
-                      <h4 className="font-bold text-lg">Real-Time Budget Alerts</h4>
+                      <h4 className="font-bold text-xl">Real-Time Budget Alerts</h4>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       Get instant notifications when you're approaching budget limits while browsing Amazon, eBay, or any shopping site
                     </p>
-                    <Badge variant="secondary" className="mt-4">Available Now</Badge>
+                    <Badge variant="availableNow" className="mt-4">Available Now</Badge>
                   </div>
                 </div>
 
@@ -71,12 +71,12 @@ export default function Features() {
                       <div className="w-10 h-10 rounded-xl bg-brand-purple/10 flex items-center justify-center">
                         <Zap className="w-5 h-5 text-brand-purple" />
                       </div>
-                      <h4 className="font-bold text-lg">Smart Merchant Detection</h4>
+                      <h4 className="font-bold text-xl">Smart Merchant Detection</h4>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       Automatically identifies merchants and categorizes purchases as you shop, saving you time on manual entry
                     </p>
-                    <Badge variant="secondary" className="mt-4">Available Now</Badge>
+                    <Badge variant="availableNow" className="mt-4">Available Now</Badge>
                   </div>
                 </div>
 
@@ -87,12 +87,12 @@ export default function Features() {
                       <div className="w-10 h-10 rounded-xl bg-brand-teal/10 flex items-center justify-center">
                         <RefreshCw className="w-5 h-5 text-brand-teal" />
                       </div>
-                      <h4 className="font-bold text-lg">Instant Cloud Sync</h4>
+                      <h4 className="font-bold text-xl">Instant Cloud Sync</h4>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       All purchases automatically sync to your mobile and desktop apps in real-time for unified tracking
                     </p>
-                    <Badge variant="secondary" className="mt-4">Available Now</Badge>
+                    <Badge variant="availableNow" className="mt-4">Available Now</Badge>
                   </div>
                 </div>
               </div>
@@ -119,12 +119,12 @@ export default function Features() {
                       <div className="w-10 h-10 rounded-xl bg-brand-blue/10 flex items-center justify-center">
                         <ScanLine className="w-5 h-5 text-brand-blue" />
                       </div>
-                      <h4 className="font-bold text-lg">Smart Receipt Scanning</h4>
+                      <h4 className="font-bold text-xl">Smart Receipt Scanning</h4>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       Upload receipts and let AI extract all details - merchant, items, prices, and categories instantly
                     </p>
-                    <Badge variant="secondary" className="mt-4">Available Now</Badge>
+                    <Badge variant="availableNow" className="mt-4">Available Now</Badge>
                   </div>
                 </div>
 
@@ -135,12 +135,12 @@ export default function Features() {
                       <div className="w-10 h-10 rounded-xl bg-brand-purple/10 flex items-center justify-center">
                         <RefreshCw className="w-5 h-5 text-brand-purple" />
                       </div>
-                      <h4 className="font-bold text-lg">Real-Time Sync</h4>
+                      <h4 className="font-bold text-xl">Real-Time Sync</h4>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       All your data syncs instantly across devices with bank-level security and encryption
                     </p>
-                    <Badge variant="secondary" className="mt-4">Available Now</Badge>
+                    <Badge variant="availableNow" className="mt-4">Available Now</Badge>
                   </div>
                 </div>
 
@@ -151,12 +151,12 @@ export default function Features() {
                       <div className="w-10 h-10 rounded-xl bg-brand-teal/10 flex items-center justify-center">
                         <Bot className="w-5 h-5 text-brand-teal" />
                       </div>
-                      <h4 className="font-bold text-lg">AI Budget Optimization</h4>
+                      <h4 className="font-bold text-xl">AI Budget Optimization</h4>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       Machine learning analyzes your spending patterns and suggests optimal budget allocations for maximum savings
                     </p>
-                    <Badge variant="secondary" className="mt-4">Available Now</Badge>
+                    <Badge variant="availableNow" className="mt-4">Available Now</Badge>
                   </div>
                 </div>
               </div>
@@ -183,12 +183,12 @@ export default function Features() {
                       <div className="w-10 h-10 rounded-xl bg-brand-blue/10 flex items-center justify-center">
                         <MapPin className="w-5 h-5 text-brand-blue" />
                       </div>
-                      <h4 className="font-bold text-lg">Geofencing Alerts</h4>
+                      <h4 className="font-bold text-xl">Geofencing Alerts</h4>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       Set location-based budgets and get notified when entering areas where you tend to overspend
                     </p>
-                    <Badge variant="secondary" className="mt-4">Available Now</Badge>
+                    <Badge variant="availableNow" className="mt-4">Available Now</Badge>
                   </div>
                 </div>
 
@@ -199,12 +199,12 @@ export default function Features() {
                       <div className="w-10 h-10 rounded-xl bg-brand-purple/10 flex items-center justify-center">
                         <Bell className="w-5 h-5 text-brand-purple" />
                       </div>
-                      <h4 className="font-bold text-lg">Smart Push Notifications</h4>
+                      <h4 className="font-bold text-xl">Smart Push Notifications</h4>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       Receive intelligent alerts for budget limits, unusual spending, and personalized savings opportunities
                     </p>
-                    <Badge variant="secondary" className="mt-4">Available Now</Badge>
+                    <Badge variant="availableNow" className="mt-4">Available Now</Badge>
                   </div>
                 </div>
 
@@ -215,12 +215,12 @@ export default function Features() {
                       <div className="w-10 h-10 rounded-xl bg-brand-teal/10 flex items-center justify-center">
                         <Camera className="w-5 h-5 text-brand-teal" />
                       </div>
-                      <h4 className="font-bold text-lg">Instant Camera Capture</h4>
+                      <h4 className="font-bold text-xl">Instant Camera Capture</h4>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       Snap photos of receipts with your phone camera for instant OCR processing and automatic transaction logging
                     </p>
-                    <Badge variant="secondary" className="mt-4">Available Now</Badge>
+                    <Badge variant="availableNow" className="mt-4">Available Now</Badge>
                   </div>
                 </div>
               </div>
