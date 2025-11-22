@@ -127,7 +127,7 @@ export default function Home() {
                   <Lock className="w-6 h-6 text-brand-blue" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-2">End-to-End Encryption</h3>
+                  <h3 className="text-2xl font-bold mb-3">End-to-End Encryption</h3>
                   <p className="text-muted-foreground">Your data is encrypted before it leaves your device and only you have the keys.</p>
                 </div>
               </div>
@@ -136,7 +136,7 @@ export default function Home() {
                   <Eye className="w-6 h-6 text-brand-purple" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-2">Zero Data Tracking</h3>
+                  <h3 className="text-2xl font-bold mb-3">Zero Data Tracking</h3>
                   <p className="text-muted-foreground">We don't track, analyze, or sell your spending habits to third parties.</p>
                 </div>
               </div>
@@ -145,7 +145,7 @@ export default function Home() {
                   <Database className="w-6 h-6 text-brand-teal" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-2">Local-First Storage</h3>
+                  <h3 className="text-2xl font-bold mb-3">Local-First Storage</h3>
                   <p className="text-muted-foreground">Your data lives on your device first. Cloud sync is optional and always encrypted.</p>
                 </div>
               </div>

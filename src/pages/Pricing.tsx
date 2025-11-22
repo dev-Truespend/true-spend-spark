@@ -47,7 +47,7 @@ export default function Pricing() {
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/10">
       
       {/* Hero Section */}
-      <section className="pt-32 pb-16 px-6">
+      <section className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-6xl text-center">
           <Badge variant="secondary" className="mb-6 text-base px-6 py-2">
             Simple, Transparent Pricing
@@ -80,7 +80,7 @@ export default function Pricing() {
       </section>
 
       {/* Pricing Cards */}
-      <section className="py-16 px-6">
+      <section className="py-24 px-6">
         <div className="container mx-auto max-w-7xl">
           <div className="grid lg:grid-cols-3 gap-10">
             
@@ -135,7 +135,7 @@ export default function Pricing() {
             {/* Plus Plan */}
             <Card className="border-2 border-brand-purple shadow-premium relative group scale-[1.02] lg:scale-[1.05]">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <Badge className="bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal text-white px-6 py-2 text-sm font-semibold shadow-large">
+                <Badge variant="popular" className="px-6 py-2 text-sm">
                   🔥 Most Popular
                 </Badge>
               </div>
@@ -250,7 +250,7 @@ export default function Pricing() {
       <section className="py-24 px-6">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Frequently Asked Questions</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Frequently Asked Questions</h2>
             <p className="text-lg text-muted-foreground">Everything you need to know about our pricing</p>
           </div>
           
