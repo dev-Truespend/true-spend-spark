@@ -262,59 +262,8 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Left Side - Enterprise Security Visual */}
-      <div className="hidden lg:flex flex-col justify-center items-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/5 via-brand-purple/5 to-brand-teal/5"></div>
-        
-        <div className="relative z-10 w-full max-w-lg space-y-12">
-          <div className="text-center">
-            <img 
-              src={authEnterprise} 
-              alt="Enterprise Security Architecture" 
-              className="w-full h-auto mx-auto drop-shadow-2xl"
-            />
-          </div>
-          
-          <div className="space-y-6 text-center">
-            <h1 className="text-4xl font-bold text-white">Enterprise-Grade Security</h1>
-            <p className="text-lg text-gray-300">
-              Bank-level encryption and zero-trust architecture protecting your financial data
-            </p>
-          </div>
-
-          {/* Trust Badges Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-xl hover:bg-white/10 transition-all">
-              <Lock className="w-8 h-8 mb-3 text-brand-blue" />
-              <div className="font-semibold text-white text-sm">AES-256 Encryption</div>
-              <div className="text-xs text-gray-400 mt-1">Military-grade security</div>
-            </div>
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-xl hover:bg-white/10 transition-all">
-              <Shield className="w-8 h-8 mb-3 text-brand-purple" />
-              <div className="font-semibold text-white text-sm">SOC 2 Type II</div>
-              <div className="text-xs text-gray-400 mt-1">Certified secure</div>
-            </div>
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-xl hover:bg-white/10 transition-all">
-              <Eye className="w-8 h-8 mb-3 text-brand-teal" />
-              <div className="font-semibold text-white text-sm">Zero Knowledge</div>
-              <div className="text-xs text-gray-400 mt-1">Private by design</div>
-            </div>
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-xl hover:bg-white/10 transition-all">
-              <CheckCircle className="w-8 h-8 mb-3 text-brand-blue" />
-              <div className="font-semibold text-white text-sm">GDPR Compliant</div>
-              <div className="text-xs text-gray-400 mt-1">EU standards</div>
-            </div>
-          </div>
-
-          <div className="text-center pt-4">
-            <p className="text-sm text-gray-400">Trusted by 10,000+ users worldwide</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Side - Authentication Form */}
-      <div className="flex flex-col min-h-screen bg-background">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex flex-col w-full max-w-md px-6">
         {/* Back to Home Button */}
         <div className="p-6">
           <Link to="/">
