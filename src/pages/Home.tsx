@@ -6,10 +6,10 @@ import { Shield, Sparkles, Smartphone, Check, X, ArrowRight, Lock, Eye, Database
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { GetInTouch } from "@/components/GetInTouch";
-import heroPremium from "@/assets/hero-premium.png";
+import heroCardsPhone from "@/assets/hero-cards-phone.png";
 import privacyPremium from "@/assets/privacy-premium.png";
 import multiDevice from "@/assets/multi-device-ecosystem.png";
-import heroCardsPhone from "@/assets/hero-cards-phone.png";
+import heroPremium from "@/assets/hero-premium.png";
 import localData from "@/assets/local-first-data.png";
 
 export default function Home() {
@@ -80,7 +80,7 @@ export default function Home() {
               <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/30 via-brand-purple/30 to-brand-teal/30 blur-3xl animate-pulse-slow"></div>
               <div className="absolute -inset-4 bg-gradient-to-r from-brand-blue/20 to-brand-purple/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
               <img 
-                src={heroPremium} 
+                src={heroCardsPhone} 
                 alt="TrueSpend - Smart expense tracking with AI-powered rewards" 
                 className="relative w-full h-auto drop-shadow-2xl transform group-hover:scale-[1.03] group-hover:rotate-1 transition-all duration-700 animate-float-slow"
               />
@@ -228,7 +228,7 @@ export default function Home() {
               <div className="relative mx-auto w-64 h-64 group">
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/20 to-brand-purple/20 blur-2xl rounded-full animate-pulse-slow"></div>
                 <img 
-                  src={heroCardsPhone} 
+              src={heroPremium}
                   alt="Smart AI-powered rewards with credit cards" 
                   className="relative w-full h-full object-contain drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
                 />
