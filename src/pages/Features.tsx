@@ -35,13 +35,21 @@ export default function Features() {
           </div>
           
           {/* Ecosystem Diagram */}
-          <div className="relative group max-w-5xl mx-auto">
-            <div className="absolute inset-0 bg-gradient-to-r from-brand-blue/10 via-brand-purple/10 to-brand-teal/10 blur-3xl rounded-full animate-pulse-slow"></div>
-            <img 
-              src={ecosystemProfessional} 
-              alt="TrueSpend comprehensive ecosystem across all platforms" 
-              className="relative w-full h-auto drop-shadow-2xl transform group-hover:scale-[1.02] transition-transform duration-700"
-            />
+          <div className="relative group max-w-4xl mx-auto">
+            {/* Subtle gradient backdrop */}
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/5 via-brand-purple/5 to-brand-teal/5 rounded-3xl"></div>
+            
+            {/* Animated glow effect */}
+            <div className="absolute -inset-4 bg-gradient-to-r from-brand-blue/20 via-brand-purple/20 to-brand-teal/20 blur-2xl rounded-full opacity-50 group-hover:opacity-75 transition-opacity duration-700"></div>
+            
+            {/* Image container with blend effect */}
+            <div className="relative backdrop-blur-sm rounded-3xl overflow-hidden">
+              <img 
+                src={ecosystemProfessional} 
+                alt="TrueSpend comprehensive ecosystem across all platforms" 
+                className="relative w-full h-auto mix-blend-normal transform group-hover:scale-[1.02] transition-transform duration-700"
+              />
+            </div>
           </div>
         </div>
       </section>
