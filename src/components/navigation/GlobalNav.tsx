@@ -92,7 +92,10 @@ export function GlobalNav() {
             {!user && (
               <>
                 <div className="hidden md:flex items-center gap-8">
-                  <Link to="/pricing" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
+                  <Link to="/features" className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
+                    Features
+                  </Link>
+                  <Link to="/pricing" className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
                     Pricing
                   </Link>
                 </div>
@@ -110,7 +113,7 @@ export function GlobalNav() {
             {user && (
               <>
                 <div className="hidden md:flex items-center gap-8">
-                  {accessibleItems.slice(0, 5).map(item => {
+                  {accessibleItems.slice(0, 6).map(item => {
                     const isActive = location.pathname.startsWith(item.route) && item.route !== '/' 
                                   || (item.route === '/' && location.pathname === '/');
                     

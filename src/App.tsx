@@ -18,7 +18,9 @@ import { useOfflineStorage } from "@/hooks/useOfflineStorage";
 import { toast } from "sonner";
 import AdminDashboardLayout from "./pages/dashboard/AdminDashboardLayout";
 import DashboardLauncher from "./pages/DashboardLauncher";
-import Home from "./pages/Home";
+import Home from './pages/Home';
+import Features from './pages/Features';
+import Pricing from './pages/Pricing';
 import UserDashboard from "./pages/UserDashboard";
 import Overview from "./pages/dashboard/Overview";
 import Phases from "./pages/dashboard/Phases";
@@ -260,6 +262,17 @@ function App() {
                   </div>
                 }>
                   {React.createElement(lazy(() => import('@/pages/Home')))}
+                </Suspense>
+              } />
+              
+              {/* Features Page */}
+              <Route path="/features" element={
+                <Suspense fallback={
+                  <div className="min-h-screen flex items-center justify-center bg-background">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                }>
+                  {React.createElement(lazy(() => import('@/pages/Features')))}
                 </Suspense>
               } />
               
