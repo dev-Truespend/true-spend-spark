@@ -7,7 +7,6 @@ import {
   ShoppingCart, Zap, RefreshCw, Camera, ScanLine, Bot,
   CloudOff, MapPin, Bell
 } from "lucide-react";
-import ecosystemProfessional from "@/assets/ecosystem-professional.png";
 import browserShoppingTracker from "@/assets/browser-shopping-tracker.png";
 import browserMerchantDetect from "@/assets/browser-merchant-detect.png";
 import browserAutoSync from "@/assets/browser-auto-sync.png";
@@ -22,47 +21,15 @@ export default function Features() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/10">
       
-      {/* Hero Section with Multi-Device Image */}
-      <section className="pt-32 pb-16 px-6">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-              Works <span className="bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal bg-clip-text text-transparent">Everywhere</span> You Need It
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              One account. All your devices. Seamlessly synced in real-time with bank-level security. Available on mobile, desktop, tablet, and web.
-            </p>
-          </div>
-          
-          {/* Ecosystem Diagram */}
-          <div className="relative group max-w-4xl mx-auto">
-            {/* Subtle gradient backdrop */}
-            <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/5 via-brand-purple/5 to-brand-teal/5 rounded-3xl"></div>
-            
-            {/* Animated glow effect */}
-            <div className="absolute -inset-4 bg-gradient-to-r from-brand-blue/20 via-brand-purple/20 to-brand-teal/20 blur-2xl rounded-full opacity-50 group-hover:opacity-75 transition-opacity duration-700"></div>
-            
-            {/* Image container with blend effect */}
-            <div className="relative backdrop-blur-sm rounded-3xl overflow-hidden">
-              <img 
-                src={ecosystemProfessional} 
-                alt="TrueSpend comprehensive ecosystem across all platforms" 
-                className="relative w-full h-auto mix-blend-normal transform group-hover:scale-[1.02] transition-transform duration-700"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-
       {/* Platform-Specific Features */}
-      <section className="py-24 px-6 bg-gradient-to-br from-brand-blue/5 via-background to-brand-purple/5">
+      <section className="pt-32 px-6 bg-gradient-to-br from-brand-blue/5 via-background to-brand-purple/5">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
-            
-            <h2 className="text-4xl font-bold mb-4">Powerful Features on Every Platform</h2>
+            <h2 className="text-4xl font-bold mb-4">
+              Powerful <span className="bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal bg-clip-text text-transparent">Features</span> on Every Platform
+            </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Experience the full power of TrueSpend on your favorite device with platform-optimized features
+              One account. All your devices. Seamlessly synced in real-time with bank-level security. Available on mobile, desktop, tablet, and web.
             </p>
           </div>
 
