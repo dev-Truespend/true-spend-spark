@@ -70,39 +70,93 @@ export default function Auth() {
   const [processingOAuth, setProcessingOAuth] = useState(isOAuthCallback);
 
   useEffect(() => {
-    if (isOAuthCallback) {
-      const completeOAuth = async () => {
-        try {
-          const code = searchParams.get('code') || hashParams.get('code');
-          const accessToken = searchParams.get('access_token') || hashParams.get('access_token');
-          const refreshToken = hashParams.get('refresh_token');
-          const providerToken = hashParams.get('provider_token');
-          const provider = searchParams.get('provider') || hashParams.get('provider') || 'google';
-          
-          if (!code && !accessToken && !refreshToken && !providerToken) {
-            toast({ title: "OAuth Error", description: "Missing OAuth parameters.", variant: "destructive" });
-            setProcessingOAuth(false);
-            return;
-          }
+    if (!isOAuthCallback) return;
 
-          // OAuth callback handled automatically by Supabase
-          // Wait for user session to be established
-          setTimeout(() => {
-            if (user) {
-              toast({ title: "Welcome back!" });
-              navigate(redirectTo, { replace: true });
-            }
-          }, 1000);
-        } catch (error) {
-          toast({ title: "OAuth Error", description: "An error occurred during OAuth processing.", variant: "destructive" });
-        } finally {
+    const completeOAuth = async () => {
+      try {
+        console.log('[Auth] Processing OAuth callback');
+        setProcessingOAuth(true);
+        
+        const code = searchParams.get('code') || hashParams.get('code');
+        const accessToken = searchParams.get('access_token') || hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const errorParam = searchParams.get('error') || hashParams.get('error');
+        
+        // Handle OAuth errors
+        if (errorParam) {
+          const errorDesc = searchParams.get('error_description') || hashParams.get('error_description');
+          toast({
+            title: "Sign-in Failed",
+            description: errorDesc || "Authentication was cancelled or failed.",
+            variant: "destructive"
+          });
           setProcessingOAuth(false);
+          return;
         }
-      };
+        
+        if (!code && !accessToken && !refreshToken) {
+          toast({
+            title: "OAuth Error",
+            description: "Missing authentication parameters. Please try again.",
+            variant: "destructive"
+          });
+          setProcessingOAuth(false);
+          return;
+        }
 
-      completeOAuth();
-    }
-  }, [isOAuthCallback, navigate, redirectTo, signIn, searchParams, hashParams, toast]);
+        // Wait for session to be established (with timeout)
+        const maxWaitTime = 5000; // 5 seconds max
+        const startTime = Date.now();
+        
+        const checkSession = async () => {
+          const { data: { session } } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
+          
+          if (session && session.user) {
+            console.log('[Auth] Session established, redirecting to dashboard');
+            toast({ title: "Welcome back!", description: "Successfully signed in." });
+            navigate(redirectTo, { replace: true });
+            return true;
+          }
+          
+          // Timeout check
+          if (Date.now() - startTime > maxWaitTime) {
+            console.error('[Auth] Session establishment timeout');
+            toast({
+              title: "Sign-in Delayed",
+              description: "Taking longer than expected. Please refresh the page.",
+              variant: "destructive"
+            });
+            setProcessingOAuth(false);
+            return true;
+          }
+          
+          return false;
+        };
+        
+        // Poll for session (check every 300ms)
+        const pollInterval = setInterval(async () => {
+          const done = await checkSession();
+          if (done) {
+            clearInterval(pollInterval);
+          }
+        }, 300);
+        
+        // Initial check
+        await checkSession();
+        
+      } catch (error) {
+        console.error('[Auth] OAuth processing error:', error);
+        toast({
+          title: "Authentication Error",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive"
+        });
+        setProcessingOAuth(false);
+      }
+    };
+
+    completeOAuth();
+  }, [isOAuthCallback, navigate, redirectTo, toast, searchParams, hashParams]);
 
   // Auto-redirect if already authenticated
   useEffect(() => {
