@@ -54,6 +54,7 @@ export default function Auth() {
   const [mfaRequired, setMfaRequired] = useState(false);
   const [checkingMfa, setCheckingMfa] = useState(false);
   const [mfaMethod, setMfaMethod] = useState<'totp' | 'backup'>('totp');
+  const [emailSent, setEmailSent] = useState(false);
   const { signIn, signUp, user, session, loading, checkAuthProvider, checkMfaStatus } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -298,7 +299,14 @@ export default function Auth() {
       if (error) {
         toast({ title: "Signup failed", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "Account created!", description: "Welcome to TrueSpend." });
+        toast({ 
+          title: "Account created!", 
+          description: "A verification email has been sent to your inbox. Please verify within 24 hours to activate your account.",
+          duration: 8000, // Longer duration for important message
+        });
+        
+        // Also show persistent alert in UI (will be added in Phase 4)
+        setEmailSent(true);
       }
     } catch (error) {
       toast({ title: "Error", description: "An error occurred.", variant: "destructive" });
