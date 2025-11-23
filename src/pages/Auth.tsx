@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +17,7 @@ import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { ConsentBlock } from "@/components/auth/ConsentBlock";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Loader2, Shield, Lock, Eye, CheckCircle, Smartphone, KeyRound, ArrowLeft } from "lucide-react";
+import { Loader2, Shield, Lock, Eye, CheckCircle, Smartphone, KeyRound, ArrowLeft, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import authEnterprise from "@/assets/auth-enterprise.png";
@@ -488,6 +489,26 @@ export default function Auth() {
             </TabsContent>
 
             <TabsContent value="signup" className="space-y-4 mt-6">
+              {!emailSent && (
+                <Alert className="mb-4 border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
+                  <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <AlertDescription className="text-sm text-blue-800 dark:text-blue-200 ml-2">
+                    <strong>Email Verification Required:</strong> After signing up, you'll receive a verification email. 
+                    Please verify within 24 hours to activate your account.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {emailSent && (
+                <Alert className="mb-4 border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950">
+                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <AlertDescription className="text-sm text-green-800 dark:text-green-200 ml-2">
+                    <strong>Verification Email Sent!</strong> Check your inbox and verify your email within 24 hours. 
+                    Don't forget to check your spam folder.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <Form {...signupForm}>
                 <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
                   <FormField control={signupForm.control} name="email" render={({ field }) => (
