@@ -590,7 +590,7 @@ const logger = useLogger();
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth`,
+          redirectTo: `${window.location.origin}/dashboard`,
           queryParams: {
             access_type: 'online',
             prompt: 'select_account', // Let user choose account each time
