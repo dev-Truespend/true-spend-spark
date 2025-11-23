@@ -7,6 +7,8 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { createSyncPersister } from '@/lib/queryPersister';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { useSessionActivity } from "@/hooks/useSessionActivity";
+import { ContinueSessionDialog } from "@/components/auth/ContinueSessionDialog";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { GlobalNav } from "@/components/navigation/GlobalNav";
 import { Footer } from "@/components/navigation/Footer";
@@ -224,6 +226,9 @@ function SyncManagerWrapper() {
 }
 
 function App() {
+  // Session activity tracking
+  const { showWarning, remainingTime, continueSession } = useSessionActivity();
+
   // Maintenance mode gate
   if (import.meta.env.VITE_MAINTENANCE_MODE === 'true') {
     return (
@@ -246,6 +251,13 @@ function App() {
           <ErrorBoundary>
             <BrowserRouter>
               <AuthProvider>
+                {/* Session inactivity warning */}
+                <ContinueSessionDialog 
+                  open={showWarning}
+                  remainingTime={remainingTime}
+                  onContinue={continueSession}
+                />
+                
                 <SyncManagerWrapper />
                 <Toaster />
                 <Sonner />
