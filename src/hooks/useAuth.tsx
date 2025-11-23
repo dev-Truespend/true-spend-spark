@@ -572,13 +572,20 @@ const logger = useLogger();
     // Trigger verification email via edge function
     if (authData.user && authData.session) {
       try {
-        await supabase.functions.invoke('send-verification-email', {
+        const { data, error: emailError } = await supabase.functions.invoke('send-verification-email', {
           headers: {
             Authorization: `Bearer ${authData.session.access_token}`,
           },
         });
+        
+        if (emailError) {
+          console.error('Verification email error:', emailError);
+          // Note: Don't throw - account was created successfully
+          // User will be notified in Auth.tsx
+        }
       } catch (emailError) {
         console.error('Failed to send verification email:', emailError);
+        // Note: Don't throw - account was created successfully
       }
     }
 
