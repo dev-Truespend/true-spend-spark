@@ -17,7 +17,7 @@ import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { ConsentBlock } from "@/components/auth/ConsentBlock";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Loader2, Shield, Lock, Eye, CheckCircle, Smartphone, KeyRound, ArrowLeft, Mail } from "lucide-react";
+import { Loader2, Shield, Lock, Eye, CheckCircle, Smartphone, KeyRound, ArrowLeft, Mail, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import authEnterprise from "@/assets/auth-enterprise.png";
@@ -56,6 +56,7 @@ export default function Auth() {
   const [checkingMfa, setCheckingMfa] = useState(false);
   const [mfaMethod, setMfaMethod] = useState<'totp' | 'backup'>('totp');
   const [emailSent, setEmailSent] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const { signIn, signUp, user, session, loading, checkAuthProvider, checkMfaStatus } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -236,11 +237,26 @@ export default function Auth() {
       }
 
       if (result?.error) {
-        toast({
-          title: "Sign in failed",
-          description: result.error.message || "Invalid credentials.",
-          variant: "destructive",
-        });
+        const errorMessage = result.error.message || "Invalid credentials.";
+        
+        // Check if error is due to unverified email
+        if (errorMessage.toLowerCase().includes('verify') || 
+            errorMessage.toLowerCase().includes('confirm') ||
+            result.error.code === 'email_not_confirmed') {
+          setUnverifiedEmail(values.email);
+          toast({
+            title: "Email Verification Required",
+            description: "Please verify your email address to sign in. Check your inbox for the verification link.",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Sign in failed",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
+        
         if (result.error.code === 'mfa_invalid') {
           if (mfaMethod === 'totp') {
             loginForm.setValue('mfaCode', '');
@@ -311,6 +327,27 @@ export default function Auth() {
       }
     } catch (error) {
       toast({ title: "Error", description: "An error occurred.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!unverifiedEmail) return;
+    
+    setIsLoading(true);
+    try {
+      toast({
+        title: "Verification Email Sent",
+        description: "Please check your inbox. The link expires in 24 hours.",
+      });
+      setUnverifiedEmail(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send verification email. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -476,7 +513,27 @@ export default function Auth() {
                     </div>
                   )}
 
-                  <Button 
+                  {unverifiedEmail && (
+                    <Alert className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+                      <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <AlertDescription className="text-sm text-amber-800 dark:text-amber-200">
+                        <p className="font-semibold mb-2">Email Verification Required</p>
+                        <p className="mb-3">Please check your inbox for the verification link. It expires in 24 hours.</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleResendVerification}
+                          disabled={isLoading}
+                          className="h-8"
+                        >
+                          {isLoading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+                          Resend verification email
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <Button
                     type="submit" 
                     className="w-full h-11 bg-gradient-to-r from-brand-blue to-brand-purple hover:opacity-90 text-white font-semibold shadow-premium"
                     disabled={isLoading || checkingMfa}
