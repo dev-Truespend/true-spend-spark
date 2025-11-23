@@ -225,10 +225,20 @@ function SyncManagerWrapper() {
   );
 }
 
-function App() {
-  // Session activity tracking
+// Component that uses session activity - must be inside AuthProvider
+function SessionActivityManager() {
   const { showWarning, remainingTime, continueSession } = useSessionActivity();
+  
+  return (
+    <ContinueSessionDialog 
+      open={showWarning}
+      remainingTime={remainingTime}
+      onContinue={continueSession}
+    />
+  );
+}
 
+function App() {
   // Maintenance mode gate
   if (import.meta.env.VITE_MAINTENANCE_MODE === 'true') {
     return (
@@ -251,13 +261,7 @@ function App() {
           <ErrorBoundary>
             <BrowserRouter>
               <AuthProvider>
-                {/* Session inactivity warning */}
-                <ContinueSessionDialog 
-                  open={showWarning}
-                  remainingTime={remainingTime}
-                  onContinue={continueSession}
-                />
-                
+                <SessionActivityManager />
                 <SyncManagerWrapper />
                 <Toaster />
                 <Sonner />
