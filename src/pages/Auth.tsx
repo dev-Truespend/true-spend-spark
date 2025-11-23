@@ -104,6 +104,14 @@ export default function Auth() {
     }
   }, [isOAuthCallback, navigate, redirectTo, signIn, searchParams, hashParams, toast]);
 
+  // Auto-redirect if already authenticated
+  useEffect(() => {
+    if (!loading && !processingOAuth && user && session) {
+      console.log('[Auth] User already authenticated, redirecting to dashboard');
+      navigate(redirectTo, { replace: true });
+    }
+  }, [loading, processingOAuth, user, session, navigate, redirectTo]);
+
   useEffect(() => {
     if (isExtensionMode) {
       document.body.classList.add('extension-mode');
