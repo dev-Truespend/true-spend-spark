@@ -408,6 +408,15 @@ export default function Auth() {
                     )} 
                   />
                   
+                  <div className="flex justify-end">
+                    <Link 
+                      to="/forgot-password" 
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors underline-offset-4 hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                  
                   {mfaRequired && (
                     <div className="space-y-4">
                       <Tabs value={mfaMethod} onValueChange={(v) => setMfaMethod(v as 'totp' | 'backup')} className="w-full">
