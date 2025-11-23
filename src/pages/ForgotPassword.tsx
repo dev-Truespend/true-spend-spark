@@ -121,10 +121,10 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <div className="w-full max-w-md space-y-4">
-        <Link to="/">
+        <Link to="/auth">
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back to Home
+            Back to Login
           </Button>
         </Link>
 
@@ -186,10 +186,9 @@ export default function ForgotPassword() {
                 </div>
 
                 <Button 
-                  variant="outline" 
                   onClick={handleResend}
                   disabled={resendCooldown > 0}
-                  className="w-full"
+                  className="w-full h-11 bg-gradient-to-r from-brand-blue to-brand-purple hover:opacity-90 text-white font-semibold shadow-premium"
                 >
                   {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend Email'}
                 </Button>
@@ -220,7 +219,7 @@ export default function ForgotPassword() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button type="submit" className="w-full h-11 bg-gradient-to-r from-brand-blue to-brand-purple hover:opacity-90 text-white font-semibold shadow-premium" disabled={isLoading}>
                     {isLoading ? "Sending..." : "Send Reset Link"}
                   </Button>
                 </form>
