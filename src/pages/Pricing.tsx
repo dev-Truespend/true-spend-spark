@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import {
 } from "lucide-react";
 
 export default function Pricing() {
+  const [isAnnual, setIsAnnual] = useState(false);
   const features = {
     free: [
       { icon: Receipt, text: "Unlimited receipt scanning" },
@@ -58,6 +60,25 @@ export default function Pricing() {
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
             Start free forever. Upgrade when you need advanced features. All plans include privacy-first architecture and work seamlessly across all your devices.
           </p>
+
+          {/* Billing Period Toggle */}
+          <div className="flex items-center justify-center gap-4 mb-12">
+            <span className={`text-lg font-medium transition-colors ${!isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Monthly
+            </span>
+            <button
+              onClick={() => setIsAnnual(!isAnnual)}
+              className="relative w-16 h-8 rounded-full bg-muted border-2 transition-all hover:border-brand-purple"
+            >
+              <div className={`absolute top-0.5 ${isAnnual ? 'right-0.5' : 'left-0.5'} w-6 h-6 rounded-full bg-gradient-to-r from-brand-blue to-brand-purple transition-all duration-300 shadow-md`} />
+            </button>
+            <span className={`text-lg font-medium transition-colors ${isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Annual
+            </span>
+            <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
+              Save 15%
+            </Badge>
+          </div>
           
           {/* Platform Showcase */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mb-12">
@@ -148,9 +169,27 @@ export default function Pricing() {
                   <div>
                     <h3 className="text-3xl font-bold mb-2">Plus</h3>
                     <div className="flex items-baseline gap-2 mb-3">
-                      <span className="text-5xl font-bold bg-gradient-to-r from-brand-blue to-brand-purple bg-clip-text text-transparent">$9</span>
-                      <span className="text-muted-foreground text-lg">/month</span>
+                      {isAnnual ? (
+                        <>
+                          <span className="text-5xl font-bold bg-gradient-to-r from-brand-blue to-brand-purple bg-clip-text text-transparent">
+                            $102
+                          </span>
+                          <span className="text-muted-foreground text-lg">/year</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-5xl font-bold bg-gradient-to-r from-brand-blue to-brand-purple bg-clip-text text-transparent">
+                            $10
+                          </span>
+                          <span className="text-muted-foreground text-lg">/month</span>
+                        </>
+                      )}
                     </div>
+                    {isAnnual && (
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Billed as $102/year • Save $18 compared to monthly
+                      </p>
+                    )}
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-purple/10 border border-brand-purple/20">
                       <TrendingUp className="w-4 h-4 text-brand-purple" />
                       <p className="text-sm font-semibold text-brand-purple">
@@ -205,9 +244,23 @@ export default function Pricing() {
                   <div>
                     <h3 className="text-3xl font-bold mb-2">Pro</h3>
                     <div className="flex items-baseline gap-2 mb-3">
-                      <span className="text-5xl font-bold">$19</span>
-                      <span className="text-muted-foreground text-lg">/month</span>
+                      {isAnnual ? (
+                        <>
+                          <span className="text-5xl font-bold">$193.80</span>
+                          <span className="text-muted-foreground text-lg">/year</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-5xl font-bold">$19</span>
+                          <span className="text-muted-foreground text-lg">/month</span>
+                        </>
+                      )}
                     </div>
+                    {isAnnual && (
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Billed as $193.80/year • Save $34.20 compared to monthly
+                      </p>
+                    )}
                     <p className="text-sm text-muted-foreground">
                       For businesses and professionals who need advanced features and integrations
                     </p>
