@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Sheet,
   SheetContent,
@@ -28,9 +29,14 @@ import {
   RefreshCw,
   Trash2,
   Star,
+  ArrowUpRight,
+  ArrowDownRight,
+  Loader2,
 } from 'lucide-react';
 import type { CreditCard } from '@/hooks/useCreditCards';
 import { useCreditCards } from '@/hooks/useCreditCards';
+import { usePlaid } from '@/hooks/usePlaid';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 interface CreditCardDetailsProps {
@@ -39,9 +45,36 @@ interface CreditCardDetailsProps {
   onClose: () => void;
 }
 
+interface Transaction {
+  id: string;
+  amount: number;
+  merchant_id: string | null;
+  category: string | null;
+  timestamp: string;
+  description: string | null;
+}
+
 export function CreditCardDetails({ card, isOpen, onClose }: CreditCardDetailsProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { deleteCard, setPrimaryCard, isDeleting } = useCreditCards();
+  const { syncTransactions, isLoading: isSyncing } = usePlaid();
+
+  const { data: transactions = [], isLoading: isLoadingTransactions, refetch: refetchTransactions } = useQuery({
+    queryKey: ['card-transactions', card.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('id, amount, merchant_id, category, timestamp, description')
+        .eq('user_id', card.user_id)
+        .eq('credit_card_id', card.id)
+        .order('timestamp', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      return data as Transaction[];
+    },
+    enabled: isOpen,
+  });
 
   const balance = card.current_balance || 0;
   const creditLimit = card.credit_limit || 0;
@@ -55,6 +88,13 @@ export function CreditCardDetails({ card, isOpen, onClose }: CreditCardDetailsPr
 
   const handleSetPrimary = () => {
     setPrimaryCard(card.id);
+  };
+
+  const handleSync = async () => {
+    if (card.plaid_item_id) {
+      await syncTransactions(card.plaid_item_id, card.id);
+      refetchTransactions();
+    }
   };
 
   return (
@@ -156,12 +196,57 @@ export function CreditCardDetails({ card, isOpen, onClose }: CreditCardDetailsPr
             {/* Recent Transactions */}
             <div>
               <h3 className="font-semibold mb-3">Recent Transactions</h3>
-              <div className="rounded-lg border-2 border-dashed p-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Transaction history will appear here once Plaid integration is complete.
-                </p>
-                <Badge variant="outline" className="mt-2">Phase 2 Feature</Badge>
-              </div>
+              {isLoadingTransactions ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : transactions.length === 0 ? (
+                <div className="rounded-lg border-2 border-dashed p-8 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No transactions found. Sync your card to see recent activity.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {transactions.map((transaction) => (
+                    <div
+                      key={transaction.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          'p-2 rounded-full',
+                          transaction.amount < 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-red-100 dark:bg-red-900/30 text-red-600'
+                        )}>
+                          {transaction.amount < 0 ? (
+                            <ArrowDownRight className="h-4 w-4" />
+                          ) : (
+                            <ArrowUpRight className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {transaction.description || 'Transaction'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(transaction.timestamp).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                            {transaction.category && ` • ${transaction.category}`}
+                          </p>
+                        </div>
+                      </div>
+                      <p className={cn(
+                        'font-semibold',
+                        transaction.amount < 0 ? 'text-green-600' : 'text-red-600'
+                      )}>
+                        {transaction.amount < 0 ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <Separator />
@@ -182,11 +267,20 @@ export function CreditCardDetails({ card, isOpen, onClose }: CreditCardDetailsPr
               <Button
                 variant="outline"
                 className="w-full justify-start"
-                disabled
+                onClick={handleSync}
+                disabled={isSyncing || !card.plaid_item_id}
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Sync Now
-                <Badge variant="secondary" className="ml-auto">Coming Soon</Badge>
+                {isSyncing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Syncing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Sync Now
+                  </>
+                )}
               </Button>
 
               <Button

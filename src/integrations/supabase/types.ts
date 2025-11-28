@@ -4537,6 +4537,7 @@ export type Database = {
           amount: number
           category: string
           created_at: string | null
+          credit_card_id: string | null
           description: string | null
           embedding: string | null
           geofence_id: string | null
@@ -4554,6 +4555,7 @@ export type Database = {
           amount: number
           category: string
           created_at?: string | null
+          credit_card_id?: string | null
           description?: string | null
           embedding?: string | null
           geofence_id?: string | null
@@ -4571,6 +4573,7 @@ export type Database = {
           amount?: number
           category?: string
           created_at?: string | null
+          credit_card_id?: string | null
           description?: string | null
           embedding?: string | null
           geofence_id?: string | null
@@ -4585,6 +4588,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_geofence_id_fkey"
             columns: ["geofence_id"]
