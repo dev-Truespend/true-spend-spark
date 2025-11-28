@@ -156,8 +156,6 @@ schedule = "0 4 * * 0"
 verify_jwt = false
 schedule = "0 1 * * *"
 
-# Phase 7: Location Intelligence Edge Functions
-
 [functions.location-insights-ai]
 verify_jwt = true
 
@@ -180,8 +178,6 @@ schedule = "0 */6 * * *"
 
 [functions.deal-notification-trigger]
 verify_jwt = true
-
-# Phase 8: Messaging & Events Infrastructure
 
 [functions.publish-event]
 verify_jwt = true
@@ -207,16 +203,12 @@ verify_jwt = true
 [functions.trace-collector]
 verify_jwt = false
 
-# Phase 9: Data Planes & Disaster Recovery
-
 [functions.backup-verification]
 verify_jwt = false
 schedule = "0 */6 * * *"
 
 [functions.data-export-request]
 verify_jwt = true
-
-# Phase 10: Observability & Polish
 
 [functions.log-collector]
 verify_jwt = false
@@ -229,8 +221,6 @@ verify_jwt = false
 
 [functions.incident-manager]
 verify_jwt = true
-# Run every hour
-# schedule = "0 * * * *"
 
 [functions.slo-manager]
 verify_jwt = true
@@ -245,4 +235,19 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.metrics-collector]
+verify_jwt = true
+
+[functions.plaid-create-link-token]
+verify_jwt = true
+
+[functions.plaid-exchange-token]
+verify_jwt = true
+
+[functions.plaid-sync-transactions]
+verify_jwt = true
+
+[functions.plaid-refresh-accounts]
+verify_jwt = true
+
+[functions.plaid-disconnect-item]
 verify_jwt = true

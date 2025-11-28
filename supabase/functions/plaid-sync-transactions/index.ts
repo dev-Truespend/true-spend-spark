@@ -107,8 +107,7 @@ serve(async (req) => {
       cards.map(card => [card.account_id, card.id])
     );
 
-    // Insert transactions
-    const transactionsToInsert = allTransactions
+                const transactionsToInsert = allTransactions
       .filter((tx: any) => accountToCardMap.has(tx.account_id))
       .map((tx: any) => ({
         user_id: user.id,
@@ -116,9 +115,7 @@ serve(async (req) => {
         amount: tx.amount,
         category: tx.category?.[0] || tx.personal_finance_category?.primary || 'other',
         description: tx.name,
-        date: tx.date,
-        merchant: tx.merchant_name || tx.name,
-        pending: tx.pending || false,
+        timestamp: tx.date,
         synced: true,
       }));
 
@@ -126,7 +123,7 @@ serve(async (req) => {
       const { error: txError } = await supabase
         .from('transactions')
         .upsert(transactionsToInsert, {
-          onConflict: 'user_id,date,amount,description',
+          onConflict: 'user_id,timestamp,amount,description',
           ignoreDuplicates: true,
         });
 
@@ -162,7 +159,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('[Plaid] Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
