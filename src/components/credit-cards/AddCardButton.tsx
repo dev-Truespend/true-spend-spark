@@ -1,4 +1,4 @@
-import { Plus, Sparkles } from 'lucide-react';
+import { Plus, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,9 +10,11 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useCreditCards } from '@/hooks/useCreditCards';
+import { usePlaidLinkFlow } from '@/hooks/usePlaid';
 
 export function AddCardButton() {
   const { cardCount, freeSlots, paidSlots, canAddMoreCards, needsPayment, additionalCardPrice } = useCreditCards();
+  const { openPlaidLink, isLoading, ready } = usePlaidLinkFlow();
 
   if (!canAddMoreCards) {
     return (
@@ -22,6 +24,10 @@ export function AddCardButton() {
       </Button>
     );
   }
+
+  const handleConnect = () => {
+    openPlaidLink();
+  };
 
   return (
     <Dialog>
@@ -43,7 +49,7 @@ export function AddCardButton() {
             Connect Credit Card
           </DialogTitle>
           <DialogDescription>
-            Securely connect your credit card to track balances and transactions
+            Securely connect your credit card using Plaid's bank-level encryption
           </DialogDescription>
         </DialogHeader>
 
@@ -68,16 +74,13 @@ export function AddCardButton() {
             )}
           </div>
 
-          {/* Coming Soon Notice */}
-          <div className="rounded-lg border-2 border-dashed border-primary/20 p-6 text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-2">
-              <Sparkles className="h-6 w-6 text-primary" />
-            </div>
-            <h4 className="font-semibold">Plaid Integration Coming Soon</h4>
-            <p className="text-sm text-muted-foreground">
-              Securely connect your credit cards using Plaid's industry-leading authentication.
+          {/* Security Notice */}
+          <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+            <h4 className="font-semibold text-sm mb-2">🔒 Bank-Level Security</h4>
+            <p className="text-xs text-muted-foreground">
+              Plaid uses 256-bit encryption and never stores your banking credentials. 
+              Your data is protected by the same security banks use.
             </p>
-            <Badge variant="outline" className="mt-2">Phase 2 Feature</Badge>
           </div>
 
           {/* What You'll Get */}
@@ -105,9 +108,22 @@ export function AddCardButton() {
         </div>
 
         <div className="flex gap-2">
-          <Button className="flex-1" disabled>
-            Connect with Plaid
-            <Badge variant="secondary" className="ml-2">Soon</Badge>
+          <Button 
+            className="flex-1 gap-2" 
+            onClick={handleConnect}
+            disabled={isLoading || !ready}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                Connect with Plaid
+              </>
+            )}
           </Button>
         </div>
       </DialogContent>
