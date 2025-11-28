@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { usePlaidLink, PlaidLinkOnSuccess, PlaidLinkOptions } from 'react-plaid-link';
+import { useState, useCallback } from 'react';
+import { usePlaidLink, PlaidLinkOnSuccess, PlaidLinkOptions, PlaidLinkError } from 'react-plaid-link';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -10,179 +10,166 @@ export function usePlaid() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const createLinkToken = async () => {
+  const createLinkToken = useCallback(async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase.functions.invoke('plaid-create-link-token');
-
+      
       if (error) throw error;
-
-      if (data?.link_token) {
-        setLinkToken(data.link_token);
-        return data.link_token;
-      } else {
-        throw new Error('No link token received');
-      }
+      
+      setLinkToken(data.link_token);
+      return data.link_token;
     } catch (error) {
-      console.error('[usePlaid] Create link token error:', error);
+      console.error('Error creating link token:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to initialize Plaid connection. Please try again.',
-        variant: 'destructive',
+        title: "Connection Error",
+        description: "Failed to initialize Plaid connection. Please try again.",
+        variant: "destructive",
       });
-      return null;
+      throw error;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
-  const exchangeToken = async (publicToken: string, metadata: any) => {
+  const exchangeToken = useCallback(async (publicToken: string, metadata: any) => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase.functions.invoke('plaid-exchange-token', {
-        body: {
-          public_token: publicToken,
-          metadata,
-        },
+        body: { public_token: publicToken, metadata }
       });
 
       if (error) throw error;
 
-      if (data?.success) {
-        toast({
-          title: 'Success!',
-          description: `Connected ${data.cards?.length || 0} credit card(s) from ${data.institution || 'your bank'}.`,
-        });
-        
-        // Refresh credit cards query
-        queryClient.invalidateQueries({ queryKey: ['credit-cards'] });
-        
-        return data;
-      } else {
-        throw new Error('Token exchange failed');
-      }
-    } catch (error) {
-      console.error('[usePlaid] Exchange token error:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to connect your accounts. Please try again.',
-        variant: 'destructive',
+        title: "Success!",
+        description: `Connected ${data.cards_added} credit card(s)`,
       });
-      return null;
+
+      // Invalidate queries to refresh the cards list
+      queryClient.invalidateQueries({ queryKey: ['credit-cards'] });
+      
+      return data;
+    } catch (error) {
+      console.error('Error exchanging token:', error);
+      toast({
+        title: "Connection Failed",
+        description: "Failed to connect your account. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast, queryClient]);
 
-  const syncTransactions = async (itemId: string, cardId?: string) => {
+  const syncTransactions = useCallback(async (itemId: string, cardId?: string) => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase.functions.invoke('plaid-sync-transactions', {
-        body: { item_id: itemId, card_id: cardId },
+        body: { item_id: itemId, credit_card_id: cardId }
       });
 
       if (error) throw error;
 
-      if (data?.success) {
-        toast({
-          title: 'Synced!',
-          description: `Synced ${data.synced} transaction(s).`,
-        });
-        
-        queryClient.invalidateQueries({ queryKey: ['credit-cards'] });
-        queryClient.invalidateQueries({ queryKey: ['card-transactions'] });
-        
-        return data;
-      } else {
-        throw new Error('Sync failed');
-      }
-    } catch (error) {
-      console.error('[usePlaid] Sync error:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to sync transactions. Please try again.',
-        variant: 'destructive',
+        title: "Synced!",
+        description: `Updated ${data.transactions_synced} transaction(s)`,
       });
-      return null;
+
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['credit-cards'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      
+      return data;
+    } catch (error) {
+      console.error('Error syncing transactions:', error);
+      toast({
+        title: "Sync Failed",
+        description: "Failed to sync transactions. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast, queryClient]);
 
-  const disconnectItem = async (itemId: string) => {
+  const disconnectItem = useCallback(async (itemId: string) => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.functions.invoke('plaid-disconnect-item', {
-        body: { item_id: itemId },
+      const { error } = await supabase.functions.invoke('plaid-disconnect-item', {
+        body: { item_id: itemId }
       });
 
       if (error) throw error;
 
-      if (data?.success) {
-        toast({
-          title: 'Disconnected',
-          description: 'Bank connection removed successfully.',
-        });
-        
-        queryClient.invalidateQueries({ queryKey: ['credit-cards'] });
-        
-        return data;
-      } else {
-        throw new Error('Disconnect failed');
-      }
-    } catch (error) {
-      console.error('[usePlaid] Disconnect error:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to disconnect. Please try again.',
-        variant: 'destructive',
+        title: "Disconnected",
+        description: "Successfully disconnected your account",
       });
-      return null;
+
+      queryClient.invalidateQueries({ queryKey: ['credit-cards'] });
+    } catch (error) {
+      console.error('Error disconnecting item:', error);
+      toast({
+        title: "Disconnect Failed",
+        description: "Failed to disconnect account. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast, queryClient]);
 
-  return {
-    linkToken,
-    isLoading,
-    createLinkToken,
-    exchangeToken,
-    syncTransactions,
-    disconnectItem,
-  };
+  return { linkToken, isLoading, createLinkToken, exchangeToken, syncTransactions, disconnectItem };
 }
 
 export function usePlaidLinkFlow() {
   const { linkToken, createLinkToken, exchangeToken, isLoading } = usePlaid();
+  const [isTokenLoading, setIsTokenLoading] = useState(false);
 
-  const onSuccess: PlaidLinkOnSuccess = async (publicToken, metadata) => {
+  const initializeLinkToken = useCallback(async () => {
+    if (linkToken) return; // Don't fetch if we already have a token
+    
+    setIsTokenLoading(true);
+    try {
+      await createLinkToken();
+    } finally {
+      setIsTokenLoading(false);
+    }
+  }, [linkToken, createLinkToken]);
+
+  const onSuccess: PlaidLinkOnSuccess = useCallback(async (publicToken, metadata) => {
     console.log('[Plaid] Link success, exchanging token...');
     await exchangeToken(publicToken, metadata);
-  };
+  }, [exchangeToken]);
+
+  const onExit = useCallback((err: PlaidLinkError | null) => {
+    if (err) {
+      console.error('Plaid Link error:', err);
+    }
+  }, []);
 
   const config: PlaidLinkOptions = {
     token: linkToken,
     onSuccess,
+    onExit,
   };
 
   const { open, ready } = usePlaidLink(config);
 
-  const openPlaidLink = async () => {
-    if (!linkToken) {
-      const token = await createLinkToken();
-      if (token) {
-        // Token is set, will trigger usePlaidLink to become ready
-        setTimeout(() => open(), 100);
-      }
-    } else if (ready) {
+  const openPlaidLink = useCallback(() => {
+    if (ready && linkToken) {
       open();
     }
-  };
+  }, [ready, linkToken, open]);
 
   return {
+    initializeLinkToken,
     openPlaidLink,
-    isLoading,
+    isLoading: isLoading || isTokenLoading,
     ready: ready && !!linkToken,
   };
 }
