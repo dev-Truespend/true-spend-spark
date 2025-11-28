@@ -1,4 +1,5 @@
 import { Plus, Sparkles, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,7 +15,15 @@ import { usePlaidLinkFlow } from '@/hooks/usePlaid';
 
 export function AddCardButton() {
   const { cardCount, freeSlots, paidSlots, canAddMoreCards, needsPayment, additionalCardPrice } = useCreditCards();
-  const { openPlaidLink, isLoading, ready } = usePlaidLinkFlow();
+  const { initializeLinkToken, openPlaidLink, isLoading, ready } = usePlaidLinkFlow();
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Eagerly fetch link token when dialog opens
+  useEffect(() => {
+    if (dialogOpen) {
+      initializeLinkToken();
+    }
+  }, [dialogOpen, initializeLinkToken]);
 
   if (!canAddMoreCards) {
     return (
@@ -30,7 +39,7 @@ export function AddCardButton() {
   };
 
   return (
-    <Dialog>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
@@ -116,12 +125,17 @@ export function AddCardButton() {
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Connecting...
+                {ready ? 'Connecting...' : 'Preparing...'}
               </>
-            ) : (
+            ) : ready ? (
               <>
                 <Sparkles className="h-4 w-4" />
                 Connect with Plaid
+              </>
+            ) : (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading...
               </>
             )}
           </Button>
