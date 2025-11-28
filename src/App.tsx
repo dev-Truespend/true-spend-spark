@@ -44,6 +44,7 @@ import ConfirmEmailChange from "./pages/ConfirmEmailChange";
 import Transactions from "./pages/Transactions";
 import Budgets from "./pages/Budgets";
 import Insights from "./pages/Insights";
+import CreditCards from "./pages/CreditCards";
 import LocationHistory from "./pages/LocationHistory";
 import LocationMetrics from "./pages/dashboard/LocationMetrics";
 import NotFound from "./pages/NotFound";
@@ -409,6 +410,14 @@ function App() {
               />
 
               {/* Phase 4: User Features */}
+              <Route 
+                path="/credit-cards" 
+                element={
+                  <ProtectedRoute>
+                    <CreditCards />
+                  </ProtectedRoute>
+                } 
+              />
               <Route 
                 path="/transactions" 
                 element={

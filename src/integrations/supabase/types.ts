@@ -702,6 +702,77 @@ export type Database = {
           },
         ]
       }
+      credit_cards: {
+        Row: {
+          account_id: string
+          account_mask: string | null
+          account_name: string | null
+          apr_percentage: number | null
+          available_credit: number | null
+          card_brand: string | null
+          created_at: string | null
+          credit_limit: number | null
+          current_balance: number | null
+          due_date: string | null
+          id: string
+          is_active: boolean | null
+          is_primary: boolean | null
+          last_sync_at: string | null
+          minimum_payment: number | null
+          plaid_item_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          account_mask?: string | null
+          account_name?: string | null
+          apr_percentage?: number | null
+          available_credit?: number | null
+          card_brand?: string | null
+          created_at?: string | null
+          credit_limit?: number | null
+          current_balance?: number | null
+          due_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          last_sync_at?: string | null
+          minimum_payment?: number | null
+          plaid_item_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          account_mask?: string | null
+          account_name?: string | null
+          apr_percentage?: number | null
+          available_credit?: number | null
+          card_brand?: string | null
+          created_at?: string | null
+          credit_limit?: number | null
+          current_balance?: number | null
+          due_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          last_sync_at?: string | null
+          minimum_payment?: number | null
+          plaid_item_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_cards_plaid_item_id_fkey"
+            columns: ["plaid_item_id"]
+            isOneToOne: false
+            referencedRelation: "plaid_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       csp_violations: {
         Row: {
           blocked_uri: string | null
@@ -3207,6 +3278,48 @@ export type Database = {
           hit_count?: number | null
           id?: string
           place_data?: Json
+        }
+        Relationships: []
+      }
+      plaid_items: {
+        Row: {
+          access_token_encrypted: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          institution_id: string | null
+          institution_name: string | null
+          item_id: string
+          last_sync_at: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token_encrypted: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          institution_id?: string | null
+          institution_name?: string | null
+          item_id: string
+          last_sync_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token_encrypted?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          institution_id?: string | null
+          institution_name?: string | null
+          item_id?: string
+          last_sync_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }

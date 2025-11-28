@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
-import { Settings, LayoutDashboard, BarChart3, RefreshCw, AlertTriangle, MapPin, Heart } from 'lucide-react';
+import { Settings, LayoutDashboard, BarChart3, RefreshCw, AlertTriangle, MapPin, Heart, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { VersionDisplay } from '@/components/version/VersionDisplay';
@@ -13,6 +13,7 @@ import { Logo } from '@/components/brand/Logo';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', route: '/dashboard', icon: LayoutDashboard, roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'credit-cards', label: 'Credit Cards', route: '/credit-cards', icon: CreditCard, roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'transactions', label: 'Transactions', route: '/transactions', icon: BarChart3, roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'budgets', label: 'Budgets', route: '/budgets', icon: BarChart3, roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'insights', label: 'Insights', route: '/insights', icon: BarChart3, roles: ['user', 'developer', 'admin'], authRequired: true },
