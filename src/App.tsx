@@ -271,16 +271,8 @@ function App() {
                 <RateLimitStatus />
                 <div className="pt-14">
             <Routes>
-              {/* Root shows Home page */}
-              <Route path="/" element={
-                <Suspense fallback={
-                  <div className="min-h-screen flex items-center justify-center bg-background">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                  </div>
-                }>
-                  {React.createElement(lazy(() => import('@/pages/Home')))}
-                </Suspense>
-              } />
+              {/* Root redirects to admin dashboard */}
+              <Route path="/" element={<Navigate to="/admin" replace />} />
               
               {/* Features Page */}
               <Route path="/features" element={
