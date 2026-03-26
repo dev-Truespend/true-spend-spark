@@ -60,6 +60,7 @@ serve(async (req) => {
         products: ['transactions'],
         country_codes: ['US'],
         language: 'en',
+        webhook: `${Deno.env.get('SUPABASE_URL')}/functions/v1/webhook-plaid`,
         account_filters: {
           credit: {
             account_subtypes: ['credit card'],

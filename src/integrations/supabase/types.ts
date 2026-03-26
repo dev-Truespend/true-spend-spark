@@ -3285,6 +3285,7 @@ export type Database = {
         Row: {
           access_token_encrypted: string
           created_at: string | null
+          error_code: string | null
           error_message: string | null
           id: string
           institution_id: string | null
@@ -3292,12 +3293,14 @@ export type Database = {
           item_id: string
           last_sync_at: string | null
           status: string | null
+          sync_cursor: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           access_token_encrypted: string
           created_at?: string | null
+          error_code?: string | null
           error_message?: string | null
           id?: string
           institution_id?: string | null
@@ -3305,12 +3308,14 @@ export type Database = {
           item_id: string
           last_sync_at?: string | null
           status?: string | null
+          sync_cursor?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           access_token_encrypted?: string
           created_at?: string | null
+          error_code?: string | null
           error_message?: string | null
           id?: string
           institution_id?: string | null
@@ -3318,6 +3323,7 @@ export type Database = {
           item_id?: string
           last_sync_at?: string | null
           status?: string | null
+          sync_cursor?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -5270,8 +5276,8 @@ export type Database = {
       cleanup_old_workflow_executions: { Args: never; Returns: number }
       cleanup_unverified_accounts: { Args: never; Returns: number }
       clear_login_attempts:
-        | { Args: { p_user_id: string }; Returns: undefined }
         | { Args: { p_identifier: string }; Returns: undefined }
+        | { Args: { p_user_id: string }; Returns: undefined }
       decrypt_pii: { Args: { secret_id: string }; Returns: string }
       decrypt_totp_secret: { Args: { secret_id: string }; Returns: string }
       delete_totp_vault_secret: {
@@ -5281,8 +5287,8 @@ export type Database = {
       detect_ocr_anomalies: { Args: { p_user_id: string }; Returns: Json }
       encrypt_pii: { Args: { data: string }; Returns: string }
       encrypt_totp_secret:
-        | { Args: { secret: string; user_id: string }; Returns: string }
         | { Args: { secret: string }; Returns: string }
+        | { Args: { secret: string; user_id: string }; Returns: string }
       evaluate_feature_flag: {
         Args: { p_environment?: string; p_flag_name: string; p_user_id: string }
         Returns: boolean
@@ -5349,8 +5355,8 @@ export type Database = {
         Returns: undefined
       }
       is_account_locked:
-        | { Args: { p_user_id: string }; Returns: boolean }
         | { Args: { p_identifier: string }; Returns: Record<string, unknown> }
+        | { Args: { p_user_id: string }; Returns: boolean }
       mark_token_used:
         | { Args: { p_token: string }; Returns: undefined }
         | { Args: { p_token_id: string }; Returns: undefined }
