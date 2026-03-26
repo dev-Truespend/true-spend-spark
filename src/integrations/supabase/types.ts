@@ -3285,6 +3285,7 @@ export type Database = {
         Row: {
           access_token_encrypted: string
           created_at: string | null
+          error_code: string | null
           error_message: string | null
           id: string
           institution_id: string | null
@@ -3292,12 +3293,14 @@ export type Database = {
           item_id: string
           last_sync_at: string | null
           status: string | null
+          sync_cursor: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           access_token_encrypted: string
           created_at?: string | null
+          error_code?: string | null
           error_message?: string | null
           id?: string
           institution_id?: string | null
@@ -3305,12 +3308,14 @@ export type Database = {
           item_id: string
           last_sync_at?: string | null
           status?: string | null
+          sync_cursor?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           access_token_encrypted?: string
           created_at?: string | null
+          error_code?: string | null
           error_message?: string | null
           id?: string
           institution_id?: string | null
@@ -3318,6 +3323,7 @@ export type Database = {
           item_id?: string
           last_sync_at?: string | null
           status?: string | null
+          sync_cursor?: string | null
           updated_at?: string | null
           user_id?: string
         }

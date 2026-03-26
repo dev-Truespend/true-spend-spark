@@ -57,7 +57,7 @@ serve(async (req) => {
       throw new Error('Plaid item not found');
     }
 
-    console.log(`[Plaid] Syncing transactions for item ${item_id}`);
+    console.log(`[Plaid] Syncing transactions for item ${item_id}, cursor: ${plaidItem.sync_cursor || 'none'}`);
 
     // Get credit cards for this item
     let cardsQuery = supabase
@@ -76,69 +76,96 @@ serve(async (req) => {
       throw new Error('No credit cards found');
     }
 
-    // Fetch transactions using Plaid Transactions Sync
-    const syncResponse = await fetch(`${plaidUrl}/transactions/sync`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'PLAID-CLIENT-ID': PLAID_CLIENT_ID,
-        'PLAID-SECRET': PLAID_SECRET,
-      },
-      body: JSON.stringify({
-        access_token: plaidItem.access_token_encrypted,
-        count: 100,
-      }),
-    });
-
-    const syncData = await syncResponse.json();
-
-    if (!syncResponse.ok) {
-      console.error('[Plaid] Sync error:', syncData);
-      throw new Error(syncData.error_message || 'Failed to sync transactions');
-    }
-
-    const { added, modified } = syncData;
-    const allTransactions = [...added, ...modified];
-
-    console.log(`[Plaid] Found ${allTransactions.length} transactions`);
-
     // Map account_id to card_id
     const accountToCardMap = new Map(
       cards.map(card => [card.account_id, card.id])
     );
 
-                const transactionsToInsert = allTransactions
-      .filter((tx: any) => accountToCardMap.has(tx.account_id))
-      .map((tx: any) => ({
-        user_id: user.id,
-        credit_card_id: accountToCardMap.get(tx.account_id),
-        amount: tx.amount,
-        category: tx.category?.[0] || tx.personal_finance_category?.primary || 'other',
-        description: tx.name,
-        timestamp: tx.date,
-        synced: true,
-      }));
+    let totalSynced = 0;
+    let cursor = plaidItem.sync_cursor || '';
+    let hasMore = true;
 
-    if (transactionsToInsert.length > 0) {
-      const { error: txError } = await supabase
-        .from('transactions')
-        .upsert(transactionsToInsert, {
-          onConflict: 'user_id,timestamp,amount,description',
-          ignoreDuplicates: true,
-        });
+    while (hasMore) {
+      // Fetch transactions using Plaid Transactions Sync with cursor
+      const syncResponse = await fetch(`${plaidUrl}/transactions/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'PLAID-CLIENT-ID': PLAID_CLIENT_ID,
+          'PLAID-SECRET': PLAID_SECRET,
+        },
+        body: JSON.stringify({
+          access_token: plaidItem.access_token_encrypted,
+          cursor: cursor || undefined,
+          count: 500,
+        }),
+      });
 
-      if (txError) {
-        console.error('[Plaid] Transaction insert error:', txError);
-        throw txError;
+      const syncData = await syncResponse.json();
+
+      if (!syncResponse.ok) {
+        console.error('[Plaid] Sync error:', syncData);
+        
+        // Update item with error info
+        await supabase
+          .from('plaid_items')
+          .update({ 
+            error_code: syncData.error_code || 'SYNC_ERROR',
+            error_message: syncData.error_message || 'Failed to sync transactions',
+          })
+          .eq('id', item_id);
+        
+        throw new Error(syncData.error_message || 'Failed to sync transactions');
       }
 
-      console.log(`[Plaid] Inserted ${transactionsToInsert.length} transactions`);
+      const { added, modified, removed, next_cursor, has_more } = syncData;
+      const allTransactions = [...(added || []), ...(modified || [])];
+
+      console.log(`[Plaid] Batch: ${allTransactions.length} added/modified, ${(removed || []).length} removed`);
+
+      const transactionsToInsert = allTransactions
+        .filter((tx: any) => accountToCardMap.has(tx.account_id))
+        .map((tx: any) => ({
+          user_id: user.id,
+          credit_card_id: accountToCardMap.get(tx.account_id),
+          amount: tx.amount,
+          category: tx.category?.[0] || tx.personal_finance_category?.primary || 'other',
+          description: tx.name,
+          timestamp: tx.date,
+          synced: true,
+        }));
+
+      if (transactionsToInsert.length > 0) {
+        const { error: txError } = await supabase
+          .from('transactions')
+          .upsert(transactionsToInsert, {
+            onConflict: 'user_id,timestamp,amount,description',
+            ignoreDuplicates: true,
+          });
+
+        if (txError) {
+          console.error('[Plaid] Transaction insert error:', txError);
+          throw txError;
+        }
+
+        totalSynced += transactionsToInsert.length;
+      }
+
+      cursor = next_cursor;
+      hasMore = has_more;
     }
 
-    // Update last sync timestamp
+    console.log(`[Plaid] Total synced: ${totalSynced} transactions`);
+
+    // Update cursor and timestamps
     await supabase
       .from('plaid_items')
-      .update({ last_sync_at: new Date().toISOString() })
+      .update({ 
+        sync_cursor: cursor,
+        last_sync_at: new Date().toISOString(),
+        error_message: null,
+        error_code: null,
+      })
       .eq('id', item_id);
 
     for (const card of cards) {
@@ -151,8 +178,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        synced: transactionsToInsert.length,
-        has_more: syncData.has_more,
+        synced: totalSynced,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

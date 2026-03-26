@@ -251,3 +251,6 @@ verify_jwt = true
 
 [functions.plaid-disconnect-item]
 verify_jwt = true
+
+[functions.webhook-plaid]
+verify_jwt = false
