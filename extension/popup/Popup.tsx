@@ -132,17 +132,29 @@ export function Popup() {
 
   const handleSignIn = () => {
     try {
-      // Open web app auth page in popup window
-      const authUrl = `${window.location.origin}/auth?source=extension`;
-      const popup = window.open(
-        authUrl,
-        'truespend-auth',
-        'width=500,height=700,left=100,top=100,popup=yes'
-      );
+      // In a chrome-extension origin, `window.location.origin` is
+      // `chrome-extension://<id>` — which doesn't serve the auth page.
+      // Resolve the real web app URL from the build-time env var, with
+      // a sensible production fallback.
+      const webAppUrl =
+        (import.meta.env.VITE_APP_URL as string | undefined) ??
+        'https://truespend.org';
 
-      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+      // chrome.tabs.create is the supported way to open a tab from an
+      // extension popup — window.open is unreliable across browsers and
+      // popup blockers (the popup is itself a popup).
+      const authUrl = `${webAppUrl}/auth?source=extension`;
+
+      if (typeof chrome !== 'undefined' && chrome.tabs?.create) {
+        chrome.tabs.create({ url: authUrl });
+        logger.auth('Auth tab opened via chrome.tabs');
+        return;
+      }
+
+      // Fallback for non-extension environments (dev preview, tests)
+      const popup = window.open(authUrl, '_blank', 'noopener,noreferrer');
+      if (!popup) {
         logger.warn('Popup blocked or failed to open');
-        // Handle popup blocking
         alert('Please allow popups for TrueSpend to sign in');
       } else {
         logger.auth('Auth popup opened successfully');

@@ -13,13 +13,20 @@ export function useSessionActivity() {
   const logoutTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Reset activity timer
+  // Stash signOut behind a ref so the resetActivity callback identity is
+  // stable across renders. Without this, every parent re-render produced
+  // a new resetActivity, which re-ran the useEffect below and wiped the
+  // running timers — meaning the inactivity logout never fired.
+  const signOutRef = useRef(signOut);
+  useEffect(() => { signOutRef.current = signOut; }, [signOut]);
+
+  // Reset activity timer — identity depends only on `user`.
   const resetActivity = useCallback(() => {
     if (!user) return;
 
     lastActivityRef.current = Date.now();
     setShowWarning(false);
-    
+
     // Clear existing timers
     if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
     if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
@@ -46,9 +53,9 @@ export function useSessionActivity() {
 
     // Set logout timer (10 minutes)
     logoutTimerRef.current = setTimeout(async () => {
-      await signOut();
+      await signOutRef.current();
     }, INACTIVITY_TIMEOUT);
-  }, [user, signOut]);
+  }, [user]);
 
   // Track user activity
   useEffect(() => {

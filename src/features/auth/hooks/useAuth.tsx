@@ -1,9 +1,11 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/shared/hooks/use-toast";
 import { useLogger } from "@/features/observability/hooks/useLogger";
+import { clearAuthState } from "@/shared/lib/auth/clearAuthState";
 
 interface Profile {
   id: string;
@@ -78,6 +80,7 @@ useEffect(() => { mfaPendingRef.current = mfaPending; }, [mfaPending]);
 const navigate = useNavigate();
 const { toast } = useToast();
 const logger = useLogger();
+const queryClient = useQueryClient();
 
   // Fetch profile with all auth providers
   useEffect(() => {
@@ -168,6 +171,33 @@ const logger = useLogger();
             return; // state will be reset when the resulting SIGNED_OUT fires
           }
 
+          // ── Profile status enforcement for OAuth ─────────────────────
+          // Password sign-in checks status in `signIn()`. OAuth bypasses that
+          // path entirely (Supabase handles the redirect callback), so we
+          // must enforce the same rules here — otherwise a deleted user
+          // could log back in via Google.
+          try {
+            const { data: profileRow } = await supabase
+              .from('profiles')
+              .select('status')
+              .eq('id', authUser.id)
+              .maybeSingle();
+
+            const status = (profileRow as { status?: string } | null)?.status;
+            if (status === 'deleted') {
+              await supabase.auth.signOut();
+              toast({
+                title: 'Account closed',
+                description: 'This account has been deleted. Contact support if you believe this is a mistake.',
+                variant: 'destructive',
+              });
+              return;
+            }
+          } catch (err) {
+            console.error('[useAuth] OAuth profile status check failed:', err);
+            // Fail open — don't lock out users on transient DB errors.
+          }
+
           if (import.meta.env.DEV) {
             console.log('Google sign-in successful - Auth page will handle redirect');
           }
@@ -185,6 +215,11 @@ const logger = useLogger();
         }
       }
 
+      // ── Token refresh failure → forced logout ─────────────────────────
+      // If Supabase couldn't refresh the access token (refresh token
+      // expired, revoked, or rotated by another tab), it emits SIGNED_OUT
+      // with no session. Treat this as a session-expired event so the
+      // user lands on /auth instead of seeing a stale UI.
       if (event === 'SIGNED_OUT') {
         // Non-blocking security log
         setTimeout(async () => {
@@ -201,6 +236,10 @@ const logger = useLogger();
             console.error('Failed to log logout:', err);
           }
         }, 0);
+
+        // Drop cached queries — prevents a logged-out tab from showing
+        // the previous user's data on subsequent re-login.
+        try { queryClient.clear(); } catch { /* non-fatal */ }
       }
 
       // Single state update — one render per auth event
@@ -217,7 +256,46 @@ const logger = useLogger();
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [queryClient, toast]);
+
+  // ── Live profile revocation ─────────────────────────────────────────────
+  // Subscribe to the user's profile row. If an admin (or the user from
+  // another device) flips status to 'deleted', force a sign-out so the
+  // session can't continue with stale auth.
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`profile-status-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`,
+        },
+        async (payload) => {
+          const newStatus = (payload.new as { status?: string } | null)?.status;
+          if (newStatus === 'deleted') {
+            toast({
+              title: 'Session ended',
+              description: 'Your account has been closed. You have been signed out.',
+              variant: 'destructive',
+            });
+            // Trigger the centralised logout flow
+            clearAuthState({ queryClient });
+            await supabase.auth.signOut({ scope: 'global' }).catch(() => {});
+            window.location.href = '/auth';
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient, toast]);
 
   const signIn = async (email: string, password: string, mfaCode?: string, backupCode?: string) => {
     try {
@@ -613,27 +691,30 @@ const logger = useLogger();
     }
   };
 
-  const signOut = async () => {
-    // Clear local state first
+  // useCallback so consumers (e.g. useSessionActivity) get a stable
+  // reference and don't reset their timers on every render.
+  const signOut = useCallback(async () => {
+    // 1. Clear local React state first so any in-flight queries see
+    //    `user === null` and short-circuit before the page reload.
     setUser(null);
     setSession(null);
     setProfile(null);
     setMfaPending(false);
 
-    // Remove only auth-related keys — localStorage.clear() would nuke unrelated app state
-    const authKeyPrefixes = ['sb-', 'supabase.auth'];
-    Object.keys(localStorage)
-      .filter(k => authKeyPrefixes.some(prefix => k.startsWith(prefix)))
-      .forEach(k => localStorage.removeItem(k));
+    // 2. Clear React Query cache + auth storage (prevents data leak
+    //    between users on shared devices, BFCache replay, etc.).
+    clearAuthState({ queryClient });
 
+    // 3. Tell Supabase to revoke the session server-side.
     try {
       await supabase.auth.signOut({ scope: 'global' });
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // 4. Full reload to /auth — guarantees no in-memory state survives.
       window.location.href = '/auth';
     }
-  };
+  }, [queryClient]);
 
   const sendVerificationEmail = async () => {
     if (!session) {

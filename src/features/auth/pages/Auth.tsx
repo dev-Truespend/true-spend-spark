@@ -22,6 +22,7 @@ import { Badge } from "@/shared/components/ui/badge";
 import { Link } from "react-router-dom";
 import authEnterprise from "@/assets/auth-enterprise.png";
 import { supabase } from "@/integrations/supabase/client";
+import { safeRedirect } from "@/shared/lib/auth/safeRedirect";
 
 const passwordValidation = z
   .string()
@@ -65,7 +66,9 @@ export default function Auth() {
   const searchParams = new URLSearchParams(location.search);
   const hashParams = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
   
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
+  // Sanitised — blocks open-redirect via ?redirectTo=//evil.com and
+  // breaks the /auth → /auth → /auth loop if someone passes redirectTo=/auth.
+  const redirectTo = safeRedirect(searchParams.get('redirectTo'), '/dashboard');
   const isExtensionMode = searchParams.get('source') === 'extension';
   const hasOAuthInQuery = searchParams.has('code') || searchParams.has('access_token');
   const hasOAuthInHash = hashParams.has('code') || hashParams.has('access_token') || hashParams.has('refresh_token') || hashParams.has('provider_token');
@@ -107,6 +110,39 @@ export default function Auth() {
 
           if (session?.user) {
             if (!cancelled) {
+              // ── Profile status enforcement for OAuth ────────────────────
+              // The useAuth listener also checks this, but checking here too
+              // means we don't briefly flash the dashboard before being
+              // signed back out in the race between the listener and the
+              // navigation effect.
+              try {
+                const { data: profileRow } = await supabase
+                  .from('profiles')
+                  .select('status')
+                  .eq('id', session.user.id)
+                  .maybeSingle();
+
+                const status = (profileRow as { status?: string } | null)?.status;
+                if (status === 'deleted') {
+                  await supabase.auth.signOut();
+                  toast({
+                    title: "Account closed",
+                    description: "This account has been deleted.",
+                    variant: "destructive",
+                  });
+                  setProcessingOAuth(false);
+                  return true;
+                }
+              } catch (err) {
+                console.error('[Auth] OAuth profile check failed:', err);
+                // fail open
+              }
+
+              // Strip the OAuth code/tokens from the URL so the browser's
+              // Back button can't replay them (which would otherwise try
+              // to redeem an already-consumed authorisation code).
+              window.history.replaceState(null, '', '/auth');
+
               toast({ title: "Welcome back!", description: "Successfully signed in." });
               navigate(redirectTo, { replace: true });
             }
@@ -267,7 +303,9 @@ export default function Auth() {
 
       if (result?.user) {
         toast({ title: "Welcome back!" });
-        navigate(redirectTo, { replace: true });
+        // Don't navigate here — the useEffect below watches for
+        // `user && session` and handles the redirect in a single place,
+        // avoiding double-navigation races.
       }
     } catch (error) {
       toast({ title: "Error", description: "An error occurred.", variant: "destructive" });

@@ -171,7 +171,7 @@ function App() {
                     <Route path="/credit-cards"    element={<ProtectedRoute><CreditCards /></ProtectedRoute>} />
                     <Route path="/transactions"    element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
                     <Route path="/budgets"         element={<ProtectedRoute><Budgets /></ProtectedRoute>} />
-                    <Route path="/insights"        element={<ProtectedRoute><Insights /></ProtectedRoute>} />
+                    <Route path="/insights"        element={<ProtectedRoute requirePro><Insights /></ProtectedRoute>} />
                     <Route path="/location-history" element={<ProtectedRoute><LocationHistory /></ProtectedRoute>} />
                     <Route path="/favorites"       element={<ProtectedRoute><FavoriteMerchants /></ProtectedRoute>} />
                     <Route path="/settings"         element={<ProtectedRoute><Settings /></ProtectedRoute>} />
