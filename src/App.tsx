@@ -1,22 +1,22 @@
 import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/shared/components/ui/toaster";
+import { Toaster as Sonner } from "@/shared/components/ui/sonner";
+import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { createSyncPersister } from '@/lib/queryPersister';
+import { createSyncPersister } from '@/shared/lib/queryPersister';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
-import { useSessionActivity } from "@/hooks/useSessionActivity";
-import { ContinueSessionDialog } from "@/components/auth/ContinueSessionDialog";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { GlobalNav } from "@/components/navigation/GlobalNav";
-import { Footer } from "@/components/navigation/Footer";
-import { ConflictResolutionDialog } from "@/components/sync/ConflictResolutionDialog";
-import { ErrorBoundary } from "@/components/error/ErrorBoundary";
-import { syncManager, SyncStatus } from "@/services/syncManager";
-import { offlineSyncService, SyncConflict, ConflictResolution } from "@/services/offlineSync";
-import { useOfflineStorage } from "@/hooks/useOfflineStorage";
+import { AuthProvider } from "@/features/auth/hooks/useAuth";
+import { useSessionActivity } from "@/features/auth/hooks/useSessionActivity";
+import { ContinueSessionDialog } from "@/features/auth/components/ContinueSessionDialog";
+import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
+import { GlobalNav } from "@/shared/components/navigation/GlobalNav";
+import { Footer } from "@/shared/components/navigation/Footer";
+import { ConflictResolutionDialog } from "@/features/sync/components/ConflictResolutionDialog";
+import { ErrorBoundary } from "@/shared/components/error/ErrorBoundary";
+import { syncManager, SyncStatus } from "@/features/sync/services/syncManager";
+import { offlineSyncService, SyncConflict, ConflictResolution } from "@/features/sync/services/offlineSync";
+import { useOfflineStorage } from "@/features/sync/hooks/useOfflineStorage";
 import { toast } from "sonner";
 import AdminDashboardLayout from "./pages/dashboard/AdminDashboardLayout";
 import DashboardLauncher from "./pages/DashboardLauncher";
@@ -281,7 +281,7 @@ function App() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                   </div>
                 }>
-                  {React.createElement(lazy(() => import('@/pages/Features')))}
+                  {React.createElement(lazy(() => import('@/pages/marketing/Features')))}
                 </Suspense>
               } />
               
@@ -292,7 +292,7 @@ function App() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                   </div>
                 }>
-                  {React.createElement(lazy(() => import('@/pages/Pricing')))}
+                  {React.createElement(lazy(() => import('@/pages/marketing/Pricing')))}
                 </Suspense>
               } />
               
@@ -303,7 +303,7 @@ function App() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                   </div>
                 }>
-                  {React.createElement(lazy(() => import('@/pages/About')))}
+                  {React.createElement(lazy(() => import('@/pages/marketing/About')))}
                 </Suspense>
               } />
               <Route path="/careers" element={
@@ -312,7 +312,7 @@ function App() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                   </div>
                 }>
-                  {React.createElement(lazy(() => import('@/pages/Careers')))}
+                  {React.createElement(lazy(() => import('@/pages/marketing/Careers')))}
                 </Suspense>
               } />
               <Route path="/brand" element={
@@ -321,7 +321,7 @@ function App() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                   </div>
                 }>
-                  {React.createElement(lazy(() => import('@/pages/BrandAssets')))}
+                  {React.createElement(lazy(() => import('@/pages/marketing/BrandAssets')))}
                 </Suspense>
               } />
               
@@ -332,7 +332,7 @@ function App() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                   </div>
                 }>
-                  {React.createElement(lazy(() => import('@/pages/Documentation')))}
+                  {React.createElement(lazy(() => import('@/pages/marketing/Documentation')))}
                 </Suspense>
               } />
               <Route path="/api" element={
@@ -341,7 +341,7 @@ function App() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                   </div>
                 }>
-                  {React.createElement(lazy(() => import('@/pages/ApiReference')))}
+                  {React.createElement(lazy(() => import('@/pages/marketing/ApiReference')))}
                 </Suspense>
               } />
               <Route path="/community" element={
@@ -350,7 +350,7 @@ function App() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                   </div>
                 }>
-                  {React.createElement(lazy(() => import('@/pages/Community')))}
+                  {React.createElement(lazy(() => import('@/pages/marketing/Community')))}
                 </Suspense>
               } />
               <Route path="/status" element={
@@ -359,7 +359,7 @@ function App() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                   </div>
                 }>
-                  {React.createElement(lazy(() => import('@/pages/Status')))}
+                  {React.createElement(lazy(() => import('@/pages/marketing/Status')))}
                 </Suspense>
               } />
               
@@ -500,12 +500,12 @@ function App() {
                 <Route path="observability" element={<Observability />} />
                 <Route path="incidents" element={
                   <Suspense fallback={<div className="p-8">Loading...</div>}>
-                    {React.createElement(lazy(() => import('@/pages/dashboard/Incidents')))}
+                    {React.createElement(lazy(() => import('@/features/observability/pages/Incidents')))}
                   </Suspense>
                 } />
                 <Route path="slo-tracking" element={
                   <Suspense fallback={<div className="p-8">Loading...</div>}>
-                    {React.createElement(lazy(() => import('@/pages/dashboard/SLOTracking')))}
+                    {React.createElement(lazy(() => import('@/features/observability/pages/SLOTracking')))}
                   </Suspense>
                 } />
                 <Route path="alerts" element={<Alerts />} />

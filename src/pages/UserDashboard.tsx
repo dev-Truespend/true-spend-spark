@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Button } from "@/shared/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Receipt, Wallet, TrendingUp, Settings, User, LogOut, CreditCard, LayoutGrid } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { useAdaptiveContent } from "@/hooks/useAdaptiveContent";
-import { LowDataModeIndicator } from "@/components/ui/LowDataModeIndicator";
-import { UnverifiedBanner } from "@/components/auth/UnverifiedBanner";
-import { CreditCardGrid } from "@/components/credit-cards/CreditCardGrid";
-import { cn } from "@/lib/utils";
+import { useToast } from "@/shared/hooks/use-toast";
+import { useAdaptiveContent } from "@/features/sync/hooks/useAdaptiveContent";
+import { LowDataModeIndicator } from "@/shared/components/ui/LowDataModeIndicator";
+import { UnverifiedBanner } from "@/features/auth/components/UnverifiedBanner";
+import { CreditCardGrid } from "@/features/credit-cards/components/CreditCardGrid";
+import { cn } from "@/shared/lib/utils";
 
 export default function UserDashboard() {
   const { user, profile, signOut } = useAuth();
