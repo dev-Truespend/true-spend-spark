@@ -1,14 +1,29 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
-import { Settings, LayoutDashboard, BarChart3, RefreshCw, MapPin, Heart, CreditCard } from 'lucide-react';
+import {
+  Settings,
+  LayoutDashboard,
+  BarChart3,
+  RefreshCw,
+  MapPin,
+  Heart,
+  CreditCard,
+  Menu,
+  X,
+  LogOut,
+  User as UserIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
 import { VersionDisplay } from '@/components/version/VersionDisplay';
 import { UserProfileDropdown } from '@/components/auth/UserProfileDropdown';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Logo } from '@/components/brand/Logo';
+import { cn } from '@/shared/lib/utils';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', route: '/dashboard', icon: LayoutDashboard, roles: ['user', 'developer', 'admin'], authRequired: true },
@@ -27,8 +42,15 @@ export function GlobalNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { roles, hasRole } = useUserRole();
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [showDebug, setShowDebug] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close the mobile sheet whenever the route changes — otherwise the
+  // drawer stays open after a click and feels broken.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   // Emergency force refresh: Ctrl+Shift+R
   useEffect(() => {
@@ -83,11 +105,12 @@ export function GlobalNav() {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
-      <div className="container mx-auto px-8">
-        <div className="flex items-center justify-between h-20">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8">
+        <div className="flex items-center justify-between h-16 md:h-20">
           <Logo onClick={handleLogoClick} />
           
-          <nav className="flex items-center gap-8">
+          <nav className="flex items-center gap-3 md:gap-8">
+            {/* ── Logged-out: desktop nav + CTA ────────────────────────── */}
             {!user && (
               <>
                 <div className="hidden md:flex items-center gap-8">
@@ -101,33 +124,76 @@ export function GlobalNav() {
                     Pricing
                   </Link>
                 </div>
-                <Link to="/auth">
-                  <Button 
+                <Link to="/auth" className="hidden sm:block">
+                  <Button
                     size="lg"
                     className="bg-gradient-to-r from-brand-blue to-brand-purple hover:opacity-90 text-white font-semibold px-8 shadow-premium"
                   >
                     Get Started
                   </Button>
                 </Link>
+
+                {/* ── Mobile hamburger (logged-out) ──────────────────── */}
+                <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                  <SheetTrigger asChild className="md:hidden">
+                    <Button variant="ghost" size="icon" aria-label="Open menu">
+                      {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-[280px] sm:w-[320px] p-0">
+                    <SheetHeader className="px-6 pt-6 pb-4 border-b">
+                      <SheetTitle>Menu</SheetTitle>
+                    </SheetHeader>
+                    <div className="flex flex-col py-2">
+                      {[
+                        { to: '/',          label: 'Home' },
+                        { to: '/features',  label: 'Features' },
+                        { to: '/pricing',   label: 'Pricing' },
+                        { to: '/about',     label: 'About' },
+                        { to: '/docs',      label: 'Docs' },
+                      ].map((link) => (
+                        <Link
+                          key={link.to}
+                          to={link.to}
+                          className={cn(
+                            "px-6 py-3 text-base font-medium hover:bg-muted transition-colors",
+                            location.pathname === link.to && "bg-muted/60 text-foreground"
+                          )}
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                      <Separator className="my-2" />
+                      <div className="px-6 py-3">
+                        <Link to="/auth" className="block">
+                          <Button className="w-full bg-gradient-to-r from-brand-blue to-brand-purple hover:opacity-90 text-white font-semibold">
+                            Get Started
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </>
             )}
-            
+
+            {/* ── Logged-in: desktop nav + profile dropdown ──────────── */}
             {user && (
               <>
                 <div className="hidden md:flex items-center gap-8">
                   {accessibleItems.slice(0, 6).map(item => {
-                    const isActive = location.pathname.startsWith(item.route) && item.route !== '/' 
+                    const isActive = location.pathname.startsWith(item.route) && item.route !== '/'
                                   || (item.route === '/' && location.pathname === '/');
-                    
+
                     return (
-                      <Link 
-                        key={item.id} 
+                      <Link
+                        key={item.id}
                         to={item.route}
                         className="relative group"
                       >
                         <span className={`text-sm font-semibold transition-all duration-300 ${
-                          isActive 
-                            ? 'text-foreground' 
+                          isActive
+                            ? 'text-foreground'
                             : 'text-muted-foreground hover:text-foreground'
                         }`}>
                           {item.label}
@@ -139,20 +205,94 @@ export function GlobalNav() {
                     );
                   })}
                 </div>
-                
+
                 {showDebug && (
-                  <Button 
-                    onClick={handleForceRefresh} 
-                    variant="destructive" 
+                  <Button
+                    onClick={handleForceRefresh}
+                    variant="destructive"
                     size="sm"
-                    className="gap-2 animate-pulse"
+                    className="gap-2 animate-pulse hidden md:inline-flex"
                   >
                     <RefreshCw className="w-4 h-4" />
                     Force Refresh
                   </Button>
                 )}
-                
-                <UserProfileDropdown />
+
+                <div className="hidden md:block">
+                  <UserProfileDropdown />
+                </div>
+
+                {/* ── Mobile hamburger (logged-in) ───────────────────── */}
+                <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                  <SheetTrigger asChild className="md:hidden">
+                    <Button variant="ghost" size="icon" aria-label="Open menu">
+                      {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-[280px] sm:w-[320px] p-0">
+                    <SheetHeader className="px-6 pt-6 pb-4 border-b">
+                      <SheetTitle className="text-left">
+                        <p className="text-base font-semibold">
+                          {profile?.first_name || profile?.email?.split('@')[0] || 'Account'}
+                        </p>
+                        <p className="text-xs font-normal text-muted-foreground truncate">
+                          {user.email}
+                        </p>
+                      </SheetTitle>
+                    </SheetHeader>
+
+                    <div className="flex flex-col py-2 max-h-[calc(100vh-200px)] overflow-y-auto">
+                      {accessibleItems.map((item) => {
+                        const isActive = location.pathname.startsWith(item.route);
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.id}
+                            to={item.route}
+                            className={cn(
+                              "flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-muted transition-colors",
+                              isActive && "bg-muted/60 text-foreground border-l-2 border-primary"
+                            )}
+                          >
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            {item.label}
+                          </Link>
+                        );
+                      })}
+
+                      <Separator className="my-2" />
+
+                      <Link
+                        to="/settings"
+                        className="flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-muted transition-colors"
+                      >
+                        <UserIcon className="h-4 w-4 text-muted-foreground" />
+                        Profile &amp; settings
+                      </Link>
+                      <Link
+                        to="/settings/billing"
+                        className="flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-muted transition-colors"
+                      >
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        Billing
+                      </Link>
+
+                      <Separator className="my-2" />
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setMobileOpen(false);
+                          await signOut();
+                        }}
+                        className="flex items-center gap-3 px-6 py-3 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors text-left"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Sign out
+                      </button>
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </>
             )}
           </nav>
