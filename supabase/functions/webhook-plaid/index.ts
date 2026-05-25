@@ -1,112 +1,136 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.80.0';
-import { createHmac } from 'node:crypto';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, plaid-verification',
 };
 
-function verifyPlaidWebhook(body: string, signedJwt: string | null): boolean {
-  // In production, verify using Plaid's webhook verification
-  // For now, we check the webhook secret exists
-  const webhookSecret = Deno.env.get('PLAID_WEBHOOK_SECRET');
-  if (!webhookSecret) {
-    console.warn('[Plaid Webhook] No webhook secret configured, skipping verification');
+// ── JWT / JWK verification ─────────────────────────────────────────────────
+
+interface PlaidJwkKey {
+  alg: string;
+  created_at: number;
+  expired_at: number | null;
+  key_id: string;
+  kty: string;
+  crv: string;
+  x: string;
+  y: string;
+}
+
+// Simple base64url → Uint8Array
+function base64UrlDecode(str: string): Uint8Array {
+  const padded = str.replace(/-/g, '+').replace(/_/g, '/').padEnd(
+    str.length + (4 - (str.length % 4)) % 4,
+    '='
+  );
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (c) => c.charCodeAt(0));
+}
+
+async function verifyPlaidJwt(
+  jwt: string,
+  body: string,
+  clientId: string,
+  secret: string,
+  plaidUrl: string
+): Promise<boolean> {
+  try {
+    const parts = jwt.split('.');
+    if (parts.length !== 3) return false;
+
+    const header = JSON.parse(new TextDecoder().decode(base64UrlDecode(parts[0])));
+    const { kid, alg } = header;
+
+    if (alg !== 'ES256') {
+      console.error('[Plaid] Unexpected JWT algorithm:', alg);
+      return false;
+    }
+
+    // Fetch the JWK from Plaid
+    const jwkRes = await fetch(`${plaidUrl}/webhook_verification_key/get`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: clientId, secret, key_id: kid }),
+    });
+
+    if (!jwkRes.ok) {
+      console.error('[Plaid] Failed to fetch JWK:', await jwkRes.text());
+      return false;
+    }
+
+    const { key }: { key: PlaidJwkKey } = await jwkRes.json();
+
+    // Reject expired keys
+    if (key.expired_at !== null && key.expired_at * 1000 < Date.now()) {
+      console.error('[Plaid] JWK has expired');
+      return false;
+    }
+
+    // Import the EC public key
+    const cryptoKey = await crypto.subtle.importKey(
+      'jwk',
+      { kty: key.kty, crv: key.crv, x: key.x, y: key.y, ext: true },
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['verify']
+    );
+
+    // Verify signature over header.payload
+    const signingInput = new TextEncoder().encode(`${parts[0]}.${parts[1]}`);
+    const signature    = base64UrlDecode(parts[2]);
+
+    const valid = await crypto.subtle.verify(
+      { name: 'ECDSA', hash: 'SHA-256' },
+      cryptoKey,
+      signature,
+      signingInput
+    );
+
+    if (!valid) {
+      console.error('[Plaid] JWT signature invalid');
+      return false;
+    }
+
+    // Verify payload claims
+    const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(parts[1])));
+
+    // iat must be within 5 minutes of now
+    const ageSecs = (Date.now() / 1000) - payload.iat;
+    if (ageSecs > 300) {
+      console.error('[Plaid] JWT too old (iat):', ageSecs, 'seconds');
+      return false;
+    }
+
+    // request_body_sha256 must match SHA-256 of the raw request body
+    const bodyBytes  = new TextEncoder().encode(body);
+    const bodyDigest = await crypto.subtle.digest('SHA-256', bodyBytes);
+    const bodyHex    = Array.from(new Uint8Array(bodyDigest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    if (payload.request_body_sha256 !== bodyHex) {
+      console.error('[Plaid] Body hash mismatch');
+      return false;
+    }
+
     return true;
-  }
-  
-  // Plaid sends a signed JWT in the Plaid-Verification header
-  // Full verification requires fetching Plaid's JWK and verifying the JWT
-  // For production, implement full JWT verification
-  if (!signedJwt) {
-    console.error('[Plaid Webhook] Missing Plaid-Verification header');
+  } catch (err) {
+    console.error('[Plaid] JWT verification error:', err);
     return false;
   }
-  
-  return true;
 }
+
+// ── Main handler ─────────────────────────────────────────────────────────
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const body = await req.text();
-    const plaidVerification = req.headers.get('Plaid-Verification');
-    
-    if (!verifyPlaidWebhook(body, plaidVerification)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid webhook signature' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const payload = JSON.parse(body);
-    const { webhook_type, webhook_code, item_id, error } = payload;
-
-    console.log(`[Plaid Webhook] Received: ${webhook_type}.${webhook_code} for item ${item_id}`);
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    // Find the plaid item by plaid's item_id
-    const { data: plaidItem, error: itemError } = await supabase
-      .from('plaid_items')
-      .select('*')
-      .eq('item_id', item_id)
-      .single();
-
-    if (itemError || !plaidItem) {
-      console.error(`[Plaid Webhook] Item not found for item_id: ${item_id}`);
-      return new Response(
-        JSON.stringify({ received: true, warning: 'Item not found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    switch (webhook_type) {
-      case 'TRANSACTIONS': {
-        await handleTransactionsWebhook(supabase, plaidItem, webhook_code, payload);
-        break;
-      }
-      case 'ITEM': {
-        await handleItemWebhook(supabase, plaidItem, webhook_code, error);
-        break;
-      }
-      case 'AUTH': {
-        console.log(`[Plaid Webhook] AUTH event: ${webhook_code}`);
-        break;
-      }
-      default: {
-        console.log(`[Plaid Webhook] Unhandled webhook type: ${webhook_type}`);
-      }
-    }
-
-    return new Response(
-      JSON.stringify({ received: true }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (err) {
-    console.error('[Plaid Webhook] Error:', err);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-});
-
-async function handleTransactionsWebhook(
-  supabase: any,
-  plaidItem: any,
-  webhookCode: string,
-  payload: any
-) {
-  const PLAID_CLIENT_ID = Deno.env.get('PLAID_CLIENT_ID');
-  const PLAID_SECRET = Deno.env.get('PLAID_SECRET');
+  const PLAID_CLIENT_ID   = Deno.env.get('PLAID_CLIENT_ID') ?? '';
+  const PLAID_SECRET      = Deno.env.get('PLAID_SECRET') ?? '';
   const PLAID_ENVIRONMENT = Deno.env.get('PLAID_ENVIRONMENT') || 'sandbox';
 
   const plaidUrl = PLAID_ENVIRONMENT === 'production'
@@ -115,161 +139,243 @@ async function handleTransactionsWebhook(
     ? 'https://development.plaid.com'
     : 'https://sandbox.plaid.com';
 
+  try {
+    const body              = await req.text();
+    const plaidVerification = req.headers.get('Plaid-Verification');
+
+    if (!plaidVerification) {
+      console.error('[Plaid Webhook] Missing Plaid-Verification header');
+      return new Response(
+        JSON.stringify({ error: 'Missing Plaid-Verification header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // In sandbox the header is a stub — skip full crypto verification
+    const isSandbox = PLAID_ENVIRONMENT === 'sandbox';
+    if (!isSandbox) {
+      const valid = await verifyPlaidJwt(plaidVerification, body, PLAID_CLIENT_ID, PLAID_SECRET, plaidUrl);
+      if (!valid) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid webhook signature' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    const payload = JSON.parse(body);
+    const { webhook_type, webhook_code, item_id, error } = payload;
+
+    console.log(`[Plaid Webhook] ${webhook_type}.${webhook_code} — item ${item_id}`);
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { data: plaidItem, error: itemError } = await supabase
+      .from('plaid_items')
+      .select('*')
+      .eq('item_id', item_id)
+      .single();
+
+    if (itemError || !plaidItem) {
+      console.warn(`[Plaid Webhook] Item not found: ${item_id}`);
+      return new Response(
+        JSON.stringify({ received: true, warning: 'Item not found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    switch (webhook_type) {
+      case 'TRANSACTIONS':
+        await handleTransactionsWebhook(supabase, plaidItem, webhook_code, payload, plaidUrl, PLAID_CLIENT_ID, PLAID_SECRET);
+        break;
+      case 'ITEM':
+        await handleItemWebhook(supabase, plaidItem, webhook_code, error);
+        break;
+      case 'AUTH':
+        console.log(`[Plaid Webhook] AUTH.${webhook_code}`);
+        break;
+      default:
+        console.log(`[Plaid Webhook] Unhandled type: ${webhook_type}`);
+    }
+
+    return new Response(
+      JSON.stringify({ received: true }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (err) {
+    console.error('[Plaid Webhook] Unhandled error:', err);
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
+
+// ── Transactions webhook ──────────────────────────────────────────────────
+
+async function handleTransactionsWebhook(
+  supabase: ReturnType<typeof createClient>,
+  plaidItem: Record<string, unknown>,
+  webhookCode: string,
+  payload: Record<string, unknown>,
+  plaidUrl: string,
+  clientId: string,
+  secret: string
+) {
   switch (webhookCode) {
     case 'SYNC_UPDATES_AVAILABLE': {
-      console.log(`[Plaid Webhook] Sync updates available for item ${plaidItem.id}`);
-      
-      // Trigger incremental sync
-      let hasMore = true;
-      let cursor = plaidItem.sync_cursor || '';
-      let totalSynced = 0;
+      let cursor    = (plaidItem.sync_cursor as string) || '';
+      let hasMore   = true;
+      let synced    = 0;
+      let removed   = 0;
 
       while (hasMore) {
-        const syncResponse = await fetch(`${plaidUrl}/transactions/sync`, {
+        const syncRes = await fetch(`${plaidUrl}/transactions/sync`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'PLAID-CLIENT-ID': PLAID_CLIENT_ID!,
-            'PLAID-SECRET': PLAID_SECRET!,
+            'Content-Type':   'application/json',
+            'PLAID-CLIENT-ID': clientId,
+            'PLAID-SECRET':    secret,
           },
           body: JSON.stringify({
             access_token: plaidItem.access_token_encrypted,
             cursor: cursor || undefined,
-            count: 500,
+            count:  500,
           }),
         });
 
-        const syncData = await syncResponse.json();
-        if (!syncResponse.ok) {
-          console.error('[Plaid Webhook] Sync error:', syncData);
+        const syncData = await syncRes.json();
+        if (!syncRes.ok) {
+          console.error('[Plaid] /transactions/sync error:', syncData);
           break;
         }
 
-        const { added, modified, removed, next_cursor, has_more } = syncData;
+        const { added, modified, removed: removedTxs, next_cursor, has_more } = syncData;
 
-        // Get credit cards for this item
+        // ── Map account_id → credit_card row ────────────────────────────
         const { data: cards } = await supabase
           .from('credit_cards')
           .select('id, account_id')
           .eq('plaid_item_id', plaidItem.id);
 
-        const accountToCardMap = new Map(
-          (cards || []).map((card: any) => [card.account_id, card.id])
+        const accountToCard = new Map(
+          (cards ?? []).map((c: Record<string, string>) => [c.account_id, c.id])
         );
 
-        // Insert added/modified transactions
-        const allTransactions = [...(added || []), ...(modified || [])];
-        const transactionsToInsert = allTransactions
-          .filter((tx: any) => accountToCardMap.has(tx.account_id))
-          .map((tx: any) => ({
-            user_id: plaidItem.user_id,
-            credit_card_id: accountToCardMap.get(tx.account_id),
-            amount: tx.amount,
-            category: tx.category?.[0] || tx.personal_finance_category?.primary || 'other',
-            description: tx.name,
-            timestamp: tx.date,
-            synced: true,
+        // ── Upsert added + modified ──────────────────────────────────────
+        const upserts = [...(added ?? []), ...(modified ?? [])]
+          .filter((tx: Record<string, unknown>) => accountToCard.has(tx.account_id as string))
+          .map((tx: Record<string, unknown>) => ({
+            user_id:              plaidItem.user_id,
+            credit_card_id:       accountToCard.get(tx.account_id as string),
+            plaid_transaction_id: tx.transaction_id,
+            amount:               tx.amount,
+            category:             (tx.personal_finance_category as Record<string, string>)?.primary
+                                    ?? (tx.category as string[])?.[0]
+                                    ?? 'other',
+            description:          tx.name,
+            timestamp:            tx.date,
+            pending:              tx.pending ?? false,
+            synced:               true,
           }));
 
-        if (transactionsToInsert.length > 0) {
-          const { error: txError } = await supabase
+        if (upserts.length > 0) {
+          const { error: txErr } = await supabase
             .from('transactions')
-            .upsert(transactionsToInsert, {
-              onConflict: 'user_id,timestamp,amount,description',
-              ignoreDuplicates: true,
-            });
+            .upsert(upserts, { onConflict: 'plaid_transaction_id' });
 
-          if (txError) {
-            console.error('[Plaid Webhook] Transaction insert error:', txError);
-          } else {
-            totalSynced += transactionsToInsert.length;
-          }
+          if (txErr) console.error('[Plaid] Upsert error:', txErr);
+          else synced += upserts.length;
         }
 
-        // Handle removed transactions
-        if (removed && removed.length > 0) {
-          console.log(`[Plaid Webhook] ${removed.length} transactions removed`);
+        // ── Remove deleted transactions ───────────────────────────────────
+        // Plaid sends { transaction_id } objects in the removed array
+        const removedIds = (removedTxs ?? []).map((t: Record<string, string>) => t.transaction_id);
+        if (removedIds.length > 0) {
+          const { error: delErr } = await supabase
+            .from('transactions')
+            .delete()
+            .in('plaid_transaction_id', removedIds);
+
+          if (delErr) console.error('[Plaid] Delete error:', delErr);
+          else removed += removedIds.length;
         }
 
-        cursor = next_cursor;
+        cursor  = next_cursor;
         hasMore = has_more;
       }
 
-      // Update cursor
+      // Persist cursor
       await supabase
         .from('plaid_items')
-        .update({ 
-          sync_cursor: cursor, 
-          last_sync_at: new Date().toISOString(),
+        .update({
+          sync_cursor:   cursor,
+          last_sync_at:  new Date().toISOString(),
           error_message: null,
-          error_code: null,
+          error_code:    null,
         })
         .eq('id', plaidItem.id);
 
-      console.log(`[Plaid Webhook] Synced ${totalSynced} transactions`);
+      console.log(`[Plaid] Synced ${synced} added/modified, deleted ${removed} removed`);
       break;
     }
+
     case 'INITIAL_UPDATE':
-    case 'HISTORICAL_UPDATE': {
-      console.log(`[Plaid Webhook] ${webhookCode} for item ${plaidItem.id}`);
+    case 'HISTORICAL_UPDATE':
+      console.log(`[Plaid] ${webhookCode} — triggering full sync`);
+      // Re-use SYNC_UPDATES_AVAILABLE path (cursor starts empty so it does full sync)
+      await handleTransactionsWebhook(
+        supabase, plaidItem, 'SYNC_UPDATES_AVAILABLE', payload, plaidUrl, clientId, secret
+      );
       break;
-    }
-    default: {
-      console.log(`[Plaid Webhook] Unhandled transaction code: ${webhookCode}`);
-    }
+
+    default:
+      console.log(`[Plaid] Unhandled transaction code: ${webhookCode}`);
   }
 }
 
+// ── Item webhook ─────────────────────────────────────────────────────────
+
 async function handleItemWebhook(
-  supabase: any,
-  plaidItem: any,
+  supabase: ReturnType<typeof createClient>,
+  plaidItem: Record<string, unknown>,
   webhookCode: string,
-  error: any
+  error: Record<string, string> | null
 ) {
   switch (webhookCode) {
     case 'ERROR': {
-      const errorCode = error?.error_code || 'UNKNOWN';
-      const errorMessage = error?.error_message || 'Unknown error';
-      console.error(`[Plaid Webhook] Item error: ${errorCode} - ${errorMessage}`);
+      const code    = error?.error_code    ?? 'UNKNOWN';
+      const message = error?.error_message ?? 'Unknown error';
+      console.error(`[Plaid] Item error: ${code} — ${message}`);
+      await supabase.from('plaid_items').update({
+        status:        code === 'ITEM_LOGIN_REQUIRED' ? 'login_required' : 'error',
+        error_code:    code,
+        error_message: message,
+      }).eq('id', plaidItem.id);
+      break;
+    }
+    case 'PENDING_EXPIRATION':
+      await supabase.from('plaid_items').update({
+        status:        'pending_expiration',
+        error_message: 'Access consent is expiring. Please re-link your account.',
+      }).eq('id', plaidItem.id);
+      break;
 
-      await supabase
-        .from('plaid_items')
-        .update({
-          status: errorCode === 'ITEM_LOGIN_REQUIRED' ? 'login_required' : 'error',
-          error_code: errorCode,
-          error_message: errorMessage,
-        })
-        .eq('id', plaidItem.id);
+    case 'USER_PERMISSION_REVOKED':
+      await supabase.from('plaid_items').update({
+        status:        'revoked',
+        error_message: 'User permission was revoked.',
+      }).eq('id', plaidItem.id);
       break;
-    }
-    case 'PENDING_EXPIRATION': {
-      console.warn(`[Plaid Webhook] Item ${plaidItem.id} consent is expiring soon`);
-      await supabase
-        .from('plaid_items')
-        .update({
-          status: 'pending_expiration',
-          error_message: 'Access consent is expiring. Please re-link your account.',
-        })
-        .eq('id', plaidItem.id);
+
+    case 'WEBHOOK_UPDATE_ACKNOWLEDGED':
+      console.log(`[Plaid] Webhook URL update acknowledged for item ${plaidItem.id}`);
       break;
-    }
-    case 'USER_PERMISSION_REVOKED': {
-      console.warn(`[Plaid Webhook] User revoked permission for item ${plaidItem.id}`);
-      await supabase
-        .from('plaid_items')
-        .update({
-          status: 'revoked',
-          error_message: 'User permission was revoked.',
-        })
-        .eq('id', plaidItem.id);
-      break;
-    }
-    case 'WEBHOOK_UPDATE_ACKNOWLEDGED': {
-      console.log(`[Plaid Webhook] Webhook URL update acknowledged for item ${plaidItem.id}`);
-      break;
-    }
-    default: {
-      console.log(`[Plaid Webhook] Unhandled item code: ${webhookCode}`);
-    }
+
+    default:
+      console.log(`[Plaid] Unhandled item code: ${webhookCode}`);
   }
 }

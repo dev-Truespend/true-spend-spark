@@ -65,6 +65,7 @@ import CreditCards from "@/features/credit-cards/pages/CreditCards";
 import LocationHistory from "@/features/location/pages/LocationHistory";
 import FavoriteMerchants from "@/features/merchants/pages/FavoriteMerchants";
 import Settings from "@/features/settings/pages/Settings";
+import Billing from "@/features/settings/pages/Billing";
 
 const PageSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -173,7 +174,8 @@ function App() {
                     <Route path="/insights"        element={<ProtectedRoute><Insights /></ProtectedRoute>} />
                     <Route path="/location-history" element={<ProtectedRoute><LocationHistory /></ProtectedRoute>} />
                     <Route path="/favorites"       element={<ProtectedRoute><FavoriteMerchants /></ProtectedRoute>} />
-                    <Route path="/settings"        element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/settings"         element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/settings/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
 
                     {/* Admin routes */}
                     <Route path="/admin" element={<ProtectedRoute requireRole="admin"><AdminDashboardLayout /></ProtectedRoute>}>

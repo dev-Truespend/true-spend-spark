@@ -99,6 +99,37 @@ export function Popup() {
     enabled: !!session,
   });
 
+  // Fetch per-category spending for the current calendar month so each
+  // budget card shows real progress rather than a hard-coded zero.
+  const { data: spendingMap } = useQuery<Record<string, number>>({
+    queryKey: ['popup-spending-this-month'],
+    enabled:  !!session && (budgets?.length ?? 0) > 0,
+    staleTime: 1000 * 60 * 2,
+    queryFn: async () => {
+      const now   = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const end   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+      const categories = (budgets ?? []).map((b) => b.category);
+      if (!categories.length) return {};
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('category, amount')
+        .in('category', categories)
+        .gte('timestamp', start)
+        .lte('timestamp', end);
+
+      if (error) throw error;
+
+      // Sum amounts per category
+      return (data ?? []).reduce<Record<string, number>>((acc, tx) => {
+        acc[tx.category] = (acc[tx.category] ?? 0) + Number(tx.amount);
+        return acc;
+      }, {});
+    },
+  });
+
   const handleSignIn = () => {
     try {
       // Open web app auth page in popup window
@@ -161,7 +192,7 @@ export function Popup() {
           <div className="text-center py-8">Loading...</div>
         ) : budgets && budgets.length > 0 ? (
           budgets.map((budget) => {
-            const spent = 0; // TODO: Calculate from transactions
+            const spent      = spendingMap?.[budget.category] ?? 0;
             const percentage = (spent / budget.limit_amount) * 100;
             
             return (

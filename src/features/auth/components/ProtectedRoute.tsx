@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useSubscription } from "@/shared/hooks/useSubscription";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -9,15 +10,19 @@ interface ProtectedRouteProps {
   requireRole?: string | string[];
   /** Where to send unauthenticated users (default: /auth). */
   redirectTo?: string;
+  /** If true, redirect free-tier users to /settings/billing. */
+  requirePro?: boolean;
 }
 
 export function ProtectedRoute({
   children,
   requireRole,
   redirectTo = "/auth",
+  requirePro = false,
 }: ProtectedRouteProps) {
   const { user, session, loading: authLoading } = useAuth();
   const { roles, loading: roleLoading } = useUserRole();
+  const { isPro, isLoading: subLoading } = useSubscription();
   const location = useLocation();
 
   // ── 1. Auth loading ─────────────────────────────────────────────────────
@@ -56,6 +61,20 @@ export function ProtectedRoute({
     }
   }
 
-  // ── 4. All checks passed ─────────────────────────────────────────────────
+  // ── 4. Subscription gating ──────────────────────────────────────────────
+  if (requirePro) {
+    if (subLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      );
+    }
+    if (!isPro) {
+      return <Navigate to="/settings/billing" state={{ from: location.pathname }} replace />;
+    }
+  }
+
+  // ── 5. All checks passed ─────────────────────────────────────────────────
   return <>{children}</>;
 }

@@ -1,39 +1,51 @@
-/**
- * Stripe Integration — COMING IN 2-4 WEEKS
- *
- * Planned features:
- *  - Subscription billing (free / pro / enterprise tiers)
- *  - Payment method management
- *  - Invoice history
- *  - Webhook handler for subscription lifecycle events
- *
- * Setup steps when ready:
- *  1. Install: npm install @stripe/stripe-js @stripe/react-stripe-js
- *  2. Add VITE_STRIPE_PUBLISHABLE_KEY to .env.example
- *  3. Add STRIPE_SECRET_KEY to Supabase Edge Function secrets
- *  4. Create Edge Functions: create-checkout-session, create-portal-session, webhook
- *  5. Wire up SubscriptionGuard component in ProtectedRoute
- */
+import { loadStripe, type Stripe } from "@stripe/stripe-js";
 
-// TODO: replace with real Stripe client once keys are configured
-export const stripe = null;
+// ── Stripe.js singleton (lazy-loaded) ────────────────────────────────────
+let _stripePromise: ReturnType<typeof loadStripe> | null = null;
 
-export type StripeSubscriptionStatus =
-  | 'active'
-  | 'trialing'
-  | 'past_due'
-  | 'canceled'
-  | 'unpaid'
-  | 'incomplete';
-
-export interface StripeSubscription {
-  id: string;
-  status: StripeSubscriptionStatus;
-  currentPeriodEnd: Date;
-  planId: string;
+export function getStripe(): ReturnType<typeof loadStripe> {
+  const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+  if (!key) {
+    console.warn("[Stripe] VITE_STRIPE_PUBLISHABLE_KEY is not set — Stripe unavailable");
+    return Promise.resolve(null);
+  }
+  if (!_stripePromise) {
+    _stripePromise = loadStripe(key);
+  }
+  return _stripePromise;
 }
 
-/** Returns whether the user has an active paid subscription. Always false until Stripe is wired up. */
-export function hasActiveSubscription(_subscription: StripeSubscription | null): boolean {
-  return false; // TODO: implement after Stripe integration
+// ── Types ────────────────────────────────────────────────────────────────
+
+export type StripeSubscriptionStatus =
+  | "active"
+  | "trialing"
+  | "past_due"
+  | "canceled"
+  | "unpaid"
+  | "incomplete";
+
+export type Plan = "free" | "pro" | "enterprise";
+
+export interface SubscriptionRecord {
+  id: string;
+  user_id: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  plan: Plan;
+  status: StripeSubscriptionStatus | "trialing" | "incomplete";
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  trial_end: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** True when the user is on a paid, active plan (active or trialing). */
+export function hasActiveSubscription(sub: SubscriptionRecord | null | undefined): boolean {
+  if (!sub) return false;
+  return (sub.plan === "pro" || sub.plan === "enterprise") &&
+    (sub.status === "active" || sub.status === "trialing");
 }

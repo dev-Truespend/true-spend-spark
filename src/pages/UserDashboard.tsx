@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +19,33 @@ export default function UserDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
 
   const isRestricted = profile?.status === 'pending_verification';
+
+  // ── Real spending total: sum of this calendar month's transactions ──────
+  const { data: monthStats } = useQuery({
+    queryKey: ["dashboard-month-total", user?.id],
+    enabled:  !!user,
+    staleTime: 1000 * 60 * 5,
+    queryFn: async () => {
+      const now   = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const end   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("amount")
+        .eq("user_id", user!.id)
+        .gte("timestamp", start)
+        .lte("timestamp", end);
+
+      if (error) throw error;
+      const total = (data ?? []).reduce((sum, tx) => sum + Number(tx.amount), 0);
+      const count = data?.length ?? 0;
+      return { total, count };
+    },
+  });
+
+  const totalSpent  = monthStats?.total ?? null;
+  const receiptCount = monthStats?.count ?? null;
 
   const handleSignOut = async () => {
     await signOut();
@@ -66,8 +95,12 @@ export default function UserDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">$0.00</div>
-                  <p className="text-xs text-muted-foreground">No expenses yet</p>
+                  <div className="text-2xl font-bold">
+                    {totalSpent === null ? "—" : `$${totalSpent.toFixed(2)}`}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {totalSpent === null ? "Loading…" : totalSpent === 0 ? "No expenses yet" : "This month"}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -79,8 +112,12 @@ export default function UserDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">0</div>
-                  <p className="text-xs text-muted-foreground">Start uploading receipts</p>
+                  <div className="text-2xl font-bold">
+                    {receiptCount === null ? "—" : receiptCount}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {receiptCount === null ? "Loading…" : receiptCount === 0 ? "Start uploading receipts" : "This month"}
+                  </p>
                 </CardContent>
               </Card>
 
