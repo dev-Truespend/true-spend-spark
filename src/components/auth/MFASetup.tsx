@@ -97,7 +97,6 @@ export function MFASetup() {
           mfaPending: !enabled && hasPendingSecret,
           clearingStaleQR: !enabled && !hasPendingSecret && (qrCodeUrl || secret)
         });
-        console.log('[MFA] Final UI state:', { enabled, pending: !enabled && hasPendingSecret, hasQR: !!qrCodeUrl });
       }
     } catch (error) {
       console.error('Error checking MFA status:', error);

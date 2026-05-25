@@ -77,7 +77,6 @@ export default function Auth() {
 
     const completeOAuth = async () => {
       try {
-        console.log('[Auth] Processing OAuth callback');
         setProcessingOAuth(true);
         
         const code = searchParams.get('code') || hashParams.get('code');
@@ -115,7 +114,6 @@ export default function Auth() {
           const { data: { session } } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
           
           if (session && session.user) {
-            console.log('[Auth] Session established, redirecting to dashboard');
             toast({ title: "Welcome back!", description: "Successfully signed in." });
             navigate(redirectTo, { replace: true });
             return true;
@@ -164,7 +162,6 @@ export default function Auth() {
   // Auto-redirect if already authenticated
   useEffect(() => {
     if (!loading && !processingOAuth && user && session) {
-      console.log('[Auth] User already authenticated, redirecting to dashboard');
       navigate(redirectTo, { replace: true });
     }
   }, [loading, processingOAuth, user, session, navigate, redirectTo]);

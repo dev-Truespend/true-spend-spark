@@ -23,11 +23,9 @@ export interface OCRResult {
  */
 export async function extractReceiptData(imageBlob: Blob): Promise<OCRResult> {
   try {
-    console.log('[OCRService] Starting receipt extraction...');
 
     // Step 1: Optimize image for OCR
     const optimized = await prepareImageForOCR(imageBlob);
-    console.log('[OCRService] Image optimized:', optimized.metadata);
 
     // Step 2: Upload image to storage
     const fileName = `receipt_${Date.now()}.jpg`;
@@ -58,7 +56,6 @@ export async function extractReceiptData(imageBlob: Blob): Promise<OCRResult> {
     let primaryError;
 
     // Step 4: Try Google Vision API as primary
-    console.log('[OCRService] Trying Google Vision API...');
     const { data: visionData, error: visionError } = await supabase.functions.invoke(
       'google-vision-ocr',
       { body: { imageUrl: urlData.publicUrl } }
@@ -66,13 +63,10 @@ export async function extractReceiptData(imageBlob: Blob): Promise<OCRResult> {
 
     if (!visionError && visionData?.success) {
       ocrResult = visionData.data;
-      console.log('[OCRService] Google Vision succeeded');
     } else {
       primaryError = visionError?.message || visionData?.error;
-      console.log('[OCRService] Google Vision failed, trying fallback:', primaryError);
       
       // Step 5: Fallback to Lovable AI
-      console.log('[OCRService] Trying Lovable AI OCR...');
       const { data: lovableData, error: lovableError } = await supabase.functions.invoke(
         'ocr-process-receipt',
         { body: { imageUrl: urlData.publicUrl } }
@@ -80,10 +74,8 @@ export async function extractReceiptData(imageBlob: Blob): Promise<OCRResult> {
 
       if (!lovableError && lovableData) {
         ocrResult = lovableData;
-        console.log('[OCRService] Lovable AI succeeded');
       } else {
         primaryError = lovableError?.message || lovableData?.error;
-        console.log('[OCRService] Lovable AI failed, trying final fallback:', primaryError);
         
         // Step 6: Final fallback to Hugging Face (if enabled)
         const { data: hfFallbackFlag } = await supabase
@@ -93,7 +85,6 @@ export async function extractReceiptData(imageBlob: Blob): Promise<OCRResult> {
           .single();
 
         if (hfFallbackFlag?.enabled === true) {
-          console.log('[OCRService] Trying HF OCR as final fallback...');
           const { data: hfData, error: hfError } = await supabase.functions.invoke(
             'huggingface-ocr-receipt',
             { body: { imageUrl: urlData.publicUrl } }
@@ -101,9 +92,7 @@ export async function extractReceiptData(imageBlob: Blob): Promise<OCRResult> {
 
           if (!hfError && hfData?.success) {
             ocrResult = hfData.data;
-            console.log('[OCRService] HF OCR succeeded');
           } else {
-            console.log('[OCRService] HF OCR fallback failed:', hfError?.message || hfData?.error);
           }
         }
       }
@@ -113,7 +102,6 @@ export async function extractReceiptData(imageBlob: Blob): Promise<OCRResult> {
       throw new Error(`All OCR providers failed. Last error: ${primaryError}`);
     }
 
-    console.log('[OCRService] Receipt extracted successfully');
     return {
       success: true,
       data: ocrResult as ReceiptData,

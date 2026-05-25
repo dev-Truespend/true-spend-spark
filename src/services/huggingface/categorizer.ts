@@ -32,7 +32,6 @@ export async function categorizeTransaction(
     // Check cache first
     const cached = await getCachedResponse(inputText);
     if (cached) {
-      console.log('[HF Categorizer] Cache hit for:', inputText);
       return {
         ...cached,
         method: 'hf-client',
@@ -67,7 +66,6 @@ export async function categorizeTransaction(
     const responseTime = Date.now() - startTime;
     client.updateMetrics(true, responseTime);
 
-    console.log(`[HF Categorizer] Categorized as "${bestLabel}" (${(confidence * 100).toFixed(1)}%) in ${responseTime}ms`);
 
     return prediction;
   } catch (error) {
@@ -129,11 +127,9 @@ export async function isCategorizerReady(): Promise<boolean> {
  */
 export async function preloadCategorizer(): Promise<void> {
   try {
-    console.log('[HF Categorizer] Preloading model...');
     const client = getHFClient();
     await client.initialize();
     await client.getPipeline(HF_MODELS.ZERO_SHOT.modelId, HF_MODELS.ZERO_SHOT.task);
-    console.log('[HF Categorizer] Model preloaded successfully');
   } catch (error) {
     console.error('[HF Categorizer] Failed to preload:', error);
   }

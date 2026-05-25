@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useOfflineStorage } from "@/hooks/useOfflineStorage";
-import { useAdaptiveContent } from "@/hooks/useAdaptiveContent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,33 +10,19 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Plus, AlertTriangle, CheckCircle2, RefreshCw, WifiOff, MapPin } from "lucide-react";
-import { OfflineIndicator } from "@/components/network/OfflineIndicator";
-import { SyncStatusBadge } from "@/components/sync/SyncStatusBadge";
-import { LowDataModeIndicator } from "@/components/ui/LowDataModeIndicator";
+import { Loader2, Plus, AlertTriangle, MapPin } from "lucide-react";
 import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
-import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
-  "Dining",
-  "Groceries",
-  "Transportation",
-  "Shopping",
-  "Entertainment",
-  "Health",
-  "Utilities",
-  "Travel",
-  "Other",
+  "Dining", "Groceries", "Transportation", "Shopping",
+  "Entertainment", "Health", "Utilities", "Travel", "Other",
 ];
 
 const PERIODS = ["monthly", "weekly", "quarterly"];
 
 export default function Budgets() {
   const queryClient = useQueryClient();
-  const { storage, saveOffline, status } = useOfflineStorage();
-  const { shouldDeferNonCritical, shouldAnimate } = useAdaptiveContent();
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [newBudget, setNewBudget] = useState({
     category: "Other",
     limit_amount: 0,
@@ -47,56 +31,42 @@ export default function Budgets() {
     geofence_id: null as string | null,
   });
 
-  // Fetch user's geofences
   const { data: userGeofences } = useQuery({
     queryKey: ['user-geofences'],
     queryFn: async () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return [];
-
       const { data, error } = await supabase
         .from('geofences')
         .select('*')
         .eq('user_id', user.user.id)
         .eq('active', true);
-
       if (error) throw error;
       return data || [];
     },
   });
 
-  // Fetch geofence spending summary
   const { data: geofenceSpending } = useQuery({
     queryKey: ['geofence-spending'],
     queryFn: async () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return [];
-
       const { data: transactions, error } = await supabase
         .from('transactions')
         .select('amount, geofence_id, geofence:geofences(name)')
         .eq('user_id', user.user.id)
         .not('geofence_id', 'is', null)
         .gte('timestamp', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
-
       if (error) throw error;
-
-      // Group by geofence
       const grouped = transactions?.reduce((acc: any, tx: any) => {
         const geofenceId = tx.geofence_id;
         if (!acc[geofenceId]) {
-          acc[geofenceId] = {
-            geofence_id: geofenceId,
-            name: tx.geofence?.name || 'Unknown',
-            total: 0,
-            count: 0,
-          };
+          acc[geofenceId] = { geofence_id: geofenceId, name: tx.geofence?.name || 'Unknown', total: 0, count: 0 };
         }
         acc[geofenceId].total += Number(tx.amount);
         acc[geofenceId].count += 1;
         return acc;
       }, {});
-
       return Object.values(grouped || {});
     },
   });
@@ -104,101 +74,38 @@ export default function Budgets() {
   const { data: budgets, isLoading } = useQuery<any[]>({
     queryKey: ['budgets-with-spending'],
     queryFn: async () => {
-      // Try local storage first
-      const localBudgets = await storage.getAll('budgets');
-      const localTransactions = await storage.getAll('transactions');
-
-      // If offline, calculate spending from local data
-      if (!status.isOnline) {
-        if (import.meta.env.DEV) {
-          console.log('[Budgets] Offline: Using local data');
-        }
-        return localBudgets.map((budget: any) => {
-          const transactions = localTransactions.filter(
-            (tx: any) =>
-              tx.category === budget.category &&
-              tx.timestamp >= budget.start_date &&
-              tx.timestamp <= (budget.end_date || new Date().toISOString())
-          );
-          const spent: number = transactions.reduce<number>((sum: number, tx: any): number => {
-            const amount = Number(tx.amount) || 0;
-            return sum + amount;
-          }, 0);
-          const limitAmount: number = Number(budget.limit_amount) || 1;
-          const remaining: number = limitAmount - spent;
-          const utilization: number = (spent / limitAmount) * 100;
-          
+      const { data: budgetRows, error: budgetsError } = await supabase
+        .from('budgets')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
+      if (budgetsError) throw budgetsError;
+      const budgetsWithSpending = await Promise.all(
+        budgetRows.map(async (budget) => {
+          let query = supabase
+            .from('transactions')
+            .select('amount')
+            .eq('category', budget.category)
+            .gte('timestamp', budget.start_date)
+            .lte('timestamp', budget.end_date || new Date().toISOString());
+          if (budget.geofence_id) query = query.eq('geofence_id', budget.geofence_id);
+          const { data: transactions } = await query;
+          const spent = transactions?.reduce((sum, tx) => sum + Number(tx.amount), 0) || 0;
+          let geofence = null;
+          if (budget.geofence_id) {
+            const { data: gf } = await supabase.from('geofences').select('name').eq('id', budget.geofence_id).single();
+            geofence = gf;
+          }
           return {
             ...budget,
             spent,
-            remaining,
-            utilization,
+            remaining: Number(budget.limit_amount) - spent,
+            utilization: (spent / Number(budget.limit_amount)) * 100,
+            geofence,
           };
-        });
-      }
-
-      // If online, fetch from Supabase
-      try {
-        const { data: budgets, error: budgetsError } = await supabase
-          .from('budgets')
-          .select('*')
-          .eq('active', true)
-          .order('created_at', { ascending: false });
-
-        if (budgetsError) throw budgetsError;
-
-        // Get spending for each budget
-        const budgetsWithSpending = await Promise.all(
-          budgets.map(async (budget) => {
-            let query = supabase
-              .from('transactions')
-              .select('amount')
-              .eq('category', budget.category)
-              .gte('timestamp', budget.start_date)
-              .lte('timestamp', budget.end_date || new Date().toISOString());
-
-            // Filter by geofence if budget is linked to one
-            if (budget.geofence_id) {
-              query = query.eq('geofence_id', budget.geofence_id);
-            }
-
-            const { data: transactions } = await query;
-
-            const spent = transactions?.reduce((sum, tx) => sum + Number(tx.amount), 0) || 0;
-
-            // Fetch geofence name if linked
-            let geofence = null;
-            if (budget.geofence_id) {
-              const { data: gf } = await supabase
-                .from('geofences')
-                .select('name')
-                .eq('id', budget.geofence_id)
-                .single();
-              geofence = gf;
-            }
-
-            return {
-              ...budget,
-              spent,
-              remaining: Number(budget.limit_amount) - spent,
-              utilization: (spent / Number(budget.limit_amount)) * 100,
-              geofence,
-            };
-          })
-        );
-
-        // Update local storage with fresh data
-        await storage.bulkSet(
-          'budgets',
-          budgetsWithSpending.map(b => ({ key: b.id, value: { ...b, synced: true } }))
-        );
-
-        return budgetsWithSpending;
-      } catch (error) {
-        console.error('[Budgets] Fetch error, falling back to local:', error);
-        // Fallback to local if online fetch fails
-        return localBudgets.length > 0 ? localBudgets : [];
-      }
+        })
+      );
+      return budgetsWithSpending;
     },
   });
 
@@ -210,7 +117,6 @@ export default function Budgets() {
         .select('*, budget:budgets(*)')
         .is('acknowledged_at', null)
         .order('triggered_at', { ascending: false });
-
       if (error) throw error;
       return data;
     },
@@ -220,7 +126,6 @@ export default function Budgets() {
     mutationFn: async (input: typeof newBudget) => {
       const startDate = new Date();
       let endDate: Date | null = null;
-
       if (input.period === 'weekly') {
         endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
       } else if (input.period === 'monthly') {
@@ -228,35 +133,8 @@ export default function Budgets() {
       } else if (input.period === 'quarterly') {
         endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 3, startDate.getDate());
       }
-
-      // If offline, save locally
-      if (!status.isOnline) {
-        const offlineBudget = {
-          id: crypto.randomUUID(),
-          user_id: '', // Will be set by backend
-          category: input.category,
-          limit_amount: input.limit_amount,
-          period: input.period,
-          start_date: startDate.toISOString(),
-          end_date: endDate?.toISOString() || null,
-          alert_threshold: input.alert_threshold,
-          active: true,
-          synced: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        await saveOffline('budgets', offlineBudget, 'CREATE');
-        if (import.meta.env.DEV) {
-          console.log('[Budgets] Saved offline:', offlineBudget.id);
-        }
-        return offlineBudget;
-      }
-
-      // If online, create in Supabase
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-
       const { data, error } = await supabase
         .from('budgets')
         .insert({
@@ -267,28 +145,16 @@ export default function Budgets() {
           start_date: startDate.toISOString(),
           end_date: endDate?.toISOString() || null,
           alert_threshold: input.alert_threshold,
+          geofence_id: input.geofence_id || null,
         })
         .select()
         .single();
-
       if (error) throw error;
-      
-      // Save to local storage
-      await storage.set('budgets', data.id, { ...data, synced: true });
-      
       return data;
     },
-    onSuccess: (data: any) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets-with-spending'] });
-      
-      if ('synced' in data && !data.synced) {
-        toast.success('Budget saved offline - will sync when online', {
-          icon: <WifiOff className="h-4 w-4" />,
-        });
-      } else {
-        toast.success('Budget created successfully');
-      }
-      
+      toast.success('Budget created successfully');
       setIsAddOpen(false);
       setNewBudget({ category: "Other", limit_amount: 0, period: "monthly", alert_threshold: 0.8, geofence_id: null });
     },
@@ -303,7 +169,6 @@ export default function Budgets() {
         .from('budget_alerts')
         .update({ acknowledged_at: new Date().toISOString() })
         .eq('id', alertId);
-
       if (error) throw error;
     },
     onSuccess: () => {
@@ -314,71 +179,11 @@ export default function Budgets() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (newBudget.limit_amount <= 0) {
       toast.error('Please enter a valid budget amount');
       return;
     }
-
     addBudgetMutation.mutate(newBudget);
-  };
-
-  const handleSyncNow = async () => {
-    if (!status.isOnline) {
-      toast.error('Cannot sync while offline');
-      return;
-    }
-
-    setIsSyncing(true);
-    try {
-      // Get all unsynced budgets
-      const allBudgets = await storage.getAll('budgets');
-      const unsyncedBudgets = allBudgets.filter((b: any) => !b.synced);
-
-      if (unsyncedBudgets.length === 0) {
-        toast.info('All budgets are already synced');
-        return;
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Process each unsynced budget
-      for (const budget of unsyncedBudgets) {
-        try {
-          const { data, error } = await supabase
-            .from('budgets')
-            .insert({
-              user_id: user.id,
-              category: (budget as any).category,
-              limit_amount: (budget as any).limit_amount,
-              period: (budget as any).period,
-              start_date: (budget as any).start_date,
-              end_date: (budget as any).end_date,
-              alert_threshold: (budget as any).alert_threshold,
-              active: (budget as any).active,
-              geofence_id: (budget as any).geofence_id,
-            })
-            .select()
-            .single();
-
-          if (error) throw error;
-
-          // Mark as synced in local storage
-          await storage.set('budgets', (budget as any).id, { ...data, synced: true });
-        } catch (error) {
-          console.error('[Budgets] Sync error:', error);
-          toast.error(`Failed to sync budget: ${(budget as any).category}`);
-        }
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['budgets-with-spending'] });
-      toast.success(`Synced ${unsyncedBudgets.length} budget(s)`);
-    } catch (error) {
-      toast.error('Sync failed');
-    } finally {
-      setIsSyncing(false);
-    }
   };
 
   const getSeverityColor = (utilization: number) => {
@@ -390,46 +195,11 @@ export default function Budgets() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <OfflineIndicator />
-      <LowDataModeIndicator />
-      
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Budgets</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <p className="text-muted-foreground">Monitor and manage your spending limits</p>
-            {status.pendingChanges > 0 && (
-              <Badge variant="secondary" className="gap-1">
-                <WifiOff className="h-3 w-3" />
-                {status.pendingChanges} pending
-              </Badge>
-            )}
-          </div>
+          <p className="text-muted-foreground mt-1">Monitor and manage your spending limits</p>
         </div>
-        
-        <div className="flex gap-2">
-          {status.pendingChanges > 0 && status.isOnline && (
-            <Button
-              data-testid="sync-now-button"
-              variant="outline"
-              onClick={handleSyncNow}
-              disabled={isSyncing}
-              className="gap-2"
-            >
-              {isSyncing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Syncing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4" />
-                  Sync Now
-                </>
-              )}
-            </Button>
-          )}
-        
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -440,9 +210,7 @@ export default function Budgets() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Budget</DialogTitle>
-              <DialogDescription>
-                Set spending limits for a category
-              </DialogDescription>
+              <DialogDescription>Set spending limits for a category</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -451,9 +219,7 @@ export default function Budgets() {
                   value={newBudget.category}
                   onValueChange={(value) => setNewBudget(prev => ({ ...prev, category: value }))}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map(cat => (
                       <SelectItem key={cat} value={cat}>{cat}</SelectItem>
@@ -461,7 +227,6 @@ export default function Budgets() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="limit">Budget Limit</Label>
                 <Input
@@ -474,16 +239,13 @@ export default function Budgets() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="period">Period</Label>
                 <Select
                   value={newBudget.period}
                   onValueChange={(value) => setNewBudget(prev => ({ ...prev, period: value }))}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PERIODS.map(period => (
                       <SelectItem key={period} value={period}>
@@ -493,49 +255,32 @@ export default function Budgets() {
                   </SelectContent>
                 </Select>
               </div>
-
               {userGeofences && userGeofences.length > 0 && (
                 <div className="space-y-2">
                   <Label htmlFor="geofence">Link to Location (Optional)</Label>
                   <Select
                     value={newBudget.geofence_id || "none"}
-                    onValueChange={(value) => setNewBudget(prev => ({ 
-                      ...prev, 
-                      geofence_id: value === "none" ? null : value 
-                    }))}
+                    onValueChange={(value) => setNewBudget(prev => ({ ...prev, geofence_id: value === "none" ? null : value }))}
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No location</SelectItem>
                       {userGeofences.map((gf: any) => (
-                        <SelectItem key={gf.id} value={gf.id}>
-                          {gf.name}
-                        </SelectItem>
+                        <SelectItem key={gf.id} value={gf.id}>{gf.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Track spending only at this location
-                  </p>
+                  <p className="text-xs text-muted-foreground">Track spending only at this location</p>
                 </div>
               )}
-
               <Button type="submit" className="w-full" disabled={addBudgetMutation.isPending}>
                 {addBudgetMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  'Create Budget'
-                )}
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</>
+                ) : 'Create Budget'}
               </Button>
             </form>
           </DialogContent>
         </Dialog>
-        </div>
       </div>
 
       {alerts && alerts.length > 0 && (
@@ -555,11 +300,7 @@ export default function Budgets() {
                     {alert.threshold_percentage}% threshold reached (${Number(alert.current_spent).toFixed(2)} / ${Number(alert.budget_limit).toFixed(2)})
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => acknowledgeAlertMutation.mutate(alert.id)}
-                >
+                <Button size="sm" variant="outline" onClick={() => acknowledgeAlertMutation.mutate(alert.id)}>
                   Acknowledge
                 </Button>
               </div>
@@ -588,9 +329,9 @@ export default function Budgets() {
                     </div>
                     <p className="text-lg font-bold">${gf.total.toFixed(2)}</p>
                   </div>
-                  <Progress 
-                    value={(gf.total / Math.max(...(geofenceSpending as any[]).map((g: any) => g.total))) * 100} 
-                    className="h-2" 
+                  <Progress
+                    value={(gf.total / Math.max(...(geofenceSpending as any[]).map((g: any) => g.total))) * 100}
+                    className="h-2"
                   />
                 </div>
               ))}
@@ -600,20 +341,11 @@ export default function Budgets() {
       )}
 
       {isLoading ? (
-        shouldDeferNonCritical ? (
-          <div className="text-center py-12 text-muted-foreground">
-            Loading budgets... (Low Data Mode)
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <SkeletonLoader variant="card" count={3} />
-          </div>
-        )
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <SkeletonLoader variant="card" count={3} />
+        </div>
       ) : (
-        <div className={cn(
-          "grid gap-4 md:grid-cols-2 lg:grid-cols-3",
-          shouldAnimate && "animate-fade-in"
-        )}>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {budgets?.map((budget: any) => (
             <Card key={budget.id}>
               <CardHeader>
@@ -626,10 +358,6 @@ export default function Budgets() {
                         {budget.geofence.name}
                       </Badge>
                     )}
-                    <SyncStatusBadge
-                      status={budget.synced === false ? 'pending' : 'synced'}
-                      lastSyncTime={budget.updated_at}
-                    />
                   </div>
                   {budget.utilization >= 100 ? (
                     <Badge variant="destructive">Exceeded</Badge>
@@ -655,7 +383,6 @@ export default function Budgets() {
                     <span className="font-medium">${Number(budget.limit_amount).toFixed(2)}</span>
                   </div>
                 </div>
-
                 <div className="pt-2 border-t">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Remaining</span>
@@ -670,7 +397,6 @@ export default function Budgets() {
               </CardContent>
             </Card>
           ))}
-          
           {budgets?.length === 0 && (
             <Card className="col-span-full">
               <CardContent className="pt-6 text-center text-muted-foreground">

@@ -130,7 +130,6 @@ export class ErrorHandler {
       url: window.location.href,
     };
 
-    console.log('[ErrorHandler] Would send to tracking service:', errorData);
   }
 
   /**
