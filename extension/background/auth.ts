@@ -1,4 +1,5 @@
 // Authentication flow using Chrome Identity API and Supabase
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config';
 
 export async function handleAuth() {
   try {
@@ -9,9 +10,8 @@ export async function handleAuth() {
     console.log('[Auth] Redirect URL:', redirectURL);
 
     // Build Supabase OAuth URL
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const authUrl = new URL(`${supabaseUrl}/auth/v1/authorize`);
-    
+    const authUrl = new URL(`${SUPABASE_URL}/auth/v1/authorize`);
+
     authUrl.searchParams.set('provider', 'google');
     authUrl.searchParams.set('redirect_to', redirectURL);
     authUrl.searchParams.set('response_type', 'token');
@@ -42,7 +42,7 @@ export async function handleAuth() {
     // Parse tokens from callback URL
     const params = new URL(responseUrl).hash.substring(1);
     const urlParams = new URLSearchParams(params);
-    
+
     const accessToken = urlParams.get('access_token');
     const refreshToken = urlParams.get('refresh_token');
     const expiresIn = urlParams.get('expires_in');
@@ -92,12 +92,12 @@ export async function refreshSessionIfNeeded() {
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,
+        `${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'apikey': SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({
             refresh_token: session.refresh_token,
@@ -111,7 +111,7 @@ export async function refreshSessionIfNeeded() {
       }
 
       const data = await response.json();
-      
+
       const newSession = {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
