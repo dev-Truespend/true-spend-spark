@@ -66,6 +66,7 @@ import LocationHistory from "@/features/location/pages/LocationHistory";
 import FavoriteMerchants from "@/features/merchants/pages/FavoriteMerchants";
 import Settings from "@/features/settings/pages/Settings";
 import Billing from "@/features/settings/pages/Billing";
+import { PendingDeletionBanner } from "@/features/settings/components/PendingDeletionBanner";
 
 const PageSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -132,6 +133,7 @@ function App() {
                 <Sonner />
                 <CSPViolationReporter />
                 <GlobalNav />
+                <PendingDeletionBanner />
                 <RateLimitStatus />
                 <div className="pt-14">
                   <Routes>

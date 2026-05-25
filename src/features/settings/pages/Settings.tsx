@@ -7,6 +7,7 @@ import { SessionsAndDevices } from "@/components/auth/SessionsAndDevices";
 import { UserProfileDropdown } from "@/components/auth/UserProfileDropdown";
 import { Button } from "@/components/ui/button";
 import { useDataExport } from "@/hooks/useDataExport";
+import { DangerZone } from "@/features/settings/components/DangerZone";
 import { Bell, Shield, User, Smartphone, Download } from "lucide-react";
 
 export default function Settings() {
@@ -102,6 +103,9 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* ── GDPR Right to Erasure ───────────────────────────────────── */}
+            <DangerZone />
           </div>
         </TabsContent>
       </Tabs>
