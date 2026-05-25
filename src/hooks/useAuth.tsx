@@ -532,7 +532,7 @@ const logger = useLogger();
       email: data.email,
       password: data.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${import.meta.env.VITE_APP_URL ?? window.location.origin}/auth`,
         data: {
           first_name: data.firstName,
           last_name: data.lastName,
@@ -596,7 +596,7 @@ const logger = useLogger();
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${import.meta.env.VITE_APP_URL ?? window.location.origin}/auth`,
           queryParams: {
             access_type: 'online',
             prompt: 'select_account', // Let user choose account each time
