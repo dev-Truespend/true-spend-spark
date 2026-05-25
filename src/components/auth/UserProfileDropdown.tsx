@@ -138,7 +138,7 @@ export function UserProfileDropdown() {
         .update({ 
           [field]: value.trim() || null,
           updated_at: new Date().toISOString() 
-        })
+        } as any)
         .eq('id', user.id);
 
       if (error) throw error;

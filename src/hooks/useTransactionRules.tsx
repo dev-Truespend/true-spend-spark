@@ -68,7 +68,7 @@ export function useTransactionRules() {
     mutationFn: async ({ id, ...updates }: Partial<TransactionRule> & { id: string }) => {
       const { data, error } = await supabase
         .from('transaction_rules')
-        .update(updates)
+        .update(updates as any)
         .eq('id', id)
         .select()
         .single();
