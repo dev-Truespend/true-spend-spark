@@ -1,4 +1,4 @@
-interface ProtectedRouteProps {
+import type { ReactNode } from "react";
   children: React.ReactNode;
   requireRole?: string | string[];
   redirectTo?: string;
