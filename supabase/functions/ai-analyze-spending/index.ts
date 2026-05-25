@@ -39,13 +39,20 @@ serve(async (req) => {
 
     const { period = 'month' } = await req.json().catch(() => ({}));
 
-    // Check cache first
-    const cacheKey = `ai_spending_analysis_${period}`;
+    // Map UI period → spending_patterns.pattern_type so each period has
+    // its own cache row. Previously every period hit 'monthly' which
+    // meant a 'week' analysis was served from a 'month' cache.
+    const patternType =
+      period === 'week'    ? 'weekly'    :
+      period === 'quarter' ? 'quarterly' :
+                             'monthly';
+
+    // Check cache first (per period)
     const { data: cached } = await supabase
       .from('spending_patterns')
       .select('*')
       .eq('user_id', user.id)
-      .eq('pattern_type', 'monthly')
+      .eq('pattern_type', patternType)
       .gte('expires_at', new Date().toISOString())
       .order('cached_at', { ascending: false })
       .limit(1)
@@ -71,7 +78,10 @@ serve(async (req) => {
         JSON.stringify({
           insights: ['No transaction data available for analysis.'],
           patterns: [],
-          recommendations: [],
+          recommendations: ['Add a few transactions or connect a card to unlock AI insights.'],
+          topCategories: [],
+          totalSpent: 0,
+          txCount: 0,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -160,7 +170,7 @@ Be concise, data-driven, and actionable. Focus on unusual changes, opportunities
 
     await supabase.from('spending_patterns').insert({
       user_id: user.id,
-      pattern_type: 'monthly',
+      pattern_type: patternType, // weekly | monthly | quarterly — matches the read above
       period_start: periodStart.toISOString().split('T')[0],
       period_end: periodEnd.toISOString().split('T')[0],
       data: result,

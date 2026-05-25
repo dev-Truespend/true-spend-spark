@@ -18,6 +18,7 @@ interface Profile {
   email_verified_at: string | null;
   auth_provider: string | null; // Keep for backward compatibility
   auth_providers: string[]; // NEW: Array of all providers
+  onboarding_completed_at: string | null;
 }
 
 interface SignUpData {
@@ -117,6 +118,7 @@ const queryClient = useQueryClient();
             email_verified_at: (profile.email_verified_at as string) || null,
             auth_provider: (profile.auth_provider as string) || null,
             auth_providers: providers,
+            onboarding_completed_at: (profile.onboarding_completed_at as string) || null,
           });
         } else if (user) {
           // Fallback to auth user data if profile doesn't exist yet
@@ -131,6 +133,7 @@ const queryClient = useQueryClient();
             email_verified_at: user.email_confirmed_at || null,
             auth_provider: user.app_metadata?.provider || 'email',
             auth_providers: [user.app_metadata?.provider || 'email'],
+            onboarding_completed_at: null,
           });
 
           // Retry after 1 second in case profile is being created by trigger

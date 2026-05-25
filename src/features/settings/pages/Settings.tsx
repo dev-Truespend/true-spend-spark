@@ -8,6 +8,7 @@ import { UserProfileDropdown } from "@/components/auth/UserProfileDropdown";
 import { Button } from "@/components/ui/button";
 import { useDataExport } from "@/hooks/useDataExport";
 import { DangerZone } from "@/features/settings/components/DangerZone";
+import { ProfileEditor } from "@/features/settings/components/ProfileEditor";
 import { Bell, Shield, User, Smartphone, Download } from "lucide-react";
 
 export default function Settings() {
@@ -65,15 +66,7 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Settings</CardTitle>
-              <CardDescription>Manage your personal information and account details</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <UserProfileDropdown />
-            </CardContent>
-          </Card>
+          <ProfileEditor />
         </TabsContent>
 
         <TabsContent value="privacy">

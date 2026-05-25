@@ -12,6 +12,9 @@ interface ProtectedRouteProps {
   redirectTo?: string;
   /** If true, redirect free-tier users to /settings/billing. */
   requirePro?: boolean;
+  /** If true, don't redirect to /onboarding. Use on the onboarding page
+   *  itself (otherwise it loops) and any post-onboarding flows. */
+  skipOnboardingCheck?: boolean;
 }
 
 export function ProtectedRoute({
@@ -19,8 +22,9 @@ export function ProtectedRoute({
   requireRole,
   redirectTo = "/auth",
   requirePro = false,
+  skipOnboardingCheck = false,
 }: ProtectedRouteProps) {
-  const { user, session, loading: authLoading } = useAuth();
+  const { user, session, profile, loading: authLoading } = useAuth();
   const { roles, loading: roleLoading } = useUserRole();
   const { isPro, isLoading: subLoading } = useSubscription();
   const location = useLocation();
@@ -61,7 +65,15 @@ export function ProtectedRoute({
     }
   }
 
-  // ── 4. Subscription gating ──────────────────────────────────────────────
+  // ── 4. Onboarding gating ────────────────────────────────────────────────
+  // First-time users get pushed through the wizard before they hit anything
+  // else. Skip the check on /onboarding itself (would loop) and on routes
+  // that opt out (e.g. the page that completes onboarding).
+  if (!skipOnboardingCheck && profile && profile.status === 'active' && !profile.onboarding_completed_at) {
+    return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
+  }
+
+  // ── 5. Subscription gating ──────────────────────────────────────────────
   if (requirePro) {
     if (subLoading) {
       return (
@@ -75,6 +87,6 @@ export function ProtectedRoute({
     }
   }
 
-  // ── 5. All checks passed ─────────────────────────────────────────────────
+  // ── 6. All checks passed ─────────────────────────────────────────────────
   return <>{children}</>;
 }

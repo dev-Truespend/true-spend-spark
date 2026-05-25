@@ -66,6 +66,7 @@ import LocationHistory from "@/features/location/pages/LocationHistory";
 import FavoriteMerchants from "@/features/merchants/pages/FavoriteMerchants";
 import Settings from "@/features/settings/pages/Settings";
 import Billing from "@/features/settings/pages/Billing";
+import Onboarding from "@/features/onboarding/pages/Onboarding";
 import { PendingDeletionBanner } from "@/features/settings/components/PendingDeletionBanner";
 
 const PageSpinner = () => (
@@ -166,6 +167,9 @@ function App() {
                     <Route path="/reset-password"    element={<ResetPassword />} />
                     <Route path="/verify-email"      element={<VerifyEmail />} />
                     <Route path="/confirm-email-change" element={<ConfirmEmailChange />} />
+
+                    {/* Onboarding (its own ProtectedRoute exemption is handled by skipOnboardingCheck) */}
+                    <Route path="/onboarding"      element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
 
                     {/* User app routes */}
                     <Route path="/dashboard"       element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
