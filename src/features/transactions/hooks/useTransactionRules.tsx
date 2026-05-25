@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { toast } from "@/shared/hooks/use-toast";
 
 export interface TransactionRule {

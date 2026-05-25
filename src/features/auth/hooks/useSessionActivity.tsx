@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useAuth } from './useAuth';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 const WARNING_BEFORE_LOGOUT = 1 * 60 * 1000; // 1 minute warning

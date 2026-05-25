@@ -1,6 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 export interface TraceContext {
   traceId: string;

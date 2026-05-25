@@ -28,24 +28,24 @@ import SecurityDashboard from "./pages/admin/SecurityDashboard";
 import Phase3Completion from "./pages/admin/Phase3Completion";
 import Workflows from "./pages/admin/Workflows";
 
-// Observability / ML pages still in pages/dashboard
-import Timeline from "./pages/dashboard/Timeline";
-import Geofences from "./pages/dashboard/Geofences";
-import LocationMetrics from "./pages/dashboard/LocationMetrics";
-import WebhookAnalytics from "./pages/dashboard/WebhookAnalytics";
-import AnomalyDetection from "./pages/dashboard/AnomalyDetection";
-import ABTesting from "./pages/dashboard/ABTesting";
-import HuggingFace from "./pages/dashboard/HuggingFace";
-import MLTraining from "./pages/dashboard/MLTraining";
-import RealtimeEvents from "./pages/dashboard/RealtimeEvents";
-import FeatureFlags from "./pages/dashboard/FeatureFlags";
-import DistributedTracing from "./pages/dashboard/DistributedTracing";
-import DataPlanes from "./pages/dashboard/DataPlanes";
-import SystemLogs from "./pages/dashboard/SystemLogs";
-import Observability from "./pages/dashboard/Observability";
-import Alerts from "./pages/dashboard/Alerts";
-import Performance from "./pages/dashboard/Performance";
-import RealTimeMetrics from "./pages/dashboard/RealTimeMetrics";
+// Admin / Observability / ML / Location pages (feature-based paths)
+import Timeline from "./pages/admin/Timeline";
+import Geofences from "@/features/location/pages/Geofences";
+import LocationMetrics from "@/features/location/pages/LocationMetrics";
+import WebhookAnalytics from "@/features/observability/pages/WebhookAnalytics";
+import AnomalyDetection from "@/features/ml/pages/AnomalyDetection";
+import ABTesting from "@/features/ml/pages/ABTesting";
+import HuggingFace from "@/features/ml/pages/HuggingFace";
+import MLTraining from "@/features/ml/pages/MLTraining";
+import RealtimeEvents from "@/features/observability/pages/RealtimeEvents";
+import FeatureFlags from "@/features/ml/pages/FeatureFlags";
+import DistributedTracing from "@/features/observability/pages/DistributedTracing";
+import DataPlanes from "@/features/observability/pages/DataPlanes";
+import SystemLogs from "@/features/observability/pages/SystemLogs";
+import Observability from "@/features/observability/pages/Observability";
+import Alerts from "@/features/observability/pages/Alerts";
+import Performance from "@/features/observability/pages/Performance";
+import RealTimeMetrics from "@/features/observability/pages/RealTimeMetrics";
 
 // Shared pages (not yet moved to features)
 import DashboardLauncher from "./pages/DashboardLauncher";

@@ -6,7 +6,7 @@ import { registerPlugin } from '@capacitor/core';
 
 const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation');
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { toast } from './use-toast';
 
 interface GPSPosition {
