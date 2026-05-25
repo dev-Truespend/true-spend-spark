@@ -24,7 +24,11 @@ export function CreditCardTile({ card }: CreditCardTileProps) {
   const colors = brandColors[card.card_brand?.toLowerCase() || 'default'] || brandColors.default;
   const balance = card.current_balance || 0;
   const creditLimit = card.credit_limit || 0;
-  const utilizationPercent = creditLimit > 0 ? (balance / creditLimit) * 100 : 0;
+  // Raw percentage for the numeric display; capped value for the visual
+  // bar so a card 110% utilised doesn't render off-screen.
+  const rawUtilization = creditLimit > 0 ? (balance / creditLimit) * 100 : 0;
+  const utilizationPercent = Math.min(100, rawUtilization);
+  const isOverUtilized = rawUtilization > 100;
 
   return (
     <>
@@ -84,17 +88,24 @@ export function CreditCardTile({ card }: CreditCardTileProps) {
             <div>
               <div className="flex items-center justify-between text-sm mb-2">
                 <span className="text-muted-foreground">Credit Used</span>
-                <span className="font-medium">{utilizationPercent.toFixed(0)}%</span>
+                <span className={cn(
+                  "font-medium",
+                  isOverUtilized && "text-destructive"
+                )}>
+                  {rawUtilization.toFixed(0)}%
+                  {isOverUtilized && " ⚠️"}
+                </span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className={cn(
                     'h-full transition-all duration-500',
-                    utilizationPercent > 80 ? 'bg-destructive' :
-                    utilizationPercent > 50 ? 'bg-yellow-500' :
-                    'bg-primary'
+                    isOverUtilized            ? 'bg-destructive' :
+                    utilizationPercent > 80   ? 'bg-destructive' :
+                    utilizationPercent > 50   ? 'bg-yellow-500'  :
+                                                'bg-primary'
                   )}
-                  style={{ width: `${Math.min(utilizationPercent, 100)}%` }}
+                  style={{ width: `${utilizationPercent}%` }}
                 />
               </div>
             </div>

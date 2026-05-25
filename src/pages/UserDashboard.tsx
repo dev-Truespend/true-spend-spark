@@ -1,226 +1,653 @@
-import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/shared/hooks/useSubscription";
+import { useCreditCards } from "@/features/credit-cards/hooks/useCreditCards";
 import { supabase } from "@/integrations/supabase/client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Receipt, Wallet, TrendingUp, Settings, User, LogOut, CreditCard, LayoutGrid } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { UnverifiedBanner } from "@/components/auth/UnverifiedBanner";
-import { CreditCardGrid } from "@/components/credit-cards/CreditCardGrid";
+import { ErrorBoundary } from "@/shared/components/error/ErrorBoundary";
+
+import {
+  Receipt,
+  Wallet,
+  TrendingUp,
+  CreditCard,
+  BarChart3,
+  Sparkles,
+  Plus,
+  ArrowRight,
+  AlertTriangle,
+  CheckCircle2,
+  Calendar,
+  ChevronRight,
+  Settings as SettingsIcon,
+  MapPin,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// ── Type for our queries ─────────────────────────────────────────────────
+interface TxRow {
+  id:          string;
+  amount:      number;
+  category:    string | null;
+  description: string | null;
+  timestamp:   string;
+}
+
+interface BudgetRow {
+  id:           string;
+  category:     string;
+  limit_amount: number;
+  period:       string;
+}
+
+// ── Section error fallback so one query failure doesn't kill the page ──
+function SectionError({ label }: { label: string }) {
+  return (
+    <Card className="border-destructive/30 bg-destructive/5">
+      <CardContent className="py-6 text-center text-sm text-muted-foreground">
+        <AlertTriangle className="h-5 w-5 mx-auto mb-2 text-destructive/70" />
+        Could not load {label}. Try refreshing the page.
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Main page ────────────────────────────────────────────────────────────
 export default function UserDashboard() {
-  const { user, profile, signOut } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("overview");
+  const { user, profile }     = useAuth();
+  const { plan, isPro }       = useSubscription();
+  const { cards, cardCount }  = useCreditCards();
 
-  const isRestricted = profile?.status === 'pending_verification';
+  const isRestricted = profile?.status === "pending_verification";
 
-  // ── Real spending total: sum of this calendar month's transactions ──────
-  const { data: monthStats } = useQuery({
-    queryKey: ["dashboard-month-total", user?.id],
+  // Calendar-month window for "this month" stats
+  const now    = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+  // ── Monthly totals (Total Expenses + Receipt count) ───────────────────
+  const monthStats = useQuery({
+    queryKey: ["dashboard-month-stats", user?.id],
     enabled:  !!user,
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
-      const now   = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const end   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
-
       const { data, error } = await supabase
         .from("transactions")
-        .select("amount")
+        .select("amount, receipt_url")
         .eq("user_id", user!.id)
-        .gte("timestamp", start)
-        .lte("timestamp", end);
+        .gte("timestamp", monthStart)
+        .lte("timestamp", monthEnd);
 
       if (error) throw error;
-      const total = (data ?? []).reduce((sum, tx) => sum + Number(tx.amount), 0);
-      const count = data?.length ?? 0;
-      return { total, count };
+      const total       = (data ?? []).reduce((s, t) => s + Number(t.amount), 0);
+      const txCount     = data?.length ?? 0;
+      const receiptCount = (data ?? []).filter((t) => !!t.receipt_url).length;
+      return { total, txCount, receiptCount };
     },
   });
 
-  const totalSpent  = monthStats?.total ?? null;
-  const receiptCount = monthStats?.count ?? null;
+  // ── Recent activity (last 5) ──────────────────────────────────────────
+  const recent = useQuery({
+    queryKey: ["dashboard-recent-tx", user?.id],
+    enabled:  !!user,
+    staleTime: 1000 * 30,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("id, amount, category, description, timestamp")
+        .eq("user_id", user!.id)
+        .order("timestamp", { ascending: false })
+        .limit(5);
 
-  const handleSignOut = async () => {
-    await signOut();
-    toast({
-      title: "Signed out",
-      description: "You've been successfully logged out.",
-    });
-  };
+      if (error) throw error;
+      return (data ?? []) as TxRow[];
+    },
+  });
+
+  // ── Active budgets with this-month spend per category ─────────────────
+  const budgets = useQuery({
+    queryKey: ["dashboard-budgets", user?.id],
+    enabled:  !!user,
+    staleTime: 1000 * 60 * 2,
+    queryFn: async () => {
+      const { data: rows, error: budErr } = await supabase
+        .from("budgets")
+        .select("id, category, limit_amount, period")
+        .eq("user_id", user!.id)
+        .eq("active", true)
+        .limit(50);
+
+      if (budErr) throw budErr;
+      const budgetRows = (rows ?? []) as BudgetRow[];
+      if (!budgetRows.length) return [];
+
+      // Aggregate this-month spend per category in a single round-trip
+      const { data: spend } = await supabase
+        .from("transactions")
+        .select("category, amount")
+        .eq("user_id", user!.id)
+        .in("category", budgetRows.map((b) => b.category))
+        .gte("timestamp", monthStart)
+        .lte("timestamp", monthEnd);
+
+      const spendMap = (spend ?? []).reduce<Record<string, number>>((acc, r) => {
+        acc[r.category] = (acc[r.category] ?? 0) + Number(r.amount);
+        return acc;
+      }, {});
+
+      return budgetRows.map((b) => ({
+        ...b,
+        spent:    spendMap[b.category] ?? 0,
+        percent:  b.limit_amount > 0 ? Math.min(100, (spendMap[b.category] ?? 0) / b.limit_amount * 100) : 0,
+        overBudget: (spendMap[b.category] ?? 0) > b.limit_amount,
+      }));
+    },
+  });
+
+  // Derived
+  const activeBudgetCount = budgets.data?.length ?? null;
+  const atRiskCount       = budgets.data?.filter((b) => b.percent >= 80).length ?? 0;
+
+  const greeting =
+    now.getHours() < 12 ? "Good morning" :
+    now.getHours() < 18 ? "Good afternoon" :
+                          "Good evening";
+
+  const firstName = profile?.first_name?.trim() || (profile?.email?.split("@")[0] ?? "");
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl">
         <UnverifiedBanner />
 
-        <div className="flex justify-between items-center mb-8">
+        {/* ── Hero / greeting ─────────────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">
-              Welcome back{profile?.first_name ? `, ${profile.first_name}` : ''}!
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1 tracking-tight">
+              {greeting}{firstName ? `, ${firstName}` : ""}
             </h1>
-            <p className="text-muted-foreground">{user?.email}</p>
+            <p className="text-muted-foreground text-sm">
+              Here's a quick look at your finances{plan !== "free" && (
+                <Badge variant="secondary" className="ml-2 capitalize">{plan}</Badge>
+              )}
+            </p>
           </div>
-          <Button variant="outline" onClick={handleSignOut} className="gap-2">
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </Button>
+
+          <div className="flex gap-2">
+            <Button asChild variant="outline" className="gap-2">
+              <Link to="/credit-cards">
+                <CreditCard className="h-4 w-4" />
+                Manage cards
+              </Link>
+            </Button>
+            <Button asChild className="gap-2 bg-gradient-to-r from-brand-blue to-brand-purple hover:opacity-90 text-white">
+              <Link to="/transactions">
+                <Plus className="h-4 w-4" />
+                Add transaction
+              </Link>
+            </Button>
+          </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
-            <TabsTrigger value="overview" className="gap-2">
-              <LayoutGrid className="h-4 w-4" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="credit-cards" className="gap-2">
-              <CreditCard className="h-4 w-4" />
-              Credit Cards
-            </TabsTrigger>
-          </TabsList>
+        {/* ── Metric tiles ─────────────────────────────────────────────── */}
+        <ErrorBoundary fallback={<SectionError label="monthly stats" />}>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
+            <MetricTile
+              label="Total Expenses"
+              icon={<Wallet className="h-4 w-4" />}
+              accent="from-primary/10 to-primary/5"
+              iconBg="bg-primary/10 text-primary"
+              loading={monthStats.isLoading}
+              value={monthStats.data ? `$${monthStats.data.total.toFixed(2)}` : null}
+              caption={monthStats.data?.total === 0 ? "No spending yet" : "This month"}
+            />
+            <MetricTile
+              label="Transactions"
+              icon={<BarChart3 className="h-4 w-4" />}
+              accent="from-accent/10 to-accent/5"
+              iconBg="bg-accent/10 text-accent"
+              loading={monthStats.isLoading}
+              value={monthStats.data?.txCount ?? null}
+              caption={monthStats.data?.txCount === 0 ? "Add your first one" : "This month"}
+            />
+            <MetricTile
+              label="Receipts"
+              icon={<Receipt className="h-4 w-4" />}
+              accent="from-brand-teal/10 to-brand-teal/5"
+              iconBg="bg-brand-teal/10 text-brand-teal"
+              loading={monthStats.isLoading}
+              value={monthStats.data?.receiptCount ?? null}
+              caption={monthStats.data?.receiptCount === 0 ? "Scan or upload" : "Captured this month"}
+            />
+            <MetricTile
+              label="Active Budgets"
+              icon={<TrendingUp className="h-4 w-4" />}
+              accent="from-amber-500/10 to-amber-500/5"
+              iconBg="bg-amber-500/10 text-amber-600 dark:text-amber-400"
+              loading={budgets.isLoading}
+              value={activeBudgetCount ?? null}
+              caption={
+                activeBudgetCount === 0   ? "Set your first budget" :
+                atRiskCount > 0           ? `${atRiskCount} approaching limit` :
+                                            "All on track"
+              }
+              captionTone={atRiskCount > 0 ? "warning" : "default"}
+            />
+          </div>
+        </ErrorBoundary>
 
-          <TabsContent value="overview" className="space-y-8">
-            <div className="grid md:grid-cols-3 gap-6">
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-primary/10 to-primary/5">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Wallet className="h-5 w-5 text-primary" />
+        {/* ── Two-column: Recent activity + Budgets at a glance ──────── */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          {/* ── Recent activity ─────────────────────────────────────── */}
+          <ErrorBoundary fallback={<SectionError label="recent activity" />}>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <div>
+                  <CardTitle className="text-base">Recent activity</CardTitle>
+                  <CardDescription>Your latest transactions</CardDescription>
+                </div>
+                <Button asChild variant="ghost" size="sm" className="gap-1">
+                  <Link to="/transactions">
+                    View all <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {recent.isLoading ? (
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <div className="flex-1 space-y-1.5">
+                          <Skeleton className="h-3 w-2/3" />
+                          <Skeleton className="h-2.5 w-1/3" />
+                        </div>
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    ))}
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {totalSpent === null ? "—" : `$${totalSpent.toFixed(2)}`}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {totalSpent === null ? "Loading…" : totalSpent === 0 ? "No expenses yet" : "This month"}
-                  </p>
-                </CardContent>
-              </Card>
+                ) : recent.data?.length === 0 ? (
+                  <EmptyState
+                    icon={<Receipt className="h-8 w-8 text-muted-foreground/50" />}
+                    title="No transactions yet"
+                    description="Add a transaction or connect a card to get started."
+                    cta={
+                      <Button asChild size="sm" className="gap-1">
+                        <Link to="/transactions">
+                          <Plus className="h-3.5 w-3.5" /> Add transaction
+                        </Link>
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <ul className="divide-y -mx-2">
+                    {recent.data?.map((tx) => (
+                      <li key={tx.id}>
+                        <Link
+                          to="/transactions"
+                          className="flex items-center gap-3 px-2 py-2.5 hover:bg-muted/50 rounded-md transition-colors"
+                        >
+                          <div className="h-9 w-9 rounded-full bg-muted/70 flex items-center justify-center text-xs font-semibold uppercase shrink-0">
+                            {(tx.category || "??").slice(0, 2)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {tx.description || tx.category || "Transaction"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(tx.timestamp).toLocaleDateString("en-US", {
+                                month: "short", day: "numeric",
+                              })}
+                              {tx.category && ` • ${tx.category}`}
+                            </p>
+                          </div>
+                          <span className="text-sm font-semibold tabular-nums">
+                            ${Math.abs(Number(tx.amount)).toFixed(2)}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </ErrorBoundary>
 
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-accent/10 to-accent/5">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Receipts</CardTitle>
-                  <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                    <Receipt className="h-5 w-5 text-accent" />
+          {/* ── Budgets at a glance ─────────────────────────────────── */}
+          <ErrorBoundary fallback={<SectionError label="budgets" />}>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <div>
+                  <CardTitle className="text-base">Budgets at a glance</CardTitle>
+                  <CardDescription>This month's progress</CardDescription>
+                </div>
+                <Button asChild variant="ghost" size="sm" className="gap-1">
+                  <Link to="/budgets">
+                    Manage <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {budgets.isLoading ? (
+                  <div className="space-y-4">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="space-y-1.5">
+                        <div className="flex justify-between">
+                          <Skeleton className="h-3 w-20" />
+                          <Skeleton className="h-3 w-16" />
+                        </div>
+                        <Skeleton className="h-2 w-full" />
+                      </div>
+                    ))}
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {receiptCount === null ? "—" : receiptCount}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {receiptCount === null ? "Loading…" : receiptCount === 0 ? "Start uploading receipts" : "This month"}
-                  </p>
-                </CardContent>
-              </Card>
+                ) : budgets.data?.length === 0 ? (
+                  <EmptyState
+                    icon={<TrendingUp className="h-8 w-8 text-muted-foreground/50" />}
+                    title="No budgets yet"
+                    description="Set spending limits per category to keep your finances on track."
+                    cta={
+                      <Button asChild size="sm" className="gap-1">
+                        <Link to="/budgets">
+                          <Plus className="h-3.5 w-3.5" /> Create budget
+                        </Link>
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <ul className="space-y-3">
+                    {budgets.data?.slice(0, 4).map((b) => (
+                      <li key={b.id}>
+                        <div className="flex items-center justify-between text-sm mb-1.5">
+                          <span className="font-medium truncate">{b.category}</span>
+                          <span
+                            className={cn(
+                              "text-xs tabular-nums",
+                              b.overBudget ? "text-destructive font-semibold" : "text-muted-foreground"
+                            )}
+                          >
+                            ${b.spent.toFixed(0)} / ${b.limit_amount.toFixed(0)}
+                          </span>
+                        </div>
+                        <Progress
+                          value={b.percent}
+                          className={cn(
+                            "h-1.5",
+                            b.overBudget && "[&>div]:bg-destructive",
+                            !b.overBudget && b.percent >= 80 && "[&>div]:bg-amber-500"
+                          )}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </ErrorBoundary>
+        </div>
 
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-brand-teal/10 to-brand-teal/5">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Budget Status</CardTitle>
-                  <div className="w-10 h-10 rounded-lg bg-brand-teal/10 flex items-center justify-center">
-                    <TrendingUp className="h-5 w-5 text-brand-teal" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">--</div>
-                  <p className="text-xs text-muted-foreground">Set up your first budget</p>
-                </CardContent>
-              </Card>
-            </div>
+        {/* ── Connected cards strip ───────────────────────────────────── */}
+        <ErrorBoundary fallback={<SectionError label="credit cards" />}>
+          <Card className="mb-8">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                  Connected cards
+                </CardTitle>
+                <CardDescription>
+                  {cardCount === 0
+                    ? "Connect a card to auto-sync transactions"
+                    : `${cardCount} card${cardCount === 1 ? "" : "s"} connected`}
+                </CardDescription>
+              </div>
+              <Button asChild variant="ghost" size="sm" className="gap-1">
+                <Link to="/credit-cards">
+                  Manage <ChevronRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {cardCount === 0 ? (
+                <EmptyState
+                  icon={<CreditCard className="h-8 w-8 text-muted-foreground/50" />}
+                  title="No cards connected"
+                  description="Securely link your credit cards via Plaid to track balances and import transactions automatically."
+                  cta={
+                    <Button asChild className="gap-1">
+                      <Link to="/credit-cards">
+                        <Plus className="h-4 w-4" /> Add your first card
+                      </Link>
+                    </Button>
+                  }
+                />
+              ) : (
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                  {cards.slice(0, 6).map((c) => (
+                    <Link
+                      key={c.id}
+                      to="/credit-cards"
+                      className="shrink-0 w-44 rounded-lg border bg-card p-3 hover:border-primary/50 hover:shadow-sm transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <CreditCard className="h-5 w-5 text-muted-foreground" />
+                        {c.is_primary && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Primary</Badge>}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {c.account_name || "Card"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        •••• {c.account_mask || "••••"}
+                      </p>
+                      <p className="text-sm font-semibold tabular-nums">
+                        ${Math.abs(c.current_balance || 0).toFixed(2)}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </ErrorBoundary>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card className={cn(
-                "border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary border-2 border-transparent",
-                isRestricted ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-              )}>
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Receipt className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle>Receipts & Expenses</CardTitle>
-                      <CardDescription>
-                        {isRestricted
-                          ? "Verify your email to access this feature"
-                          : "Capture and manage your receipts"
-                        }
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="outline" className="w-full" disabled={isRestricted}>
-                    {isRestricted ? "🔒 Locked" : "Coming Soon"}
-                  </Button>
-                </CardContent>
-              </Card>
+        {/* ── Feature navigation grid ─────────────────────────────────── */}
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          Explore
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <FeatureCard
+            to="/transactions"
+            icon={<Receipt className="h-5 w-5" />}
+            color="text-primary bg-primary/10"
+            title="Transactions"
+            description="Browse, filter, and add expenses"
+            disabled={isRestricted}
+            disabledHint="Verify your email to access"
+          />
+          <FeatureCard
+            to="/budgets"
+            icon={<TrendingUp className="h-5 w-5" />}
+            color="text-accent bg-accent/10"
+            title="Budgets"
+            description="Set spending limits per category"
+            disabled={isRestricted}
+            disabledHint="Verify your email to access"
+          />
+          <FeatureCard
+            to="/credit-cards"
+            icon={<CreditCard className="h-5 w-5" />}
+            color="text-blue-600 bg-blue-500/10"
+            title="Credit Cards"
+            description="Connect and manage cards"
+            disabled={isRestricted}
+            disabledHint="Verify your email to access"
+          />
+          <FeatureCard
+            to="/insights"
+            icon={<Sparkles className="h-5 w-5" />}
+            color="text-purple-600 bg-purple-500/10"
+            title="Insights"
+            description="AI-powered spending analysis"
+            disabled={isRestricted}
+            disabledHint="Verify your email to access"
+            badge={!isPro ? <Badge variant="outline" className="text-[10px]">Pro</Badge> : undefined}
+          />
+          <FeatureCard
+            to="/location-history"
+            icon={<MapPin className="h-5 w-5" />}
+            color="text-brand-teal bg-brand-teal/10"
+            title="Location History"
+            description="Where you spend, mapped"
+            disabled={isRestricted}
+            disabledHint="Verify your email to access"
+          />
+          <FeatureCard
+            to="/settings"
+            icon={<SettingsIcon className="h-5 w-5" />}
+            color="text-muted-foreground bg-muted"
+            title="Settings"
+            description="Profile, security, billing"
+          />
+        </div>
 
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-accent border-2 border-transparent cursor-pointer">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                      <TrendingUp className="w-6 h-6 text-accent" />
-                    </div>
-                    <div>
-                      <CardTitle>Budgets</CardTitle>
-                      <CardDescription>Track spending against your budgets</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="outline" className="w-full">Coming Soon</Button>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-brand-teal border-2 border-transparent cursor-pointer">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-brand-teal/10 flex items-center justify-center">
-                      <User className="w-6 h-6 text-brand-teal" />
-                    </div>
-                    <div>
-                      <CardTitle>Profile</CardTitle>
-                      <CardDescription>Manage your account settings</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="outline" className="w-full">Coming Soon</Button>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary border-2 border-transparent cursor-pointer">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Settings className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle>Settings</CardTitle>
-                      <CardDescription>Configure app preferences</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="outline" className="w-full">Coming Soon</Button>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="credit-cards">
-            <CreditCardGrid />
-          </TabsContent>
-        </Tabs>
+        {/* ── Upgrade banner for free users ──────────────────────────── */}
+        {!isPro && !isRestricted && (
+          <Card className="mt-8 border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
+            <CardContent className="py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold">Unlock AI insights, unlimited cards &amp; bank sync</p>
+                  <p className="text-sm text-muted-foreground">14-day free trial — no card required</p>
+                </div>
+              </div>
+              <Button asChild className="gap-2">
+                <Link to="/settings/billing">
+                  Start free trial <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
+    </div>
+  );
+}
+
+// ── Reusable building blocks ─────────────────────────────────────────────
+
+interface MetricTileProps {
+  label:      string;
+  icon:       React.ReactNode;
+  accent:     string;       // gradient classes for card bg
+  iconBg:     string;       // bg classes for icon container
+  loading:    boolean;
+  value:      string | number | null;
+  caption:    string;
+  captionTone?: "default" | "warning";
+}
+
+function MetricTile({ label, icon, accent, iconBg, loading, value, caption, captionTone = "default" }: MetricTileProps) {
+  return (
+    <Card className={cn("border-0 shadow-sm bg-gradient-to-br", accent)}>
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground">{label}</p>
+          <div className={cn("h-7 w-7 sm:h-8 sm:w-8 rounded-md flex items-center justify-center", iconBg)}>
+            {icon}
+          </div>
+        </div>
+        {loading || value === null ? (
+          <Skeleton className="h-7 w-20 mt-1" />
+        ) : (
+          <p className="text-xl sm:text-2xl font-bold tabular-nums leading-tight">
+            {value}
+          </p>
+        )}
+        <p
+          className={cn(
+            "text-[11px] sm:text-xs mt-1",
+            captionTone === "warning" ? "text-amber-600 dark:text-amber-400 font-medium" : "text-muted-foreground"
+          )}
+        >
+          {caption}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface FeatureCardProps {
+  to:           string;
+  icon:         React.ReactNode;
+  color:        string;
+  title:        string;
+  description:  string;
+  badge?:       React.ReactNode;
+  disabled?:    boolean;
+  disabledHint?: string;
+}
+
+function FeatureCard({ to, icon, color, title, description, badge, disabled, disabledHint }: FeatureCardProps) {
+  const content = (
+    <Card
+      className={cn(
+        "h-full transition-all border",
+        disabled
+          ? "opacity-60 cursor-not-allowed"
+          : "hover:border-primary/50 hover:shadow-md cursor-pointer group"
+      )}
+      aria-disabled={disabled}
+    >
+      <CardContent className="p-5 flex items-start gap-3">
+        <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center shrink-0", color)}>
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-semibold truncate">{title}</h3>
+            {badge}
+          </div>
+          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
+            {disabled && disabledHint ? disabledHint : description}
+          </p>
+        </div>
+        {!disabled && (
+          <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  if (disabled) return <div>{content}</div>;
+  return <Link to={to} className="block">{content}</Link>;
+}
+
+interface EmptyStateProps {
+  icon:        React.ReactNode;
+  title:       string;
+  description: string;
+  cta:         React.ReactNode;
+}
+
+function EmptyState({ icon, title, description, cta }: EmptyStateProps) {
+  return (
+    <div className="py-8 text-center space-y-3">
+      <div className="mx-auto">{icon}</div>
+      <div className="space-y-1">
+        <p className="font-medium text-sm">{title}</p>
+        <p className="text-xs text-muted-foreground max-w-xs mx-auto">{description}</p>
+      </div>
+      <div className="pt-1">{cta}</div>
     </div>
   );
 }

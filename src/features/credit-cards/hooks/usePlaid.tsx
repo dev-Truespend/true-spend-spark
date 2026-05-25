@@ -126,13 +126,20 @@ export function usePlaid() {
   return { linkToken, isLoading, createLinkToken, exchangeToken, syncTransactions, disconnectItem };
 }
 
-export function usePlaidLinkFlow() {
+interface PlaidLinkFlowOptions {
+  /** Called when Plaid Link finishes (success OR user exit), so callers
+   *  can close their dialog without having to track Plaid state. */
+  onComplete?: () => void;
+}
+
+export function usePlaidLinkFlow(options: PlaidLinkFlowOptions = {}) {
   const { linkToken, createLinkToken, exchangeToken, isLoading } = usePlaid();
   const [isTokenLoading, setIsTokenLoading] = useState(false);
+  const { toast } = useToast();
 
   const initializeLinkToken = useCallback(async () => {
     if (linkToken) return; // Don't fetch if we already have a token
-    
+
     setIsTokenLoading(true);
     try {
       await createLinkToken();
@@ -142,14 +149,33 @@ export function usePlaidLinkFlow() {
   }, [linkToken, createLinkToken]);
 
   const onSuccess: PlaidLinkOnSuccess = useCallback(async (publicToken, metadata) => {
-    await exchangeToken(publicToken, metadata);
-  }, [exchangeToken]);
+    try {
+      await exchangeToken(publicToken, metadata);
+    } finally {
+      options.onComplete?.();
+    }
+  }, [exchangeToken, options]);
 
   const onExit = useCallback((err: PlaidLinkError | null) => {
+    // Plaid emits onExit when the user cancels (no err) and on real
+    // errors. Surface real errors so the user gets feedback — they
+    // were previously silently logged to the console only.
     if (err) {
       console.error('Plaid Link error:', err);
+      const friendly =
+        err.error_code === 'INVALID_CREDENTIALS' ? 'Those credentials didn\'t match. Please try again.' :
+        err.error_code === 'ITEM_LOCKED'         ? 'Your bank has temporarily locked this account. Try again later.' :
+        err.error_code === 'INTERNAL_SERVER_ERROR' ? 'Plaid is having issues. Please try again in a few minutes.' :
+        err.display_message || err.error_message || 'Something went wrong connecting your bank. Please try again.';
+
+      toast({
+        title:       'Couldn\'t connect bank',
+        description: friendly,
+        variant:     'destructive',
+      });
     }
-  }, []);
+    options.onComplete?.();
+  }, [toast, options]);
 
   const config: PlaidLinkOptions = {
     token: linkToken,

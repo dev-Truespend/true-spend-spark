@@ -1,5 +1,5 @@
 import { Plus, Sparkles, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import {
   Dialog,
@@ -15,8 +15,14 @@ import { usePlaidLinkFlow } from '@/features/credit-cards/hooks/usePlaid';
 
 export function AddCardButton() {
   const { cardCount, freeSlots, paidSlots, canAddMoreCards, needsPayment, additionalCardPrice } = useCreditCards();
-  const { initializeLinkToken, openPlaidLink, isLoading, ready } = usePlaidLinkFlow();
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Auto-close the dialog as soon as Plaid Link fires onSuccess/onExit.
+  // Passing the closeDialog callback into the flow lets the hook fire it
+  // from inside Plaid's lifecycle without us polling state.
+  const { initializeLinkToken, openPlaidLink, isLoading, ready } = usePlaidLinkFlow({
+    onComplete: () => setDialogOpen(false),
+  });
 
   // Eagerly fetch link token when dialog opens
   useEffect(() => {
@@ -24,6 +30,18 @@ export function AddCardButton() {
       initializeLinkToken();
     }
   }, [dialogOpen, initializeLinkToken]);
+
+  // Watch for card count change while dialog is open — Plaid Link
+  // sometimes fires onSuccess after the dialog is closed externally,
+  // or in iframe-blocked browsers won't fire at all. Closing on
+  // card-count-bump is a belt-and-braces safety net.
+  const lastCountRef = useRef(cardCount);
+  useEffect(() => {
+    if (dialogOpen && cardCount > lastCountRef.current) {
+      setDialogOpen(false);
+    }
+    lastCountRef.current = cardCount;
+  }, [cardCount, dialogOpen]);
 
   if (!canAddMoreCards) {
     return (
