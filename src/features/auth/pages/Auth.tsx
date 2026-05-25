@@ -21,6 +21,7 @@ import { Loader2, Shield, Lock, Eye, CheckCircle, Smartphone, KeyRound, ArrowLef
 import { Badge } from "@/shared/components/ui/badge";
 import { Link } from "react-router-dom";
 import authEnterprise from "@/assets/auth-enterprise.png";
+import { supabase } from "@/integrations/supabase/client";
 
 const passwordValidation = z
   .string()
@@ -75,96 +76,92 @@ export default function Auth() {
   useEffect(() => {
     if (!isOAuthCallback) return;
 
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+    let cancelled = false;
+
     const completeOAuth = async () => {
       try {
-        console.log('[Auth] Processing OAuth callback');
         setProcessingOAuth(true);
-        
-        const code = searchParams.get('code') || hashParams.get('code');
-        const accessToken = searchParams.get('access_token') || hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
+
         const errorParam = searchParams.get('error') || hashParams.get('error');
-        
-        // Handle OAuth errors
+
         if (errorParam) {
           const errorDesc = searchParams.get('error_description') || hashParams.get('error_description');
           toast({
             title: "Sign-in Failed",
             description: errorDesc || "Authentication was cancelled or failed.",
-            variant: "destructive"
-          });
-          setProcessingOAuth(false);
-          return;
-        }
-        
-        if (!code && !accessToken && !refreshToken) {
-          toast({
-            title: "OAuth Error",
-            description: "Missing authentication parameters. Please try again.",
-            variant: "destructive"
+            variant: "destructive",
           });
           setProcessingOAuth(false);
           return;
         }
 
-        // Wait for session to be established (with timeout)
-        const maxWaitTime = 5000; // 5 seconds max
+        // Supabase SDK processes the code/tokens in the URL automatically on page load.
+        // We poll getSession() until it's ready (code exchange is async).
+        const maxWaitTime = 8000;
         const startTime = Date.now();
-        
-        const checkSession = async () => {
-          const { data: { session } } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
-          
-          if (session && session.user) {
-            console.log('[Auth] Session established, redirecting to dashboard');
-            toast({ title: "Welcome back!", description: "Successfully signed in." });
-            navigate(redirectTo, { replace: true });
+
+        const checkSession = async (): Promise<boolean> => {
+          if (cancelled) return true;
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (session?.user) {
+            if (!cancelled) {
+              toast({ title: "Welcome back!", description: "Successfully signed in." });
+              navigate(redirectTo, { replace: true });
+            }
             return true;
           }
-          
-          // Timeout check
+
           if (Date.now() - startTime > maxWaitTime) {
-            console.error('[Auth] Session establishment timeout');
-            toast({
-              title: "Sign-in Delayed",
-              description: "Taking longer than expected. Please refresh the page.",
-              variant: "destructive"
-            });
-            setProcessingOAuth(false);
+            if (!cancelled) {
+              toast({
+                title: "Sign-in Delayed",
+                description: "Taking longer than expected. Please refresh the page.",
+                variant: "destructive",
+              });
+              setProcessingOAuth(false);
+            }
             return true;
           }
-          
+
           return false;
         };
-        
-        // Poll for session (check every 300ms)
-        const pollInterval = setInterval(async () => {
+
+        // Initial synchronous check (handles hash-based token flows)
+        const done = await checkSession();
+        if (done) return;
+
+        // Poll for code-exchange flow (PKCE)
+        pollInterval = setInterval(async () => {
           const done = await checkSession();
-          if (done) {
-            clearInterval(pollInterval);
-          }
+          if (done && pollInterval) clearInterval(pollInterval);
         }, 300);
-        
-        // Initial check
-        await checkSession();
-        
+
       } catch (error) {
-        console.error('[Auth] OAuth processing error:', error);
-        toast({
-          title: "Authentication Error",
-          description: "An unexpected error occurred. Please try again.",
-          variant: "destructive"
-        });
-        setProcessingOAuth(false);
+        if (!cancelled) {
+          console.error('[Auth] OAuth processing error:', error);
+          toast({
+            title: "Authentication Error",
+            description: "An unexpected error occurred. Please try again.",
+            variant: "destructive",
+          });
+          setProcessingOAuth(false);
+        }
       }
     };
 
     completeOAuth();
+
+    return () => {
+      cancelled = true;
+      if (pollInterval) clearInterval(pollInterval);
+    };
   }, [isOAuthCallback, navigate, redirectTo, toast, searchParams, hashParams]);
 
   // Auto-redirect if already authenticated
   useEffect(() => {
     if (!loading && !processingOAuth && user && session) {
-      console.log('[Auth] User already authenticated, redirecting to dashboard');
       navigate(redirectTo, { replace: true });
     }
   }, [loading, processingOAuth, user, session, navigate, redirectTo]);
@@ -226,8 +223,8 @@ export default function Auth() {
 
       const mfaCode = mfaMethod === 'totp' ? loginForm.getValues('mfaCode') : undefined;
       const backupCode = mfaMethod === 'backup' ? loginForm.getValues('backupCode') : undefined;
-      
-      const result = await signIn(values.email, values.password, mfaMethod === 'totp' ? mfaCode : undefined);
+
+      const result = await signIn(values.email, values.password, mfaCode, backupCode);
 
       if (result?.requiresMFA) {
         setMfaRequired(true);
@@ -270,7 +267,7 @@ export default function Auth() {
 
       if (result?.user) {
         toast({ title: "Welcome back!" });
-        navigate("/dashboard", { replace: true });
+        navigate(redirectTo, { replace: true });
       }
     } catch (error) {
       toast({ title: "Error", description: "An error occurred.", variant: "destructive" });
@@ -309,8 +306,8 @@ export default function Auth() {
       const { error } = await signUp({
         email: values.email,
         password: values.password,
-        firstName: null,
-        lastName: null
+        firstName: '',
+        lastName: ''
       });
 
       if (error) {
@@ -334,9 +331,16 @@ export default function Auth() {
 
   const handleResendVerification = async () => {
     if (!unverifiedEmail) return;
-    
+
     setIsLoading(true);
     try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: unverifiedEmail,
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Verification Email Sent",
         description: "Please check your inbox. The link expires in 24 hours.",

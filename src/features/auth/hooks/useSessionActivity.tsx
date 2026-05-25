@@ -27,7 +27,6 @@ export function useSessionActivity() {
 
     // Set warning timer (9 minutes)
     warningTimerRef.current = setTimeout(() => {
-      console.log('[SessionActivity] Showing inactivity warning');
       setShowWarning(true);
       setRemainingTime(60);
 
@@ -47,7 +46,6 @@ export function useSessionActivity() {
 
     // Set logout timer (10 minutes)
     logoutTimerRef.current = setTimeout(async () => {
-      console.log('[SessionActivity] Auto-logout due to inactivity');
       await signOut();
     }, INACTIVITY_TIMEOUT);
   }, [user, signOut]);
@@ -77,7 +75,6 @@ export function useSessionActivity() {
   }, [user, resetActivity]);
 
   const continueSession = useCallback(() => {
-    console.log('[SessionActivity] User chose to continue session');
     resetActivity();
   }, [resetActivity]);
 

@@ -142,7 +142,6 @@ export function usePlaidLinkFlow() {
   }, [linkToken, createLinkToken]);
 
   const onSuccess: PlaidLinkOnSuccess = useCallback(async (publicToken, metadata) => {
-    console.log('[Plaid] Link success, exchanging token...');
     await exchangeToken(publicToken, metadata);
   }, [exchangeToken]);
 

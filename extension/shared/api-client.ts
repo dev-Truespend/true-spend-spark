@@ -2,6 +2,7 @@
 // Handles token management and automatic re-auth on 401
 
 import { logger } from './logger';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config';
 
 interface FetchOptions extends RequestInit {
   retries?: number;
@@ -114,15 +115,15 @@ export async function supabaseQuery<T = any>(
     searchParams.append(key, String(value));
   });
 
-  const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/${table}?${searchParams}`;
-  
+  const url = `${SUPABASE_URL}/rest/v1/${table}?${searchParams}`;
+
   const result = await chrome.storage.local.get('session');
   const session = result.session;
 
   const response = await fetch(url, {
     headers: {
       'Authorization': `Bearer ${session.access_token}`,
-      'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      'apikey': SUPABASE_ANON_KEY,
       'Content-Type': 'application/json',
     },
   });

@@ -36,7 +36,6 @@ class HuggingFaceClient {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    console.log('[HF Client] Initializing...');
 
     // Clear expired cache on startup
     if (this.options.enableCaching) {
@@ -44,7 +43,6 @@ class HuggingFaceClient {
     }
 
     this.initialized = true;
-    console.log('[HF Client] Initialized successfully');
   }
 
   async getPipeline(modelId: string, task: any): Promise<any> {
@@ -58,7 +56,6 @@ class HuggingFaceClient {
     // Determine optimal device
     const device = this.options.enableWebGPU ? await getOptimalDevice() : 'wasm';
 
-    console.log(`[HF Client] Loading pipeline: ${modelId} on ${device}`);
 
     // Set download progress
     this.downloadProgress.set(modelId, {
@@ -89,7 +86,6 @@ class HuggingFaceClient {
       });
 
       this.pipelines.set(key, pipe);
-      console.log(`[HF Client] Pipeline ready: ${modelId}`);
 
       return pipe;
     } catch (error) {
@@ -131,7 +127,6 @@ class HuggingFaceClient {
   }
 
   async dispose(): Promise<void> {
-    console.log('[HF Client] Disposing pipelines...');
     
     for (const [key, pipe] of this.pipelines.entries()) {
       try {
@@ -147,7 +142,6 @@ class HuggingFaceClient {
     this.downloadProgress.clear();
     this.initialized = false;
     
-    console.log('[HF Client] Disposed successfully');
   }
 }
 

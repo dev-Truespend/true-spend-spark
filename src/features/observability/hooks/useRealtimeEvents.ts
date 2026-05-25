@@ -60,7 +60,6 @@ export function useRealtimeEvents(
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log('[useRealtimeEvents] Loading historical events...');
 
       let query = supabase
         .from('event_log')
@@ -88,7 +87,6 @@ export function useRealtimeEvents(
       }
 
       if (data && data.length > 0) {
-        console.log(`[useRealtimeEvents] Loaded ${data.length} historical events`);
         setEvents(data.reverse() as RealtimeEvent[]); // Reverse to chronological order
       }
     } catch (error) {
@@ -105,11 +103,6 @@ export function useRealtimeEvents(
       }
 
       setConnectionState('connecting');
-      console.log('[useRealtimeEvents] Connecting to realtime channel...', {
-        topics,
-        eventTypes,
-        userId: user.id,
-      });
 
       // Create channel with user-specific name
       const channelName = `user-events:${user.id}`;
@@ -125,19 +118,16 @@ export function useRealtimeEvents(
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('[useRealtimeEvents] Received new event:', payload);
           
           const newEvent = payload.new as RealtimeEvent;
 
           // Apply topic filter
           if (topics.length > 0 && !topics.includes(newEvent.topic)) {
-            console.log('[useRealtimeEvents] Event filtered by topic:', newEvent.topic);
             return;
           }
 
           // Apply event type filter
           if (eventTypes.length > 0 && !eventTypes.includes(newEvent.event_type)) {
-            console.log('[useRealtimeEvents] Event filtered by type:', newEvent.event_type);
             return;
           }
 
@@ -153,14 +143,12 @@ export function useRealtimeEvents(
 
       // Subscribe with callbacks
       channel.subscribe((status, err) => {
-        console.log('[useRealtimeEvents] Subscription status:', status, err);
 
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
           setConnectionState('connected');
           setLastError(null);
           reconnectAttemptsRef.current = 0;
-          console.log('[useRealtimeEvents] ✅ Successfully connected to realtime');
         } else if (status === 'CHANNEL_ERROR') {
           setIsConnected(false);
           setConnectionState('error');
@@ -172,7 +160,6 @@ export function useRealtimeEvents(
           // Auto-reconnect if enabled
           if (autoReconnect && reconnectAttemptsRef.current < 5) {
             const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
-            console.log(`[useRealtimeEvents] Reconnecting in ${delay}ms...`);
             reconnectTimeoutRef.current = setTimeout(() => {
               reconnectAttemptsRef.current++;
               connect();
@@ -206,7 +193,6 @@ export function useRealtimeEvents(
     }
 
     if (channelRef.current) {
-      console.log('[useRealtimeEvents] Disconnecting from realtime channel...');
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
@@ -217,14 +203,12 @@ export function useRealtimeEvents(
 
   // Manual reconnect
   const reconnect = useCallback(() => {
-    console.log('[useRealtimeEvents] Manual reconnect triggered');
     disconnect();
     setTimeout(() => connect(), 100);
   }, [disconnect, connect]);
 
   // Clear events list
   const clearEvents = useCallback(() => {
-    console.log('[useRealtimeEvents] Clearing events list');
     setEvents([]);
   }, []);
 

@@ -102,19 +102,18 @@ const logger = useLogger();
           
           const providers = identities?.map(i => i.provider) || [];
           
-          // Cast to any to bypass stale TypeScript types
-          const profile = data as any;
+              const profile = data as Record<string, unknown>;
           setProfile({
-            id: profile.id,
-            email: profile.email || user.email,
-            first_name: profile.first_name || null,
-            last_name: profile.last_name || null,
-            full_name: profile.full_name || null,
+            id: profile.id as string,
+            email: (profile.email as string) || user.email || '',
+            first_name: (profile.first_name as string) || null,
+            last_name: (profile.last_name as string) || null,
+            full_name: (profile.full_name as string) || null,
             status: profile.status as 'pending_verification' | 'active' | 'deleted',
-            verification_expires_at: profile.verification_expires_at || null,
-            email_verified_at: profile.email_verified_at || null,
-            auth_provider: profile.auth_provider || null,
-            auth_providers: providers, // Add all providers
+            verification_expires_at: (profile.verification_expires_at as string) || null,
+            email_verified_at: (profile.email_verified_at as string) || null,
+            auth_provider: (profile.auth_provider as string) || null,
+            auth_providers: providers,
           });
         } else if (user) {
           // Fallback to auth user data if profile doesn't exist yet
@@ -148,36 +147,32 @@ const logger = useLogger();
         return;
       }
 
-      // Handle successful sign-in
+      // Google-specific validation — runs before state is committed
       if (event === 'SIGNED_IN' && session?.user) {
         const authUser = session.user;
         const provider = authUser.app_metadata?.provider;
-        
-        // Set session and user immediately
-        setSession(session);
-        setUser(authUser);
-        
-        // Google-specific validation
+
         if (provider === 'google') {
           if (import.meta.env.DEV) {
             console.log('Google sign-in detected, validating email');
           }
-          
+
           if (!authUser.email) {
+            // Sign out and surface error — the SIGNED_OUT event will clear state
             await supabase.auth.signOut();
             toast({
               title: "Sign-In Failed",
               description: "No email found from Google. Please try again.",
               variant: "destructive",
             });
-            return;
+            return; // state will be reset when the resulting SIGNED_OUT fires
           }
-          
+
           if (import.meta.env.DEV) {
             console.log('Google sign-in successful - Auth page will handle redirect');
           }
-          
-          // Log successful Google login (non-blocking)
+
+          // Non-blocking audit log
           supabase.functions.invoke('audit-google-login', {
             body: {
               eventType: 'google_login_success',
@@ -186,14 +181,12 @@ const logger = useLogger();
               ipAddress: null,
               userAgent: navigator.userAgent,
             },
-          }).catch(error => {
-            console.error('Error logging Google login:', error);
-          });
+          }).catch(err => console.error('Error logging Google login:', err));
         }
       }
-      
+
       if (event === 'SIGNED_OUT') {
-        // Log logout event (non-blocking)
+        // Non-blocking security log
         setTimeout(async () => {
           try {
             await supabase.from('security_logs').insert({
@@ -210,7 +203,7 @@ const logger = useLogger();
         }, 0);
       }
 
-      // Only update state, NO redirects
+      // Single state update — one render per auth event
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -430,7 +423,7 @@ const logger = useLogger();
         .eq('id', authData.user.id)
         .maybeSingle();
 
-      const profile = profileData as any;
+      const profile = profileData as Record<string, unknown> | null;
 
       if (!profile) {
         logger.error('Profile not found after authentication', {
@@ -466,7 +459,7 @@ const logger = useLogger();
         
         // Check if verification expired
         if (profile.verification_expires_at) {
-          const expiry = new Date(profile.verification_expires_at);
+          const expiry = new Date(profile.verification_expires_at as string);
           if (expiry < new Date()) {
             return { 
               error: { 
@@ -533,7 +526,7 @@ const logger = useLogger();
       email: data.email,
       password: data.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${import.meta.env.VITE_APP_URL ?? window.location.origin}/auth`,
         data: {
           first_name: data.firstName,
           last_name: data.lastName,
@@ -550,17 +543,17 @@ const logger = useLogger();
           user_id: authData.user.id,
           accepted_terms: true,
           accepted_privacy: true,
-          accepted_data_processing: true,
-          accepted_ai_recommendations: true,
-          accepted_affiliate_transparency: true,
-          accepted_consent_agreement: true,
+          consent_data_processing: true,
+          consent_ai: true,
+          consent_affiliate_transparency: true,
+          consent_info_accuracy: true,
           terms_version: '1.0',
           privacy_version: '1.0',
           data_processing_version: '1.0',
-          ai_recommendations_version: '1.0',
-          affiliate_transparency_version: '1.0',
-          consent_agreement_version: '1.0',
-          ip_address: null, // Could capture via edge function if needed
+          ai_policy_version: '1.0',
+          affiliate_policy_version: '1.0',
+          consent_policy_version: '1.0',
+          ip_address: null,
           user_agent: navigator.userAgent,
         });
       } catch (consentError) {
@@ -597,11 +590,11 @@ const logger = useLogger();
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${import.meta.env.VITE_APP_URL ?? window.location.origin}/auth`,
           queryParams: {
             access_type: 'online',
             prompt: 'select_account', // Let user choose account each time
-            hd: undefined, // Allow any domain (remove if you want to restrict to specific domain)
+            // hd: undefined — omit to allow any Google domain
           },
           skipBrowserRedirect: false,
         }
@@ -614,32 +607,30 @@ const logger = useLogger();
 
       // Supabase will redirect to Google, no further action needed here
       return { error: null };
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Unexpected Google sign-in error:', err);
-      return { error: err };
+      return { error: err instanceof Error ? err : new Error(String(err)) };
     }
   };
 
   const signOut = async () => {
+    // Clear local state first
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    setMfaPending(false);
+
+    // Remove only auth-related keys — localStorage.clear() would nuke unrelated app state
+    const authKeyPrefixes = ['sb-', 'supabase.auth'];
+    Object.keys(localStorage)
+      .filter(k => authKeyPrefixes.some(prefix => k.startsWith(prefix)))
+      .forEach(k => localStorage.removeItem(k));
+
     try {
-      // Clear all local state FIRST
-      setUser(null);
-      setSession(null);
-      setProfile(null);
-      setMfaPending(false);
-      
-      // Clear ALL localStorage items related to auth
-      localStorage.clear();
-      
-      // Sign out with GLOBAL scope to invalidate ALL tokens/sessions
       await supabase.auth.signOut({ scope: 'global' });
-      
-      // Force hard redirect (not navigate) to ensure clean state
-      window.location.href = '/auth';
     } catch (error) {
       console.error('Logout error:', error);
-      // Even on error, clear storage and force redirect
-      localStorage.clear();
+    } finally {
       window.location.href = '/auth';
     }
   };

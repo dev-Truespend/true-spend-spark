@@ -1,11 +1,9 @@
-import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent } from "@/shared/components/ui/card";
-import { Badge } from "@/shared/components/ui/badge";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Shield, Sparkles, Smartphone, Check, X, ArrowRight, Lock, Eye, Database } from "lucide-react";
-import { useAuth } from "@/features/auth/hooks/useAuth";
-import { useEffect } from "react";
-import { GetInTouch } from "@/shared/components/GetInTouch";
+import { GetInTouch } from "@/components/GetInTouch";
 import heroCardsPhone from "@/assets/hero-cards-phone.png";
 import privacyPremium from "@/assets/privacy-premium.png";
 import multiDevice from "@/assets/multi-device-ecosystem.png";
@@ -13,25 +11,6 @@ import heroPremium from "@/assets/hero-premium.png";
 import localData from "@/assets/local-first-data.png";
 
 export default function Home() {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && user) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [user, loading, navigate]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (user) return null;
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/10">
       
