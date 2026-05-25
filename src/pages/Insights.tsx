@@ -1,16 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAdaptiveContent } from "@/hooks/useAdaptiveContent";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, TrendingUp, Lightbulb, AlertCircle, Sparkles } from "lucide-react";
-import { LowDataModeIndicator } from "@/components/ui/LowDataModeIndicator";
 import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
-import { cn } from "@/lib/utils";
 
 interface SpendingAnalysis {
   insights: string[];
@@ -23,7 +20,6 @@ interface SpendingAnalysis {
 export default function Insights() {
   const [period, setPeriod] = useState<'week' | 'month' | 'quarter'>('month');
   const [isGenerating, setIsGenerating] = useState(false);
-  const { shouldDeferNonCritical, shouldAnimate } = useAdaptiveContent();
 
   const { data: analysis, isLoading, refetch } = useQuery<SpendingAnalysis>({
     queryKey: ['spending-analysis', period],
@@ -31,7 +27,6 @@ export default function Insights() {
       const { data, error } = await supabase.functions.invoke('ai-analyze-spending', {
         body: { period },
       });
-
       if (error) {
         if (error.message?.includes('Rate limit')) {
           toast.error('Rate limit exceeded. Please wait before requesting another analysis.');
@@ -40,7 +35,6 @@ export default function Insights() {
         }
         throw error;
       }
-
       return data;
     },
     staleTime: 24 * 60 * 60 * 1000, // 24 hours
@@ -55,7 +49,6 @@ export default function Insights() {
         .eq('status', 'pending')
         .order('detected_at', { ascending: false })
         .limit(10);
-
       if (error) throw error;
       return data;
     },
@@ -66,8 +59,8 @@ export default function Insights() {
     try {
       await refetch();
       toast.success('Insights refreshed!');
-    } catch (error) {
-      console.error('Failed to generate insights:', error);
+    } catch {
+      // error surfaced via toast in queryFn
     } finally {
       setIsGenerating(false);
     }
@@ -75,41 +68,24 @@ export default function Insights() {
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
-      case 'critical':
-        return <AlertCircle className="h-4 w-4 text-red-600" />;
-      case 'warning':
-        return <AlertCircle className="h-4 w-4 text-orange-600" />;
-      default:
-        return <AlertCircle className="h-4 w-4 text-blue-600" />;
+      case 'critical': return <AlertCircle className="h-4 w-4 text-red-600" />;
+      case 'warning': return <AlertCircle className="h-4 w-4 text-orange-600" />;
+      default: return <AlertCircle className="h-4 w-4 text-blue-600" />;
     }
   };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <LowDataModeIndicator />
-      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">AI Insights</h1>
           <p className="text-muted-foreground">Smart analysis of your spending patterns</p>
         </div>
-        
-        <Button onClick={handleGenerateInsights} disabled={isGenerating || shouldDeferNonCritical}>
+        <Button onClick={handleGenerateInsights} disabled={isGenerating}>
           {isGenerating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
-            </>
-          ) : shouldDeferNonCritical ? (
-            <>
-              <Sparkles className="mr-2 h-4 w-4" />
-              Deferred (Low Data)
-            </>
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Analyzing...</>
           ) : (
-            <>
-              <Sparkles className="mr-2 h-4 w-4" />
-              Refresh Insights
-            </>
+            <><Sparkles className="mr-2 h-4 w-4" />Refresh Insights</>
           )}
         </Button>
       </div>
@@ -123,21 +99,12 @@ export default function Insights() {
 
         <TabsContent value={period} className="space-y-6 mt-6">
           {isLoading ? (
-            shouldDeferNonCritical ? (
-              <div className="text-center py-12 text-muted-foreground">
-                Deferring analysis... (Low Data Mode)
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <SkeletonLoader variant="chart" count={1} />
-                <SkeletonLoader variant="card" count={2} />
-              </div>
-            )
+            <div className="space-y-6">
+              <SkeletonLoader variant="chart" count={1} />
+              <SkeletonLoader variant="card" count={2} />
+            </div>
           ) : analysis ? (
-            <div className={cn(
-              "space-y-6",
-              shouldAnimate && "animate-fade-in"
-            )}>
+            <div className="space-y-6">
               {analysis.cached && (
                 <Badge variant="outline" className="mb-4">
                   <Sparkles className="mr-1 h-3 w-3" />
@@ -194,14 +161,12 @@ export default function Insights() {
                   <CardContent>
                     <ul className="space-y-2">
                       {analysis.patterns.map((pattern, i) => (
-                        <li key={i} className="text-sm text-muted-foreground">
-                          • {pattern}
-                        </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            )}
+                        <li key={i} className="text-sm text-muted-foreground">• {pattern}</li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           ) : (
             <Card>
@@ -229,8 +194,7 @@ export default function Insights() {
                         <div className="flex-1">
                           <p className="font-medium text-sm capitalize">{anomaly.anomaly_type.replace('_', ' ')}</p>
                           <p className="text-xs text-muted-foreground">
-                            {anomaly.transaction?.description || 'Unknown'} - $
-                            {Number(anomaly.transaction?.amount).toFixed(2)}
+                            {anomaly.transaction?.description || 'Unknown'} - ${Number(anomaly.transaction?.amount).toFixed(2)}
                           </p>
                           {anomaly.confidence_score && (
                             <p className="text-xs text-muted-foreground mt-1">

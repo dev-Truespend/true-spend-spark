@@ -62,7 +62,6 @@ export async function retryWithBackoff<T>(
         ? error.retryAfter * 1000
         : baseDelay * Math.pow(2, attempt);
 
-      console.log(`Rate limited. Retrying in ${delay}ms... (Attempt ${attempt + 1}/${maxRetries})`);
 
       // Wait before retrying
       await new Promise(resolve => setTimeout(resolve, delay));

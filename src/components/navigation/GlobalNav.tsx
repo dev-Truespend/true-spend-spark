@@ -1,8 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
-import { useOfflineStorage } from '@/hooks/useOfflineStorage';
-import { Settings, LayoutDashboard, BarChart3, RefreshCw, AlertTriangle, MapPin, Heart, CreditCard } from 'lucide-react';
+import { Settings, LayoutDashboard, BarChart3, RefreshCw, MapPin, Heart, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { VersionDisplay } from '@/components/version/VersionDisplay';
@@ -29,7 +28,6 @@ export function GlobalNav() {
   const navigate = useNavigate();
   const { roles, hasRole } = useUserRole();
   const { user, signOut } = useAuth();
-  const { status } = useOfflineStorage();
   const [showDebug, setShowDebug] = useState(false);
 
   // Emergency force refresh: Ctrl+Shift+R
@@ -151,20 +149,6 @@ export function GlobalNav() {
                   >
                     <RefreshCw className="w-4 h-4" />
                     Force Refresh
-                  </Button>
-                )}
-                
-                {status.conflicts.length > 0 && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="gap-2 border-destructive text-destructive hover:bg-destructive/10"
-                  >
-                    <AlertTriangle className="w-4 h-4" />
-                    <Badge variant="destructive" className="px-1.5 py-0">
-                      {status.conflicts.length}
-                    </Badge>
-                    Conflicts
                   </Button>
                 )}
                 

@@ -61,7 +61,6 @@ export async function cacheModel(modelId: string, blob: Blob): Promise<void> {
       timestamp: Date.now(),
       size: blob.size,
     });
-    console.log(`[HF Cache] Cached model ${modelId} (${(blob.size / 1024 / 1024).toFixed(2)} MB)`);
   } catch (error) {
     console.error('[HF Cache] Failed to cache model:', error);
   }
@@ -77,11 +76,9 @@ export async function getCachedModel(modelId: string): Promise<Blob | null> {
     // Check if cache is expired
     if (Date.now() - cached.timestamp > CACHE_EXPIRY_MS) {
       await database.delete('models', modelId);
-      console.log(`[HF Cache] Model ${modelId} expired, deleted from cache`);
       return null;
     }
 
-    console.log(`[HF Cache] Model ${modelId} loaded from cache`);
     return cached.blob;
   } catch (error) {
     console.error('[HF Cache] Failed to get cached model:', error);
@@ -144,7 +141,6 @@ export async function clearExpiredCache(): Promise<void> {
       }
     }
 
-    console.log('[HF Cache] Cleared expired cache entries');
   } catch (error) {
     console.error('[HF Cache] Failed to clear expired cache:', error);
   }
@@ -178,7 +174,6 @@ export async function clearAllCache(): Promise<void> {
     const database = await getDB();
     await database.clear('models');
     await database.clear('responses');
-    console.log('[HF Cache] Cleared all cache');
   } catch (error) {
     console.error('[HF Cache] Failed to clear cache:', error);
   }

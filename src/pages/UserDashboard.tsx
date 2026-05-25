@@ -6,8 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Receipt, Wallet, TrendingUp, Settings, User, LogOut, CreditCard, LayoutGrid } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useAdaptiveContent } from "@/hooks/useAdaptiveContent";
-import { LowDataModeIndicator } from "@/components/ui/LowDataModeIndicator";
 import { UnverifiedBanner } from "@/components/auth/UnverifiedBanner";
 import { CreditCardGrid } from "@/components/credit-cards/CreditCardGrid";
 import { cn } from "@/lib/utils";
@@ -16,10 +14,8 @@ export default function UserDashboard() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { shouldAnimate, imageQuality } = useAdaptiveContent();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Restrict actions if unverified
   const isRestricted = profile?.status === 'pending_verification';
 
   const handleSignOut = async () => {
@@ -28,16 +24,13 @@ export default function UserDashboard() {
       title: "Signed out",
       description: "You've been successfully logged out.",
     });
-    // Navigation is handled by signOut function
   };
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-6 py-8">
-        {/* Unverified Banner */}
         <UnverifiedBanner />
 
-        {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">
@@ -51,7 +44,6 @@ export default function UserDashboard() {
           </Button>
         </div>
 
-        {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
             <TabsTrigger value="overview" className="gap-2">
@@ -64,9 +56,7 @@ export default function UserDashboard() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-8">
-            {/* Quick Stats */}
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="border-0 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-primary/10 to-primary/5">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -108,7 +98,6 @@ export default function UserDashboard() {
               </Card>
             </div>
 
-            {/* Feature Cards */}
             <div className="grid md:grid-cols-2 gap-6">
               <Card className={cn(
                 "border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary border-2 border-transparent",
@@ -122,8 +111,8 @@ export default function UserDashboard() {
                     <div>
                       <CardTitle>Receipts & Expenses</CardTitle>
                       <CardDescription>
-                        {isRestricted 
-                          ? "Verify your email to access this feature" 
+                        {isRestricted
+                          ? "Verify your email to access this feature"
                           : "Capture and manage your receipts"
                         }
                       </CardDescription>
@@ -131,11 +120,7 @@ export default function UserDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Button 
-                    variant="outline" 
-                    className="w-full" 
-                    disabled={isRestricted}
-                  >
+                  <Button variant="outline" className="w-full" disabled={isRestricted}>
                     {isRestricted ? "🔒 Locked" : "Coming Soon"}
                   </Button>
                 </CardContent>
@@ -154,12 +139,7 @@ export default function UserDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                  >
-                    Coming Soon
-                  </Button>
+                  <Button variant="outline" className="w-full">Coming Soon</Button>
                 </CardContent>
               </Card>
 
@@ -176,12 +156,7 @@ export default function UserDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                  >
-                    Coming Soon
-                  </Button>
+                  <Button variant="outline" className="w-full">Coming Soon</Button>
                 </CardContent>
               </Card>
 
@@ -198,18 +173,12 @@ export default function UserDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                  >
-                    Coming Soon
-                  </Button>
+                  <Button variant="outline" className="w-full">Coming Soon</Button>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
-          {/* Credit Cards Tab */}
           <TabsContent value="credit-cards">
             <CreditCardGrid />
           </TabsContent>

@@ -68,7 +68,6 @@ class NativeGeofencingService {
         }
       );
 
-      console.log('Native geofencing started with watcher:', this.watcherId);
     } catch (error) {
       console.error('Error starting geofencing:', error);
       throw error;
@@ -86,7 +85,6 @@ class NativeGeofencingService {
       this.watcherId = null;
       this.activeGeofences.clear();
       this.insideGeofences.clear();
-      console.log('Native geofencing stopped');
     } catch (error) {
       console.error('Error stopping geofencing:', error);
     }
@@ -117,7 +115,6 @@ class NativeGeofencingService {
         });
       });
 
-      console.log(`Loaded ${this.activeGeofences.size} geofences`);
     } catch (error) {
       console.error('Error loading geofences:', error);
       throw error;
@@ -207,7 +204,6 @@ class NativeGeofencingService {
 
       if (error) throw error;
 
-      console.log(`Recorded ${events.length} geofence events`);
     } catch (error) {
       console.error('Error recording geofence events:', error);
     }

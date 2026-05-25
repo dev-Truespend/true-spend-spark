@@ -36,7 +36,6 @@ class NativePushNotificationService implements PushNotificationService {
       // Token will be received in the 'registration' listener
       return new Promise(async (resolve) => {
         const removeListener = await PushNotifications.addListener('registration', (token: Token) => {
-          console.log('Push registration success, token:', token.value);
           removeListener.remove();
           resolve(token.value);
         });
@@ -73,7 +72,6 @@ class NativePushNotificationService implements PushNotificationService {
           fcm_token: token 
         });
 
-      console.log('Unregistered push notification token');
     } catch (error) {
       console.error('Error unregistering push notification:', error);
     }
@@ -86,7 +84,6 @@ class NativePushNotificationService implements PushNotificationService {
     const registrationListener = await PushNotifications.addListener(
       'registration',
       async (token: Token) => {
-        console.log('Push registration success, token:', token.value);
         
         try {
           const { data: { user } } = await supabase.auth.getUser();
@@ -104,7 +101,6 @@ class NativePushNotificationService implements PushNotificationService {
             onConflict: 'fcm_token'
           });
 
-          console.log('Device token saved to database');
         } catch (error) {
           console.error('Error saving device token:', error);
         }
@@ -123,7 +119,6 @@ class NativePushNotificationService implements PushNotificationService {
     const pushReceivedListener = await PushNotifications.addListener(
       'pushNotificationReceived',
       (notification: PushNotificationSchema) => {
-        console.log('Push notification received:', notification);
         
         // Handle foreground notification
         // You can show a custom in-app notification here if desired
@@ -134,7 +129,6 @@ class NativePushNotificationService implements PushNotificationService {
     const pushActionListener = await PushNotifications.addListener(
       'pushNotificationActionPerformed',
       (notification: ActionPerformed) => {
-        console.log('Push notification action performed:', notification);
         
         // Handle notification tap
         // Navigate to appropriate screen based on notification.notification.data

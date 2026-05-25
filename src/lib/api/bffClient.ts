@@ -1,7 +1,4 @@
-// BFF Client - Backend for Frontend API client with adaptive network handling
 import { supabase } from "@/integrations/supabase/client";
-import { AdaptiveClient } from './adaptiveClient';
-import { NetworkQuality } from '@/hooks/useNetworkQuality';
 import { measureAsync } from '@/lib/performance/performanceMonitor';
 
 export interface DashboardData {
@@ -31,7 +28,7 @@ export interface TransactionInput {
   location_lat?: number;
   location_lng?: number;
   timestamp?: string;
-  idempotency_key?: string; // For preventing duplicate processing
+  idempotency_key?: string;
 }
 
 export interface CategorizationRequest {
@@ -48,7 +45,6 @@ export interface CategorizationResult {
   original_description: string;
 }
 
-// Standardized error envelope
 export interface BFFError {
   code: string;
   message: string;
@@ -56,24 +52,11 @@ export interface BFFError {
   details?: any;
 }
 
-export interface BFFResponse<T> {
-  ok: boolean;
-  data?: T;
-  error?: BFFError;
-}
-
-// Generate correlation ID for request tracing
 function generateCorrelationId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
 class BFFClient {
-  private adaptiveClient: AdaptiveClient | null = null;
-
-  setNetworkQuality(quality: NetworkQuality) {
-    this.adaptiveClient = new AdaptiveClient(quality);
-  }
-
   private async call<T>(
     functionName: string,
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
@@ -82,11 +65,9 @@ class BFFClient {
     return measureAsync(`bff-${functionName}`, async () => {
       const correlationId = generateCorrelationId();
       const requestId = crypto.randomUUID();
-      
-      // Apply adaptive timeout if available
-      const timeout = this.adaptiveClient?.getRequestTimeout() || 30000;
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), timeout)
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout')), 30000)
       );
 
       const requestPromise = supabase.functions.invoke(functionName, {
@@ -98,28 +79,19 @@ class BFFClient {
         },
       });
 
-      const { data, error } = await Promise.race([
-        requestPromise,
-        timeoutPromise
-      ]) as any;
+      const { data, error } = await Promise.race([requestPromise, timeoutPromise]) as any;
 
       if (error) {
-        console.error(`BFF ${functionName} error [${correlationId}]:`, error);
-        
-        // Normalize error into standardized format
         const bffError: BFFError = {
           code: error.status?.toString() || 'UNKNOWN_ERROR',
           message: error.message || 'Request failed',
           correlationId,
           details: error,
         };
-        
         throw new Error(bffError.message);
       }
 
-      // Check if response has standardized error format
       if (data && !data.ok && data.error) {
-        console.error(`BFF ${functionName} error [${correlationId}]:`, data.error);
         throw new Error(data.error.message);
       }
 
@@ -136,11 +108,9 @@ class BFFClient {
     geofence_matched: boolean;
     rules_applied: number;
   }> {
-    // Generate idempotency key if not provided
     if (!input.idempotency_key) {
       input.idempotency_key = `txn-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     }
-    
     return this.call('process-transaction', 'POST', input);
   }
 
