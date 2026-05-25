@@ -96,7 +96,7 @@ class NativePushNotificationService implements PushNotificationService {
             fcm_token: token.value,
             platform: platform === 'ios' ? 'ios' : 'android',
             device_name: `${platform} Device`,
-            active: true,
+            push_enabled: true,
           }, {
             onConflict: 'fcm_token'
           });

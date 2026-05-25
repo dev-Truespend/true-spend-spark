@@ -104,16 +104,16 @@ const logger = useLogger();
           
               const profile = data as Record<string, unknown>;
           setProfile({
-            id: profile.id,
-            email: profile.email || user.email,
-            first_name: profile.first_name || null,
-            last_name: profile.last_name || null,
-            full_name: profile.full_name || null,
+            id: profile.id as string,
+            email: (profile.email as string) || user.email,
+            first_name: (profile.first_name as string) || null,
+            last_name: (profile.last_name as string) || null,
+            full_name: (profile.full_name as string) || null,
             status: profile.status as 'pending_verification' | 'active' | 'deleted',
-            verification_expires_at: profile.verification_expires_at || null,
-            email_verified_at: profile.email_verified_at || null,
-            auth_provider: profile.auth_provider || null,
-            auth_providers: providers, // Add all providers
+            verification_expires_at: (profile.verification_expires_at as string) || null,
+            email_verified_at: (profile.email_verified_at as string) || null,
+            auth_provider: (profile.auth_provider as string) || null,
+            auth_providers: providers,
           });
         } else if (user) {
           // Fallback to auth user data if profile doesn't exist yet
@@ -465,7 +465,7 @@ const logger = useLogger();
         
         // Check if verification expired
         if (profile.verification_expires_at) {
-          const expiry = new Date(profile.verification_expires_at);
+          const expiry = new Date(profile.verification_expires_at as string);
           if (expiry < new Date()) {
             return { 
               error: { 
@@ -549,17 +549,17 @@ const logger = useLogger();
           user_id: authData.user.id,
           accepted_terms: true,
           accepted_privacy: true,
-          accepted_data_processing: true,
-          accepted_ai_recommendations: true,
-          accepted_affiliate_transparency: true,
-          accepted_consent_agreement: true,
+          consent_data_processing: true,
+          consent_ai: true,
+          consent_affiliate_transparency: true,
+          consent_info_accuracy: true,
           terms_version: '1.0',
           privacy_version: '1.0',
           data_processing_version: '1.0',
-          ai_recommendations_version: '1.0',
-          affiliate_transparency_version: '1.0',
-          consent_agreement_version: '1.0',
-          ip_address: null, // Could capture via edge function if needed
+          ai_policy_version: '1.0',
+          affiliate_policy_version: '1.0',
+          consent_policy_version: '1.0',
+          ip_address: null,
           user_agent: navigator.userAgent,
         });
       } catch (consentError) {
