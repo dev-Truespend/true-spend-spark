@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Badge } from "@/shared/components/ui/badge";
 import { Zap, Database, Brain, DollarSign, TrendingUp, Layers } from "lucide-react";
-import { useV42Metrics } from "@/shared/hooks/useV42Metrics";
+import { useDashboardMetrics } from "@/shared/hooks/useDashboardMetrics";
 
 export default function Optimization() {
-  const metrics = useV42Metrics();
+  const metrics = useDashboardMetrics();
 
   const performanceOptimizations = [
     { name: 'Multi-Tier Cache (L1/L2/L3)', impact: '+8% cache hit rate', status: 'Planned', category: 'Caching' },

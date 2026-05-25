@@ -14,7 +14,7 @@ interface FeatureFlag {
   metadata?: any;
 }
 
-export function HFFeatureFlagControls() {
+export function HuggingFaceFeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);

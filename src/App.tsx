@@ -15,21 +15,21 @@ import { CSPViolationReporter } from "@/shared/components/security/CSPViolationR
 import { RateLimitStatus } from "@/shared/components/api/RateLimitStatus";
 
 // Admin pages (moved from pages/dashboard)
-import AdminDashboardLayout from "./pages/admin/AdminDashboardLayout";
-import Overview from "./pages/admin/Overview";
-import Phases from "./pages/admin/Phases";
-import Architecture from "./pages/admin/Architecture";
-import Tasks from "./pages/admin/Tasks";
-import Metrics from "./pages/admin/Metrics";
-import Optimization from "./pages/admin/Optimization";
-import Testing from "./pages/admin/Testing";
-import Security from "./pages/admin/Security";
-import SecurityDashboard from "./pages/admin/SecurityDashboard";
-import Phase3Completion from "./pages/admin/Phase3Completion";
-import Workflows from "./pages/admin/Workflows";
+import AdminDashboardLayout from "./pages/internal/AdminDashboardLayout";
+import Overview from "./pages/internal/Overview";
+import Phases from "./pages/internal/Phases";
+import Architecture from "./pages/internal/Architecture";
+import Tasks from "./pages/internal/Tasks";
+import Metrics from "./pages/internal/Metrics";
+import Optimization from "./pages/internal/Optimization";
+import Testing from "./pages/internal/Testing";
+import Security from "./pages/internal/Security";
+import SecurityDashboard from "./pages/internal/SecurityDashboard";
+import Phase3Completion from "./pages/internal/Phase3Completion";
+import Workflows from "./pages/internal/Workflows";
 
 // Admin / Observability / ML / Location pages (feature-based paths)
-import Timeline from "./pages/admin/Timeline";
+import Timeline from "./pages/internal/Timeline";
 import Geofences from "@/features/location/pages/Geofences";
 import LocationMetrics from "@/features/location/pages/LocationMetrics";
 import WebhookAnalytics from "@/features/observability/pages/WebhookAnalytics";

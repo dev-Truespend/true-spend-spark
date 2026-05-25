@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => ({
       // ── Feature-specific component redirects ─────────────────────────────
       { find: '@/components/auth',         replacement: path.resolve(__dirname, './src/features/auth/components') },
       { find: '@/components/credit-cards', replacement: path.resolve(__dirname, './src/features/credit-cards/components') },
-      { find: '@/components/receipts',     replacement: path.resolve(__dirname, './src/features/ocr/components') },
+      { find: '@/components/receipts',     replacement: path.resolve(__dirname, './src/features/receipts/components') },
       { find: '@/components/settings',     replacement: path.resolve(__dirname, './src/features/settings/components') },
       // ── Shared component / hook / lib redirects ───────────────────────────
       { find: '@/components',              replacement: path.resolve(__dirname, './src/shared/components') },

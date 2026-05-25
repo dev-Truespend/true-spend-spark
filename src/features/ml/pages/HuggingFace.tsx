@@ -1,5 +1,5 @@
 import { HuggingFaceMonitor } from '@/features/ml/components/HuggingFaceMonitor';
-import { HFFeatureFlagControls } from '@/features/ml/components/HFFeatureFlagControls';
+import { HuggingFaceFeatureFlags } from '@/features/ml/components/HuggingFaceFeatureFlags';
 
 export default function HuggingFace() {
   return (
@@ -11,7 +11,7 @@ export default function HuggingFace() {
         </p>
       </div>
 
-      <HFFeatureFlagControls />
+      <HuggingFaceFeatureFlags />
       <HuggingFaceMonitor />
     </div>
   );

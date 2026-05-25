@@ -2,10 +2,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { BudgetOptimizer } from '@/features/ml/components/BudgetOptimizer';
 import { GeofenceOptimizer } from '@/features/ml/components/GeofenceOptimizer';
 import { SemanticSearchBar } from '@/features/ml/components/SemanticSearchBar';
-import { LambdaMARTTrainer } from '@/features/ml/components/LambdaMARTTrainer';
-import { ProphetForecaster } from '@/features/ml/components/ProphetForecaster';
-import { ALSRecommender } from '@/features/ml/components/ALSRecommender';
-import { DQNCacheOptimizer } from '@/features/ml/components/DQNCacheOptimizer';
+import { RankingModelTrainer } from '@/features/ml/components/RankingModelTrainer';
+import { TimeSeriesForecaster } from '@/features/ml/components/TimeSeriesForecaster';
+import { CollaborativeRecommender } from '@/features/ml/components/CollaborativeRecommender';
+import { ReinforcedCacheOptimizer } from '@/features/ml/components/ReinforcedCacheOptimizer';
 import { TrainingJobMonitor } from '@/features/ml/components/TrainingJobMonitor';
 import { Phase15CompletionPlan } from '@/features/ml/components/Phase15CompletionPlan';
 import { Brain, Target, Search, TrendingUp, Calendar, Store, Zap, Map } from 'lucide-react';
@@ -75,19 +75,19 @@ export default function Phase15ML() {
         </TabsContent>
 
         <TabsContent value="lambdamart">
-          <LambdaMARTTrainer />
+          <RankingModelTrainer />
         </TabsContent>
 
         <TabsContent value="prophet">
-          <ProphetForecaster />
+          <TimeSeriesForecaster />
         </TabsContent>
 
         <TabsContent value="als">
-          <ALSRecommender />
+          <CollaborativeRecommender />
         </TabsContent>
 
         <TabsContent value="dqn">
-          <DQNCacheOptimizer />
+          <ReinforcedCacheOptimizer />
         </TabsContent>
       </Tabs>
     </div>
