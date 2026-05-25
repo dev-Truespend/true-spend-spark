@@ -28,9 +28,19 @@ export function ProtectedRoute({ children, requireRole, redirectTo = "/auth" }: 
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          // On query failure, deny access rather than hanging forever
+          setHasRole(false);
+          setRoleChecked(true);
+          return;
+        }
         const userRoles = data?.map((r) => r.role) ?? [];
         setHasRole(roles.some((r) => userRoles.includes(r)));
+        setRoleChecked(true);
+      })
+      .catch(() => {
+        setHasRole(false);
         setRoleChecked(true);
       });
   }, [user, requireRole]);

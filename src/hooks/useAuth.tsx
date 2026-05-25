@@ -102,8 +102,7 @@ const logger = useLogger();
           
           const providers = identities?.map(i => i.provider) || [];
           
-          // Cast to any to bypass stale TypeScript types
-          const profile = data as any;
+              const profile = data as Record<string, unknown>;
           setProfile({
             id: profile.id,
             email: profile.email || user.email,
@@ -430,7 +429,7 @@ const logger = useLogger();
         .eq('id', authData.user.id)
         .maybeSingle();
 
-      const profile = profileData as any;
+      const profile = profileData as Record<string, unknown> | null;
 
       if (!profile) {
         logger.error('Profile not found after authentication', {
@@ -614,32 +613,30 @@ const logger = useLogger();
 
       // Supabase will redirect to Google, no further action needed here
       return { error: null };
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Unexpected Google sign-in error:', err);
-      return { error: err };
+      return { error: err instanceof Error ? err : new Error(String(err)) };
     }
   };
 
   const signOut = async () => {
+    // Clear local state first
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    setMfaPending(false);
+
+    // Remove only auth-related keys — localStorage.clear() would nuke unrelated app state
+    const authKeyPrefixes = ['sb-', 'supabase.auth'];
+    Object.keys(localStorage)
+      .filter(k => authKeyPrefixes.some(prefix => k.startsWith(prefix)))
+      .forEach(k => localStorage.removeItem(k));
+
     try {
-      // Clear all local state FIRST
-      setUser(null);
-      setSession(null);
-      setProfile(null);
-      setMfaPending(false);
-      
-      // Clear ALL localStorage items related to auth
-      localStorage.clear();
-      
-      // Sign out with GLOBAL scope to invalidate ALL tokens/sessions
       await supabase.auth.signOut({ scope: 'global' });
-      
-      // Force hard redirect (not navigate) to ensure clean state
-      window.location.href = '/auth';
     } catch (error) {
       console.error('Logout error:', error);
-      // Even on error, clear storage and force redirect
-      localStorage.clear();
+    } finally {
       window.location.href = '/auth';
     }
   };

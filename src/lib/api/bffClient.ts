@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { measureAsync } from '@/lib/performance/performanceMonitor';
+import { logger } from '@/lib/logger';
 
 export interface DashboardData {
   transactions: any[];
@@ -66,20 +67,29 @@ class BFFClient {
       const correlationId = generateCorrelationId();
       const requestId = crypto.randomUUID();
 
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout')), 30000)
-      );
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const requestPromise = supabase.functions.invoke(functionName, {
-        body,
-        method,
-        headers: {
-          'x-request-id': requestId,
-          'x-correlation-id': correlationId,
-        },
-      });
-
-      const { data, error } = await Promise.race([requestPromise, timeoutPromise]) as any;
+      let data: any, error: any;
+      try {
+        ({ data, error } = await supabase.functions.invoke(functionName, {
+          body,
+          method,
+          headers: {
+            'x-request-id': requestId,
+            'x-correlation-id': correlationId,
+          },
+          signal: controller.signal,
+        }));
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          logger.warn('bffClient', `Timeout: ${functionName}`, { correlationId, requestId });
+          throw new Error('Request timeout');
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (error) {
         const bffError: BFFError = {
@@ -88,10 +98,12 @@ class BFFClient {
           correlationId,
           details: error,
         };
+        logger.error('bffClient', `Error: ${functionName}`, { code: bffError.code, correlationId, requestId });
         throw new Error(bffError.message);
       }
 
       if (data && !data.ok && data.error) {
+        logger.error('bffClient', `Function error: ${functionName}`, { error: data.error, correlationId });
         throw new Error(data.error.message);
       }
 
