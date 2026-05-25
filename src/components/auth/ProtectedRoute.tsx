@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-  children: React.ReactNode;
+
+interface ProtectedRouteProps {
+  children: ReactNode;
   requireRole?: string | string[];
   redirectTo?: string;
 }
