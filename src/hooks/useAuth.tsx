@@ -105,7 +105,7 @@ const logger = useLogger();
               const profile = data as Record<string, unknown>;
           setProfile({
             id: profile.id as string,
-            email: (profile.email as string) || user.email,
+            email: (profile.email as string) || user.email || '',
             first_name: (profile.first_name as string) || null,
             last_name: (profile.last_name as string) || null,
             full_name: (profile.full_name as string) || null,
@@ -147,36 +147,32 @@ const logger = useLogger();
         return;
       }
 
-      // Handle successful sign-in
+      // Google-specific validation — runs before state is committed
       if (event === 'SIGNED_IN' && session?.user) {
         const authUser = session.user;
         const provider = authUser.app_metadata?.provider;
-        
-        // Set session and user immediately
-        setSession(session);
-        setUser(authUser);
-        
-        // Google-specific validation
+
         if (provider === 'google') {
           if (import.meta.env.DEV) {
             console.log('Google sign-in detected, validating email');
           }
-          
+
           if (!authUser.email) {
+            // Sign out and surface error — the SIGNED_OUT event will clear state
             await supabase.auth.signOut();
             toast({
               title: "Sign-In Failed",
               description: "No email found from Google. Please try again.",
               variant: "destructive",
             });
-            return;
+            return; // state will be reset when the resulting SIGNED_OUT fires
           }
-          
+
           if (import.meta.env.DEV) {
             console.log('Google sign-in successful - Auth page will handle redirect');
           }
-          
-          // Log successful Google login (non-blocking)
+
+          // Non-blocking audit log
           supabase.functions.invoke('audit-google-login', {
             body: {
               eventType: 'google_login_success',
@@ -185,14 +181,12 @@ const logger = useLogger();
               ipAddress: null,
               userAgent: navigator.userAgent,
             },
-          }).catch(error => {
-            console.error('Error logging Google login:', error);
-          });
+          }).catch(err => console.error('Error logging Google login:', err));
         }
       }
-      
+
       if (event === 'SIGNED_OUT') {
-        // Log logout event (non-blocking)
+        // Non-blocking security log
         setTimeout(async () => {
           try {
             await supabase.from('security_logs').insert({
@@ -209,7 +203,7 @@ const logger = useLogger();
         }, 0);
       }
 
-      // Only update state, NO redirects
+      // Single state update — one render per auth event
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -600,7 +594,7 @@ const logger = useLogger();
           queryParams: {
             access_type: 'online',
             prompt: 'select_account', // Let user choose account each time
-            hd: undefined, // Allow any domain (remove if you want to restrict to specific domain)
+            // hd: undefined — omit to allow any Google domain
           },
           skipBrowserRedirect: false,
         }
