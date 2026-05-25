@@ -46,7 +46,33 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
-  console.log(`[Stripe Webhook] Processing event: ${event.type}`);
+  // ── Idempotency guard ────────────────────────────────────────────────
+  // Stripe retries deliveries until it gets 2xx, so the same event ID
+  // can arrive multiple times. Atomically insert event.id; if it
+  // conflicts we've already processed it — ack with 200 and return.
+  const { error: idempErr } = await supabase
+    .from("stripe_webhook_events")
+    .insert({
+      event_id:   event.id,
+      event_type: event.type,
+    });
+
+  if (idempErr) {
+    // 23505 = unique_violation — this is the expected duplicate-delivery path
+    const code = (idempErr as { code?: string }).code;
+    if (code === "23505") {
+      console.log(`[Stripe Webhook] Duplicate event ${event.id} — skipping`);
+      return new Response(
+        JSON.stringify({ received: true, duplicate: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // Any other DB error: log loudly but don't block — better to risk a
+    // double-process than to drop the event and have Stripe stop retrying.
+    console.error("[Stripe Webhook] Idempotency insert failed:", idempErr);
+  }
+
+  console.log(`[Stripe Webhook] Processing event: ${event.type} (${event.id})`);
 
   try {
     switch (event.type) {
@@ -171,6 +197,16 @@ serve(async (req) => {
     );
   } catch (err) {
     console.error(`[Stripe Webhook] Error processing ${event.type}:`, err);
+
+    // Roll back the idempotency row so Stripe's retry can re-process.
+    // (If we leave it, the next delivery would be deduped and we'd
+    //  permanently drop the event.)
+    await supabase
+      .from("stripe_webhook_events")
+      .delete()
+      .eq("event_id", event.id)
+      .catch(() => { /* non-fatal */ });
+
     return new Response(
       JSON.stringify({ error: "Internal error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

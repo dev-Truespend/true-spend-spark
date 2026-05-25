@@ -73,9 +73,52 @@ export default defineConfig(({ mode }) => ({
         },
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
-        manualChunks: mode !== 'extension' ? {
-          vendor: ['react', 'react-dom', 'react/jsx-runtime', '@tanstack/react-query'],
-        } : undefined,
+        manualChunks: mode !== 'extension'
+          ? (id: string) => {
+              // ── 3rd-party vendor splits ─────────────────────────────────
+              // Splitting node_modules into themed chunks lets the browser
+              // cache them independently (changing app code doesn't bust
+              // the vendor caches).
+              if (id.includes('node_modules')) {
+                if (id.includes('react-dom')) return 'vendor-react-dom';
+                if (id.includes('@tanstack/react-query')) return 'vendor-react-query';
+                if (/[\\/]react[\\/]/.test(id) || id.includes('react/jsx-runtime')) {
+                  return 'vendor-react';
+                }
+                if (id.includes('@supabase')) return 'vendor-supabase';
+                if (id.includes('@radix-ui')) return 'vendor-radix';
+                if (id.includes('lucide-react')) return 'vendor-icons';
+                if (id.includes('react-hook-form') || id.includes('@hookform') || id.includes('/zod/')) {
+                  return 'vendor-forms';
+                }
+                if (id.includes('mermaid') || id.includes('cytoscape') || id.includes('d3-')) {
+                  return 'vendor-diagrams';
+                }
+                if (id.includes('recharts') || id.includes('chart.js')) {
+                  return 'vendor-charts';
+                }
+                if (id.includes('@stripe')) return 'vendor-stripe';
+                if (id.includes('date-fns')) return 'vendor-datefns';
+                if (id.includes('katex')) return 'vendor-katex';
+                // Default vendor chunk for everything else
+                return 'vendor';
+              }
+
+              // ── App-route splits ───────────────────────────────────────
+              // Admin pages are huge (observability dashboards etc.) and
+              // never loaded for normal users — keep them out of the main
+              // chunk completely.
+              if (id.includes('/pages/internal/') || id.includes('/features/observability/')) {
+                return 'admin';
+              }
+              if (id.includes('/features/ml/')) return 'ml';
+              if (id.includes('/pages/marketing/')) return 'marketing';
+              if (id.includes('/pages/legal/')) return 'legal';
+
+              // default: app code stays in the main bundle
+              return undefined;
+            }
+          : undefined,
       },
     },
   },
