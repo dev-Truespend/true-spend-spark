@@ -83,14 +83,14 @@ sequenceDiagram
     POP-->>U: Show "Sign in to TrueSpend" button
 
     U->>POP: Click Sign In
-    POP->>SW: chrome.runtime.sendMessage({ type: 'AUTH_REQUEST' })
-    SW->>CI: chrome.identity.launchWebAuthFlow({\n  url: supabase/auth/v1/authorize,\n  interactive: true\n})
+    POP->>SW: chrome.runtime.sendMessage — AUTH_REQUEST
+    SW->>CI: chrome.identity.launchWebAuthFlow(supabaseOAuthUrl, interactive: true)
     CI-->>U: Opens Supabase/Google OAuth in popup window
     U->>CI: Grants permission
     CI-->>SW: Callback URL with access_token + refresh_token
     SW->>SW: Parse tokens from callback URL
-    SW->>CS: chrome.storage.local.set({ session: {\n  access_token, refresh_token,\n  expires_at: now + expires_in\n}})
-    SW->>CR: chrome.runtime.sendMessage({ type: 'AUTH_SUCCESS' })
+    SW->>CS: chrome.storage.local.set — session (access_token, refresh_token, expires_at)
+    SW->>CR: chrome.runtime.sendMessage — AUTH_SUCCESS
     POP->>POP: Listen for 'TRUESPEND_AUTH_SUCCESS' postMessage
     POP->>SA: supabase.auth.setSession(session)
     POP->>POP: Re-render → Show budget dashboard
@@ -304,9 +304,9 @@ flowchart TD
 | Week 46 | extension/shared/storage.ts | ✅ Done |
 | Week 46 | Popup scaffold + budget display | ✅ Done |
 | Week 46 | Options page scaffold | ✅ Done |
-| **Week 47** | **Merchant detector content script** | ❌ |
+| Week 47 | Merchant detector content script (15 merchants, MutationObserver) | ✅ Done |
+| **Week 47** | **Popup: budget spending real calculation (currently $0 hardcoded)** | ❌ |
 | **Week 47** | **Popup: one-click expense capture form** | ❌ |
-| **Week 47** | **Popup: merchant badge + pre-fill** | ❌ |
 | **Week 47** | **Options: account connect (OAuth flow)** | ❌ |
-| **Week 47** | **Production extension build pipeline** | ❌ |
+| **Week 47** | **Production extension build pipeline (Vite config)** | ❌ |
 | **Week 47** | **Chrome Web Store listing** | ❌ |

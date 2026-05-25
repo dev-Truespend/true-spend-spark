@@ -44,7 +44,7 @@ flowchart TD
     end
 
     subgraph DB ["Supabase — Phase 1, 9"]
-        PG[("PostgreSQL\n99 tables · RLS")]
+        PG[("PostgreSQL\n127 tables · RLS")]
         ST["Storage\nbucket: receipts"]
         RT["Realtime\nWS subscriptions"]
     end
@@ -210,21 +210,21 @@ sequenceDiagram
     participant LLM as Claude/Gemini/GPT-4
     participant DB as PostgreSQL
 
-    U->>W: Fill transaction form\n(amount, merchant, category)
+    U->>W: Fill transaction form (amount, merchant, category)
     W->>GPS: navigator.geolocation.getCurrentPosition()
-    GPS-->>W: { latitude, longitude }
+    GPS-->>W: latitude, longitude
 
-    W->>W: Haversine distance check\nagainst all active geofences
+    W->>W: Haversine distance check against active geofences
 
-    W->>BFF: bffClient.processTransaction({\namount, merchant, category,\nlocation, geofence_id?})
+    W->>BFF: bffClient.processTransaction(amount, merchant, location, geofence_id)
 
-    BFF->>DB: INSERT transactions\n{ user_id, amount, merchant,\ncategory, lat, lng, geofence_id }
+    BFF->>DB: INSERT transactions (user_id, amount, merchant, category, lat, lng)
 
-    BFF->>AI: invoke('ai-categorize-transaction'\n{ merchant, amount, description })
-    AI->>LLM: Prompt → Claude API
-    LLM-->>AI: { category, confidence, tags }
+    BFF->>AI: invoke ai-categorize-transaction (merchant, amount, description)
+    AI->>LLM: Prompt to Claude API
+    LLM-->>AI: category, confidence, tags
 
-    Note over AI,LLM: Fallback chain:\nClaude fails → Gemini → GPT-4
+    Note over AI,LLM: Fallback chain — Claude fails → Gemini → GPT-4
 
     AI-->>BFF: Suggested category
     BFF->>DB: UPDATE transactions SET ai_category
@@ -288,34 +288,37 @@ sequenceDiagram
     participant EF as Supabase Edge Functions
     participant PL as Plaid API
     participant DB as PostgreSQL
-    participant WH as plaid-webhook ⚠️
+    participant WH as webhook-plaid
 
     U->>W: Click "Link Bank Account"
-    W->>EF: invoke('plaid-create-link-token'\n{ user_id })
+    W->>EF: invoke plaid-create-link-token (user_id)
     EF->>PL: POST /link/token/create
-    PL-->>EF: { link_token }
+    PL-->>EF: link_token
     EF-->>W: link_token
 
-    W->>W: usePlaidLink({ token: link_token })\nOpens Plaid Link UI modal
+    W->>W: usePlaidLink opens Plaid Link modal
 
     U->>W: Select bank, enter credentials
-    W-->>PL: (Plaid handles authentication)
-    PL-->>W: onSuccess({ publicToken, metadata })
+    W-->>PL: Plaid handles authentication
+    PL-->>W: onSuccess(publicToken, metadata)
 
-    W->>EF: invoke('plaid-exchange-token'\n{ publicToken, metadata })
+    W->>EF: invoke plaid-exchange-token (publicToken, metadata)
     EF->>PL: POST /item/public_token/exchange
-    PL-->>EF: { access_token, item_id }
-    EF->>DB: INSERT plaid_accounts\n{ user_id, item_id, access_token }
-    EF-->>W: { cards_added, transactions_synced }
+    PL-->>EF: access_token, item_id
+    EF->>DB: INSERT plaid_items + credit_cards (user_id, item_id)
+    EF-->>W: cards_added, transactions_synced
 
-    W->>W: queryClient.invalidateQueries\n['credit-cards', 'transactions']
+    W->>W: queryClient.invalidateQueries credit-cards + transactions
     W-->>U: Cards appear in list ✅
 
-    Note over WH,DB: ⚠️ AUTO-SYNC NOT YET BUILT
-    PL-->>WH: Webhook: TRANSACTIONS_DEFAULT\n(new transactions from bank)
-    WH->>DB: INSERT transactions ❌ NOT IMPLEMENTED
-    WH->>DB: DELETE on TRANSACTIONS_REMOVED ❌
-    WH->>DB: UPDATE on PENDING→POSTED ❌
+    Note over WH,DB: SYNC_UPDATES_AVAILABLE is implemented ✅
+    PL-->>WH: Webhook SYNC_UPDATES_AVAILABLE (new transactions)
+    WH->>PL: POST /transactions/sync (cursor-based pagination)
+    PL-->>WH: added[], modified[], removed[], next_cursor
+    WH->>DB: UPSERT transactions (added + modified) ✅
+    WH->>DB: Soft-delete TRANSACTIONS_REMOVED ❌ missing
+    WH->>DB: UPDATE on PENDING→POSTED ❌ missing
+    Note over WH,DB: JWT signature verification also incomplete ⚠️
 ```
 
 ---
@@ -415,22 +418,22 @@ sequenceDiagram
     participant EM as Email Service
     participant W as React App
 
-    TRG->>EF: invoke('ai-analyze-spending'\n{ userId, period: 'weekly' })
-    EF->>DB: SELECT transactions\nLast 30 days, grouped by category
+    TRG->>EF: invoke ai-analyze-spending (userId, period: weekly)
+    EF->>DB: SELECT transactions — last 30 days, grouped by category
     DB-->>EF: Transaction aggregates
     EF->>DB: SELECT budgets, geofences
     DB-->>EF: Budget limits + zones
 
-    EF->>LLM: Prompt: "Analyze spend:\n{transactions}\nBudgets: {budgets}"
-    LLM-->>EF: { insights[], anomalies[], recommendations[] }
+    EF->>LLM: Prompt: Analyze spend by category vs budgets
+    LLM-->>EF: insights[], anomalies[], recommendations[]
 
-    EF->>DB: INSERT ai_insights\n{ user_id, insights, generated_at }
+    EF->>DB: INSERT ai_insights (user_id, insights, generated_at)
 
-    EF->>EM: Send weekly summary email\n(top insight + spend breakdown)
+    EF->>EM: Send weekly summary email (top insight + spend breakdown)
 
-    W->>DB: SELECT ai_insights\n(Insights page loads)
+    W->>DB: SELECT ai_insights WHERE user_id (Insights page loads)
     DB-->>W: Latest insights
-    W-->>W: Render LocationInsightsPanel\n+ charts
+    W-->>W: Render LocationInsightsPanel + charts
 ```
 
 ---
@@ -443,8 +446,8 @@ sequenceDiagram
 | Phase 2 | Rate limiter, BFF client, CSP reporter | ✅ | `src/shared/lib/api/`, Cloudflare |
 | Phase 3 | Geofencing, budget alerts, map creator | ✅ | `src/features/location/` |
 | Phase 4 | Auth, MFA, session activity, password reset | ✅ | `src/features/auth/` |
-| Phase 5 | BFF edge functions, AI categorise, email | 🟡 85% | `supabase/functions/` |
-| Phase 6 | Plaid sync, Stripe billing | 🟡 70% | `src/features/credit-cards/`, `src/integrations/stripe/` |
+| Phase 5 | BFF edge functions, AI categorise, email | 🟡 75% | `supabase/functions/` — `bff-transactions` missing |
+| Phase 6 | Plaid sync ✅ partial · Stripe billing ❌ 0% | 🟡 50% | `src/features/credit-cards/`, `src/integrations/stripe/` (stub) |
 | Phase 7 | Heatmap, GPS, deal alerts, location insights | ✅ | `src/features/location/` |
 | Phase 8 | Feature flags, A/B test, anomaly detection, realtime | ✅ | `src/features/ml/`, `src/features/notifications/` |
 | Phase 9 | Audit logs, data masking, backup | ✅ | Supabase policies + Edge Fns |

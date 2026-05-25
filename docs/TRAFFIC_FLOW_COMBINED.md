@@ -37,7 +37,7 @@ flowchart TD
     end
 
     subgraph DB ["Phase 9 — Data Layer"]
-        PG[("PostgreSQL\n99 tables · RLS")]
+        PG[("PostgreSQL\n127 tables · RLS")]
         RT["Realtime\nWebSocket broadcast"]
         STO["Storage\nbucket: receipts"]
     end
@@ -217,7 +217,7 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-    participant EF as Edge Function\n(any trigger)
+    participant EF as Edge Function (any trigger)
     participant DB as PostgreSQL
     participant UD as user_devices table
     participant FCM as Firebase / APNs
@@ -226,11 +226,11 @@ sequenceDiagram
 
     Note over EF,DB: Trigger: budget_alert / geofence_enter / anomaly
 
-    EF->>DB: SELECT user_devices\nWHERE user_id AND push_enabled
-    DB-->>EF: [{ fcm_token, platform }]
+    EF->>DB: SELECT user_devices WHERE user_id AND push_enabled = true
+    DB-->>EF: fcm_token, platform per device
 
     loop For each device token
-        EF->>FCM: POST /v1/projects/{id}/messages:send\n{ token, notification: { title, body },\n  data: { type, route } }
+        EF->>FCM: POST messages:send (token, title, body, type, route)
         FCM->>IOS: APNs delivery (iOS)
         FCM->>AND: FCM delivery (Android)
     end
@@ -354,8 +354,8 @@ flowchart TD
 | **Phase 8** | Feature flags, A/B test, anomaly detection, realtime | ✅ | 🟡 | ✅ |
 | **Phase 9** | Audit logs, data masking, backup, cross-region DR | ✅ | ✅ | ✅ |
 | **Phase 10** | SLO, incidents, performance, observability dashboards | ✅ | — | — |
-| **Phase 11** | Chrome extension (service worker, popup, OAuth) | — | 🟡 30% | — |
-| **Phase 12** | Capacitor iOS/Android builds, push, biometric ❌ | — | — | 🟡 20% |
+| **Phase 11** | Chrome extension (service worker, popup, merchant detector ✅, capture ❌) | — | 🟡 55% | — |
+| **Phase 12** | Capacitor iOS/Android native folders exist, on-device builds unverified | — | — | 🟡 35% |
 | **Phase 13** | Redis cache, read replica, GraphQL ❌ | ✅ | ✅ | ✅ |
 | **Phase 14** | HuggingFace ML infra, model registry, training pipeline | ✅ | — | — |
 | **Phase 15** | Advanced ML (ranking, forecast, RL, collab filter) ❌ | ❌ | — | — |

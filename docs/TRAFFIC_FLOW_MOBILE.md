@@ -128,7 +128,7 @@ sequenceDiagram
     W->>W: Check: session older than 5 minutes?
 
     alt Biometric available
-        W->>CAP: BiometricAuth.authenticate({\n  reason: "Verify it's you"\n})
+        W->>CAP: BiometricAuth.authenticate(reason: Verify its you)
         CAP->>OS: Prompt: Face ID / Fingerprint
         OS-->>U: Show biometric prompt
         U->>OS: Authenticate (face/finger)
@@ -161,7 +161,7 @@ sequenceDiagram
     DB-->>NGS: [{ id, name, lat, lng, radius_meters }]
     NGS->>NGS: Store in activeGeofences Map
 
-    NGS->>BGG: BackgroundGeolocation.addWatcher({\n  backgroundTitle: "Location Tracking Active",\n  backgroundMessage: "TrueSpend is tracking...",\n  distanceFilter: 25\n})
+    NGS->>BGG: addWatcher(backgroundTitle, backgroundMessage, distanceFilter: 25m)
 
     Note over OS,NGS: Every 25 metres moved (or less)
 
