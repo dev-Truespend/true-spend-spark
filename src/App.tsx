@@ -1,49 +1,37 @@
 import React, { Suspense, lazy } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/shared/components/ui/toaster";
+import { Toaster as Sonner } from "@/shared/components/ui/sonner";
+import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
-import { useSessionActivity } from "@/hooks/useSessionActivity";
-import { ContinueSessionDialog } from "@/components/auth/ContinueSessionDialog";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { GlobalNav } from "@/components/navigation/GlobalNav";
-import { Footer } from "@/components/navigation/Footer";
-import { ErrorBoundary } from "@/components/error/ErrorBoundary";
-import { CSPViolationReporter } from "./components/security/CSPViolationReporter";
-import { RateLimitStatus } from "./components/api/RateLimitStatus";
-import AdminDashboardLayout from "./pages/dashboard/AdminDashboardLayout";
-import DashboardLauncher from "./pages/DashboardLauncher";
-import Home from './pages/Home';
-import UserDashboard from "./pages/UserDashboard";
-import Overview from "./pages/dashboard/Overview";
-import Phases from "./pages/dashboard/Phases";
-import Architecture from "./pages/dashboard/Architecture";
+import { AuthProvider } from "@/features/auth/hooks/useAuth";
+import { useSessionActivity } from "@/features/auth/hooks/useSessionActivity";
+import { ContinueSessionDialog } from "@/features/auth/components/ContinueSessionDialog";
+import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
+import { GlobalNav } from "@/shared/components/navigation/GlobalNav";
+import { Footer } from "@/shared/components/navigation/Footer";
+import { ErrorBoundary } from "@/shared/components/error/ErrorBoundary";
+import { CSPViolationReporter } from "@/shared/components/security/CSPViolationReporter";
+import { RateLimitStatus } from "@/shared/components/api/RateLimitStatus";
+
+// Admin pages (moved from pages/dashboard)
+import AdminDashboardLayout from "./pages/admin/AdminDashboardLayout";
+import Overview from "./pages/admin/Overview";
+import Phases from "./pages/admin/Phases";
+import Architecture from "./pages/admin/Architecture";
+import Tasks from "./pages/admin/Tasks";
+import Metrics from "./pages/admin/Metrics";
+import Optimization from "./pages/admin/Optimization";
+import Testing from "./pages/admin/Testing";
+import Security from "./pages/admin/Security";
+import SecurityDashboard from "./pages/admin/SecurityDashboard";
+import Phase3Completion from "./pages/admin/Phase3Completion";
+import Workflows from "./pages/admin/Workflows";
+
+// Observability / ML pages still in pages/dashboard
 import Timeline from "./pages/dashboard/Timeline";
-import Tasks from "./pages/dashboard/Tasks";
-import Metrics from "./pages/dashboard/Metrics";
-import Optimization from "./pages/dashboard/Optimization";
-import Testing from "./pages/dashboard/Testing";
-import Security from "./pages/dashboard/Security";
-import SecurityDashboard from "./pages/dashboard/SecurityDashboard";
 import Geofences from "./pages/dashboard/Geofences";
-import Phase3Completion from "./pages/dashboard/Phase3Completion";
-import Auth from "./pages/Auth";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import VerifyEmail from "./pages/VerifyEmail";
-import ConfirmEmailChange from "./pages/ConfirmEmailChange";
-import Transactions from "./pages/Transactions";
-import Budgets from "./pages/Budgets";
-import Insights from "./pages/Insights";
-import CreditCards from "./pages/CreditCards";
-import LocationHistory from "./pages/LocationHistory";
 import LocationMetrics from "./pages/dashboard/LocationMetrics";
-import NotFound from "./pages/NotFound";
-import FavoriteMerchants from "./pages/FavoriteMerchants";
-import Settings from "./pages/Settings";
-import Workflows from "./pages/dashboard/Workflows";
 import WebhookAnalytics from "./pages/dashboard/WebhookAnalytics";
 import AnomalyDetection from "./pages/dashboard/AnomalyDetection";
 import ABTesting from "./pages/dashboard/ABTesting";
@@ -58,6 +46,25 @@ import Observability from "./pages/dashboard/Observability";
 import Alerts from "./pages/dashboard/Alerts";
 import Performance from "./pages/dashboard/Performance";
 import RealTimeMetrics from "./pages/dashboard/RealTimeMetrics";
+
+// Shared pages (not yet moved to features)
+import DashboardLauncher from "./pages/DashboardLauncher";
+import UserDashboard from "./pages/UserDashboard";
+import NotFound from "./pages/NotFound";
+
+// Feature pages
+import Auth from "@/features/auth/pages/Auth";
+import ForgotPassword from "@/features/auth/pages/ForgotPassword";
+import ResetPassword from "@/features/auth/pages/ResetPassword";
+import VerifyEmail from "@/features/auth/pages/VerifyEmail";
+import ConfirmEmailChange from "@/features/auth/pages/ConfirmEmailChange";
+import Transactions from "@/features/transactions/pages/Transactions";
+import Budgets from "@/features/budgets/pages/Budgets";
+import Insights from "@/features/insights/pages/Insights";
+import CreditCards from "@/features/credit-cards/pages/CreditCards";
+import LocationHistory from "@/features/location/pages/LocationHistory";
+import FavoriteMerchants from "@/features/merchants/pages/FavoriteMerchants";
+import Settings from "@/features/settings/pages/Settings";
 
 const PageSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -74,14 +81,14 @@ const SmallSpinner = () => (
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60,          // 1 min — queries are fresh for 60s
-      refetchOnWindowFocus: false,   // opt-in per query instead of globally refetching everything
+      staleTime: 1000 * 60,
+      refetchOnWindowFocus: false,
       refetchOnReconnect: true,
-      retry: 1,                      // one retry on failure, not the silent 3x default
+      retry: 1,
       retryDelay: 2000,
     },
     mutations: {
-      retry: 0,                      // never auto-retry mutations — side effects aren't idempotent
+      retry: 0,
     },
   },
 });
@@ -127,91 +134,96 @@ function App() {
                 <RateLimitStatus />
                 <div className="pt-14">
                   <Routes>
-                    <Route path="/" element={<Home />} />
+                    <Route path="/" element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/marketing/Home')))}</Suspense>} />
 
-                    <Route path="/features" element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/Features')))}</Suspense>} />
-                    <Route path="/pricing" element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/Pricing')))}</Suspense>} />
-                    <Route path="/about" element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/About')))}</Suspense>} />
-                    <Route path="/careers" element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/Careers')))}</Suspense>} />
-                    <Route path="/brand" element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/BrandAssets')))}</Suspense>} />
-                    <Route path="/docs" element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/Documentation')))}</Suspense>} />
-                    <Route path="/api" element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/ApiReference')))}</Suspense>} />
-                    <Route path="/community" element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/Community')))}</Suspense>} />
-                    <Route path="/status" element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/Status')))}</Suspense>} />
+                    <Route path="/features"   element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/marketing/Features')))}</Suspense>} />
+                    <Route path="/pricing"    element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/marketing/Pricing')))}</Suspense>} />
+                    <Route path="/about"      element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/marketing/About')))}</Suspense>} />
+                    <Route path="/careers"    element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/marketing/Careers')))}</Suspense>} />
+                    <Route path="/brand"      element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/marketing/BrandAssets')))}</Suspense>} />
+                    <Route path="/docs"       element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/marketing/Documentation')))}</Suspense>} />
+                    <Route path="/api"        element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/marketing/ApiReference')))}</Suspense>} />
+                    <Route path="/community"  element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/marketing/Community')))}</Suspense>} />
+                    <Route path="/status"     element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/marketing/Status')))}</Suspense>} />
 
                     {/* Login aliases */}
-                    <Route path="/login" element={<Navigate to="/auth" replace />} />
-                    <Route path="/signin" element={<Navigate to="/auth" replace />} />
+                    <Route path="/login"   element={<Navigate to="/auth" replace />} />
+                    <Route path="/signin"  element={<Navigate to="/auth" replace />} />
                     <Route path="/sign-in" element={<Navigate to="/auth" replace />} />
                     <Route path="/account/login" element={<Navigate to="/auth" replace />} />
-                    <Route path="/v3" element={<Navigate to="/auth" replace />} />
-                    <Route path="/v3/*" element={<Navigate to="/auth" replace />} />
+                    <Route path="/v3"    element={<Navigate to="/auth" replace />} />
+                    <Route path="/v3/*"  element={<Navigate to="/auth" replace />} />
                     <Route path="/old-auth" element={<Navigate to="/auth" replace />} />
                     <Route path="/project-management-dashboard" element={<Navigate to="/auth" replace />} />
 
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/auth/*" element={<Auth />} />
-                    <Route path="/forgot-password" element={<ForgotPassword />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    <Route path="/verify-email" element={<VerifyEmail />} />
+                    {/* Auth pages */}
+                    <Route path="/auth"              element={<Auth />} />
+                    <Route path="/auth/*"            element={<Auth />} />
+                    <Route path="/forgot-password"   element={<ForgotPassword />} />
+                    <Route path="/reset-password"    element={<ResetPassword />} />
+                    <Route path="/verify-email"      element={<VerifyEmail />} />
                     <Route path="/confirm-email-change" element={<ConfirmEmailChange />} />
 
-                    <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
-                    <Route path="/launcher" element={<ProtectedRoute><DashboardLauncher /></ProtectedRoute>} />
-                    <Route path="/credit-cards" element={<ProtectedRoute><CreditCards /></ProtectedRoute>} />
-                    <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
-                    <Route path="/budgets" element={<ProtectedRoute><Budgets /></ProtectedRoute>} />
-                    <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
+                    {/* User app routes */}
+                    <Route path="/dashboard"       element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
+                    <Route path="/launcher"        element={<ProtectedRoute><DashboardLauncher /></ProtectedRoute>} />
+                    <Route path="/credit-cards"    element={<ProtectedRoute><CreditCards /></ProtectedRoute>} />
+                    <Route path="/transactions"    element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+                    <Route path="/budgets"         element={<ProtectedRoute><Budgets /></ProtectedRoute>} />
+                    <Route path="/insights"        element={<ProtectedRoute><Insights /></ProtectedRoute>} />
                     <Route path="/location-history" element={<ProtectedRoute><LocationHistory /></ProtectedRoute>} />
-                    <Route path="/favorites" element={<ProtectedRoute><FavoriteMerchants /></ProtectedRoute>} />
-                    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/favorites"       element={<ProtectedRoute><FavoriteMerchants /></ProtectedRoute>} />
+                    <Route path="/settings"        element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
+                    {/* Admin routes */}
                     <Route path="/admin" element={<ProtectedRoute requireRole="admin"><AdminDashboardLayout /></ProtectedRoute>}>
                       <Route index element={<Overview />} />
-                      <Route path="phases" element={<Phases />} />
-                      <Route path="timeline" element={<Timeline />} />
-                      <Route path="architecture" element={<Architecture />} />
-                      <Route path="tasks" element={<Tasks />} />
-                      <Route path="team" element={<div className="p-8">Team view coming soon...</div>} />
+                      <Route path="phases"        element={<Phases />} />
+                      <Route path="timeline"      element={<Timeline />} />
+                      <Route path="architecture"  element={<Architecture />} />
+                      <Route path="tasks"         element={<Tasks />} />
+                      <Route path="team"      element={<div className="p-8">Team view coming soon...</div>} />
                       <Route path="milestones" element={<div className="p-8">Milestones view coming soon...</div>} />
-                      <Route path="metrics" element={<Metrics />} />
-                      <Route path="optimization" element={<Optimization />} />
-                      <Route path="risks" element={<div className="p-8">Risks view coming soon...</div>} />
-                      <Route path="testing" element={<Testing />} />
-                      <Route path="security" element={<Security />} />
+                      <Route path="metrics"       element={<Metrics />} />
+                      <Route path="optimization"  element={<Optimization />} />
+                      <Route path="risks"     element={<div className="p-8">Risks view coming soon...</div>} />
+                      <Route path="testing"       element={<Testing />} />
+                      <Route path="security"      element={<Security />} />
                       <Route path="security-monitor" element={<SecurityDashboard />} />
-                      <Route path="geofences" element={<Geofences />} />
-                      <Route path="phase3" element={<Phase3Completion />} />
-                      <Route path="location-metrics" element={<LocationMetrics />} />
-                      <Route path="webhook-analytics" element={<WebhookAnalytics />} />
-                      <Route path="anomaly-detection" element={<AnomalyDetection />} />
-                      <Route path="ab-testing" element={<ABTesting />} />
-                      <Route path="huggingface" element={<HuggingFace />} />
-                      <Route path="ml-training" element={<MLTraining />} />
-                      <Route path="realtime-events" element={<RealtimeEvents />} />
-                      <Route path="feature-flags" element={<FeatureFlags />} />
-                      <Route path="workflows" element={<Workflows />} />
+                      <Route path="geofences"     element={<Geofences />} />
+                      <Route path="phase3"        element={<Phase3Completion />} />
+                      <Route path="location-metrics"   element={<LocationMetrics />} />
+                      <Route path="webhook-analytics"  element={<WebhookAnalytics />} />
+                      <Route path="anomaly-detection"  element={<AnomalyDetection />} />
+                      <Route path="ab-testing"         element={<ABTesting />} />
+                      <Route path="huggingface"        element={<HuggingFace />} />
+                      <Route path="ml-training"        element={<MLTraining />} />
+                      <Route path="realtime-events"    element={<RealtimeEvents />} />
+                      <Route path="feature-flags"      element={<FeatureFlags />} />
+                      <Route path="workflows"          element={<Workflows />} />
                       <Route path="distributed-tracing" element={<DistributedTracing />} />
-                      <Route path="data-planes" element={<DataPlanes />} />
-                      <Route path="system-logs" element={<SystemLogs />} />
-                      <Route path="observability" element={<Observability />} />
-                      <Route path="incidents" element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/pages/dashboard/Incidents')))}</Suspense>} />
-                      <Route path="slo-tracking" element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/pages/dashboard/SLOTracking')))}</Suspense>} />
-                      <Route path="alerts" element={<Alerts />} />
-                      <Route path="performance" element={<Performance />} />
+                      <Route path="data-planes"        element={<DataPlanes />} />
+                      <Route path="system-logs"        element={<SystemLogs />} />
+                      <Route path="observability"      element={<Observability />} />
+                      <Route path="incidents"   element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/features/observability/pages/Incidents')))}</Suspense>} />
+                      <Route path="slo-tracking" element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/features/observability/pages/SLOTracking')))}</Suspense>} />
+                      <Route path="alerts"        element={<Alerts />} />
+                      <Route path="performance"   element={<Performance />} />
                       <Route path="real-time-metrics" element={<RealTimeMetrics />} />
                     </Route>
 
-                    <Route path="/app" element={<Navigate to="/dashboard" replace />} />
+                    {/* Convenience redirects */}
+                    <Route path="/app"        element={<Navigate to="/dashboard" replace />} />
                     <Route path="/monitoring" element={<Navigate to="/admin/observability" replace />} />
-                    <Route path="/website" element={<Navigate to="/" replace />} />
+                    <Route path="/website"    element={<Navigate to="/" replace />} />
 
-                    <Route path="/legal/terms" element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/pages/legal/TermsOfService')))}</Suspense>} />
-                    <Route path="/legal/privacy" element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/pages/legal/PrivacyPolicy')))}</Suspense>} />
-                    <Route path="/legal/data-processing" element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/pages/legal/DataProcessingPolicy')))}</Suspense>} />
-                    <Route path="/legal/ai-recommendations" element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/pages/legal/AIRecommendationPolicy')))}</Suspense>} />
+                    {/* Legal pages */}
+                    <Route path="/legal/terms"                element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/pages/legal/TermsOfService')))}</Suspense>} />
+                    <Route path="/legal/privacy"              element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/pages/legal/PrivacyPolicy')))}</Suspense>} />
+                    <Route path="/legal/data-processing"      element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/pages/legal/DataProcessingPolicy')))}</Suspense>} />
+                    <Route path="/legal/ai-recommendations"   element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/pages/legal/AIRecommendationPolicy')))}</Suspense>} />
                     <Route path="/legal/affiliate-transparency" element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/pages/legal/AffiliateTransparency')))}</Suspense>} />
-                    <Route path="/legal/consent" element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/pages/legal/ConsentAgreement')))}</Suspense>} />
+                    <Route path="/legal/consent"              element={<Suspense fallback={<SmallSpinner />}>{React.createElement(lazy(() => import('@/pages/legal/ConsentAgreement')))}</Suspense>} />
 
                     <Route path="*" element={<NotFound />} />
                   </Routes>
