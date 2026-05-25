@@ -3,7 +3,7 @@ import { Card } from '@/shared/components/ui/card';
 import { Progress } from '@/shared/components/ui/progress';
 import { Badge } from '@/shared/components/ui/badge';
 import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
-import { analyzeOCRQuality, OCRQualityScore } from '@/features/ocr/services/ocrPreparation';
+import { analyzeOCRQuality, OCRQualityScore } from '@/features/receipts/services/ocrPreparation';
 
 interface OCRQualityIndicatorProps {
   file: File | Blob;

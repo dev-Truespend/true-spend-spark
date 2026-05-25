@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { Card } from '@/shared/components/ui/card';
 import { Camera, X, SwitchCamera, Image as ImageIcon } from 'lucide-react';
-import { useCamera } from '@/features/ocr/hooks/useCamera';
+import { useCamera } from '@/features/receipts/hooks/useCamera';
 import { toast } from 'sonner';
 
 interface CameraCaptureProps {

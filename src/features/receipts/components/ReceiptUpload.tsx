@@ -6,13 +6,13 @@ import { Card } from '@/shared/components/ui/card';
 import { Progress } from '@/shared/components/ui/progress';
 import { Dialog, DialogContent, DialogTitle } from '@/shared/components/ui/dialog';
 import { uploadFile, getUserPath } from '@/features/sync/services/storageService';
-import { prepareImageForOCR } from '@/features/ocr/services/ocrPreparation';
-import { extractReceiptData, ReceiptData } from '@/features/ocr/services/ocrService';
+import { prepareImageForOCR } from '@/features/receipts/services/ocrPreparation';
+import { extractReceiptData, ReceiptData } from '@/features/receipts/services/ocrService';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { toast } from 'sonner';
-import { CameraCapture } from '@/features/ocr/components/CameraCapture';
-import { ImagePreview } from '@/features/ocr/components/ImagePreview';
-import { OCRQualityIndicator } from '@/features/ocr/components/OCRQualityIndicator';
+import { CameraCapture } from '@/features/receipts/components/CameraCapture';
+import { ImagePreview } from '@/features/receipts/components/ImagePreview';
+import { OCRQualityIndicator } from '@/features/receipts/components/OCRQualityIndicator';
 
 interface UploadedFile {
   name: string;

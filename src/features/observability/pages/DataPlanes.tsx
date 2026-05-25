@@ -1,7 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { BackupStatusDashboard } from "@/features/observability/components/BackupStatusDashboard";
 import { AuditLogViewer } from "@/features/observability/components/AuditLogViewer";
-import { CacheAnalyticsDashboard } from "@/features/observability/components/CacheAnalyticsDashboard2";
+import { CacheAnalyticsDashboard } from "@/features/observability/components/CacheLayerMetrics";
 import { Database, Shield, Activity } from "lucide-react";
 
 export default function DataPlanes() {

@@ -5,25 +5,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Label } from "@/shared/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
-import { Switch } from "@/shared/components/ui/switch";
-import { Calendar, Loader2, TrendingUp } from "lucide-react";
+import { Slider } from "@/shared/components/ui/slider";
+import { Loader2, Zap } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-export function ProphetForecaster() {
-  const [forecastHorizon, setForecastHorizon] = useState("30");
-  const [includeHolidays, setIncludeHolidays] = useState(true);
-  const [seasonalityMode, setSeasonalityMode] = useState("additive");
+export function ReinforcedCacheOptimizer() {
+  const [episodeCount, setEpisodeCount] = useState([1000]);
+  const [learningRate, setLearningRate] = useState([0.001]);
+  const [discountFactor, setDiscountFactor] = useState([0.95]);
+  const [epsilon, setEpsilon] = useState([0.1]);
   const [trainingDataId, setTrainingDataId] = useState<string | null>(null);
 
   const { data: latestModel } = useQuery({
-    queryKey: ["latest-prophet-model"],
+    queryKey: ["latest-dqn-model"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ml_model_registry")
         .select("*")
-        .eq("model_type", "prophet_forecast")
+        .eq("model_type", "dqn_cache_policy")
         .order("created_at", { ascending: false })
         .limit(1)
         .single();
@@ -37,9 +37,9 @@ export function ProphetForecaster() {
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke("prepare-training-data", {
         body: {
-          model_type: "prophet_forecast",
+          model_type: "dqn_cache_policy",
           date_range: {
-            start: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+            start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
             end: new Date().toISOString(),
           },
         },
@@ -50,7 +50,7 @@ export function ProphetForecaster() {
     },
     onSuccess: (data) => {
       setTrainingDataId(data.training_data_id);
-      toast.success(`Training data prepared: ${data.record_count} days of data`);
+      toast.success(`Training data prepared: ${data.record_count} API requests`);
     },
     onError: (error: Error) => {
       toast.error(`Failed to prepare data: ${error.message}`);
@@ -63,12 +63,13 @@ export function ProphetForecaster() {
 
       const { data, error } = await supabase.functions.invoke("modal-training-trigger", {
         body: {
-          model_type: "prophet_forecast",
+          model_type: "dqn_cache_policy",
           training_data_id: trainingDataId,
           config: {
-            horizon: parseInt(forecastHorizon),
-            include_holidays: includeHolidays,
-            seasonality_mode: seasonalityMode,
+            episode_count: episodeCount[0],
+            learning_rate: learningRate[0],
+            discount_factor: discountFactor[0],
+            epsilon: epsilon[0],
           },
         },
       });
@@ -89,11 +90,11 @@ export function ProphetForecaster() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
-          Prophet Time Series Forecasting
+          <Zap className="h-5 w-5" />
+          DQN Cache Policy Optimization
         </CardTitle>
         <CardDescription>
-          Train a Prophet model to forecast future spending patterns
+          Train a Deep Q-Network to optimize API caching decisions
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -108,21 +109,21 @@ export function ProphetForecaster() {
             {latestModel.metrics && (
               <div className="grid grid-cols-3 gap-4 mt-2">
                 <div>
-                  <div className="text-xs text-muted-foreground">MAPE</div>
-                  <div className="text-lg font-semibold">
-                    {(latestModel.metrics as any).mape?.toFixed(2) || "N/A"}%
+                  <div className="text-xs text-muted-foreground">Hit Rate</div>
+                  <div className="text-lg font-semibold text-green-600">
+                    {(latestModel.metrics as any).hit_rate?.toFixed(1) || "N/A"}%
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground">RMSE</div>
+                  <div className="text-xs text-muted-foreground">Avg Latency</div>
                   <div className="text-lg font-semibold">
-                    ${(latestModel.metrics as any).rmse?.toFixed(0) || "N/A"}
+                    {(latestModel.metrics as any).avg_latency?.toFixed(0) || "N/A"}ms
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground">R²</div>
+                  <div className="text-xs text-muted-foreground">Reward</div>
                   <div className="text-lg font-semibold">
-                    {(latestModel.metrics as any).r2?.toFixed(3) || "N/A"}
+                    {(latestModel.metrics as any).final_reward?.toFixed(2) || "N/A"}
                   </div>
                 </div>
               </div>
@@ -132,36 +133,51 @@ export function ProphetForecaster() {
 
         <div className="space-y-4">
           <div>
-            <Label>Forecast Horizon</Label>
-            <Select value={forecastHorizon} onValueChange={setForecastHorizon}>
-              <SelectTrigger className="mt-2">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">7 days</SelectItem>
-                <SelectItem value="14">14 days</SelectItem>
-                <SelectItem value="30">30 days</SelectItem>
-                <SelectItem value="90">90 days</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label>Include Holidays</Label>
-            <Switch checked={includeHolidays} onCheckedChange={setIncludeHolidays} />
+            <Label>Episode Count: {episodeCount[0]}</Label>
+            <Slider
+              value={episodeCount}
+              onValueChange={setEpisodeCount}
+              min={100}
+              max={10000}
+              step={100}
+              className="mt-2"
+            />
           </div>
 
           <div>
-            <Label>Seasonality Mode</Label>
-            <Select value={seasonalityMode} onValueChange={setSeasonalityMode}>
-              <SelectTrigger className="mt-2">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="additive">Additive</SelectItem>
-                <SelectItem value="multiplicative">Multiplicative</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Learning Rate: {learningRate[0].toFixed(4)}</Label>
+            <Slider
+              value={learningRate}
+              onValueChange={setLearningRate}
+              min={0.0001}
+              max={0.01}
+              step={0.0001}
+              className="mt-2"
+            />
+          </div>
+
+          <div>
+            <Label>Discount Factor (γ): {discountFactor[0].toFixed(2)}</Label>
+            <Slider
+              value={discountFactor}
+              onValueChange={setDiscountFactor}
+              min={0.9}
+              max={0.99}
+              step={0.01}
+              className="mt-2"
+            />
+          </div>
+
+          <div>
+            <Label>Epsilon (Exploration): {epsilon[0].toFixed(2)}</Label>
+            <Slider
+              value={epsilon}
+              onValueChange={setEpsilon}
+              min={0.01}
+              max={0.3}
+              step={0.01}
+              className="mt-2"
+            />
           </div>
         </div>
 

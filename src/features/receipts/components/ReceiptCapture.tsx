@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { Button } from '@/shared/components/ui/button';
 import { Alert, AlertDescription } from '@/shared/components/ui/alert';
 import { Camera, Loader2, Image as ImageIcon } from 'lucide-react';
-import { useCamera } from '@/features/ocr/hooks/useCamera';
+import { useCamera } from '@/features/receipts/hooks/useCamera';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SPECIFIC_ERRORS } from '@/shared/lib/errors/errorMessages';

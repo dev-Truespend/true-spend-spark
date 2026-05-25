@@ -10,7 +10,7 @@ import { Loader2, Store } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-export function ALSRecommender() {
+export function CollaborativeRecommender() {
   const [numFactors, setNumFactors] = useState([50]);
   const [regularization, setRegularization] = useState([0.1]);
   const [iterations, setIterations] = useState([20]);

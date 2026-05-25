@@ -1,4 +1,4 @@
-export function useV42Metrics() {
+export function useDashboardMetrics() {
   return {
     apiLatencyImprovement: '57%', // 150ms → 65ms p95
     pageLoadImprovement: '47%', // 1.5s → 0.8s
