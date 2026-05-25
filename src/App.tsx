@@ -74,9 +74,14 @@ const SmallSpinner = () => (
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 30,
-      refetchOnWindowFocus: true,
+      staleTime: 1000 * 60,          // 1 min — queries are fresh for 60s
+      refetchOnWindowFocus: false,   // opt-in per query instead of globally refetching everything
       refetchOnReconnect: true,
+      retry: 1,                      // one retry on failure, not the silent 3x default
+      retryDelay: 2000,
+    },
+    mutations: {
+      retry: 0,                      // never auto-retry mutations — side effects aren't idempotent
     },
   },
 });

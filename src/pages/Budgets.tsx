@@ -80,32 +80,51 @@ export default function Budgets() {
         .eq('active', true)
         .order('created_at', { ascending: false });
       if (budgetsError) throw budgetsError;
-      const budgetsWithSpending = await Promise.all(
-        budgetRows.map(async (budget) => {
-          let query = supabase
-            .from('transactions')
-            .select('amount')
-            .eq('category', budget.category)
-            .gte('timestamp', budget.start_date)
-            .lte('timestamp', budget.end_date || new Date().toISOString());
-          if (budget.geofence_id) query = query.eq('geofence_id', budget.geofence_id);
-          const { data: transactions } = await query;
-          const spent = transactions?.reduce((sum, tx) => sum + Number(tx.amount), 0) || 0;
-          let geofence = null;
-          if (budget.geofence_id) {
-            const { data: gf } = await supabase.from('geofences').select('name').eq('id', budget.geofence_id).single();
-            geofence = gf;
-          }
-          return {
-            ...budget,
-            spent,
-            remaining: Number(budget.limit_amount) - spent,
-            utilization: (spent / Number(budget.limit_amount)) * 100,
-            geofence,
-          };
-        })
-      );
-      return budgetsWithSpending;
+      if (!budgetRows.length) return [];
+
+      // Single query for all transactions across all budget categories (avoids N+1)
+      const earliestStart = budgetRows.reduce((earliest, b) =>
+        b.start_date < earliest ? b.start_date : earliest, budgetRows[0].start_date);
+
+      const { data: allTransactions } = await supabase
+        .from('transactions')
+        .select('amount, category, geofence_id')
+        .in('category', budgetRows.map(b => b.category))
+        .gte('timestamp', earliestStart);
+
+      // Single query for all referenced geofences
+      const geofenceIds = [...new Set(budgetRows.map(b => b.geofence_id).filter(Boolean))];
+      const geofenceMap: Record<string, { name: string }> = {};
+      if (geofenceIds.length) {
+        const { data: geofences } = await supabase
+          .from('geofences')
+          .select('id, name')
+          .in('id', geofenceIds);
+        geofences?.forEach(g => { geofenceMap[g.id] = { name: g.name }; });
+      }
+
+      // Compute spending per budget in JS (no further DB calls)
+      return budgetRows.map(budget => {
+        const cutoff = budget.end_date || new Date().toISOString();
+        const spent = (allTransactions ?? [])
+          .filter(tx =>
+            tx.category === budget.category &&
+            (!budget.geofence_id || tx.geofence_id === budget.geofence_id)
+          )
+          .reduce((sum, tx) => {
+            const amt = Number(tx.amount);
+            return sum + (isNaN(amt) ? 0 : amt);
+          }, 0);
+
+        const limit = Number(budget.limit_amount) || 1; // guard: never divide by zero
+        return {
+          ...budget,
+          spent,
+          remaining: Number(budget.limit_amount) - spent,
+          utilization: (spent / limit) * 100,
+          geofence: budget.geofence_id ? geofenceMap[budget.geofence_id] ?? null : null,
+        };
+      });
     },
   });
 
