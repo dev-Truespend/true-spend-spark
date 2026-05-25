@@ -1,0 +1,175 @@
+<mxfile host="app.diagrams.net" modified="2026-05-25T00:00:00.000Z" agent="Claude Code" version="21.0.0">
+  <diagram id="mobile-flow" name="Mobile Flow">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ═══════════════════════════════════════════
+             CAPACITOR ARCHITECTURE
+             ═══════════════════════════════════════════ -->
+        <mxCell id="T0" value="iOS &amp; Android — Capacitor 7.6  —  Phase 12 🟡 35%" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=14;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="600" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- Native OS layer -->
+        <mxCell id="NATIVE" value="Native OS Layer  (iOS / Android)" style="swimlane;startSize=30;fillColor=#f0f0f0;strokeColor=#888888;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="54" width="1200" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="N_GEO" value="📍 BackgroundGeolocation&#xa;@capacitor-community&#xa;✅ Plugin wired" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="NATIVE">
+          <mxGeometry x="30" y="45" width="190" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="N_PUSH" value="🔔 PushNotifications&#xa;@capacitor/push-notifications&#xa;✅ Plugin wired" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="NATIVE">
+          <mxGeometry x="250" y="45" width="190" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="N_CAM" value="📷 Camera&#xa;@capacitor/camera&#xa;✅ Plugin wired" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="NATIVE">
+          <mxGeometry x="470" y="45" width="190" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="N_BIO" value="🔐 BiometricAuth&#xa;❌ Not yet built&#xa;Phase 12 — planned" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="NATIVE">
+          <mxGeometry x="690" y="45" width="190" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="N_FCM" value="APNs (iOS) / FCM (Android)&#xa;Push delivery OS layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="NATIVE">
+          <mxGeometry x="910" y="45" width="240" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- WebView layer -->
+        <mxCell id="WEBVIEW" value="Capacitor WebView  (React SPA — dist/)" style="swimlane;startSize=30;fillColor=#fff9e6;strokeColor=#d6b656;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="210" width="1200" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="W_NGS" value="nativeGeofencingService.ts&#xa;Haversine check · enter/exit events&#xa;✅ Implemented" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="WEBVIEW">
+          <mxGeometry x="30" y="45" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="W_GPS" value="useNativeGPSTracking.ts&#xa;Position updates · 25m filter&#xa;✅ Implemented" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="WEBVIEW">
+          <mxGeometry x="280" y="45" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="W_PNS" value="pushNotificationService.ts&#xa;register · listeners · deep-link&#xa;✅ Implemented" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="WEBVIEW">
+          <mxGeometry x="530" y="45" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="W_SS" value="storageService.ts&#xa;Offline queue · IndexedDB&#xa;✅ Implemented" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="WEBVIEW">
+          <mxGeometry x="780" y="45" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="W_CAM" value="useCamera.tsx&#xa;Camera.getPhoto() · DataUrl&#xa;✅ Implemented" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="WEBVIEW">
+          <mxGeometry x="1030" y="45" width="140" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Plugin bridge arrows -->
+        <mxCell id="B1" value="plugin bridge" style="edgeStyle=orthogonalEdgeStyle;dashed=1;fontSize=9;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="N_GEO" target="W_GPS" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="B2" value="plugin bridge" style="edgeStyle=orthogonalEdgeStyle;dashed=1;fontSize=9;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="N_PUSH" target="W_PNS" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="B3" value="plugin bridge" style="edgeStyle=orthogonalEdgeStyle;dashed=1;fontSize=9;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="N_CAM" target="W_CAM" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ═══════════════════════════════════════════
+             FLOW 1: APP LAUNCH + AUTH
+             ═══════════════════════════════════════════ -->
+        <mxCell id="T1" value="FLOW 1 — App Launch + Auth Check  (Phase 4 ✅)" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="40" y="380" width="550" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="F1_TAP" value="👤 User taps&#xa;TrueSpend icon" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="414" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F1_SP" value="Native splash screen&#xa;(1.5s)&#xa;Load dist/ WebView" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="220" y="414" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F1_AUTH" value="supabase.auth.onAuthStateChange()&#xa;getSession() · autoRefreshToken&#xa;check localStorage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="450" y="414" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F1_ROLE" value="SELECT user_roles&#xa;→ /dashboard (user)&#xa;→ /admin (admin)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="414" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F1_PR" value="Register push notifications&#xa;requestPermissions()&#xa;UPSERT user_devices" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="960" y="414" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F1_GEO" value="Start geofence monitoring&#xa;addWatcher(distanceFilter: 25m)&#xa;load user's active geofences" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="960" y="510" width="210" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="F1_E1" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F1_TAP" target="F1_SP" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F1_E2" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F1_SP" target="F1_AUTH" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F1_E3" value="session valid" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="F1_AUTH" target="F1_ROLE" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F1_E4" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F1_ROLE" target="F1_PR" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F1_E5" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F1_ROLE" target="F1_GEO" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ═══════════════════════════════════════════
+             FLOW 2: BACKGROUND GEOFENCING
+             ═══════════════════════════════════════════ -->
+        <mxCell id="T2" value="FLOW 2 — Background Geofencing + Push  (Phase 7 ✅)" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="40" y="620" width="550" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="F2_OS" value="📍 OS sends GPS&#xa;position update" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="654" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F2_BG" value="BackgroundGeolocation&#xa;{ lat, lng, accuracy }" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="230" y="654" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F2_NGS" value="nativeGeofencingService&#xa;Haversine distance&#xa;vs activeGeofences Map" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="470" y="654" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F2_ENT" value="ENTER: add to insideGeofences&#xa;fire GeofenceEvent { enter }&#xa;trigger deal notification" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="654" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F2_PUSH" value="📲 Push Notification&#xa;Near {merchant}!&#xa;Check your budget." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="990" y="654" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F2_DB" value="UPDATE location_history&#xa;in Supabase" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="750" width="190" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="F2_E1" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F2_OS" target="F2_BG" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F2_E2" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F2_BG" target="F2_NGS" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F2_E3" value="dist ≤ radius" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="F2_NGS" target="F2_ENT" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F2_E4" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F2_ENT" target="F2_PUSH" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F2_E5" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F2_ENT" target="F2_DB" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ═══════════════════════════════════════════
+             FLOW 3: CAMERA + OCR
+             ═══════════════════════════════════════════ -->
+        <mxCell id="T3" value="FLOW 3 — Camera Capture + OCR  (Phase 1 ✅ + Phase 5 ✅)" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="40" y="880" width="600" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="F3_U" value="👤 Taps&#xa;Receipt Capture" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="914" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F3_C" value="Camera.getPhoto()&#xa;quality: 90&#xa;resultType: DataUrl" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="220" y="914" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F3_P" value="prepareImageForOCR()&#xa;resize · compress · quality score&#xa;OCRQualityIndicator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="460" y="914" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F3_UP" value="supabase.storage.upload()&#xa;receipts/{userId}/{ts}_{file}&#xa;progress bar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="914" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F3_OCR" value="google-vision-ocr&#xa;DOCUMENT_TEXT_DETECTION&#xa;merchant · amount · tax · date" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="970" y="914" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F3_FORM" value="Pre-fill transaction form&#xa;User confirms → save&#xa;→ Add Transaction Flow" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="914" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="F3_E1" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F3_U" target="F3_C" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F3_E2" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F3_C" target="F3_P" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F3_E3" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F3_P" target="F3_UP" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F3_E4" value="filePath" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="F3_UP" target="F3_OCR" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F3_E5" value="extracted" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="F3_OCR" target="F3_FORM" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ── STATUS CALLOUTS ── -->
+        <mxCell id="S1" value="⚠️ What's missing for App Store:&#xa;• Xcode build not verified on device&#xa;• Gradle build not verified on device&#xa;• Native splash screen + app icons&#xa;• Deep-link handling (email/OAuth)&#xa;• Biometric auth (Face ID / Fingerprint)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="654" width="280" height="140" as="geometry" />
+        </mxCell>
+
+        <!-- ── LEGEND ── -->
+        <mxCell id="LEG1" value="✅ Implemented" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="424" width="130" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="LEG2" value="🟡 In Progress" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="460" width="130" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="LEG3" value="❌ Not Built Yet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="496" width="130" height="28" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

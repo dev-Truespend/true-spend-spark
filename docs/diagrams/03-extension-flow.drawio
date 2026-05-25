@@ -1,0 +1,156 @@
+<mxfile host="app.diagrams.net" modified="2026-05-25T00:00:00.000Z" agent="Claude Code" version="21.0.0">
+  <diagram id="extension-flow" name="Browser Extension Flow">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ═══════════════════════════════════════════
+             EXTENSION ARCHITECTURE OVERVIEW
+             ═══════════════════════════════════════════ -->
+        <mxCell id="T0" value="Chrome Extension Architecture  —  Phase 11 🟡 55%" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=14;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="600" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- Browser container -->
+        <mxCell id="BROWSER" value="Chrome Browser" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="40" y="54" width="1200" height="300" as="geometry" />
+        </mxCell>
+
+        <mxCell id="CS" value="📄 Content Script&#xa;merchant-detector.ts&#xa;✅ Implemented&#xa;15 merchants · MutationObserver" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="BROWSER">
+          <mxGeometry x="30" y="50" width="200" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="SW" value="⚙️ Service Worker&#xa;background/index.ts&#xa;✅ Implemented&#xa;auth · flags · telemetry · cache" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="BROWSER">
+          <mxGeometry x="280" y="50" width="200" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="POP" value="🪟 Popup&#xa;popup/Popup.tsx&#xa;✅ Budget display wired&#xa;❌ Expense capture missing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="BROWSER">
+          <mxGeometry x="530" y="50" width="200" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="OPT" value="⚙️ Options Page&#xa;options/Options.tsx&#xa;✅ Settings toggles&#xa;❌ OAuth connect missing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="BROWSER">
+          <mxGeometry x="780" y="50" width="200" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="STOR" value="🗃️ chrome.storage.local&#xa;session tokens&#xa;budget cache&#xa;merchant detections" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="BROWSER">
+          <mxGeometry x="1000" y="50" width="180" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Alarm -->
+        <mxCell id="ALARM" value="⏰ chrome.alarms&#xa;15-min budget cache refresh" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="BROWSER">
+          <mxGeometry x="280" y="190" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Arrows inside browser -->
+        <mxCell id="BE1" value="MERCHANT_DETECTED" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="CS" target="SW" parent="BROWSER"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="BE2" value="tokens / cache" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="SW" target="STOR" parent="BROWSER"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="BE3" value="read session" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="POP" target="STOR" parent="BROWSER"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="BE4" value="read/write settings" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="OPT" target="STOR" parent="BROWSER"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="BE5" value="fires alarm" style="edgeStyle=orthogonalEdgeStyle;dashed=1;fontSize=9;" edge="1" source="ALARM" target="SW" parent="BROWSER"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ═══════════════════════════════════════════
+             FLOW 1: INSTALL + AUTH
+             ═══════════════════════════════════════════ -->
+        <mxCell id="T1" value="FLOW 1 — Install + First-Time OAuth  (Phase 11 ✅)" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="40" y="390" width="550" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="F1_I" value="👤 User installs&#xa;extension" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="424" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F1_SW" value="Service Worker starts&#xa;init flags · setup alarms&#xa;log install telemetry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="220" y="424" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F1_POP" value="Popup opens&#xa;reads chrome.storage&#xa;session: null → show Sign In" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="470" y="424" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F1_CI" value="chrome.identity&#xa;.launchWebAuthFlow()&#xa;Supabase OAuth URL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="424" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F1_CB" value="Callback URL received&#xa;Parse access_token&#xa;refresh_token" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="970" y="424" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F1_CS" value="chrome.storage.local.set&#xa;{ session: tokens }&#xa;supabase.auth.setSession()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="424" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="F1_E1" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F1_I" target="F1_SW" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F1_E2" value="click icon" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="F1_SW" target="F1_POP" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F1_E3" value="click Sign In" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="F1_POP" target="F1_CI" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F1_E4" value="OAuth success" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="F1_CI" target="F1_CB" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F1_E5" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F1_CB" target="F1_CS" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ═══════════════════════════════════════════
+             FLOW 2: MERCHANT DETECTION
+             ═══════════════════════════════════════════ -->
+        <mxCell id="T2" value="FLOW 2 — Merchant Detection  (Phase 11 ✅ Done)" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="40" y="540" width="550" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="F2_P" value="🌐 Page loads&#xa;(any HTTPS site)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="574" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F2_CS" value="Content script injected&#xa;Check hostname vs&#xa;15 known merchants" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="230" y="574" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F2_PR" value="Extract price&#xa;CSS selectors + data-price&#xa;+ regex fallback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="470" y="574" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F2_MSG" value="chrome.runtime.sendMessage&#xa;MERCHANT_DETECTED&#xa;{ merchant, price, url }" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="710" y="574" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F2_SW" value="Service Worker&#xa;handleMerchantDetection()&#xa;append to chrome.storage (max 100)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="960" y="574" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F2_MO" value="MutationObserver&#xa;watches DOM changes&#xa;debounce 1000ms" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="470" y="670" width="190" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="F2_E1" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F2_P" target="F2_CS" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F2_E2" value="known merchant" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="F2_CS" target="F2_PR" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F2_E3" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F2_PR" target="F2_MSG" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F2_E4" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F2_MSG" target="F2_SW" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F2_E5" value="DOM changes" style="edgeStyle=orthogonalEdgeStyle;dashed=1;fontSize=9;" edge="1" source="F2_MO" target="F2_CS" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ═══════════════════════════════════════════
+             FLOW 3: POPUP BUDGET + WHAT'S MISSING
+             ═══════════════════════════════════════════ -->
+        <mxCell id="T3" value="FLOW 3 — Popup Budget Check + Missing: Expense Capture  (Phase 11 🟡)" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="40" y="770" width="700" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="F3_U" value="👤 User clicks&#xa;extension icon" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="804" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F3_S" value="chrome.storage.local.get&#xa;['session', 'privacyAccepted']" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="220" y="804" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F3_SB" value="supabase.auth.setSession()&#xa;supabase.from('budgets')&#xa;.select() top 5" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="470" y="804" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F3_BD" value="Render budget cards&#xa;progress bars&#xa;⚠️ spending = $0 hardcoded" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="804" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F3_CAP" value="❌ One-click Expense Capture&#xa;Not yet built&#xa;(Week 47 — missing)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="970" y="804" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="F3_BUILD" value="❌ Extension Build Pipeline&#xa;No vite.extension.config.ts&#xa;Not publishable yet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="910" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="F3_E1" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="F3_U" target="F3_S" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F3_E2" value="session found" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="F3_S" target="F3_SB" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="F3_E3" value="budgets returned" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="F3_SB" target="F3_BD" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ── LEGEND ── -->
+        <mxCell id="LEG1" value="✅ Implemented" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="424" width="130" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="LEG2" value="🟡 Partial / In Progress" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="460" width="130" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="LEG3" value="❌ Not Built Yet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="496" width="130" height="28" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
