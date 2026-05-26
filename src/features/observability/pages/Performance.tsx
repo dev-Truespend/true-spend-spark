@@ -13,7 +13,6 @@ import { Progress } from '@/shared/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { toast } from '@/shared/hooks/use-toast';
 import { Activity, TrendingUp, Database, Zap, RefreshCw } from 'lucide-react';
-import { RedisCacheMonitor } from '@/features/ml/components/RedisCacheMonitor';
 
 export default function Performance() {
   const [timeWindow, setTimeWindow] = useState('24h');
@@ -84,9 +83,6 @@ export default function Performance() {
           </Button>
         </div>
       </div>
-
-      {/* Redis Cache Metrics */}
-      <RedisCacheMonitor />
 
       {/* Recommendations */}
       <Card>

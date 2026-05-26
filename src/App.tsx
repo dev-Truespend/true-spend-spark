@@ -26,19 +26,10 @@ import Testing from "./pages/internal/Testing";
 import Security from "./pages/internal/Security";
 import SecurityDashboard from "./pages/internal/SecurityDashboard";
 import Phase3Completion from "./pages/internal/Phase3Completion";
-import Workflows from "./pages/internal/Workflows";
 
-// Admin / Observability / ML / Location pages (feature-based paths)
+// Admin / Observability / Location pages (feature-based paths)
 import Timeline from "./pages/internal/Timeline";
-import Geofences from "@/features/location/pages/Geofences";
-import LocationMetrics from "@/features/location/pages/LocationMetrics";
-import WebhookAnalytics from "@/features/observability/pages/WebhookAnalytics";
-import AnomalyDetection from "@/features/ml/pages/AnomalyDetection";
-import ABTesting from "@/features/ml/pages/ABTesting";
-import HuggingFace from "@/features/ml/pages/HuggingFace";
-import MLTraining from "@/features/ml/pages/MLTraining";
 import RealtimeEvents from "@/features/observability/pages/RealtimeEvents";
-import FeatureFlags from "@/features/ml/pages/FeatureFlags";
 import DistributedTracing from "@/features/observability/pages/DistributedTracing";
 import DataPlanes from "@/features/observability/pages/DataPlanes";
 import SystemLogs from "@/features/observability/pages/SystemLogs";
@@ -62,9 +53,14 @@ import Transactions from "@/features/transactions/pages/Transactions";
 import Budgets from "@/features/budgets/pages/Budgets";
 import Insights from "@/features/insights/pages/Insights";
 import Recommendations from "@/features/recommendations/pages/Recommendations";
-import CreditCards from "@/features/credit-cards/pages/CreditCards";
-import LocationHistory from "@/features/location/pages/LocationHistory";
-import FavoriteMerchants from "@/features/merchants/pages/FavoriteMerchants";
+import CardsPage from "@/features/cards/pages/CardsPage";
+import NewCardPage from "@/features/cards/pages/NewCardPage";
+import CardDetailPage from "@/features/cards/pages/CardDetailPage";
+import CardRewardsPage from "@/features/cards/pages/CardRewardsPage";
+import ExtensionSetup from "@/features/extension-setup/pages/ExtensionSetup";
+import AdminCatalogPage from "@/features/admin/catalog/pages/AdminCatalogPage";
+import AdminCatalogReviewPage from "@/features/admin/catalog/pages/AdminCatalogReviewPage";
+import ValidationPage from "@/features/debug/pages/ValidationPage";
 import Settings from "@/features/settings/pages/Settings";
 import Billing from "@/features/settings/pages/Billing";
 import Onboarding from "@/features/onboarding/pages/Onboarding";
@@ -214,19 +210,39 @@ function App() {
 
                     {/* Onboarding (its own ProtectedRoute exemption is handled by skipOnboardingCheck) */}
                     <Route path="/onboarding"      element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
+                    <Route path="/app/onboarding"  element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
+
+                    {/* Canonical app routes */}
+                    <Route path="/app/dashboard"       element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
+                    <Route path="/app/cards"           element={<ProtectedRoute><CardsPage /></ProtectedRoute>} />
+                    <Route path="/app/cards/new"       element={<ProtectedRoute><NewCardPage /></ProtectedRoute>} />
+                    <Route path="/app/cards/:id"       element={<ProtectedRoute><CardDetailPage /></ProtectedRoute>} />
+                    <Route path="/app/cards/:id/rewards" element={<ProtectedRoute><CardRewardsPage /></ProtectedRoute>} />
+                    <Route path="/app/transactions"    element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+                    <Route path="/app/recommendations" element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
+                    <Route path="/app/missed-rewards"  element={<ProtectedRoute requirePro><Insights /></ProtectedRoute>} />
+                    <Route path="/app/extension"       element={<ProtectedRoute><ExtensionSetup /></ProtectedRoute>} />
+                    <Route path="/app/billing"         element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+                    <Route path="/app/settings"        element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/app/settings/security" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/app/settings/data"   element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/app/admin/catalog"   element={<ProtectedRoute requireRole="admin"><AdminCatalogPage /></ProtectedRoute>} />
+                    <Route path="/app/admin/catalog/review" element={<ProtectedRoute requireRole="admin"><AdminCatalogReviewPage /></ProtectedRoute>} />
+                    <Route path="/app/admin/catalog/:id" element={<ProtectedRoute requireRole="admin"><AdminCatalogPage /></ProtectedRoute>} />
+                    <Route path="/app/debug/validation" element={<ProtectedRoute requireRole="admin"><ValidationPage /></ProtectedRoute>} />
 
                     {/* User app routes */}
-                    <Route path="/dashboard"       element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
+                    <Route path="/dashboard"       element={<Navigate to="/app/dashboard" replace />} />
                     <Route path="/launcher"        element={<ProtectedRoute><DashboardLauncher /></ProtectedRoute>} />
-                    <Route path="/credit-cards"    element={<ProtectedRoute><CreditCards /></ProtectedRoute>} />
-                    <Route path="/transactions"    element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+                    <Route path="/credit-cards"    element={<Navigate to="/app/cards" replace />} />
+                    <Route path="/transactions"    element={<Navigate to="/app/transactions" replace />} />
                     <Route path="/budgets"         element={<ProtectedRoute><Budgets /></ProtectedRoute>} />
-                    <Route path="/insights"         element={<ProtectedRoute requirePro><Insights /></ProtectedRoute>} />
-                    <Route path="/recommendations"  element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
-                    <Route path="/location-history" element={<ProtectedRoute><LocationHistory /></ProtectedRoute>} />
-                    <Route path="/favorites"       element={<ProtectedRoute><FavoriteMerchants /></ProtectedRoute>} />
-                    <Route path="/settings"         element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                    <Route path="/settings/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+                    <Route path="/insights"         element={<Navigate to="/app/missed-rewards" replace />} />
+                    <Route path="/recommendations"  element={<Navigate to="/app/recommendations" replace />} />
+                    <Route path="/location-history" element={<Navigate to="/app/dashboard" replace />} />
+                    <Route path="/favorites"       element={<Navigate to="/app/dashboard" replace />} />
+                    <Route path="/settings"         element={<Navigate to="/app/settings" replace />} />
+                    <Route path="/settings/billing" element={<Navigate to="/app/billing" replace />} />
 
                     {/* Admin routes */}
                     <Route path="/admin" element={<ProtectedRoute requireRole="admin"><AdminDashboardLayout /></ProtectedRoute>}>
@@ -243,17 +259,8 @@ function App() {
                       <Route path="testing"       element={<Testing />} />
                       <Route path="security"      element={<Security />} />
                       <Route path="security-monitor" element={<SecurityDashboard />} />
-                      <Route path="geofences"     element={<Geofences />} />
                       <Route path="phase3"        element={<Phase3Completion />} />
-                      <Route path="location-metrics"   element={<LocationMetrics />} />
-                      <Route path="webhook-analytics"  element={<WebhookAnalytics />} />
-                      <Route path="anomaly-detection"  element={<AnomalyDetection />} />
-                      <Route path="ab-testing"         element={<ABTesting />} />
-                      <Route path="huggingface"        element={<HuggingFace />} />
-                      <Route path="ml-training"        element={<MLTraining />} />
                       <Route path="realtime-events"    element={<RealtimeEvents />} />
-                      <Route path="feature-flags"      element={<FeatureFlags />} />
-                      <Route path="workflows"          element={<Workflows />} />
                       <Route path="distributed-tracing" element={<DistributedTracing />} />
                       <Route path="data-planes"        element={<DataPlanes />} />
                       <Route path="system-logs"        element={<SystemLogs />} />
@@ -266,7 +273,7 @@ function App() {
                     </Route>
 
                     {/* Convenience redirects */}
-                    <Route path="/app"        element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/app"        element={<Navigate to="/app/dashboard" replace />} />
                     <Route path="/monitoring" element={<Navigate to="/admin/observability" replace />} />
                     <Route path="/website"    element={<Navigate to="/" replace />} />
 

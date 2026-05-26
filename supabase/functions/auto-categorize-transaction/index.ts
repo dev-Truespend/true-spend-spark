@@ -41,43 +41,7 @@ serve(async (req) => {
     const isOutOfCredits = aiError && (aiError.message?.includes('402') || aiError.message?.includes('credits'));
 
     if (isRateLimited || isOutOfCredits) {
-      console.log('Primary AI categorization service rate limited or out of credits, trying HF fallback...');
-      
-      // Try Hugging Face as fallback
-      const { data: hfResponse, error: hfError } = await supabaseClient.functions.invoke('huggingface-categorize', {
-        body: {
-          merchantName: merchantName || '',
-          description: description || '',
-          amount: amount || 0,
-        },
-      });
-
-      if (!hfError && hfResponse?.success) {
-        const category = hfResponse.data.category;
-        const confidence = hfResponse.data.confidence;
-        
-        if (transactionId) {
-          await supabaseClient
-            .from('transactions')
-            .update({ 
-              category,
-              metadata: { auto_categorized: true, method: 'hf-server', confidence }
-            })
-            .eq('id', transactionId);
-        }
-
-        return new Response(
-          JSON.stringify({ 
-            category, 
-            method: 'hf-server',
-            confidence,
-            fallback: true 
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      console.log('HF fallback also failed, using rule-based');
+      console.log('Primary AI categorization service rate limited or out of credits, using rule-based fallback');
     }
 
     if (aiError) {

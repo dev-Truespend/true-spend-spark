@@ -121,7 +121,7 @@ const dashboards: Dashboard[] = [
       {
         id: 'optimization',
         title: 'v4.2 Optimizations',
-        description: 'Performance and ML enhancements',
+        description: 'Performance and production-readiness enhancements',
         route: '/admin/optimization',
         icon: Zap,
         status: 'active',

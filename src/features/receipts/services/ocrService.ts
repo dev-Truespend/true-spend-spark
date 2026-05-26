@@ -76,25 +76,6 @@ export async function extractReceiptData(imageBlob: Blob): Promise<OCRResult> {
         ocrResult = aiData;
       } else {
         primaryError = aiError?.message || aiData?.error;
-        
-        // Step 6: Final fallback to Hugging Face (if enabled)
-        const { data: hfFallbackFlag } = await supabase
-          .from('feature_flags')
-          .select('enabled')
-          .eq('flag_name', 'hf_server_ocr_fallback')
-          .single();
-
-        if (hfFallbackFlag?.enabled === true) {
-          const { data: hfData, error: hfError } = await supabase.functions.invoke(
-            'huggingface-ocr-receipt',
-            { body: { imageUrl: urlData.publicUrl } }
-          );
-
-          if (!hfError && hfData?.success) {
-            ocrResult = hfData.data;
-          } else {
-          }
-        }
       }
     }
 

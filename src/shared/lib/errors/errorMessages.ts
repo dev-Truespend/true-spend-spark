@@ -20,7 +20,7 @@ interface ErrorMessage {
 export const ERROR_MESSAGES: Record<ErrorType, ErrorMessage> = {
   NETWORK_ERROR: {
     title: 'Connection Lost',
-    description: "You're offline. Your changes are saved and will sync when you're back online.",
+    description: "We couldn't reach TrueSpend. Check your connection and try again.",
   },
   
   SERVER_ERROR: {
@@ -34,8 +34,8 @@ export const ERROR_MESSAGES: Record<ErrorType, ErrorMessage> = {
   },
   
   SYNC_FAILED: {
-    title: 'Sync Issue',
-    description: 'Some changes couldn\'t sync. We\'ll retry automatically.',
+    title: 'Save Failed',
+    description: 'Your latest change was not saved. Please try again.',
   },
   
   QUOTA_EXCEEDED: {

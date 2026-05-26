@@ -1,6 +1,6 @@
 # TrueSpend Documentation
 
-These are the canonical docs for the current Cloudflare + Supabase + AI-agent direction.
+These are the canonical docs for the current Cloudflare + Supabase rewards MVP direction.
 
 | Document | Use it for |
 | --- | --- |
@@ -9,7 +9,10 @@ These are the canonical docs for the current Cloudflare + Supabase + AI-agent di
 | [Milestone Tracker](MILESTONE_TRACKER.md) | Current code-vs-roadmap status |
 | [Production TODO](PRODUCTION_TODO.md) | Launch blockers and owner inputs |
 | [Cloudflare + Supabase Production Guide](CLOUDFLARE_SUPABASE_PRODUCTION.md) | Deployment runbook |
-| [AI Agent UX Guide](AI_AGENT_UX_GUIDE.md) | Dashboard and engagement recommendations |
+| [Source of Truth](SOURCE_OF_TRUTH.md) | Ownership boundaries for catalog, merchants, user cards, and recommendations |
+| [Card Catalog](CARD_CATALOG.md) | Catalog schema, review flow, and seed rules |
+| [Rewards Engine](REWARDS_ENGINE.md) | Deterministic reward ranking rules |
+| [Security](SECURITY.md) | RLS, admin, extension privacy, and production checks |
 
 Historical one-off reviews, generated diagrams, and provider-specific setup notes were removed so the docs stay small enough to trust.
 

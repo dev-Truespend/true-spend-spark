@@ -7,7 +7,6 @@ import { useTimelineData } from "@/shared/hooks/useTimelineData";
 import { Calendar, Clock, AlertTriangle, CheckCircle2, Users, CheckCircle, Wrench, Sparkles, Map, MapPin, Plug } from "lucide-react";
 import { EnhancedGanttChart } from "@/shared/components/timeline/EnhancedGanttChart";
 import { HierarchicalProjectDiagram } from "@/shared/components/timeline/HierarchicalProjectDiagram";
-import { TimelineImageGenerator } from "@/features/ml/components/TimelineImageGenerator";
 import { MilestoneMarker } from "@/shared/components/timeline/MilestoneMarker";
 import { FeaturesByPhaseView } from "@/shared/components/timeline/FeaturesByPhaseView";
 
@@ -90,9 +89,6 @@ export default function Timeline() {
           </div>
         </div>
       </div>
-
-      {/* Timeline Image Generator */}
-      <TimelineImageGenerator />
 
       <Tabs defaultValue="timeline" className="w-full">
         <TabsList className="grid w-full grid-cols-2 max-w-md">

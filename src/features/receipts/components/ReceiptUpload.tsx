@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Card } from '@/shared/components/ui/card';
 import { Progress } from '@/shared/components/ui/progress';
 import { Dialog, DialogContent, DialogTitle } from '@/shared/components/ui/dialog';
-import { uploadFile, getUserPath } from '@/features/sync/services/storageService';
+import { uploadFile, getUserPath } from '@/features/receipts/services/storageService';
 import { prepareImageForOCR } from '@/features/receipts/services/ocrPreparation';
 import { extractReceiptData, ReceiptData } from '@/features/receipts/services/ocrService';
 import { useAuth } from '@/features/auth/hooks/useAuth';

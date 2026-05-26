@@ -62,21 +62,27 @@ Resend is a good free/cheap starting point. It is simpler than running your own 
 - [ ] Run `npm run verify`.
 - [ ] Run dependency audit and fix high/critical production issues.
 - [ ] Review RLS policies for all user-owned tables.
+- [ ] Apply source-of-truth migrations and regenerate Supabase TypeScript types.
+- [ ] Run source-of-truth validation scripts with test JWTs.
 - [ ] Ensure service-role keys never appear in browser-visible code or `VITE_*` env vars.
 - [ ] Tighten CORS for Edge Functions before production if possible.
 - [ ] Add Sentry or equivalent for frontend and Edge Function errors.
 
 ## P1 — First Production Sprint
 
-- [ ] Finish card catalog seed with top 100 US credit cards.
-- [ ] Build rewards editor and user confirmation flow.
-- [ ] Show card reward highlights on credit card cards/details.
+- [x] Seed first 25+ credit cards and merchant domains.
+- [x] Build rewards editor and user confirmation flow.
+- [x] Add deterministic source-of-truth rewards engine.
+- [x] Add browser-extension-ready card suggestion endpoint.
+- [ ] Expand card catalog seed from 26 to top 100 US credit cards.
+- [ ] Manually verify seeded reward rules and mark trusted rules `verified`.
+- [ ] Show richer reward highlights on all card tiles/details.
 - [ ] Move transaction reads to `bff-transactions`.
 - [ ] Add empty/error/loading states across dashboard, transactions, budgets, insights, credit cards.
 - [ ] Add Playwright E2E tests for the main website flows.
 - [ ] Add onboarding checklist for first-time users.
 - [ ] Add user-friendly provider outage messages for Plaid, Stripe, AI, and email.
-- [ ] Review admin-only ML/Hugging Face/Modal pages and either finish them or hide them from production navigation.
+- [x] Remove admin-only ML/Hugging Face/Modal pages from the production MVP.
 
 ## P2 — Scale And Retention
 
@@ -95,7 +101,7 @@ Resend is a good free/cheap starting point. It is simpler than running your own 
 - [ ] CSV import.
 - [ ] Multi-currency support.
 - [ ] Affiliate link tracking and compliance review.
-- [ ] Advanced ML training only after enough real user data exists.
+- [x] Keep advanced/custom ML training out of the MVP scope.
 
 ## Owner Inputs Needed
 

@@ -32,7 +32,7 @@ There is no separate Node/Express backend. Business logic that needs secrets or 
 | AI agent | Claude-backed rewards assistant with caching, rate limiting, and deterministic fallback | Built; production key and model budget monitoring pending |
 | Extension | Merchant detection and popup shell | Partial; build/publish pipeline pending |
 | Mobile | Capacitor iOS/Android shell | Partial; native device testing pending |
-| Internal ops | Admin, observability, ML scaffolds | Too large for MVP; should be reduced after launch path is stable |
+| Internal ops | Admin, security, health, and observability pages | Reduced to non-ML production operations |
 
 ## AI Agent Design
 
