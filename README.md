@@ -10,7 +10,7 @@ AI-powered personal finance tracker with receipt OCR, geofenced budgets, credit 
 | State / Data | TanStack React Query v5 |
 | Backend | Supabase (PostgreSQL + Auth + Edge Functions + RLS) |
 | AI / OCR | Google Vision API, HuggingFace Transformers |
-| Payments | Plaid (bank linking), Stripe (subscriptions — pending) |
+| Payments | Plaid bank linking, Stripe subscriptions |
 | Native | Capacitor (iOS / Android) |
 | Maps | Leaflet + react-leaflet |
 
@@ -52,18 +52,10 @@ Functions live in `supabase/functions/`. Each function reads secrets from Supaba
 
 ```
 src/
-  components/         # Reusable UI components
-    auth/             # Login, MFA, session management
-    credit-cards/     # Plaid-linked card UI
-    receipts/         # OCR capture flow
-    settings/         # Data management, notifications
-  hooks/              # Custom React hooks
-  lib/
-    api/              # BFF client (bffClient.ts)
-    performance/      # Performance monitoring
-  pages/              # Route-level components
-  integrations/
-    supabase/         # Generated Supabase types + client
+  features/           # Domain features: auth, budgets, cards, insights, etc.
+  shared/             # Shared UI, hooks, lib utilities, navigation
+  integrations/       # Supabase, Stripe, Google Maps integration clients
+  pages/              # Marketing, legal, dashboard launcher, internal ops pages
 supabase/
   functions/          # Edge Functions (Deno)
   migrations/         # SQL migrations
@@ -86,16 +78,18 @@ docs/                 # Architecture, API, production checklist
 ```bash
 npm run dev          # Dev server (port 8080)
 npm run build        # Production build
+npm run typecheck    # TypeScript validation
+npm run audit:prod   # Production dependency audit
+npm run verify       # typecheck + build + audit
 npm run lint         # ESLint
 ```
 
 ## Deployment
 
-The app is a static SPA. Build output goes to `dist/`. Deploy to any CDN (Vercel, Cloudflare Pages, Netlify).
+The recommended production hosting path is Cloudflare Pages for the React SPA and Supabase for Auth, Postgres, Storage, and Edge Functions. Build output goes to `dist/`.
 
 ```bash
-npm run build
-# upload dist/ to your hosting provider
+npm run verify
 ```
 
 Supabase Edge Functions are deployed via:
@@ -104,10 +98,13 @@ Supabase Edge Functions are deployed via:
 supabase functions deploy <function-name>
 ```
 
+See [Cloudflare + Supabase Production Guide](docs/CLOUDFLARE_SUPABASE_PRODUCTION.md) for the exact Cloudflare Pages settings, environment variables, Supabase secrets, smoke tests, and rollback plan.
+
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) — system design, data flows, security model
 - [API Reference](docs/API.md) — Edge Functions request/response shapes
 - [Production TODO](docs/PRODUCTION_TODO.md) — what must be done before public launch
+- [Cloudflare + Supabase Production Guide](docs/CLOUDFLARE_SUPABASE_PRODUCTION.md) — hosting, security headers, secrets, deployment runbook
 
 See [docs/PRODUCTION_TODO.md](docs/PRODUCTION_TODO.md) for what must be completed before the first public launch.

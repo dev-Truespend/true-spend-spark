@@ -15,6 +15,22 @@ interface GeocodeRequest {
   };
 }
 
+function buildSafeRequestParams(args: {
+  address?: string;
+  lat?: number;
+  lng?: number;
+  components?: GeocodeRequest['components'];
+  queryHash: string;
+}) {
+  return {
+    query_hash: args.queryHash,
+    mode: args.address ? 'address' : 'coordinates',
+    country: args.components?.country ?? null,
+    postal_code_provided: Boolean(args.components?.postal_code),
+    coordinate_precision: typeof args.lat === 'number' && typeof args.lng === 'number' ? 'exact_input_redacted' : null,
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -49,7 +65,8 @@ Deno.serve(async (req) => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const queryHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    console.log('🔍 Geocode request:', { address, lat, lng, queryHash });
+    const safeRequestParams = buildSafeRequestParams({ address, lat, lng, components, queryHash });
+    console.log('🔍 Geocode request:', safeRequestParams);
 
     // Check cache first
     const { data: cachedData } = await supabase
@@ -72,7 +89,7 @@ Deno.serve(async (req) => {
       await supabase.from('google_maps_api_logs').insert({
         api_type: 'geocoding',
         endpoint: 'google-maps-geocode',
-        request_params: { address, lat, lng },
+        request_params: safeRequestParams,
         response_status: 200,
         response_time_ms: Date.now() - startTime,
         cache_hit: true,
@@ -126,7 +143,7 @@ Deno.serve(async (req) => {
         await supabase.from('google_maps_api_logs').insert({
           api_type: 'geocoding',
           endpoint: 'google-maps-geocode',
-          request_params: { address, lat, lng },
+          request_params: safeRequestParams,
           response_status: response.status,
           response_time_ms: responseTime,
           cache_hit: false,
@@ -147,7 +164,7 @@ Deno.serve(async (req) => {
         await supabase.from('google_maps_api_logs').insert({
           api_type: 'geocoding',
           endpoint: 'google-maps-geocode',
-          request_params: { address, lat, lng },
+          request_params: safeRequestParams,
           response_status: 404,
           response_time_ms: responseTime,
           cache_hit: false,
@@ -172,7 +189,7 @@ Deno.serve(async (req) => {
       // Store in cache (30-day expiry)
       await supabase.from('google_maps_geocode_cache').insert({
         query_hash: queryHash,
-        address: address || null,
+        address: null,
         lat: resultData.lat,
         lng: resultData.lng,
         formatted_address: resultData.formatted_address,
@@ -186,7 +203,7 @@ Deno.serve(async (req) => {
       await supabase.from('google_maps_api_logs').insert({
         api_type: 'geocoding',
         endpoint: 'google-maps-geocode',
-        request_params: { address, lat, lng },
+        request_params: safeRequestParams,
         response_status: 200,
         response_time_ms: responseTime,
         cache_hit: false,
@@ -213,7 +230,7 @@ Deno.serve(async (req) => {
         await supabase.from('google_maps_api_logs').insert({
           api_type: 'geocoding',
           endpoint: 'google-maps-geocode',
-          request_params: { address, lat, lng },
+          request_params: safeRequestParams,
           response_status: 408,
           response_time_ms: 8000,
           cache_hit: false,

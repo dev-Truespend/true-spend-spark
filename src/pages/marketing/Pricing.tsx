@@ -222,14 +222,14 @@ export default function Pricing() {
                   </ul>
                 </div>
 
-                <Link to="/auth" className="block">
+                <Link to="/settings/billing" className="block">
                   <Button size="lg" className="w-full bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal hover:opacity-90 text-white font-semibold shadow-premium group-hover:shadow-glow transition-all">
                     Start 14-Day Free Trial
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
                 <p className="text-xs text-center text-muted-foreground">
-                  No credit card required • Cancel anytime
+                  Secure checkout • Cancel anytime
                 </p>
               </CardContent>
             </Card>
@@ -287,7 +287,7 @@ export default function Pricing() {
                   </ul>
                 </div>
 
-                <Link to="/auth" className="block">
+                <Link to="/settings/billing" className="block">
                   <Button variant="outline" size="lg" className="w-full group-hover:border-brand-teal group-hover:text-brand-teal transition-colors">
                     Get Started
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />

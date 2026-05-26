@@ -92,7 +92,11 @@ serve(async (req) => {
     const tolerance = 0.00001; // ~1 meter
 
     if (latDiff > tolerance || lngDiff > tolerance) {
-      console.warn(`Location mismatch: token(${payload.lat}, ${payload.lng}) vs provided(${lat}, ${lng})`);
+      console.warn(`Location mismatch`, {
+        userId: payload.user_id,
+        latDiff,
+        lngDiff,
+      });
       return new Response(
         JSON.stringify({ 
           valid: false, 
@@ -102,7 +106,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Location verified for user ${payload.user_id} at (${lat}, ${lng})`);
+    console.log(`Location verified`, { userId: payload.user_id });
 
     // Token is valid
     return new Response(

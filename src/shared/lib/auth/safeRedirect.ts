@@ -27,6 +27,7 @@ const AUTH_PATHS = new Set([
 ]);
 
 const CONTROL_CHAR_RE = /[\x00-\x1F\x7F]/;
+const MAX_REDIRECT_LENGTH = 2048;
 
 export function safeRedirect(
   raw: string | null | undefined,
@@ -36,6 +37,7 @@ export function safeRedirect(
 
   const trimmed = raw.trim();
   if (!trimmed) return fallback;
+  if (trimmed.length > MAX_REDIRECT_LENGTH) return fallback;
 
   // Must be a same-origin absolute path
   if (!trimmed.startsWith("/")) return fallback;

@@ -8,7 +8,7 @@ on:
     branches: [main, develop]
     paths:
       - 'package.json'
-      - 'bun.lockb'
+      - 'bun.lock'
   workflow_dispatch:
 
 jobs:
@@ -31,18 +31,26 @@ jobs:
         run: |
           echo "🔐 Verifying lockfile integrity..."
           
-          # Check if package.json changed in this PR
-          PACKAGE_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c "package.json" || true)
-          LOCKFILE_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c "bun.lockb" || true)
+          # Only dependency block changes require a lockfile update. Script-only
+          # package.json edits do not change the dependency graph.
+          PACKAGE_CHANGED=0
+          if git diff --name-only HEAD~1 HEAD | grep -q "package.json"; then
+            BEFORE=$(git show HEAD~1:package.json | jq -c '{dependencies, devDependencies, optionalDependencies, peerDependencies}')
+            AFTER=$(jq -c '{dependencies, devDependencies, optionalDependencies, peerDependencies}' package.json)
+            if [ "$BEFORE" != "$AFTER" ]; then
+              PACKAGE_CHANGED=1
+            fi
+          fi
+          LOCKFILE_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c "bun.lock" || true)
           
           if [ "$PACKAGE_CHANGED" -gt 0 ] && [ "$LOCKFILE_CHANGED" -eq 0 ]; then
-            echo "❌ package.json changed without bun.lockb"
-            echo "Please run 'bun install' and commit the updated bun.lockb"
+            echo "❌ package.json dependency blocks changed without bun.lock"
+            echo "Please run 'bun install' and commit the updated bun.lock"
             exit 1
           fi
           
           if [ "$LOCKFILE_CHANGED" -gt 0 ] && [ "$PACKAGE_CHANGED" -eq 0 ]; then
-            echo "⚠️  bun.lockb changed without package.json - please verify this is intentional"
+            echo "⚠️  bun.lock changed without package.json - please verify this is intentional"
           fi
           
           echo "✅ Lockfile integrity verified"

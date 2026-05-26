@@ -60,7 +60,7 @@ export async function getLandingRouteForUser(userId: string): Promise<string> {
     const userRoles = roles?.map(r => r.role) || [];
     
     if (userRoles.includes('admin')) {
-      return '/admin/dashboard';
+      return '/admin';
     }
     
     return '/dashboard';

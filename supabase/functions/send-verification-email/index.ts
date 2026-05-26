@@ -9,6 +9,17 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return 'invalid-email';
+  return `${local.slice(0, 2)}***@${domain}`;
+}
+
+function appUrl(): string {
+  const url = Deno.env.get('APP_URL') || Deno.env.get('FRONTEND_URL') || Deno.env.get('SITE_URL') || 'https://truespend.org';
+  return url.replace(/\/+$/, '');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -154,8 +165,7 @@ serve(async (req) => {
     }
 
     // Send verification email
-    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://truespend.org';
-    const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+    const verificationUrl = `${appUrl()}/verify-email?token=${verificationToken}`;
     
     const emailHtml = `
       <!DOCTYPE html>
@@ -207,11 +217,15 @@ serve(async (req) => {
     });
 
     if (emailError) {
-      console.error(`❌ [${requestId}] Resend error:`, emailError);
+      console.error(`❌ [${requestId}] Verification email failed:`, {
+        errorName: emailError.name,
+        errorMessage: emailError.message,
+        to: maskEmail(profile.email),
+      });
       throw new Error('Failed to send verification email');
     }
 
-    console.log(`✅ [${requestId}] Verification email sent to ${profile.email}`);
+    console.log(`✅ [${requestId}] Verification email sent`, { to: maskEmail(profile.email) });
 
     // Log email delivery
     await supabase.from('email_delivery_logs').insert({

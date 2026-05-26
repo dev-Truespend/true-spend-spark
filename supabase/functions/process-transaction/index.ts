@@ -17,6 +17,18 @@ interface TransactionInput {
   idempotency_key?: string;
 }
 
+function safeTransactionRequestPayload(input: TransactionInput) {
+  return {
+    amount: input.amount,
+    category: input.category,
+    has_description: Boolean(input.description),
+    has_merchant_id: Boolean(input.merchant_id),
+    has_location: typeof input.location_lat === 'number' && typeof input.location_lng === 'number',
+    has_timestamp: Boolean(input.timestamp),
+    has_idempotency_key: Boolean(input.idempotency_key),
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -70,7 +82,9 @@ serve(async (req) => {
 
     // Check idempotency
     if (input.idempotency_key) {
-      console.log(`[${correlationId}] Checking idempotency key: ${input.idempotency_key}`);
+      console.log(`[${correlationId}] Checking idempotency key`, {
+        keyPrefix: input.idempotency_key.slice(0, 8),
+      });
       
       const { data: existingEvent } = await supabase
         .from('transaction_events_log')
@@ -96,7 +110,7 @@ serve(async (req) => {
         idempotency_key: input.idempotency_key,
         user_id: user.id,
         event_type: 'process_transaction',
-        request_payload: input,
+        request_payload: safeTransactionRequestPayload(input),
         status: 'processing',
         correlation_id: correlationId,
       });
@@ -215,7 +229,10 @@ serve(async (req) => {
             .eq('id', transaction.id);
         }
         
-        console.log(`Applied rule: ${appliedRule.rule_name}`, actions);
+        console.log(`[${correlationId}] Applied transaction rule`, {
+          ruleName: appliedRule.rule_name,
+          actionKeys: Object.keys(actions ?? {}),
+        });
       }
     }
 

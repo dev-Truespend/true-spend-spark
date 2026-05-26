@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { Button } from "@/shared/components/ui/button";
@@ -63,12 +63,16 @@ export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const searchParams = new URLSearchParams(location.search);
-  const hashParams = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const hashParams = useMemo(
+    () => new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash),
+    [location.hash]
+  );
+  const locationState = location.state as { from?: string } | null;
   
   // Sanitised — blocks open-redirect via ?redirectTo=//evil.com and
   // breaks the /auth → /auth → /auth loop if someone passes redirectTo=/auth.
-  const redirectTo = safeRedirect(searchParams.get('redirectTo'), '/dashboard');
+  const redirectTo = safeRedirect(searchParams.get('redirectTo') ?? locationState?.from, '/dashboard');
   const isExtensionMode = searchParams.get('source') === 'extension';
   const hasOAuthInQuery = searchParams.has('code') || searchParams.has('access_token');
   const hasOAuthInHash = hashParams.has('code') || hashParams.has('access_token') || hashParams.has('refresh_token') || hashParams.has('provider_token');
@@ -489,7 +493,7 @@ export default function Auth() {
                       <FormItem>
                         <FormLabel>Password</FormLabel>
                         <FormControl>
-                          <Input {...field} type="password" className="h-11" />
+                          <Input {...field} type="password" className="h-11" disabled={isLoading || checkingMfa} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -524,7 +528,7 @@ export default function Auth() {
                             <FormItem>
                               <FormLabel>6-Digit Code</FormLabel>
                               <FormControl>
-                                <InputOTP maxLength={6} {...field}>
+                                <InputOTP maxLength={6} {...field} disabled={isLoading}>
                                   <InputOTPGroup>
                                     <InputOTPSlot index={0} />
                                     <InputOTPSlot index={1} />
@@ -545,7 +549,7 @@ export default function Auth() {
                             <FormItem>
                               <FormLabel>Backup Code</FormLabel>
                               <FormControl>
-                                <Input {...field} placeholder="Enter backup code" className="h-11" />
+                                <Input {...field} placeholder="Enter backup code" className="h-11" disabled={isLoading} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -614,7 +618,7 @@ export default function Auth() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input {...field} type="email" placeholder="you@example.com" className="h-11" />
+                        <Input {...field} type="email" placeholder="you@example.com" className="h-11" disabled={isLoading || emailSent} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -623,7 +627,7 @@ export default function Auth() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input {...field} type="password" className="h-11" />
+                        <Input {...field} type="password" className="h-11" disabled={isLoading || emailSent} />
                       </FormControl>
                       <PasswordStrengthMeter password={field.value} />
                       <PasswordRequirements password={field.value} />
@@ -634,7 +638,7 @@ export default function Auth() {
                     <FormItem>
                       <FormLabel>Confirm Password</FormLabel>
                       <FormControl>
-                        <Input {...field} type="password" className="h-11" />
+                        <Input {...field} type="password" className="h-11" disabled={isLoading || emailSent} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -647,7 +651,9 @@ export default function Auth() {
                         <FormControl>
                           <ConsentBlock 
                             checked={field.value} 
-                            onCheckedChange={field.onChange}
+                            onCheckedChange={(checked) => {
+                              if (!emailSent) field.onChange(checked);
+                            }}
                             error={signupForm.formState.errors.agreeToTerms?.message}
                           />
                         </FormControl>
@@ -658,7 +664,7 @@ export default function Auth() {
                   <Button 
                     type="submit" 
                     className="w-full h-11 bg-gradient-to-r from-brand-blue to-brand-purple hover:opacity-90 text-white font-semibold shadow-premium"
-                    disabled={isLoading}
+                    disabled={isLoading || emailSent}
                   >
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Create Account

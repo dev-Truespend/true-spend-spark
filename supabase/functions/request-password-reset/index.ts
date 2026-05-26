@@ -8,6 +8,17 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return 'invalid-email';
+  return `${local.slice(0, 2)}***@${domain}`;
+}
+
+function appUrl(): string {
+  const url = Deno.env.get('APP_URL') || Deno.env.get('SITE_URL') || Deno.env.get('FRONTEND_URL') || 'https://truespend.org';
+  return url.replace(/\/+$/, '');
+}
+
 Deno.serve(async (req) => {
   // Generate or extract correlation ID
   const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
@@ -49,7 +60,7 @@ Deno.serve(async (req) => {
 
     if (recentRequests && recentRequests.length >= 3) {
       // Too many requests, but still return success message
-      console.log(`[${requestId}] Rate limit hit for email: ${normalizedEmail}`);
+      console.log(`[${requestId}] Password reset rate limit hit`, { email: maskEmail(normalizedEmail) });
       return new Response(
         JSON.stringify(successResponse),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-request-id': requestId } }
@@ -65,7 +76,7 @@ Deno.serve(async (req) => {
 
     // If user doesn't exist or is deleted, still return success (don't reveal)
     if (!profile || profile.status === 'deleted') {
-      console.log(`[${requestId}] Password reset requested for non-existent email: ${normalizedEmail}`);
+      console.log(`[${requestId}] Password reset requested for unavailable account`, { email: maskEmail(normalizedEmail) });
       return new Response(
         JSON.stringify(successResponse),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-request-id': requestId } }
@@ -74,7 +85,7 @@ Deno.serve(async (req) => {
 
     // Block Google OAuth users from password reset
     if (profile.auth_provider === 'google') {
-      console.log(`[${requestId}] Password reset blocked for Google OAuth user: ${normalizedEmail}`);
+      console.log(`[${requestId}] Password reset blocked for Google OAuth user`, { email: maskEmail(normalizedEmail) });
       
       // Log security event
       await supabase.from('security_logs').insert({
@@ -83,7 +94,7 @@ Deno.serve(async (req) => {
         severity: 'warn',
         ip_address: req.headers.get('x-forwarded-for') || 'unknown',
         user_agent: req.headers.get('user-agent') || 'unknown',
-        details: { email: normalizedEmail, blocked_reason: 'google_oauth_account' }
+        details: { email: maskEmail(normalizedEmail), blocked_reason: 'google_oauth_account' }
       });
 
       return new Response(
@@ -121,7 +132,7 @@ Deno.serve(async (req) => {
     }
 
     // Create reset link
-    const resetLink = `${Deno.env.get('SITE_URL') || 'https://truespend.org'}/reset-password?token=${token}`;
+    const resetLink = `${appUrl()}/reset-password?token=${token}`;
 
     // Create simple HTML email (avoiding React SSR issues)
     const emailHtml = `
@@ -152,14 +163,13 @@ Deno.serve(async (req) => {
       </html>
     `;
 
-    // Send email with enhanced logging
+    // Send email. Do not log reset links, API keys, or full email addresses.
     const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'TrueSpend <noreply@truespend.org>';
-    console.log(`[RESEND] ===== EMAIL SEND ATTEMPT =====`);
-    console.log(`[RESEND] From: ${fromEmail}`);
-    console.log(`[RESEND] To: ${profile.email}`);
-    console.log(`[RESEND] API Key exists: ${!!Deno.env.get('RESEND_API_KEY')}`);
-    console.log(`[RESEND] API Key first 10 chars: ${Deno.env.get('RESEND_API_KEY')?.substring(0, 10) || 'MISSING'}`);
-    console.log(`[RESEND] Reset link: ${resetLink}`);
+    console.log(`[${requestId}] Sending password reset email`, {
+      to: maskEmail(profile.email),
+      fromConfigured: Boolean(Deno.env.get('RESEND_FROM_EMAIL')),
+      resendConfigured: Boolean(Deno.env.get('RESEND_API_KEY')),
+    });
 
     const { data: emailData, error: emailError } = await resend.emails.send({
       from: fromEmail,
@@ -169,19 +179,17 @@ Deno.serve(async (req) => {
     });
 
     if (emailError) {
-      console.error('[RESEND] ❌ Email failed with error:', {
+      console.error(`[${requestId}] Password reset email failed`, {
         errorName: emailError.name,
         errorMessage: emailError.message,
-        fullError: JSON.stringify(emailError, null, 2),
-        to: profile.email,
-        from: fromEmail
+        to: maskEmail(profile.email),
+        fromConfigured: Boolean(fromEmail),
       });
       // Still return success message (fail securely)
     } else {
-      console.log('[RESEND] ✅ Email sent successfully!', {
+      console.log(`[${requestId}] Password reset email accepted`, {
         emailId: emailData?.id,
-        to: profile.email,
-        from: fromEmail
+        to: maskEmail(profile.email),
       });
     }
 
@@ -192,7 +200,7 @@ Deno.serve(async (req) => {
       severity: 'info',
       ip_address: req.headers.get('x-forwarded-for') || 'unknown',
       user_agent: req.headers.get('user-agent') || 'unknown',
-      details: { email: normalizedEmail }
+      details: { email: maskEmail(normalizedEmail) }
     });
 
     return new Response(
