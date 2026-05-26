@@ -76,13 +76,6 @@ verify_jwt = false
 [functions.cleanup-unverified-accounts]
 verify_jwt = false
 
-[functions.huggingface-ocr-receipt]
-verify_jwt = true
-
-[functions.huggingface-categorize]
-verify_jwt = true
-schedule = "0 */6 * * *"
-
 [functions.verify-current-password]
 verify_jwt = true
 
@@ -105,21 +98,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.check-mfa-status]
-verify_jwt = false
-
-[functions.foursquare-places-search]
-verify_jwt = false
-
-[functions.foursquare-place-details]
-verify_jwt = false
-
-[functions.foursquare-enrich-geofence]
-verify_jwt = false
-
-[functions.foursquare-sync-categories]
-verify_jwt = false
-
-[functions.foursquare-cache-cleanup]
 verify_jwt = false
 
 [functions.bff-dashboard]
@@ -163,9 +141,6 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.location-analytics-bff]
-verify_jwt = true
-
-[functions.ab-testing-manager]
 verify_jwt = true
 
 [functions.cache-prewarmer]

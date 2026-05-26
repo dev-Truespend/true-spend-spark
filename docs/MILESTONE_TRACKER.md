@@ -33,7 +33,7 @@
 | Switch dependency source of truth to npm | ✅ Done | Removed `bun.lock`; CI now checks `package-lock.json` |
 | Keep only canonical docs | 🟡 In progress | Current canonical docs are in `docs/` |
 | Reduce 100+ Edge Functions to the MVP set | ❌ Pending | `supabase/functions/` still contains many non-MVP functions |
-| Remove unused ML/observability UI from consumer app | ❌ Pending | Internal/admin routes still expose many scaffold pages |
+| Remove unused ML/observability UI from consumer app | ✅ Done | Custom ML routes, Hugging Face/Modal functions, and training UI removed from the MVP path |
 
 **Gate to pass:** build succeeds and the app has no legacy provider strings or dead docs.
 
@@ -142,4 +142,4 @@
 3. Harden Plaid webhooks and transaction deduplication.
 4. Configure live Stripe and run webhook replay tests.
 5. Deploy staging to Cloudflare Pages and run auth/navigation E2E tests.
-6. Simplify internal/admin/ML/observability scaffolding after MVP flows are verified.
+6. Continue simplifying internal/admin observability after MVP flows are verified.

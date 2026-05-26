@@ -76,7 +76,7 @@ Resend is a good free/cheap starting point. It is simpler than running your own 
 - [ ] Add Playwright E2E tests for the main website flows.
 - [ ] Add onboarding checklist for first-time users.
 - [ ] Add user-friendly provider outage messages for Plaid, Stripe, AI, and email.
-- [ ] Review admin-only ML/Hugging Face/Modal pages and either finish them or hide them from production navigation.
+- [x] Remove admin-only ML/Hugging Face/Modal pages from the production MVP.
 
 ## P2 — Scale And Retention
 
@@ -95,7 +95,7 @@ Resend is a good free/cheap starting point. It is simpler than running your own 
 - [ ] CSV import.
 - [ ] Multi-currency support.
 - [ ] Affiliate link tracking and compliance review.
-- [ ] Advanced ML training only after enough real user data exists.
+- [x] Keep advanced/custom ML training out of the MVP scope.
 
 ## Owner Inputs Needed
 

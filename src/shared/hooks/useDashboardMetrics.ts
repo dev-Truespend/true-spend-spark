@@ -5,7 +5,7 @@ export function useDashboardMetrics() {
     databaseLatencyImprovement: '73%', // 30ms → 8ms p95
     cacheHitRate: '93%', // +8 points from v4.1
     costReduction: '52%', // $1,400 → $680/month
-    mlModels: 8,
+    aiGuardrails: 4,
     newLayers: 0, // Layer 10B is 0% implemented (not included in count)
     totalOptimizations: 27,
     apiLatencyBefore: '150ms',
@@ -22,24 +22,24 @@ export function useDashboardMetrics() {
     weeksToRevenue: '4-6', // Estimated timeline to MVP revenue capability
     
     // Phase Completion Metrics - Updated 21-NOV-2025
-    phase1Completion: '100%', // ✅ Complete - Offline storage, camera, network monitoring
+    phase1Completion: '100%', // ✅ Complete - Auth, camera, network monitoring
     phase2Completion: '100%', // ✅ Production ready - Security & Ingress
     phase3Completion: '100%', // ✅ Complete - Geofencing fully operational (JWT security, transaction/budget integration)
     phase4Completion: '98%',  // ✅ Near Complete - Auth & Supply Chain Security (minor polishing remaining)
     phase5Completion: '85%',  // 🟡 In Progress - BFF, AI, Rules live BUT Plaid (0%) & Stripe (0%) MISSING - REVENUE BLOCKER
     phase6Completion: '70%',  // 🟡 In Progress - Email (100%), Webhooks (100%), Plaid (0%), Stripe (0%) - CRITICAL
     phase7Completion: '100%', // ✅ Complete - Location Intelligence with AI insights, cache optimization, deal notifications
-    phase8Completion: '100%', // ✅ Complete - Messaging & Events (Event Bus, Realtime, Batching, Feature Flags, Workflows, Tracing)
+    phase8Completion: '100%', // ✅ Complete - Messaging & Events (Realtime, batching, tracing)
     phase9Completion: '100%', // ✅ Complete - Data Planes & DR (Audit Logging, Data Masking, Backup Monitoring, Cache Analytics, Dashboard Integration)
     phase10Completion: '95%', // ✅ Complete - Observability & Polish (Logging, Metrics, Tracing, Incidents, SLOs, Alerts, Performance) - Cloudflare pending
     phase11Completion: '30%', // 🟡 In Progress - Browser Extension (Basic structure, not production-ready)
     phase12Completion: '20%', // 🟡 In Progress - Native Apps (Capacitor setup, not production apps)
     phase13Completion: '40%', // 🟡 In Progress - Read Replica, Redis L1, 2 BFFs BUT GraphQL Gateway MISSING - N+1 queries issue
-    phase14Completion: '80%', // 🟡 In Progress - ML Infrastructure (Dashboard complete, NO trained models yet)
-    phase15Completion: '0%',  // ❌ Not Started - Advanced ML (RL, LSTM, Collaborative Filtering, Layer 10B at 0%)
+    phase14Completion: '0%', // Removed from MVP - Custom ML infrastructure is out of scope
+    phase15Completion: '0%',  // Removed from MVP - Advanced ML is out of scope
     phase16Completion: '0%',  // ❌ Not Started - Cost Optimization (Gorilla, Bloom Filters, ARIMA)
     bffEndpointsLive: 2, // bff-dashboard, bff-transactions (NOT 5 as previously stated)
-    aiModelsIntegrated: 3, // Gemini Pro, Claude, GPT-4
+    aiModelsIntegrated: 1, // Claude/Anthropic only
     tablesCreated: 99, // Accurate count from database schema
     edgeFunctionsDeployed: 96, // Accurate count from codebase analysis
     
@@ -47,7 +47,7 @@ export function useDashboardMetrics() {
     plaidIntegration: '0%', // REVENUE BLOCKER
     stripeIntegration: '0%', // REVENUE BLOCKER
     graphqlGateway: 'Missing', // Performance issue - N+1 queries
-    layer10b: '0%', // Advanced ML not implemented
+    layer10b: '0%', // Out of MVP scope
     
     // New Phase 4 completion metrics
     securityWarningsFixed: 44,

@@ -106,24 +106,12 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Step 6: Cleanup expired Foursquare cache
-    const { data: fsqExpired, error: fsqError } = await supabase
-      .from('place_enrichment_cache')
-      .delete()
-      .lt('expires_at', new Date().toISOString())
-      .select('id');
-
-    if (fsqError) throw fsqError;
-    const fsqExpiredCount = fsqExpired?.length || 0;
-    console.log(`✅ Removed ${fsqExpiredCount} expired Foursquare cache entries`);
-
     const summary = {
       success: true,
       expired_removed: expiredCount,
       old_removed: oldCount,
       lru_evicted: lruEvicted,
       total_removed: expiredCount + oldCount + lruEvicted,
-      foursquare_expired: fsqExpiredCount,
       cache_size_after: (totalCount || 0) - (expiredCount + oldCount + lruEvicted),
       execution_time_ms: Date.now() - startTime,
     };

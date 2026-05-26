@@ -1,4 +1,3 @@
-import { TelemetryDashboard } from '@/features/location/components/TelemetryDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Card } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
@@ -49,7 +48,6 @@ export default function Metrics() {
       <Tabs defaultValue="phase1" className="space-y-4">
         <TabsList>
           <TabsTrigger value="phase1">Phase 1 Metrics</TabsTrigger>
-          <TabsTrigger value="geofencing">Geofencing Telemetry</TabsTrigger>
           <TabsTrigger value="overall">Overall Project</TabsTrigger>
         </TabsList>
 
@@ -121,10 +119,6 @@ export default function Metrics() {
               </div>
             </div>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="geofencing">
-          <TelemetryDashboard />
         </TabsContent>
 
         <TabsContent value="overall">

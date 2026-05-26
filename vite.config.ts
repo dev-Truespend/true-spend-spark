@@ -48,9 +48,6 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      // onnxruntime-web is a heavy ML runtime — keep it external so the CJS
-      // plugin never tries to bundle it (it loads its own WASM assets at runtime).
-      external: (id) => id === 'onnxruntime-web' || id.startsWith('onnxruntime-web/'),
       input: mode === 'extension'
         ? {
             popup: resolve(__dirname, 'extension/popup/index.html'),
@@ -122,7 +119,7 @@ export default defineConfig(({ mode }) => ({
               // Admin pages are huge (observability dashboards etc.) and
               // never loaded for normal users — keep them out of the main
               // chunk completely.
-              if (id.includes('/pages/internal/') || id.includes('/features/observability/') || id.includes('/features/ml/')) {
+              if (id.includes('/pages/internal/') || id.includes('/features/observability/')) {
                 return 'admin';
               }
               if (id.includes('/pages/marketing/')) return 'marketing';
