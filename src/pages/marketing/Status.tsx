@@ -32,16 +32,10 @@ export default function Status() {
 
   const incidents = [
     {
-      date: "Dec 15, 2024",
-      title: "Brief API Latency",
-      description: "Increased response times on API endpoints. Resolved in 12 minutes.",
-      status: "resolved",
-    },
-    {
-      date: "Dec 10, 2024",
-      title: "Scheduled Maintenance",
-      description: "Database optimization and infrastructure upgrades completed successfully.",
-      status: "resolved",
+      date: "No incidents reported",
+      title: "Current launch environment",
+      description: "Public status automation will be connected before launch. Until then, this page should be treated as a product preview.",
+      status: "monitoring",
     },
   ];
 

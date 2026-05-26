@@ -124,8 +124,8 @@ export default function Home() {
                   <Database className="w-6 h-6 text-brand-teal" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-3">Local-First Storage</h3>
-                  <p className="text-muted-foreground">Your data lives on your device first. Cloud sync is optional and always encrypted.</p>
+                  <h3 className="text-2xl font-bold mb-3">Secure Cloud Sync</h3>
+                  <p className="text-muted-foreground">Your data syncs through Supabase with row-level security and account-scoped access controls.</p>
                 </div>
               </div>
             </div>
@@ -204,7 +204,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-2xl font-bold mb-3">Privacy-First</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Your financial data never leaves your device unencrypted. We can't see it, sell it, or share it. Period.
+                  Your financial data is protected by encrypted transport, strict database policies, and privacy-first product decisions.
                 </p>
               </div>
             </div>

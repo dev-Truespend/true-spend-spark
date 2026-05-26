@@ -53,15 +53,18 @@ serve(async (req) => {
     const page     = parseInt(url.searchParams.get("page")     ?? "1");
     const limit    = Math.min(parseInt(url.searchParams.get("limit") ?? "25"), 100);
     const category = url.searchParams.get("category");
+    const geofenceId = url.searchParams.get("geofenceId");
     const dateFrom = url.searchParams.get("dateFrom");
     const dateTo   = url.searchParams.get("dateTo");
     const cardId   = url.searchParams.get("creditCardId");
     const search   = url.searchParams.get("search");
     const synced   = url.searchParams.get("synced"); // 'true' | 'false' | null
+    const sort     = url.searchParams.get("sort") ?? "newest";
+    const refresh  = url.searchParams.get("refresh");
 
     // Cache key includes all filter params
-    const cacheKey = `bff:transactions:${user.id}:${page}:${limit}:${category ?? ""}:${dateFrom ?? ""}:${dateTo ?? ""}:${cardId ?? ""}:${search ?? ""}:${synced ?? ""}`;
-    const cached   = await redisGet(cacheKey);
+    const cacheKey = `bff:transactions:${user.id}:${page}:${limit}:${category ?? ""}:${geofenceId ?? ""}:${dateFrom ?? ""}:${dateTo ?? ""}:${cardId ?? ""}:${search ?? ""}:${synced ?? ""}:${sort}`;
+    const cached   = refresh ? null : await redisGet(cacheKey);
     if (cached) {
       return new Response(JSON.stringify({ ...cached as object, cached: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -77,26 +80,38 @@ serve(async (req) => {
         id, amount, category, description, timestamp,
         created_at, updated_at, receipt_url, synced,
         location_lat, location_lng,
-        credit_card_id, geofence_id, merchant_id
+        credit_card_id, geofence_id, merchant_id,
+        merchant:merchants(id, name),
+        geofence:geofences(id, name)
       `, { count: "exact" })
-      .order("timestamp", { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (category)  query = query.eq("category", category);
+    if (geofenceId === "none") query = query.is("geofence_id", null);
+    else if (geofenceId) query = query.eq("geofence_id", geofenceId);
     if (dateFrom)  query = query.gte("timestamp", dateFrom);
     if (dateTo)    query = query.lte("timestamp", dateTo);
     if (cardId)    query = query.eq("credit_card_id", cardId);
     if (synced !== null && synced !== undefined) query = query.eq("synced", synced === "true");
     if (search)    query = query.ilike("description", `%${search}%`);
 
+    switch (sort) {
+      case "oldest":
+        query = query.order("timestamp", { ascending: true });
+        break;
+      case "highest":
+        query = query.order("amount", { ascending: false });
+        break;
+      case "lowest":
+        query = query.order("amount", { ascending: true });
+        break;
+      case "newest":
+      default:
+        query = query.order("timestamp", { ascending: false });
+    }
+
     const { data: transactions, error, count } = await query;
     if (error) throw error;
-
-    // Summary stats for this filtered view
-    const { data: stats } = await supabase
-      .from("transactions")
-      .select("amount")
-      .then((res) => res); // lightweight — just the filtered set for total
 
     const totalPages = Math.ceil((count ?? 0) / limit);
 
@@ -114,8 +129,8 @@ serve(async (req) => {
     };
 
     // Cache for 60s — skip caching page 1 with no filters more aggressively (30s)
-    const ttl = page === 1 && !category && !dateFrom && !cardId ? 30 : CACHE_TTL;
-    await redisSet(cacheKey, payload, ttl);
+    const ttl = page === 1 && !category && !geofenceId && !dateFrom && !cardId && !search ? 30 : CACHE_TTL;
+    if (!refresh) await redisSet(cacheKey, payload, ttl);
 
     return new Response(JSON.stringify(payload), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -525,11 +525,17 @@ const queryClient = useQueryClient();
           component: 'useAuth.signIn',
           metadata: { userId: authData.user.id },
         });
+
+        supabase.functions.invoke('request-account-recovery', {
+          body: { email: email.toLowerCase() },
+        }).catch((err) => {
+          console.error('[useAuth] account recovery email failed:', err);
+        });
         
         await supabase.auth.signOut();
         return {
           error: {
-            message: "Account has been deleted"
+            message: "Account has been deleted. If this was a mistake, check your email for recovery instructions."
           }
         };
       }

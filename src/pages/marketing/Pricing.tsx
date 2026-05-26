@@ -16,8 +16,8 @@ export default function Pricing() {
       { icon: Receipt, text: "Unlimited receipt scanning" },
       { icon: Camera, text: "OCR text extraction" },
       { icon: BarChart3, text: "Basic expense tracking" },
-      { icon: Shield, text: "End-to-end encryption" },
-      { icon: Database, text: "Local-first storage" },
+      { icon: Shield, text: "Secure account protection" },
+      { icon: Database, text: "Cloud sync with RLS" },
       { icon: Globe, text: "Web & mobile access" },
     ],
     plus: [
@@ -40,7 +40,7 @@ export default function Pricing() {
 
   const platforms = [
     { icon: Smartphone, name: "iOS & Android", desc: "Native mobile apps" },
-    { icon: Laptop, name: "Desktop", desc: "Windows, Mac, Linux" },
+    { icon: Laptop, name: "Web Browser", desc: "Chrome, Safari, Edge" },
     { icon: Tablet, name: "Tablet", desc: "iPad & Android tablets" },
     { icon: Globe, name: "Web", desc: "Any modern browser" },
   ];

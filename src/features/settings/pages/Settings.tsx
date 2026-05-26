@@ -4,12 +4,12 @@ import { NotificationSettings } from "@/components/settings/NotificationSettings
 import { DataManagement } from "@/components/settings/DataManagement";
 import { MFASetup } from "@/components/auth/MFASetup";
 import { SessionsAndDevices } from "@/components/auth/SessionsAndDevices";
-import { UserProfileDropdown } from "@/components/auth/UserProfileDropdown";
 import { Button } from "@/components/ui/button";
 import { useDataExport } from "@/hooks/useDataExport";
 import { DangerZone } from "@/features/settings/components/DangerZone";
 import { ProfileEditor } from "@/features/settings/components/ProfileEditor";
-import { Bell, Shield, User, Smartphone, Download } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Bell, Shield, User, Smartphone, Download, CreditCard } from "lucide-react";
 
 export default function Settings() {
   const { exportUserData, isExporting } = useDataExport();
@@ -22,7 +22,7 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="notifications" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
             Notifications
@@ -42,6 +42,10 @@ export default function Settings() {
           <TabsTrigger value="privacy" className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Privacy
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            Billing
           </TabsTrigger>
         </TabsList>
 
@@ -100,6 +104,23 @@ export default function Settings() {
             {/* ── GDPR Right to Erasure ───────────────────────────────────── */}
             <DangerZone />
           </div>
+        </TabsContent>
+
+        <TabsContent value="billing">
+          <Card>
+            <CardHeader>
+              <CardTitle>Billing & Subscription</CardTitle>
+              <CardDescription>Review your plan, invoices, and payment method</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild>
+                <Link to="/settings/billing">
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Open billing
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
