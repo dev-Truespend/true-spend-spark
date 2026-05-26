@@ -172,6 +172,7 @@ Generate insights.`;
     // Call Claude directly through Anthropic. This legacy compatibility endpoint
     // remains until location insights are fully routed through ai-agent.
     const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
+    const model = Deno.env.get('ANTHROPIC_MODEL_FAST') || 'claude-haiku-4-5-20251001';
     if (!anthropicApiKey) {
       throw new Error('ANTHROPIC_API_KEY not configured');
     }
@@ -186,7 +187,7 @@ Generate insights.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model,
         max_tokens: 1400,
         temperature: 0.2,
         system: systemPrompt,

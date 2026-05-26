@@ -63,6 +63,7 @@
 | Route Insights through agent | ✅ Started | `src/features/insights/pages/Insights.tsx` |
 | Route dashboard AI nudge through agent | ✅ Started | `src/pages/UserDashboard.tsx` |
 | Keep compatibility endpoints while migrating | ✅ Done | Legacy endpoints now call Claude/fallback paths |
+| Add AI cost guardrails | ✅ Done | Per-user rate limits, cache table, fast/agent model routing, deterministic fallback |
 | Route transaction anomaly/best-card checks through agent | ❌ Pending | Required for real-time value |
 | Persist agent outputs consistently | 🟡 Partial | Recommendations page exists; all flows not wired |
 | Add chat UI | ❌ Pending | Needed for full co-pilot experience |

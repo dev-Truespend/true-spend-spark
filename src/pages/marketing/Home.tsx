@@ -8,7 +8,7 @@ import heroCardsPhone from "@/assets/hero-cards-phone.png";
 import privacyPremium from "@/assets/privacy-premium.png";
 import multiDevice from "@/assets/multi-device-ecosystem.png";
 import heroPremium from "@/assets/hero-premium.png";
-import localData from "@/assets/local-first-data.png";
+import privacyData from "@/assets/privacy-data.png";
 
 export default function Home() {
   return (
@@ -30,7 +30,7 @@ export default function Home() {
                 </span>
               </h1>
               <p className="text-xl text-muted-foreground leading-relaxed max-w-lg">
-                Smart expense tracking that respects your privacy. Your financial data stays yours—always encrypted, never sold.
+                Smart rewards guidance that respects your privacy. Your financial data stays protected with Supabase security and is never sold.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/auth">
@@ -87,7 +87,7 @@ export default function Home() {
               Your Data is <span className="text-brand-purple">Never</span> Sold
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Unlike other apps, we don't profit from your information. Your financial data is encrypted end-to-end and stored securely on your device.
+              Unlike data-broker products, TrueSpend is designed around account-scoped access, encrypted transport, strict database policies, and clear user consent.
             </p>
           </div>
 
@@ -106,8 +106,8 @@ export default function Home() {
                   <Lock className="w-6 h-6 text-brand-blue" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-3">End-to-End Encryption</h3>
-                  <p className="text-muted-foreground">Your data is encrypted before it leaves your device and only you have the keys.</p>
+                  <h3 className="text-2xl font-bold mb-3">Secure Data Boundaries</h3>
+                  <p className="text-muted-foreground">Sensitive data is protected in transit and stored behind Supabase row-level security and provider secret boundaries.</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -192,7 +192,7 @@ export default function Home() {
               <div className="relative mx-auto w-64 h-64 min-h-64 min-w-64 group">
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-purple/20 to-brand-teal/20 blur-2xl rounded-full animate-pulse-slow"></div>
                 <img 
-                  src={localData} 
+                  src={privacyData}
                   alt="Privacy First" 
                   className="relative w-64 h-64 object-cover rounded-2xl drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-500 animate-float-slow"
                   style={{ animationDelay: '2s' }}
@@ -244,7 +244,7 @@ export default function Home() {
               <div>
                 <h3 className="text-2xl font-bold mb-3">Track Your Expenses</h3>
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  Snap photos of receipts or manually add transactions. Everything stays private on your device.
+                  Snap photos of receipts or manually add transactions. Your records sync securely to your account.
                 </p>
               </div>
             </div>

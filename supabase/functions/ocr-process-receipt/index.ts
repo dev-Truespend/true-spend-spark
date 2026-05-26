@@ -32,6 +32,7 @@ serve(async (req) => {
 
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
+    const model = Deno.env.get("ANTHROPIC_MODEL_VISION") || Deno.env.get("ANTHROPIC_MODEL_FAST") || "claude-haiku-4-5-20251001";
 
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) throw new Error(`Could not fetch receipt image: ${imageResponse.status}`);
@@ -46,7 +47,7 @@ serve(async (req) => {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
+        model,
         max_tokens: 1200,
         temperature: 0,
         system: `Extract structured data from a receipt. Return ONLY JSON:

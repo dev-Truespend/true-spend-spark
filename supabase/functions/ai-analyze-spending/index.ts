@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+const ANTHROPIC_MODEL_FAST = Deno.env.get("ANTHROPIC_MODEL_FAST") || "claude-haiku-4-5-20251001";
 
 type Period = "week" | "month" | "quarter";
 
@@ -133,7 +134,7 @@ ${topCategories.map((cat) => `- ${cat.category}: $${cat.spent.toFixed(2)} (${cat
             "content-type": "application/json",
           },
           body: JSON.stringify({
-            model: "claude-sonnet-4-6",
+            model: ANTHROPIC_MODEL_FAST,
             max_tokens: 1000,
             temperature: 0.3,
             system: `Analyze spending data and return ONLY JSON:

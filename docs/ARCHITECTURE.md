@@ -29,6 +29,7 @@ There is no separate Node/Express backend. Business logic that needs secrets or 
 | Recommendations | AI recommendation feed | Initial implementation merged |
 | Insights | Spending analysis through `ai-agent` | Partially migrated; legacy compatibility endpoints remain |
 | Billing | Stripe checkout and portal | Code exists; live Stripe setup pending |
+| AI agent | Claude-backed rewards assistant with caching, rate limiting, and deterministic fallback | Built; production key and model budget monitoring pending |
 | Extension | Merchant detection and popup shell | Partial; build/publish pipeline pending |
 | Mobile | Capacitor iOS/Android shell | Partial; native device testing pending |
 | Internal ops | Admin, observability, ML scaffolds | Too large for MVP; should be reduced after launch path is stable |
@@ -120,6 +121,10 @@ Remaining production hardening:
 - Implement removed transaction handling.
 - Handle pending-to-posted transitions.
 - Add deduplication between manual and Plaid-created transactions.
+
+## AI Cost And Availability Controls
+
+The `ai-agent` Edge Function routes short analytical intents to the fast Claude model and keeps conversational/card-application flows on the stronger agent model. Cacheable responses are stored in `ai_agent_cache`, keyed by user, intent, and payload hash. If Anthropic is unavailable or rate-limited, deterministic tool-based summaries keep the dashboard usable without pretending an AI response was generated.
 
 ## Deployment Boundaries
 
