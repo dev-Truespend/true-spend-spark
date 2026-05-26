@@ -1,15 +1,27 @@
 /**
- * Hugging Face Transformers.js client for browser-side ML
+ * Hugging Face Transformers.js client for browser-side ML.
+ *
+ * Keep `@huggingface/transformers` behind a dynamic import so normal web users
+ * do not download the ML runtime unless they open an ML feature that needs it.
  */
 
-import { pipeline, env } from '@huggingface/transformers';
+type TransformersModule = typeof import('@huggingface/transformers');
 import { HFClientOptions, ModelDownloadProgress, HFMetrics } from './types';
-import { HF_MODELS, getOptimalDevice } from './models';
-import { getCachedModel, cacheModel, clearExpiredCache } from './cache';
+import { getOptimalDevice } from './models';
+import { clearExpiredCache } from './cache';
 
-// Configure transformers.js
-env.allowLocalModels = false;
-env.useBrowserCache = true;
+let transformersModulePromise: Promise<TransformersModule> | null = null;
+
+async function getTransformersModule(): Promise<TransformersModule> {
+  if (!transformersModulePromise) {
+    transformersModulePromise = import('@huggingface/transformers').then((module) => {
+      module.env.allowLocalModels = false;
+      module.env.useBrowserCache = true;
+      return module;
+    });
+  }
+  return transformersModulePromise;
+}
 
 class HuggingFaceClient {
   private pipelines: Map<string, any> = new Map();
@@ -65,6 +77,8 @@ class HuggingFaceClient {
     });
 
     try {
+      const { pipeline } = await getTransformersModule();
+
       // Create pipeline
       const pipe = await pipeline(task, modelId, {
         device,

@@ -1,13 +1,21 @@
 // @ts-nocheck -- TODO: fix strictNullChecks errors
 import { useState, useEffect, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { BackgroundGeolocationPlugin, Location } from '@capacitor-community/background-geolocation';
-import { registerPlugin } from '@capacitor/core';
-
-const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation');
+import type { BackgroundGeolocationPlugin, Location } from '@capacitor-community/background-geolocation';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { toast } from './use-toast';
+import { isCapacitorNative } from '@/shared/lib/platform/capacitor';
+
+let backgroundGeolocationPromise: Promise<BackgroundGeolocationPlugin> | null = null;
+
+async function getBackgroundGeolocation(): Promise<BackgroundGeolocationPlugin> {
+  if (!backgroundGeolocationPromise) {
+    backgroundGeolocationPromise = import('@capacitor/core').then(({ registerPlugin }) =>
+      registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation')
+    );
+  }
+  return backgroundGeolocationPromise;
+}
 
 interface GPSPosition {
   latitude: number;
@@ -30,7 +38,7 @@ export function useNativeGPSTracking(options: UseNativeGPSTrackingOptions = {}) 
   const [error, setError] = useState<string | null>(null);
   const [tracking, setTracking] = useState(false);
   const [watcherId, setWatcherId] = useState<string | null>(null);
-  const [isNative] = useState(Capacitor.isNativePlatform());
+  const [isNative] = useState(isCapacitorNative());
 
   const {
     enabled = false,
@@ -125,6 +133,8 @@ export function useNativeGPSTracking(options: UseNativeGPSTrackingOptions = {}) 
     }
 
     try {
+      const BackgroundGeolocation = await getBackgroundGeolocation();
+
       // Configure background geolocation
       const id = await BackgroundGeolocation.addWatcher(
         {
@@ -174,6 +184,7 @@ export function useNativeGPSTracking(options: UseNativeGPSTrackingOptions = {}) 
     if (!isNative || !watcherId) return;
 
     try {
+      const BackgroundGeolocation = await getBackgroundGeolocation();
       await BackgroundGeolocation.removeWatcher({ id: watcherId });
       setWatcherId(null);
       setTracking(false);

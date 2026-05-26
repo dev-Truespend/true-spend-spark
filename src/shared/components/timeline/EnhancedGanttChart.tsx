@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import mermaid from 'mermaid';
 import { Card } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Checkbox } from '@/shared/components/ui/checkbox';
@@ -294,8 +293,15 @@ export function EnhancedGanttChart({ currentWeek, totalWeeks, phases }: Enhanced
   };
 
   useEffect(() => {
-    if (containerRef.current) {
-      mermaid.initialize({ 
+    let cancelled = false;
+
+    async function renderChart() {
+      if (!containerRef.current) return;
+
+      const { default: mermaid } = await import('mermaid');
+      if (cancelled || !containerRef.current) return;
+
+      mermaid.initialize({
         startOnLoad: true,
         theme: 'default',
         gantt: {
@@ -304,10 +310,23 @@ export function EnhancedGanttChart({ currentWeek, totalWeeks, phases }: Enhanced
           axisFormat: 'Week %W',
         }
       });
-      
-      containerRef.current.innerHTML = getFilteredChart();
-      mermaid.contentLoaded();
+
+      const id = `enhanced-gantt-${Math.random().toString(36).slice(2)}`;
+      const { svg } = await mermaid.render(id, getFilteredChart());
+      if (!cancelled && containerRef.current) {
+        containerRef.current.innerHTML = svg;
+      }
     }
+
+    renderChart().catch((error) => {
+      if (containerRef.current) {
+        containerRef.current.textContent = `Unable to render timeline: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [filters, showMilestones]);
 
   const toggleFilter = (id: string) => {
@@ -462,9 +481,7 @@ export function EnhancedGanttChart({ currentWeek, totalWeeks, phases }: Enhanced
 
           {/* Mermaid Chart */}
           <div className="overflow-x-auto">
-            <div ref={containerRef} className="mermaid min-w-[1200px] animate-fade-in">
-              {getFilteredChart()}
-            </div>
+            <div ref={containerRef} className="min-w-[1200px] animate-fade-in" />
           </div>
         </div>
       </Card>

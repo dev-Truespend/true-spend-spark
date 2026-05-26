@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Capacitor } from '@capacitor/core';
+import { getCapacitorPlatform, isCapacitorNative } from '@/shared/lib/platform/capacitor';
 
 export type PlatformType = 'web' | 'mobile' | 'extension' | 'ios' | 'android';
 
@@ -63,8 +63,8 @@ function detectPlatform(): PlatformInfo {
                      (window as any).chrome.runtime.id !== undefined;
 
   // Check if running as native app via Capacitor
-  const isNative = Capacitor.isNativePlatform();
-  const nativePlatform = Capacitor.getPlatform(); // 'ios' | 'android' | 'web'
+  const isNative = isCapacitorNative();
+  const nativePlatform = getCapacitorPlatform(); // 'ios' | 'android' | 'web'
 
   // Check if mobile viewport (width < 768px)
   const isMobileViewport = typeof window !== 'undefined' && window.innerWidth < 768;

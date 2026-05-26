@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Capacitor } from '@capacitor/core';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -19,11 +18,12 @@ import { pushNotificationService } from '@/features/notifications/services/pushN
 import { nativeGeofencingService } from '@/features/location/services/nativeGeofencingService';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { toast } from '@/shared/hooks/use-toast';
+import { getCapacitorPlatform, isCapacitorNative } from '@/shared/lib/platform/capacitor';
 
 export function NativeFeatureTestPanel() {
   const { user } = useAuth();
-  const isNative = Capacitor.isNativePlatform();
-  const platform = Capacitor.getPlatform();
+  const isNative = isCapacitorNative();
+  const platform = getCapacitorPlatform();
   
   const [gpsEnabled, setGpsEnabled] = useState(false);
   const [pushToken, setPushToken] = useState<string | null>(null);
