@@ -61,6 +61,7 @@ import ConfirmEmailChange from "@/features/auth/pages/ConfirmEmailChange";
 import Transactions from "@/features/transactions/pages/Transactions";
 import Budgets from "@/features/budgets/pages/Budgets";
 import Insights from "@/features/insights/pages/Insights";
+import Recommendations from "@/features/recommendations/pages/Recommendations";
 import CreditCards from "@/features/credit-cards/pages/CreditCards";
 import LocationHistory from "@/features/location/pages/LocationHistory";
 import FavoriteMerchants from "@/features/merchants/pages/FavoriteMerchants";
@@ -220,7 +221,8 @@ function App() {
                     <Route path="/credit-cards"    element={<ProtectedRoute><CreditCards /></ProtectedRoute>} />
                     <Route path="/transactions"    element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
                     <Route path="/budgets"         element={<ProtectedRoute><Budgets /></ProtectedRoute>} />
-                    <Route path="/insights"        element={<ProtectedRoute requirePro><Insights /></ProtectedRoute>} />
+                    <Route path="/insights"         element={<ProtectedRoute requirePro><Insights /></ProtectedRoute>} />
+                    <Route path="/recommendations"  element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
                     <Route path="/location-history" element={<ProtectedRoute><LocationHistory /></ProtectedRoute>} />
                     <Route path="/favorites"       element={<ProtectedRoute><FavoriteMerchants /></ProtectedRoute>} />
                     <Route path="/settings"         element={<ProtectedRoute><Settings /></ProtectedRoute>} />
