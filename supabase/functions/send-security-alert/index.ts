@@ -11,6 +11,12 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return 'invalid-email';
+  return `${local.slice(0, 2)}***@${domain}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -42,7 +48,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!profile) {
-      console.log(`Security alert for non-existent email: ${email}`);
+      console.log(`Security alert requested for unavailable account`, { email: maskEmail(email) });
       return new Response(
         JSON.stringify({ success: false, error: 'User not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -73,7 +79,7 @@ Deno.serve(async (req) => {
   if (emailError) {
     console.error(`❌ [${requestId}] Security alert email failed:`, {
       error: emailError,
-      to: email
+      to: maskEmail(email)
     });
     return new Response(
       JSON.stringify({ success: false, error: 'Failed to send email', request_id: requestId }),
@@ -81,7 +87,7 @@ Deno.serve(async (req) => {
     );
   }
 
-    console.log(`✅ [${requestId}] Security alert sent to:`, email);
+    console.log(`✅ [${requestId}] Security alert sent`, { to: maskEmail(email) });
 
     // Log email delivery
     const { data: userProfile } = await supabase

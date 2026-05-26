@@ -100,7 +100,10 @@ serve(async (req) => {
 
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
-    console.log(`Location token signed for user ${user.id} at (${lat}, ${lng})`);
+    console.log(`Location token signed`, {
+      userId: user.id,
+      accuracyBucketMeters: Math.ceil(accuracy / 50) * 50,
+    });
 
     return new Response(
       JSON.stringify({ 

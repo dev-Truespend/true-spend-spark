@@ -62,7 +62,10 @@ serve(async (req) => {
       });
     }
 
-    console.log('[Deal Notifications] Checking deals near:', latitude, longitude);
+    console.log('[Deal Notifications] Checking nearby deals', {
+      userId: user.id,
+      radiusMiles,
+    });
 
     // Get user's favorite merchants
     const { data: favorites } = await supabase

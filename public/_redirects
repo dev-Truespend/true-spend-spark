@@ -1,0 +1,24 @@
+# Cloudflare Pages SPA deep-link fallbacks.
+# Cloudflare Pages already handles SPAs when no top-level 404.html exists,
+# but these explicit route rewrites make the intended production routes clear
+# and avoid rewriting static assets.
+
+/auth/* /index.html 200
+/forgot-password /index.html 200
+/reset-password /index.html 200
+/verify-email /index.html 200
+/confirm-email-change /index.html 200
+/onboarding /index.html 200
+/dashboard /index.html 200
+/launcher /index.html 200
+/credit-cards /index.html 200
+/transactions /index.html 200
+/budgets /index.html 200
+/insights /index.html 200
+/location-history /index.html 200
+/favorites /index.html 200
+/settings /index.html 200
+/settings/* /index.html 200
+/admin /index.html 200
+/admin/* /index.html 200
+/legal/* /index.html 200

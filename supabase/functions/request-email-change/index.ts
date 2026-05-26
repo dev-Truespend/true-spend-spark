@@ -9,6 +9,17 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return 'invalid-email';
+  return `${local.slice(0, 2)}***@${domain}`;
+}
+
+function appUrl(): string {
+  const url = Deno.env.get('APP_URL') || Deno.env.get('FRONTEND_URL') || Deno.env.get('SITE_URL') || 'https://truespend.org';
+  return url.replace(/\/+$/, '');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -88,8 +99,7 @@ serve(async (req) => {
       throw updateError;
     }
 
-    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://truespend.org';
-    const verificationUrl = `${frontendUrl}/confirm-email-change?token=${emailChangeToken}`;
+    const verificationUrl = `${appUrl()}/confirm-email-change?token=${emailChangeToken}`;
     
     // Send confirmation email to NEW email
     const newEmailHtml = `
@@ -141,7 +151,11 @@ serve(async (req) => {
       html: oldEmailHtml,
     });
 
-    console.log(`Email change requested: ${profile.email} -> ${newEmail}`);
+    console.log('Email change requested', {
+      from: maskEmail(profile.email),
+      to: maskEmail(newEmail),
+      userId: user.id,
+    });
 
     return new Response(
       JSON.stringify({ 

@@ -8,7 +8,10 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit --pretty false",
+    "audit:prod": "npm audit --omit=dev --audit-level=moderate",
+    "verify": "npm run typecheck && npm run build && npm run audit:prod"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",
