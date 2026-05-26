@@ -1,11 +1,21 @@
-import { Capacitor } from '@capacitor/core';
-import {
-  PushNotifications,
+import type {
   Token,
   PushNotificationSchema,
   ActionPerformed,
 } from '@capacitor/push-notifications';
 import { supabase } from '@/integrations/supabase/client';
+import { getCapacitorPlatform, isCapacitorNative } from '@/shared/lib/platform/capacitor';
+
+type PushNotificationsModule = typeof import('@capacitor/push-notifications');
+
+let pushNotificationsModulePromise: Promise<PushNotificationsModule> | null = null;
+
+async function getPushNotifications() {
+  if (!pushNotificationsModulePromise) {
+    pushNotificationsModulePromise = import('@capacitor/push-notifications');
+  }
+  return pushNotificationsModulePromise;
+}
 
 export interface PushNotificationService {
   isSupported: boolean;
@@ -16,7 +26,7 @@ export interface PushNotificationService {
 }
 
 class NativePushNotificationService implements PushNotificationService {
-  public readonly isSupported = Capacitor.isNativePlatform();
+  public readonly isSupported = isCapacitorNative();
   private listeners: (() => void)[] = [];
 
   async register(): Promise<string | null> {
@@ -26,6 +36,8 @@ class NativePushNotificationService implements PushNotificationService {
     }
 
     try {
+      const { PushNotifications } = await getPushNotifications();
+
       // Request permission
       const result = await PushNotifications.requestPermissions();
       
@@ -80,6 +92,8 @@ class NativePushNotificationService implements PushNotificationService {
   async addListeners(): Promise<void> {
     if (!this.isSupported) return;
 
+    const { PushNotifications } = await getPushNotifications();
+
     // Registration success
     const registrationListener = await PushNotifications.addListener(
       'registration',
@@ -90,7 +104,7 @@ class NativePushNotificationService implements PushNotificationService {
           if (!user) return;
 
           // Store token in database
-          const platform = Capacitor.getPlatform();
+          const platform = getCapacitorPlatform();
           await supabase.from('user_devices').upsert({
             user_id: user.id,
             fcm_token: token.value,

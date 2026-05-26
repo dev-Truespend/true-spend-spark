@@ -1,6 +1,10 @@
-export { SpendingHeatmap } from './SpendingHeatmap';
-export { MerchantDiscoveryCard } from './MerchantDiscoveryCard';
-export { DealNotification, showDealNotification, useDealNotifications } from './DealNotification';
-export { MapGeofenceCreator } from './MapGeofenceCreator';
+export { CacheAnalyticsDashboard } from './CacheAnalyticsDashboard';
+export { GeofenceDebugger } from './GeofenceDebugger';
 export { LocationCSVExport } from './LocationCSVExport';
 export { LocationTutorial } from './LocationTutorial';
+export { MerchantDiscoveryCard } from './MerchantDiscoveryCard';
+export { NativeFeatureTestPanel } from './NativeFeatureTestPanel';
+export { TelemetryDashboard } from './TelemetryDashboard';
+export { SpendingHeatmap } from './SpendingHeatmap';
+export { MapGeofenceCreator } from './MapGeofenceCreator';
+export { DealNotification, showDealNotification, useDealNotifications } from './DealNotification';

@@ -1,10 +1,18 @@
 // @ts-nocheck -- TODO: fix strictNullChecks errors
-import { Capacitor } from '@capacitor/core';
-import { BackgroundGeolocationPlugin, Location } from '@capacitor-community/background-geolocation';
-import { registerPlugin } from '@capacitor/core';
-
-const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation');
+import type { BackgroundGeolocationPlugin, Location } from '@capacitor-community/background-geolocation';
 import { supabase } from '@/integrations/supabase/client';
+import { isCapacitorNative } from '@/shared/lib/platform/capacitor';
+
+let backgroundGeolocationPromise: Promise<BackgroundGeolocationPlugin> | null = null;
+
+async function getBackgroundGeolocation(): Promise<BackgroundGeolocationPlugin> {
+  if (!backgroundGeolocationPromise) {
+    backgroundGeolocationPromise = import('@capacitor/core').then(({ registerPlugin }) =>
+      registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation')
+    );
+  }
+  return backgroundGeolocationPromise;
+}
 
 export interface Geofence {
   id: string;
@@ -26,7 +34,7 @@ export interface GeofenceEvent {
 }
 
 class NativeGeofencingService {
-  public readonly isSupported = Capacitor.isNativePlatform();
+  public readonly isSupported = isCapacitorNative();
   private watcherId: string | null = null;
   private activeGeofences: Map<string, Geofence> = new Map();
   private insideGeofences: Set<string> = new Set();
@@ -45,6 +53,8 @@ class NativeGeofencingService {
     }
 
     try {
+      const BackgroundGeolocation = await getBackgroundGeolocation();
+
       // Load user's geofences from database
       await this.loadGeofences(userId);
 
@@ -82,6 +92,7 @@ class NativeGeofencingService {
     if (!this.isSupported || !this.watcherId) return;
 
     try {
+      const BackgroundGeolocation = await getBackgroundGeolocation();
       await BackgroundGeolocation.removeWatcher({ id: this.watcherId });
       this.watcherId = null;
       this.activeGeofences.clear();

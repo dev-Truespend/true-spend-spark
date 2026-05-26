@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import mermaid from 'mermaid';
 
 interface MermaidGanttProps {
   chart: string;
@@ -9,8 +8,15 @@ export function MermaidGantt({ chart }: MermaidGanttProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (containerRef.current) {
-      mermaid.initialize({ 
+    let cancelled = false;
+
+    async function renderChart() {
+      if (!containerRef.current) return;
+
+      const { default: mermaid } = await import('mermaid');
+      if (cancelled || !containerRef.current) return;
+
+      mermaid.initialize({
         startOnLoad: true,
         theme: 'default',
         gantt: {
@@ -19,20 +25,28 @@ export function MermaidGantt({ chart }: MermaidGanttProps) {
           axisFormat: '%W',
         }
       });
-      
-      // Clear previous content
-      containerRef.current.innerHTML = chart;
-      
-      // Render mermaid
-      mermaid.contentLoaded();
+
+      const id = `mermaid-gantt-${Math.random().toString(36).slice(2)}`;
+      const { svg } = await mermaid.render(id, chart);
+      if (!cancelled && containerRef.current) {
+        containerRef.current.innerHTML = svg;
+      }
     }
+
+    renderChart().catch((error) => {
+      if (containerRef.current) {
+        containerRef.current.textContent = `Unable to render chart: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [chart]);
 
   return (
     <div className="overflow-x-auto p-4">
-      <div ref={containerRef} className="mermaid min-w-[1200px]">
-        {chart}
-      </div>
+      <div ref={containerRef} className="min-w-[1200px]" />
     </div>
   );
 }
