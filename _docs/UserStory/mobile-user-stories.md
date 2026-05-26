@@ -1,0 +1,332 @@
+# Mobile User Stories
+
+This document follows the current mobile mockup in `_docs/MobileApp-Mockup/index.html`.
+Stories are grouped only by delivery phase, not by Basic or Pro tier.
+
+## Phase 1 User Stories
+
+Phase 1 covers screens `1.1` through `8.5`: auth, onboarding, in-store recommendations, cards, the Insights tab, notifications, profile, billing, privacy, and sync.
+
+### 1. Sign In
+
+- User can see the TrueSpend splash screen when opening the mobile app (`1.1`)
+- User can start sign-in from the welcome screen (`1.2`)
+- User can sign in with Apple from the mobile app (`1.2`)
+- User can sign in with Google from the mobile app (`1.2`)
+- User can sign in with phone OTP from the mobile app (`1.2`, `1.3`)
+- User can sign in with email OTP from the mobile app (`1.2`, `1.3`)
+- User can create a new passwordless account (`1.2`, `1.3`)
+- User can stay signed in across app restarts
+- User can be redirected to onboarding after first sign-in
+- User can be redirected to the home recommendation screen after onboarding
+- User can recover from expired authentication
+- User can complete email OTP deep links from mobile
+- User can complete OAuth callback deep links from mobile
+- User can use app navigation after returning from external auth
+
+### 2. Onboarding, Linking, Plan Selection
+
+- User can understand why TrueSpend needs card information during onboarding (`2.1`)
+- User can connect a bank with Plaid during onboarding (`2.1`, `2.2`)
+- User can search for a bank during Plaid onboarding (`2.2`)
+- User can pick a supported bank from common bank options (`2.2`)
+- User can cancel bank selection during onboarding (`2.2`)
+- User can understand that Plaid access is read-only (`2.1`, `5.4`)
+- User can complete Plaid bank authorization
+- User can see connected cards after Plaid linking succeeds (`5.1`)
+- User can see an error when Plaid linking fails
+- User can retry Plaid linking after a failure
+- User can reconnect a bank when Plaid requires re-authentication (`5.4`, `8.5`)
+- User can disconnect a Plaid institution from the app (`5.4`)
+- User can choose to add cards manually instead of using Plaid (`2.1`, `2.3`)
+- User can enter a card issuer manually from a catalog-backed dropdown (`2.3`)
+- User can select a card product manually from a catalog-backed dropdown (`2.3`)
+- User can add a custom nickname for a manually added card (`2.3`)
+- User can add the last four digits for a manually added card (`2.3`)
+- User can add a card without entering a full card number (`2.3`)
+- User can set a manually added card as primary (`2.3`)
+- User can skip card connection and continue onboarding (`2.3`)
+- User can understand why TrueSpend needs location permission (`2.4`)
+- User can allow location access while using the app (`2.4`)
+- User can allow location access once (`2.4`)
+- User can deny location access and still continue with limited features (`2.4`)
+- User can recover from missing permissions
+- User can pick a Basic or Pro plan during onboarding (`2.5`)
+- User can switch between monthly and annual billing during plan selection (`2.5`)
+- User can start a 7-day trial from the selected plan (`2.5`)
+- User can understand when billing starts and that cancellation is available (`2.5`)
+- User can enable notifications during onboarding (`2.6`)
+- User can finish onboarding and continue to the home screen (`2.6`)
+
+### 3. Home And In-Store Recommendations
+
+- User can see a personalized home empty state when no cards are connected (`3.1`)
+- User can add a card from the home empty state (`3.1`)
+- User can connect a bank from the home empty state (`3.1`)
+- User can see plan or upgrade guidance from the home empty state (`3.1`)
+- User can get a clear single-card recommendation at a single-category merchant (`3.2`)
+- User can see the current detected merchant when shopping in person (`3.2`, `3.3`, `3.4`)
+- User can see the best card recommendation for the detected merchant (`3.2`, `3.3`, `3.4`)
+- User can see expected rewards value for the recommended card (`3.2`, `3.3`, `3.4`)
+- User can see why the recommended card is better than other cards (`3.2`)
+- User can see runner-up card options for the current purchase (`3.4`)
+- User can see the last four digits of the recommended card (`3.2`, `3.3`, `3.4`)
+- User can refresh the current merchant recommendation (`3.2`)
+- User can access quick actions from the home screen (`3.1`, `3.3`)
+- User can get a smart default category at a multi-category merchant based on transaction history (`3.3`)
+- User can change the suggested category at a multi-category merchant (`3.3`, `3.4`)
+- User can see the recommendation update after selecting a category (`3.3`, `3.4`)
+- User can compare electronics recommendations at a store (`3.3`, `3.4`)
+- User can compare grocery recommendations at a store (`3.3`, `3.4`)
+- User can compare clothing recommendations at a store (`3.3`, `3.4`)
+- User can compare home goods recommendations at a store (`3.3`, `3.4`)
+- User can compare beauty recommendations at a store (`3.3`, `3.4`)
+- User can compare dining or cafe recommendations at a store (`3.3`)
+- User can see a coverage warning when merchant category coding may be uncertain (`3.4`)
+- User can open card details from an in-store recommendation
+- User can receive a lock-screen card nudge (`3.5`)
+- User can navigate from a lock-screen nudge into the related recommendation (`3.5`)
+
+### 5. Cards Tab
+
+- User can view all linked and manually added cards (`5.1`)
+- User can see card visuals with issuer and product names (`5.1`)
+- User can see the last four digits of each card (`5.1`)
+- User can see whether a card was added manually or through Plaid (`5.1`, `5.2`)
+- User can see card sync status (`5.1`, `5.4`)
+- User can see when card linking limits have been reached (`5.1`)
+- User can see upgrade guidance when more links require a higher plan (`5.1`, `5.3`, `8.3`)
+- User can be redirected to billing when opening a higher-plan feature (`5.1`, `5.3`, `8.3`)
+- User can open a card detail screen (`5.2`)
+- User can view reward multipliers for a card (`5.2`)
+- User can view card terms relevant to recommendations (`5.2`)
+- User can view monthly reward contribution for a card (`5.2`)
+- User can edit reward rules for a card (`5.2`)
+- User can remove a card (`5.2`)
+- User can see a cards empty state when no cards are connected (`5.3`)
+- User can add a manual card from the cards empty state (`5.3`)
+- User can browse the card catalog from the cards empty state (`5.3`)
+- User can understand Basic linking limits and Pro unlimited linking (`5.1`, `5.3`, `8.3`)
+- User can start Plaid linking from the cards area (`5.3`, `5.4`)
+- User can view Plaid connection health (`5.4`)
+- User can reconnect a Plaid institution from connection management (`5.4`)
+- User can disconnect a Plaid institution from connection management (`5.4`)
+
+### 6. Insights Tab: Transactions And Analytics
+
+- User can open the Insights tab from bottom navigation (`6.1`, `6.3`)
+- User can switch between Transactions and Insights sub-tabs (`6.1`, `6.3`)
+- User can view recent transactions on mobile (`6.1`)
+- User can see imported transactions after Plaid sync completes (`6.1`)
+- User can distinguish imported transactions from manually tracked or receipt-derived transactions (`6.1`, `6.2`)
+- User can see merchant, amount, card, date, and category for each transaction (`6.1`, `6.2`)
+- User can search transactions by merchant or description (`6.1`)
+- User can filter transactions by category (`6.1`)
+- User can filter transactions by card (`6.1`)
+- User can filter transactions by merchant through search (`6.1`)
+- User can see earned points or cash back for each transaction (`6.1`)
+- User can see missed rewards on a transaction (`6.1`, `6.2`)
+- User can see a missed-rewards callout in transaction history (`6.1`)
+- User can see when a better card could have been used (`6.1`, `6.2`)
+- User can open transaction details (`6.1`, `6.2`)
+- User can navigate from a notification to the related transaction (`7.2`, `6.2`)
+- User can edit a transaction category (`6.2`)
+- User can change the card associated with a transaction (`6.2`)
+- User can delete a transaction (`6.2`)
+- User can open a receipt linked to a transaction (`6.2`)
+- User can see transactions while offline from local cache (`6.1`, `8.5`)
+- User can see pending sync status for offline-created or offline-edited items (`6.1`, `8.5`)
+- User can recover from failed transaction sync (`8.5`)
+- User can see an empty state when no transactions exist
+- User can view rewards earned over week, month, quarter, and year (`6.3`)
+- User can view missed-rewards totals over week, month, quarter, and year (`6.3`)
+- User can compare earned and missed rewards to a prior period (`6.3`)
+- User can see a daily earnings chart (`6.3`)
+- User can see category contribution breakdowns (`6.3`)
+- User can see top missed-reward events (`6.3`)
+- User can open a top missed-reward event from analytics (`6.3`, `6.2`)
+- User can see AI-generated reward optimization insights (`6.3`)
+
+### 7. Notifications
+
+- User can view all notifications in the mobile app (`7.1`)
+- User can filter notifications by all, unread, rewards, or security (`7.1`)
+- User can mark all notifications as read (`7.1`)
+- User can open a notification detail (`7.2`)
+- User can see missed-reward detail from a notification (`7.2`)
+- User can compare the card used and the card that should have been used (`7.2`)
+- User can see how many rewards were captured versus missed (`7.2`)
+- User can set a future reminder from notification detail (`7.2`)
+- User can add a related reminder to the home screen (`7.2`)
+- User can view the related transaction from notification detail (`7.2`)
+- User can mark a missed-reward alert as not a miss (`7.2`)
+- User can enable or disable all notifications with a master setting (`7.3`)
+- User can toggle push notifications (`7.3`)
+- User can toggle email notifications (`7.3`)
+- User can toggle best-card alerts (`7.3`)
+- User can toggle missed-rewards alerts (`7.3`)
+- User can toggle weekly summary notifications (`7.3`)
+- User can toggle budget warning notifications (`7.3`)
+- User can toggle receipt processing notifications (`7.3`)
+- User can toggle unusual transaction notifications (`7.3`)
+- User can receive custom table-driven notifications (`7.1`, `7.3`)
+- User can configure quiet hours for notifications (`7.3`)
+- User can receive credit due-date notifications before a payment is due
+- User can receive balance and credit-limit notifications when thresholds are reached
+- User can receive push notifications on iOS
+- User can receive push notifications on Android
+- User can recover from missing notification permissions
+
+### 8. Profile, Billing, Privacy, Sync
+
+- User can view their profile details (`8.1`)
+- User can see account initials, display name, and email (`8.1`)
+- User can view current plan status (`8.1`, `8.3`)
+- User can navigate to Plaid connection management from profile (`8.1`, `5.4`)
+- User can navigate to cards management from profile (`8.1`, `5.1`)
+- User can view and manage location permission status from profile (`8.1`)
+- User can view camera permission status from profile (`8.1`)
+- User can navigate to notification preferences from profile (`8.1`, `7.3`)
+- User can update display name (`8.2`)
+- User can update phone number (`8.2`)
+- User can update default home location (`8.2`)
+- User can update primary spending currency (`8.2`)
+- User can view connected sign-in methods (`8.2`)
+- User can add phone OTP as a sign-in method (`8.2`)
+- User can enable or disable biometric unlock (`8.2`)
+- User can use biometric unlock when enabled (`8.2`)
+- User can compare Basic and Pro plans from billing settings (`8.3`)
+- User can understand Basic plan limits (`8.3`)
+- User can understand Pro plan benefits (`8.3`)
+- User can upgrade to Pro from billing settings (`8.3`)
+- User can manage an existing subscription from mobile (`8.3`)
+- User can cancel a subscription from billing settings (`8.3`)
+- User can understand annual pricing and savings (`8.3`)
+- User can view payment method details (`8.3`)
+- User can export personal data (`8.4`)
+- User can download location history (`8.4`)
+- User can clear location history (`8.4`)
+- User can control anonymous analytics (`8.4`)
+- User can control personalized AI insights (`8.4`)
+- User can request account deletion (`8.4`)
+- User can cancel pending account deletion (`8.4`)
+- User can see sensitive account actions require confirmation (`8.4`)
+- User can sign out from profile settings (`8.1`)
+- User can open the mobile app while offline (`8.5`)
+- User can view cached data while offline (`8.5`)
+- User can see when data is waiting to sync (`8.5`)
+- User can see when sync succeeds (`8.5`)
+- User can see when sync fails (`8.5`)
+- User can retry failed sync (`8.5`)
+- User can resolve sync conflicts when local and remote data differ (`8.5`)
+
+### Phase 1 Error, Empty, And Loading States
+
+- User can see a loading state during sign-in
+- User can see a loading state while cards sync
+- User can see a loading state while recommendations are generated
+- User can see an empty state when no cards are connected (`3.1`, `5.3`)
+- User can use a primary empty-state action to add a card (`3.1`, `5.3`)
+- User can use a secondary empty-state action to browse the card catalog (`5.3`)
+- User can see recommendation screens show a blocked empty state instead of an error when no cards are added
+- User can see an empty state when no notifications exist
+- User can see an empty state when no recommendations are available
+- User can recover from failed recommendation loading
+- User can see a clear fallback when location permission is denied (`2.4`)
+- User can see a clear fallback when Plaid linking fails
+
+## Phase 2 User Stories
+
+Phase 2 covers the final highlighted mockup block: online purchase helper, receipts & OCR, geofencing management, and budgets.
+
+### P2. Online Purchase Helper
+
+- User can search for an online merchant before checkout (`P2.1`)
+- User can paste a merchant URL before checkout (`P2.1`)
+- User can choose from recent online merchants (`P2.1`)
+- User can choose from popular online merchants (`P2.1`)
+- User can choose a purchase category for an online merchant (`P2.2`)
+- User can use a smart default category for an online merchant (`P2.2`)
+- User can get a recommended card for an online merchant (`P2.3`)
+- User can see expected rewards for an online purchase (`P2.3`)
+- User can see why the online recommendation beats other cards (`P2.3`)
+- User can see alternative cards for the online purchase (`P2.3`)
+- User can open the merchant website from the recommendation result (`P2.3`)
+- User can return from the online recommendation result to search (`P2.3`)
+- User can track an online purchase after choosing a recommended card
+
+### P2. Receipt Scanning And OCR
+
+- User can be prompted for camera permission before receipt scanning
+- User can see a clear fallback when camera permission is denied
+- User can start receipt capture from the mobile app (`P2.4`)
+- User can take a receipt photo with the camera (`P2.4`)
+- User can upload an existing receipt image (`P2.4`)
+- User can see receipt image quality feedback (`P2.4`)
+- User can retry when a receipt image is too blurry
+- User can see upload progress for receipt processing (`P2.5`)
+- User can see OCR processing status (`P2.5`)
+- User can see receipt processing steps (`P2.5`)
+- User can cancel receipt processing (`P2.5`)
+- User can see extracted merchant, amount, date, tax, and category (`P2.6`)
+- User can see line items extracted from a receipt (`P2.6`)
+- User can edit extracted receipt fields before saving (`P2.6`)
+- User can manually enter missing receipt fields (`P2.6`)
+- User can choose the card used for a receipt (`P2.6`)
+- User can save an OCR result as a transaction (`P2.6`)
+- User can see a confirmation step when OCR confidence is low (`P2.6`)
+- User can retake a receipt photo (`P2.6`)
+- User can see a fallback path when OCR fails
+- User can queue receipt-related edits while offline
+- User can receive receipt processing completion notifications
+- User can see a loading state while OCR is processing (`P2.5`)
+- User can recover from failed receipt OCR
+- User can use camera capture on iOS
+- User can use camera capture on Android
+
+### P2. Geofencing Management
+
+- User can enable location-based recommendations for known places (`P2.7`)
+- User can see active geofence zones on a map (`P2.7`)
+- User can see paused or inactive geofence zones (`P2.7`)
+- User can see which card a geofence suggests (`P2.7`)
+- User can pause or resume a geofence (`P2.7`)
+- User can see recent visits tied to geofences (`P2.7`)
+- User can see whether a geofence nudge was followed (`P2.7`)
+- User can view full location history from geofence management (`P2.7`)
+- User can create a geofence from the mobile app (`P2.8`)
+- User can name a geofence (`P2.8`)
+- User can set a geofence address (`P2.8`)
+- User can set a default card suggestion for a geofence (`P2.8`)
+- User can set a geofence radius (`P2.8`)
+- User can choose whether to notify when entering the geofence (`P2.8`)
+- User can tie a geofence to a budget (`P2.8`)
+- User can enable or disable background tracking for a geofence (`P2.8`)
+- User can edit an existing geofence (`P2.8`)
+- User can delete an existing geofence (`P2.8`)
+- User can understand when location tracking is limited by permissions
+- User can continue using non-location features without location access
+- User can use background geofencing on iOS
+- User can use background geofencing on Android
+
+### P2. Budgets
+
+- User can view budget progress on mobile (`P2.9`)
+- User can see current budget status before making a purchase (`P2.9`)
+- User can see whether a category is close to budget (`P2.9`)
+- User can see whether a category is over budget (`P2.9`)
+- User can see budget reset timing (`P2.9`)
+- User can see budgets tied to categories, cards, or places (`P2.9`, `P2.10`)
+- User can receive a budget warning at a merchant (`P2.9`)
+- User can see geofence-linked budget warnings (`P2.8`, `P2.9`)
+- User can create a budget from mobile (`P2.10`)
+- User can edit a budget from mobile (`P2.10`)
+- User can delete a budget from mobile
+- User can set a budget amount (`P2.10`)
+- User can choose whether a budget is weekly, monthly, or quarterly (`P2.10`)
+- User can tie a budget to a category (`P2.10`)
+- User can tie a budget to a place (`P2.10`)
+- User can tie a budget to a card (`P2.10`)
+- User can set budget alert thresholds (`P2.10`)
+- User can receive budget alert notifications (`P2.10`, `7.3`)
+- User can toggle budget alert notifications (`7.3`)
