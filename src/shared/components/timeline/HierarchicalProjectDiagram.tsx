@@ -27,7 +27,7 @@ const BLUEPRINT_PHASES: Phase[] = [
       {
         name: "Project Setup",
         tasks: [
-          { name: "Lovable Cloud Enable", status: "completed" },
+          { name: "Cloudflare/Supabase Hosting", status: "completed" },
           { name: "Environment Variables Setup", status: "completed" },
           { name: "Schema Governance Framework", status: "active" },
           { name: "React Client Layer Setup", status: "pending" },
@@ -167,7 +167,7 @@ const BLUEPRINT_PHASES: Phase[] = [
         tasks: [
           { name: "Budget zone enforcement logic", status: "pending" },
           { name: "Location-based spending alerts", status: "pending" },
-          { name: "Integrate Lovable AI (Gemini 2.5 Flash)", status: "pending" },
+          { name: "Integrate Claude AI Agent", status: "pending" },
           { name: "Build spending pattern analysis", status: "pending" },
           { name: "Merchant proximity validation", status: "pending" },
           { name: "Location Intelligence Complete", status: "milestone" },

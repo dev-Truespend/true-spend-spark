@@ -144,7 +144,7 @@ INSERT INTO milestones (
   'Foundation Complete ✅',
   4,
   'Upcoming',
-  '["Lovable Cloud setup complete", "Database schema deployed", "Storage layer configured", "Client foundation working", "PWA capabilities enabled"]'::jsonb,
+  '["Cloudflare and Supabase setup complete", "Database schema deployed", "Storage layer configured", "Client foundation working", "PWA capabilities enabled"]'::jsonb,
   NOW(), NOW()
 ),
 

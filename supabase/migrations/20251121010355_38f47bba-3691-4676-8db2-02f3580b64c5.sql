@@ -12,14 +12,14 @@ VALUES (
 )
 ON CONFLICT (flag_name) DO NOTHING;
 
--- Server-side OCR fallback (when Lovable AI is rate-limited)
+-- Server-side OCR fallback (when Claude AI agent is rate-limited)
 INSERT INTO public.feature_flags (flag_name, enabled, environment, rollout_percentage, metadata)
 VALUES (
   'hf_server_ocr_fallback',
   false,
   'production',
   0,
-  '{"description": "Enable Hugging Face OCR as fallback when Lovable AI OCR fails or rate-limited", "owner": "ai-team", "fallback_only": true}'::jsonb
+  '{"description": "Enable Hugging Face OCR as fallback when primary AI OCR fails or rate-limited", "owner": "ai-team", "fallback_only": true}'::jsonb
 )
 ON CONFLICT (flag_name) DO NOTHING;
 
@@ -30,6 +30,6 @@ VALUES (
   false,
   'production',
   0,
-  '{"description": "Use Hugging Face as primary OCR provider instead of Lovable AI", "owner": "ai-team", "advanced": true}'::jsonb
+  '{"description": "Use Hugging Face as primary OCR provider instead of the legacy AI provider", "owner": "ai-team", "advanced": true}'::jsonb
 )
 ON CONFLICT (flag_name) DO NOTHING;

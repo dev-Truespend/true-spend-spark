@@ -12,7 +12,7 @@ export interface HFModelConfig {
 export interface CategoryPrediction {
   category: string;
   confidence: number;
-  method: 'hf-client' | 'hf-server' | 'lovable-ai' | 'rule-based';
+  method: 'hf-client' | 'hf-server' | 'ai-agent' | 'rule-based';
 }
 
 export interface HFClientOptions {

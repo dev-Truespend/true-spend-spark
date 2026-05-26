@@ -169,27 +169,28 @@ Noisy Geofences (excluded): ${noisyGeofences.length}
 
 Generate insights.`;
 
-    // Call Lovable AI
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    // Call Claude directly through Anthropic. This legacy compatibility endpoint
+    // remains until location insights are fully routed through ai-agent.
+    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
+    if (!anthropicApiKey) {
+      throw new Error('ANTHROPIC_API_KEY not configured');
     }
 
     console.log('[location-insights-ai] Calling AI model...');
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'x-api-key': anthropicApiKey,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        response_format: { type: 'json_object' },
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1400,
+        temperature: 0.2,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
       }),
     });
 
@@ -207,21 +208,11 @@ Generate insights.`;
         });
       }
       
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ 
-          error: 'AI credits depleted. Please add credits to your workspace.',
-          code: 'CREDITS_DEPLETED'
-        }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
       throw new Error(`AI API error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
-    const content = aiData.choices[0]?.message?.content;
+    const content = aiData.content?.find((part: { type: string }) => part.type === 'text')?.text;
     
     if (!content) {
       throw new Error('No content in AI response');

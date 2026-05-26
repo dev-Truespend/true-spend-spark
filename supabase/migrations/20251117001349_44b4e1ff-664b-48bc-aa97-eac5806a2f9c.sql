@@ -4,7 +4,7 @@
 -- Insert feature flags for Phase 1 features (disabled by default)
 INSERT INTO feature_flags (flag_name, enabled, config) VALUES
   ('offline_storage', false, '{"rollout_percentage": 0, "description": "Enable IndexedDB offline storage and sync"}'),
-  ('ocr_extraction', false, '{"rollout_percentage": 0, "description": "Enable receipt OCR using Lovable AI"}'),
+  ('ocr_extraction', false, '{"rollout_percentage": 0, "description": "Enable receipt OCR using the AI agent"}'),
   ('adaptive_loading', false, '{"rollout_percentage": 0, "description": "Enable network-aware request optimization"}'),
   ('geofencing', false, '{"rollout_percentage": 0, "description": "Enable location-based budgets and alerts"}')
 ON CONFLICT (flag_name) DO UPDATE SET

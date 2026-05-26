@@ -1,133 +1,147 @@
-# Architecture
+# TrueSpend Architecture
 
-## Overview
+## Target Architecture
 
-TrueSpend is a client-rendered SPA backed entirely by Supabase. There is no dedicated application server. All business logic runs either in the browser or in Supabase Edge Functions (Deno runtime).
+TrueSpend is a static React application deployed on Cloudflare Pages. Supabase is the backend: Auth, Postgres, RLS, Storage, Realtime, and Edge Functions.
 
-```
-Browser (React SPA)
-    │
-    ├── Supabase Auth          — JWT session management
-    ├── Supabase PostgREST     — direct table queries (RLS enforced)
-    └── Supabase Edge Functions — BFF layer, AI, webhooks
-            │
-            ├── bff-dashboard              — aggregated dashboard data
-            ├── process-transaction        — create + geofence + rule engine
-            ├── ai-categorize-transaction  — LLM category inference
-            ├── ai-analyze-spending        — spending insights
-            ├── plaid-link-token-create    — Plaid OAuth token
-            ├── plaid-exchange-token       — Plaid access token exchange
-            ├── plaid-webhook              — Plaid transaction sync
-            └── ocr-receipt                — Google Vision → structured data
+```text
+Web / iOS / Android / Chrome Extension
+  -> Cloudflare Pages CDN + WAF
+  -> React app shell
+  -> Supabase Auth for sessions and OAuth
+  -> Supabase Postgres through RLS policies
+  -> Supabase Edge Functions for provider secrets, AI, webhooks, billing
+  -> Plaid, Stripe, Resend, Google Maps, Anthropic
 ```
 
-## Authentication
+There is no separate Node/Express backend. Business logic that needs secrets or strong trust boundaries belongs in Edge Functions. User-specific reads can go directly through Supabase tables only when RLS is active and the query is simple.
 
-- Supabase Auth handles signup, email verification, password reset, and OAuth.
-- Sessions are stored in `localStorage` by the Supabase JS SDK.
-- Protected routes check `useAuth()` and then query `user_roles` for role gating.
-- MFA uses TOTP (stored server-side in `mfa_factors` table).
-- Session expiry warning shown at 4 minutes remaining via `useSessionActivity`.
+## Product Modules
 
-## Row-Level Security
+| Module | Purpose | Status |
+| --- | --- | --- |
+| Marketing site | Home, features, pricing, legal pages | Built; copy should stay reward-agent focused |
+| Auth | Email/password, Google OAuth, reset, verification, MFA UI | Built; needs E2E coverage |
+| Dashboard | User summary, AI nudge, feature entry points | Built; needs final UX polish and seeded-data validation |
+| Transactions | Manual entry, filtering, AI categorization, Plaid data target | Built; should move reads through `bff-transactions` |
+| Budgets | Category budgets and alerts | Built; needs final empty/error states and realistic test data |
+| Credit cards | Card CRUD and Plaid linking | Built; reward editor/catalog must be completed |
+| Recommendations | AI recommendation feed | Initial implementation merged |
+| Insights | Spending analysis through `ai-agent` | Partially migrated; legacy compatibility endpoints remain |
+| Billing | Stripe checkout and portal | Code exists; live Stripe setup pending |
+| Extension | Merchant detection and popup shell | Partial; build/publish pipeline pending |
+| Mobile | Capacitor iOS/Android shell | Partial; native device testing pending |
+| Internal ops | Admin, observability, ML scaffolds | Too large for MVP; should be reduced after launch path is stable |
 
-Every user-owned table (`transactions`, `budgets`, `geofences`, `merchants`, etc.) has RLS policies enforcing `user_id = auth.uid()`. Admin queries bypass RLS only from Edge Functions using the service role key stored in Supabase Vault.
+## AI Agent Design
 
-## Data Flow — Transaction Entry
+The preferred path is one agent endpoint:
 
-```
-User fills form
-    → Transactions.tsx calls bffClient.processTransaction()
-    → Edge Function: process-transaction
-        1. Resolve/create merchant record
-        2. Match against active geofences (PostGIS or app-level Haversine)
-        3. Insert transaction (RLS auto-sets user_id)
-        4. Evaluate budget alert rules
-        5. Fire anomaly detection
-    → React Query invalidates ['transactions'] cache
-    → UI re-renders
-```
-
-## Data Flow — Receipt OCR
-
-```
-User scans receipt (ReceiptCapture component)
-    → Camera/file input → base64 encoded
-    → supabase.functions.invoke('ocr-receipt', { body: { image } })
-    → Edge Function calls Google Vision API
-    → Extracts amount, merchant, date
-    → Returns structured TransactionInput
-    → Pre-fills the Add Transaction form
+```text
+src/shared/hooks/useAIAgent.ts
+  -> supabase.functions.invoke("ai-agent")
+  -> tools query user spending, cards, rewards, budgets
+  -> response returns user-facing text + structured data
 ```
 
-## Data Flow — AI Insights
+Primary intents:
 
+| Intent | User value |
+| --- | --- |
+| `analyze_spending` | Explain recent spending and trends |
+| `best_card_now` | Recommend the best existing card for a merchant/category |
+| `missed_rewards` | Calculate rewards left on the table |
+| `recommend_card_to_apply` | Suggest a card worth applying for based on actual spend |
+| `chat` | Natural-language finance/rewards questions |
+
+Compatibility endpoints such as `ai-analyze-spending`, `ai-categorize-transaction`, and `location-insights-ai` still exist so older UI and server paths do not break. They should be deleted only after all callers are migrated to `ai-agent`.
+
+## Authentication And Navigation
+
+Expected behavior:
+
+| Scenario | Correct result |
+| --- | --- |
+| Logged-out user opens `/dashboard` | Redirect to `/auth` and preserve destination |
+| Successful email login | Redirect to preserved destination or `/dashboard` |
+| Successful Google login | OAuth callback finishes on `/auth`, then redirects to preserved destination |
+| Logged-in user opens `/` | Show marketing home; do not force dashboard |
+| User logs out | Clear only Supabase auth keys and redirect to `/auth` |
+| Browser Back after logout | Protected route re-checks auth and redirects to `/auth` |
+| Non-admin opens `/admin/*` | Redirect to `/dashboard` |
+| Free user opens a premium route | Redirect to `/settings/billing` |
+
+Auth enforcement is layered:
+
+- Frontend: `ProtectedRoute` gates navigation and UI.
+- Database: RLS enforces `auth.uid() = user_id`.
+- Edge Functions: JWT validation and service-role operations scoped to server-side code.
+
+## Data Flow: Card Recommendation
+
+```text
+Plaid imports transactions
+  -> transactions normalized by merchant/category
+  -> cards linked to card catalog and reward categories
+  -> ai-agent compares transaction category + merchant + card reward rules
+  -> recommendation saved in ai_recommendations
+  -> dashboard / recommendations / extension / mobile displays one clear action
 ```
-Insights page mounts / user clicks Refresh
-    → React Query fetches ['spending-analysis', period]
-    → supabase.functions.invoke('ai-analyze-spending', { body: { period } })
-    → Edge Function queries transactions for the period
-    → Calls Claude/OpenAI to generate insights, patterns, recommendations
-    → Returns SpendingAnalysis (cached for 24h by React Query staleTime)
+
+The card catalog should become the source of truth. When the first user adds a card, AI can help parse rewards from trusted source material. After review, that normalized reward structure is reused for later users with the same card.
+
+## Data Flow: Receipt OCR
+
+```text
+Receipt capture
+  -> Supabase Storage image upload
+  -> Google Vision or Claude Vision fallback
+  -> structured merchant/date/amount/category
+  -> user confirms before transaction insert
 ```
 
-## BFF Client (`src/lib/api/bffClient.ts`)
+Receipt parsing must never silently create financial records without a confirmation screen.
 
-A thin wrapper around `supabase.functions.invoke()` that:
-- Attaches `x-request-id` and `x-correlation-id` headers for tracing
-- Enforces a 30-second timeout
-- Wraps all calls in `measureAsync()` for performance telemetry
-- Auto-generates an `idempotency_key` for transaction creation
+## Data Flow: Plaid
 
-## Role System
+```text
+Credit Cards page
+  -> plaid-create-link-token
+  -> Plaid Link
+  -> plaid-exchange-token
+  -> plaid_items / plaid_accounts
+  -> webhook-plaid and plaid-sync-transactions
+  -> transactions
+```
 
-| Role | Access |
-|------|--------|
-| `user` | All consumer pages (dashboard, transactions, budgets, etc.) |
-| `developer` | Above + Monitoring / admin observability |
-| `admin` | Above + full Admin dashboard |
+Remaining production hardening:
 
-Roles are stored in the `user_roles` table. `ProtectedRoute` queries this table on mount when `requireRole` is specified.
+- Cryptographically verify Plaid webhook JWTs.
+- Implement removed transaction handling.
+- Handle pending-to-posted transitions.
+- Add deduplication between manual and Plaid-created transactions.
 
-## Geofencing
+## Deployment Boundaries
 
-Geofences are circles (center lat/lng + radius in meters). Matching uses the Haversine formula computed in the browser (transaction entry) and in the `process-transaction` Edge Function. The `geofence_id` foreign key is set on transactions for location-based budget filtering.
+| Concern | Location |
+| --- | --- |
+| Static app | Cloudflare Pages |
+| CDN/WAF/security headers | Cloudflare |
+| Auth/session/OAuth | Supabase Auth |
+| User data | Supabase Postgres with RLS |
+| Files/receipts | Supabase Storage |
+| AI/provider secrets | Supabase Edge Functions |
+| Payments | Stripe Edge Functions + Stripe dashboard |
+| Email | Resend through Edge Functions |
+| Maps | Google Maps browser key + optional server key |
 
-## Plaid Integration
+## What Not To Add Yet
 
-- `plaid-link-token-create` — creates a Link token; browser opens Plaid Link UI
-- `plaid-exchange-token` — exchanges the public token for an access token (stored encrypted in `plaid_accounts`)
-- `plaid-webhook` — receives Plaid push events (new transactions, auth updates) and syncs to the `transactions` table
-- Card data displayed via `CreditCardGrid` component
+Avoid adding new custom infrastructure before the MVP is stable:
 
-## Performance Monitoring
-
-`src/lib/performance/performanceMonitor.ts` wraps async calls in `performance.mark()` / `performance.measure()`. In production, metrics are surfaced via the admin Observability dashboard.
-
-## Anomaly Detection
-
-Transactions are scored after insertion by the `process-transaction` function (or a separate `anomaly-detector` function). Anomalies land in `anomaly_detections` and surface in the Insights page.
-
-## Security
-
-- CSP headers enforced; violations reported via `CSPViolationReporter`
-- Rate limiting per user enforced in Edge Functions
-- All secrets (API keys, Plaid tokens) stored in Supabase Vault — never in env vars on the function side
-- Audit log written for sensitive actions (role changes, data exports, MFA events)
-- Session activity timeout after inactivity
-
-## Key Database Tables
-
-| Table | Purpose |
-|-------|---------|
-| `profiles` | Extended user info (first_name, status) |
-| `user_roles` | Role assignments |
-| `transactions` | All spending records |
-| `merchants` | Normalised merchant names |
-| `budgets` | Category/period spending limits |
-| `budget_alerts` | Threshold breach events |
-| `geofences` | Location zones |
-| `plaid_accounts` | Linked bank/card accounts |
-| `anomaly_detections` | Flagged unusual transactions |
-| `mfa_factors` | TOTP secrets |
-| `audit_logs` | Security event trail |
+- Custom observability platform
+- Custom ML training pipelines
+- Duplicate BFF endpoints for every page
+- Multiple maps providers
+- Multiple payment processors before Stripe is live
+- New admin pages that are not tied to an operational need

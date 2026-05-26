@@ -1,4 +1,4 @@
-// OCR Service - Receipt text extraction with HF fallback
+// OCR Service - Receipt text extraction with Google Vision and AI fallback
 import { supabase } from '@/integrations/supabase/client';
 import { prepareImageForOCR } from './ocrPreparation';
 
@@ -66,16 +66,16 @@ export async function extractReceiptData(imageBlob: Blob): Promise<OCRResult> {
     } else {
       primaryError = visionError?.message || visionData?.error;
       
-      // Step 5: Fallback to Lovable AI
-      const { data: lovableData, error: lovableError } = await supabase.functions.invoke(
+      // Step 5: Fallback to Claude Vision OCR
+      const { data: aiData, error: aiError } = await supabase.functions.invoke(
         'ocr-process-receipt',
         { body: { imageUrl: urlData.publicUrl } }
       );
 
-      if (!lovableError && lovableData) {
-        ocrResult = lovableData;
+      if (!aiError && aiData) {
+        ocrResult = aiData;
       } else {
-        primaryError = lovableError?.message || lovableData?.error;
+        primaryError = aiError?.message || aiData?.error;
         
         // Step 6: Final fallback to Hugging Face (if enabled)
         const { data: hfFallbackFlag } = await supabase

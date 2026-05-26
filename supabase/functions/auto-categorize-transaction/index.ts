@@ -26,29 +26,22 @@ serve(async (req) => {
 
     const { transactionId, merchantName, description, amount }: CategorizationRequest = await req.json();
 
-    // Use AI to categorize (Lovable AI - no API key needed)
-    const prompt = `Categorize this transaction into ONE of these categories: groceries, dining, transportation, entertainment, shopping, utilities, healthcare, travel, other.
-
-Transaction details:
-- Merchant: ${merchantName || 'Unknown'}
-- Description: ${description || 'N/A'}
-- Amount: $${amount || 0}
-
-Respond with ONLY the category name in lowercase, nothing else.`;
-
+    // Use the AI categorization compatibility endpoint. This function remains for
+    // callers that still expect auto-categorize-transaction.
     const { data: aiResponse, error: aiError } = await supabaseClient.functions.invoke('ai-categorize-transaction', {
       body: {
-        prompt,
-        model: 'google/gemini-2.5-flash-lite', // Fast and cheap for simple classification
+        description: description || merchantName || 'Unknown transaction',
+        merchant_name: merchantName,
+        amount,
       },
     });
 
-    // Check if Lovable AI failed due to rate limiting
+    // Check if the primary AI service failed due to rate limiting.
     const isRateLimited = aiError && (aiError.message?.includes('429') || aiError.message?.includes('rate limit'));
     const isOutOfCredits = aiError && (aiError.message?.includes('402') || aiError.message?.includes('credits'));
 
     if (isRateLimited || isOutOfCredits) {
-      console.log('Lovable AI rate limited or out of credits, trying HF fallback...');
+      console.log('Primary AI categorization service rate limited or out of credits, trying HF fallback...');
       
       // Try Hugging Face as fallback
       const { data: hfResponse, error: hfError } = await supabaseClient.functions.invoke('huggingface-categorize', {
@@ -108,7 +101,8 @@ Respond with ONLY the category name in lowercase, nothing else.`;
       );
     }
 
-    const category = aiResponse?.category || aiResponse?.text?.trim().toLowerCase() || 'other';
+    const category = aiResponse?.data?.category?.toLowerCase() || aiResponse?.category || aiResponse?.text?.trim().toLowerCase() || 'other';
+    const confidence = aiResponse?.data?.confidence || aiResponse?.confidence || 0.8;
     
     // Validate category
     const validCategories = ['groceries', 'dining', 'transportation', 'entertainment', 'shopping', 'utilities', 'healthcare', 'travel', 'other'];
@@ -120,7 +114,7 @@ Respond with ONLY the category name in lowercase, nothing else.`;
         .from('transactions')
         .update({ 
           category: finalCategory,
-          metadata: { auto_categorized: true, method: 'ai', confidence: aiResponse?.confidence || 0.8 }
+          metadata: { auto_categorized: true, method: 'ai', confidence }
         })
         .eq('id', transactionId);
     }
@@ -129,7 +123,7 @@ Respond with ONLY the category name in lowercase, nothing else.`;
       JSON.stringify({ 
         category: finalCategory, 
         method: 'ai',
-        confidence: aiResponse?.confidence || 0.8 
+        confidence
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

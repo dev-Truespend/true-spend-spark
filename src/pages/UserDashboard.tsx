@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { UnverifiedBanner } from "@/components/auth/UnverifiedBanner";
 import { ErrorBoundary } from "@/shared/components/error/ErrorBoundary";
 
@@ -165,25 +164,84 @@ export default function UserDashboard() {
     },
   });
 
-  // ── AI nudge: pull recommendation from cached insights (free ride on Insights page cache) ──
+  // ── AI nudge: ask the agent for one concise monthly action ─────────────
   const aiNudge = useQuery({
     queryKey: ["spending-analysis", "month", user?.id],
     enabled:  !!user,
     staleTime: 60 * 60 * 1000,
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("ai-analyze-spending", {
-        body: { period: "month" },
+      const { data, error } = await supabase.functions.invoke("ai-agent", {
+        body: { intent: "analyze_spending", payload: { period: "month" } },
       });
       if (error) throw error;
-      return data as { recommendations?: string[]; insights?: string[] };
+      return data as { response?: string };
     },
   });
 
-  const nudgeText = aiNudge.data?.recommendations?.[0] ?? aiNudge.data?.insights?.[0] ?? null;
+  const nudgeText = aiNudge.data?.response
+    ?.split("\n")
+    .map((line) => line.replace(/^[-*#\s]+/, "").trim())
+    .find(Boolean)
+    ?.slice(0, 220) ?? null;
 
   // Derived
   const activeBudgetCount = budgets.data?.length ?? null;
   const atRiskCount       = budgets.data?.filter((b) => b.percent >= 80).length ?? 0;
+
+  const primaryAction = useMemo(() => {
+    if (isRestricted) {
+      return {
+        eyebrow: "Account setup",
+        title: "Verify your email to unlock your workspace",
+        description: "Protected finance features stay paused until your account is verified.",
+        to: "/settings",
+        cta: "Open settings",
+        icon: <CheckCircle2 className="h-5 w-5" />,
+      };
+    }
+
+    if (!cardsLoading && cardCount === 0) {
+      return {
+        eyebrow: "Start here",
+        title: "Connect your first card",
+        description: "TrueSpend needs at least one card before it can compare rewards or suggest the best card to use.",
+        to: "/credit-cards",
+        cta: "Add card",
+        icon: <CreditCard className="h-5 w-5" />,
+      };
+    }
+
+    if (!monthStats.isLoading && (monthStats.data?.txCount ?? 0) === 0) {
+      return {
+        eyebrow: "Build your baseline",
+        title: "Add or sync your first transaction",
+        description: "A few transactions give the AI agent enough context to find missed rewards and spending patterns.",
+        to: "/transactions",
+        cta: "Add transaction",
+        icon: <Receipt className="h-5 w-5" />,
+      };
+    }
+
+    if (activeBudgetCount === 0) {
+      return {
+        eyebrow: "Add guardrails",
+        title: "Create one budget for your highest-spend category",
+        description: "Start with one category. You can expand after the dashboard proves useful.",
+        to: "/budgets",
+        cta: "Create budget",
+        icon: <TrendingUp className="h-5 w-5" />,
+      };
+    }
+
+    return {
+      eyebrow: "Next best action",
+      title: "Review your AI recommendations",
+      description: "See where a different card, category rule, or spending habit could improve rewards.",
+      to: "/recommendations",
+      cta: "View recommendations",
+      icon: <Bot className="h-5 w-5" />,
+    };
+  }, [activeBudgetCount, cardCount, cardsLoading, isRestricted, monthStats.data?.txCount, monthStats.isLoading]);
 
   const upcomingBills = useMemo<UpcomingBill[]>(() => {
     const today = new Date();
@@ -254,6 +312,35 @@ export default function UserDashboard() {
             </Button>
           </div>
         </div>
+
+        <Card className="mb-6 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  {primaryAction.icon}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-1">
+                    {primaryAction.eyebrow}
+                  </p>
+                  <h2 className="text-base sm:text-lg font-semibold tracking-tight">
+                    {primaryAction.title}
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+                    {primaryAction.description}
+                  </p>
+                </div>
+              </div>
+              <Button asChild className="gap-2 shrink-0 self-start sm:self-center">
+                <Link to={primaryAction.to}>
+                  {primaryAction.cta}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* ── AI nudge banner ──────────────────────────────────────────── */}
         {nudgeText && (

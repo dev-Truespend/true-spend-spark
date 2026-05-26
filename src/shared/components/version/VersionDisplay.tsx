@@ -13,7 +13,7 @@ export function VersionDisplay() {
     const PREVIEW_FORCE_VERSION = "5.5.5";
     const isPreviewEnv = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV;
 
-    // In Lovable preview/dev, force show the target version to avoid any caching mismatch
+    // In local dev, force show the target version to avoid any caching mismatch.
     if (isPreviewEnv) {
       setVersion(PREVIEW_FORCE_VERSION);
       return;

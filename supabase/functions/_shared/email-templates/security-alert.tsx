@@ -75,7 +75,7 @@ export const SecurityAlertEmail = ({
           <Text style={text}>{content.action}</Text>
           {alertType !== 'password_changed' && (
             <Section style={buttonContainer}>
-              <Button style={button} href={`${Deno.env.get('SITE_URL') || 'https://truespend.lovable.app'}/forgot-password`}>
+              <Button style={button} href={`${Deno.env.get('SITE_URL') || 'https://truespend.org'}/forgot-password`}>
                 Reset Password
               </Button>
             </Section>

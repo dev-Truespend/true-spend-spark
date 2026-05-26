@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
 
     console.log('[Backup Verification] Starting backup health check...');
 
-    // Lovable Cloud provides automatic backups - we verify they're recent
+    // Supabase provides managed backups/PITR on paid plans - verify freshness here.
     const backupStatus: {
       backup_type: string;
       backup_timestamp: Date;

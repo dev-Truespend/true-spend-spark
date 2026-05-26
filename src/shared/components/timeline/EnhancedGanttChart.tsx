@@ -65,7 +65,7 @@ export function EnhancedGanttChart({ currentWeek, totalWeeks, phases }: Enhanced
       chart += `
     section Phase 1: Foundation
     Project Setup & Config           :done, p1_1, 2025-01-01, 7d
-    Lovable Cloud Enable            :done, p1_2, 2025-01-01, 2d
+    Cloudflare/Supabase Hosting     :done, p1_2, 2025-01-01, 2d
     Environment Variables Setup     :done, p1_3, 2025-01-03, 2d
     Schema Governance Framework     :active, p1_4, 2025-01-05, 3d
     React Client Layer Setup        :p1_5, after p1_4, 7d`;
