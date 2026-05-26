@@ -109,6 +109,34 @@ serve(async (req) => {
       };
     }
 
+    // Source-of-truth readiness check
+    if (checkType === 'all' || checkType === 'source-of-truth') {
+      try {
+        const [cards, merchants] = await Promise.all([
+          supabase.from('card_catalog').select('id', { count: 'exact', head: true }).eq('is_active', true),
+          supabase.from('merchant_domains').select('id', { count: 'exact', head: true }).eq('is_verified', true),
+        ]);
+
+        results.checks.sourceOfTruth = {
+          status: (cards.count ?? 0) >= 25 && (merchants.count ?? 0) >= 10 ? 'healthy' : 'degraded',
+          card_catalog_count: cards.count ?? 0,
+          merchant_domain_count: merchants.count ?? 0,
+          card_catalog_error: cards.error?.message,
+          merchant_domain_error: merchants.error?.message,
+        };
+
+        if (cards.error || merchants.error || results.checks.sourceOfTruth.status !== 'healthy') {
+          results.status = 'degraded';
+        }
+      } catch (error) {
+        results.checks.sourceOfTruth = {
+          status: 'unhealthy',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
+        results.status = 'degraded';
+      }
+    }
+
     // Circuit breaker status
     if (checkType === 'all' || checkType === 'circuits') {
       try {

@@ -59,7 +59,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
 
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              Don't worry - your changes are saved offline and will sync when the issue is resolved.
+              Your session is still protected. Refresh the page or try again in a moment.
             </p>
             <p className="text-sm text-muted-foreground">
               You can try:

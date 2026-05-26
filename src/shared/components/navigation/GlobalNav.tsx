@@ -7,7 +7,7 @@ import {
   BarChart3,
   Receipt,
   Sparkles,
-  Bot,
+  Puzzle,
   Activity,
   ShieldCheck,
   RefreshCw,
@@ -21,11 +21,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { VersionDisplay } from '@/components/version/VersionDisplay';
 import { UserProfileDropdown } from '@/components/auth/UserProfileDropdown';
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Logo } from '@/components/brand/Logo';
 import { cn } from '@/shared/lib/utils';
@@ -35,7 +32,8 @@ const navItems = [
   { id: 'credit-cards',     label: 'Cards',        route: '/app/cards',           icon: CreditCard,      roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'transactions',     label: 'Transactions', route: '/app/transactions',    icon: Receipt,         roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'insights',         label: 'Missed Rewards', route: '/app/missed-rewards', icon: Sparkles,       roles: ['user', 'developer', 'admin'], authRequired: true },
-  { id: 'recommendations',  label: 'AI Assistant', route: '/app/recommendations', icon: Bot,             roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'recommendations',  label: 'Recommendations', route: '/app/recommendations', icon: Sparkles,     roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'extension',        label: 'Extension',    route: '/app/extension',       icon: Puzzle,          roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'settings',         label: 'Settings',     route: '/app/settings',        icon: Settings,        roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'monitoring',       label: 'Monitoring',   route: '/admin/observability', icon: Activity,     roles: ['admin'],                    authRequired: true },
   { id: 'admin',            label: 'Admin',        route: '/admin',            icon: ShieldCheck,     roles: ['admin'],                      authRequired: true },
@@ -56,26 +54,10 @@ function shouldHideNav(pathname: string): boolean {
 export function GlobalNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { roles, hasRole } = useUserRole();
+  const { roles } = useUserRole();
   const { user, profile, signOut } = useAuth();
   const [showDebug, setShowDebug] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  // ── Anomaly count for the Insights badge (lightweight count-only query) ──
-  const { data: anomalyCount = 0 } = useQuery({
-    queryKey: ['nav-anomaly-count', user?.id],
-    enabled:  !!user,
-    staleTime: 60_000,
-    refetchInterval: 5 * 60_000, // re-check every 5 min in background
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('anomaly_detections')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending');
-      if (error) return 0;
-      return count ?? 0;
-    },
-  });
 
   // Close the mobile sheet whenever the route changes — otherwise the
   // drawer stays open after a click and feels broken.
@@ -212,10 +194,9 @@ export function GlobalNav() {
             {user && (
               <>
                 <div className="hidden md:flex items-center gap-8">
-                  {accessibleItems.slice(0, 6).map(item => {
+                  {accessibleItems.slice(0, 7).map(item => {
                     const isActive = location.pathname.startsWith(item.route) && item.route !== '/'
                                   || (item.route === '/' && location.pathname === '/');
-                    const showBadge = item.id === 'insights' && anomalyCount > 0;
 
                     return (
                       <Link
@@ -230,11 +211,6 @@ export function GlobalNav() {
                         }`}>
                           {item.label}
                         </span>
-                        {showBadge && (
-                          <span className="absolute -top-1.5 -right-3 h-4 min-w-4 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center px-1">
-                            {anomalyCount > 9 ? '9+' : anomalyCount}
-                          </span>
-                        )}
                         <span className={`absolute -bottom-1 left-0 h-[2px] bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal transition-all duration-300 ${
                           isActive ? 'w-full' : 'w-0 group-hover:w-full'
                         }`}></span>
@@ -282,7 +258,6 @@ export function GlobalNav() {
                       {accessibleItems.map((item) => {
                         const isActive = location.pathname.startsWith(item.route);
                         const Icon = item.icon;
-                        const showBadge = item.id === 'insights' && anomalyCount > 0;
                         return (
                           <Link
                             key={item.id}
@@ -294,11 +269,6 @@ export function GlobalNav() {
                           >
                             <Icon className={cn("h-4 w-4", isActive ? "text-primary" : "text-muted-foreground")} />
                             <span className="flex-1">{item.label}</span>
-                            {showBadge && (
-                              <span className="h-5 min-w-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1.5">
-                                {anomalyCount > 9 ? '9+' : anomalyCount}
-                              </span>
-                            )}
                           </Link>
                         );
                       })}

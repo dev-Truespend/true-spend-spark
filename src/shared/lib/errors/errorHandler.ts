@@ -45,16 +45,6 @@ export class ErrorHandler {
     if (error instanceof Error) {
       const message = error.message.toLowerCase();
 
-      // IndexedDB errors should be classified as SYNC_FAILED, not NETWORK_ERROR
-      if (
-        message.includes('idbdatabase') ||
-        message.includes('indexeddb') ||
-        (message.includes('transaction') && message.includes('closing')) ||
-        error.name === 'InvalidStateError'
-      ) {
-        return 'SYNC_FAILED';
-      }
-
       // Network errors (more specific to avoid false positives)
       if (
         !navigator.onLine || // Actual offline state

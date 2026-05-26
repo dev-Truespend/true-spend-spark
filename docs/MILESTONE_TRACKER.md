@@ -2,7 +2,7 @@
 
 > Last reviewed from source code: 2026-05-26
 > Canonical build strategy: [`BUILD_PLAN.md`](../BUILD_PLAN.md)
-> Current implementation status: AI-agent rebuild is underway, not production complete.
+> Current implementation status: source-of-truth rewards MVP is underway, not production complete.
 
 ## Executive Status
 
@@ -13,8 +13,10 @@
 | Dashboard | Built | Needs final AI-agent/rewards-first UX |
 | Transactions | Built | Needs `bff-transactions` adoption and pagination validation |
 | Budgets | Built | Needs seeded-data validation and empty/error state pass |
-| Credit cards | Built | Needs card rewards catalog/editor completion |
-| AI agent | Initial implementation | Needs all legacy AI callers migrated |
+| Credit cards | Source-of-truth flow built | Needs seeded DB verification and UX testing |
+| Source-of-truth catalog | Built | Needs migrations applied in Supabase and admin review |
+| Rewards engine | Built | Needs deployed Edge Function smoke test with real user cards |
+| AI agent | Deferred helper | Must not be source of truth for reward math |
 | Recommendations | Initial implementation | Needs best-card and missed-rewards persistence across flows |
 | Stripe billing | Code exists | Needs live products, secrets, webhook replay |
 | Plaid | Partially implemented | Needs webhook hardening and transaction lifecycle coverage |
@@ -46,15 +48,20 @@
 | Create rewards schema | ✅ Started | `supabase/migrations/20260526001300_rewards_foundation.sql` |
 | Add recommendation feed schema | ✅ Started | Same migration |
 | Add Recommendations page | ✅ Started | `src/features/recommendations/pages/Recommendations.tsx` |
-| Add card catalog seed for top cards | ❌ Pending | Required before reliable card matching |
-| Add rewards editor for user confirmation | ❌ Pending | Needed so users can correct AI/card-catalog data |
-| Show reward highlights on card tiles/details | ❌ Pending | Needed for user trust |
+| Add card catalog seed for top cards | ✅ Built | `20260526090004_seed_initial_catalog.sql` seeds 26 cards as `needs_review` |
+| Add merchant domain seed | ✅ Built | `20260526090005_seed_merchant_domains.sql` seeds 10 verified domains |
+| Add deterministic rewards engine | ✅ Built | `supabase/functions/rewards-engine/index.ts` |
+| Add browser-extension suggestion endpoint | ✅ Built | `supabase/functions/extension-card-suggest/index.ts`; stores domain only |
+| Add rewards editor for user confirmation | ✅ Built | `/app/cards/:id/rewards`, `card-update-reward-overrides` |
+| Show reward highlights on card tiles/details | 🟡 Partial | Card detail shows catalog rules; list tiles still intentionally compact |
+| Add admin catalog review flow | ✅ Built | `/app/admin/catalog`, `/app/admin/catalog/review` |
+| Add validation scripts | ✅ Built | `scripts/validate-*` |
 
-**Gate to pass:** a linked/added card is matched to catalog rewards and the user can review/edit those rewards.
+**Gate to pass:** apply migrations in Supabase, add a real user card, run Amazon extension validation, and confirm admin review is role-gated.
 
-## Phase 2 — AI Agent Core
+## Phase 2 — AI Explanation Layer
 
-**Goal:** Route recommendations and insights through one agent instead of many one-off AI functions.
+**Goal:** Use AI only for explanation, summaries, and draft extraction after deterministic recommendations work.
 
 | Task | Status | Evidence / Notes |
 | --- | --- | --- |
@@ -64,11 +71,11 @@
 | Route dashboard AI nudge through agent | ✅ Started | `src/pages/UserDashboard.tsx` |
 | Keep compatibility endpoints while migrating | ✅ Done | Legacy endpoints now call Claude/fallback paths |
 | Add AI cost guardrails | ✅ Done | Per-user rate limits, cache table, fast/agent model routing, deterministic fallback |
-| Route transaction anomaly/best-card checks through agent | ❌ Pending | Required for real-time value |
+| Keep reward math out of AI | ✅ Built | `rewards-engine` is deterministic and documented |
 | Persist agent outputs consistently | 🟡 Partial | Recommendations page exists; all flows not wired |
 | Add chat UI | ❌ Pending | Needed for full co-pilot experience |
 
-**Gate to pass:** user can ask "what is my best card for this purchase?" and get a correct answer based on their cards and recent spend.
+**Gate to pass:** user can ask "why this card?" and AI explains the already-computed deterministic result without changing catalog data.
 
 ## Phase 3 — Website Experience
 
@@ -137,9 +144,9 @@
 
 ## Current Top Priorities
 
-1. Finish reward catalog and rewards editor.
-2. Route all recommendations and insights through `ai-agent`.
-3. Harden Plaid webhooks and transaction deduplication.
-4. Configure live Stripe and run webhook replay tests.
-5. Deploy staging to Cloudflare Pages and run auth/navigation E2E tests.
-6. Continue simplifying internal/admin observability after MVP flows are verified.
+1. Apply and verify the source-of-truth migrations in Supabase.
+2. Regenerate Supabase TypeScript types after migrations.
+3. Run validation scripts with real test JWTs.
+4. Harden Plaid webhooks and transaction deduplication.
+5. Configure live Stripe and run webhook replay tests.
+6. Deploy staging to Cloudflare Pages and run auth/navigation E2E tests.

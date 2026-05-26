@@ -15,6 +15,84 @@ Content-Type: application/json
 
 Provider webhooks use provider signatures instead of a user JWT.
 
+## Source-Of-Truth Rewards Endpoints
+
+These endpoints are the MVP path for card portfolio setup and browser-extension recommendations. They use Supabase JWT auth and never trust `user_id` from the request body.
+
+### `card-search`
+
+Searches active `card_catalog` rows.
+
+```json
+{ "query": "amex gold" }
+```
+
+### `card-add-user-card`
+
+Adds a catalog card to the authenticated user's portfolio.
+
+```json
+{
+  "card_catalog_id": "uuid",
+  "display_name": "Amex Gold",
+  "last4": "1234"
+}
+```
+
+### `card-update-reward-overrides`
+
+Stores user-confirmed reward overrides.
+
+```json
+{
+  "user_credit_card_id": "uuid",
+  "overrides": [
+    { "category": "dining", "reward_rate": 4, "reward_unit": "points_per_dollar" }
+  ]
+}
+```
+
+### `merchant-resolve`
+
+Resolves a domain to `merchant_domains`. Unknown domains return `status = unknown`; AI classification is intentionally not called in this phase.
+
+```json
+{ "domain": "amazon.com", "page_title": "Amazon" }
+```
+
+### `rewards-engine`
+
+Deterministically ranks the authenticated user's active cards.
+
+```json
+{
+  "merchant_name": "Amazon",
+  "domain": "amazon.com",
+  "normalized_category": "shopping",
+  "amount_cents": 5000
+}
+```
+
+### `extension-card-suggest`
+
+Main browser-extension endpoint. It stores domain-only extension events and returns the best card plus alternatives.
+
+```json
+{
+  "domain": "amazon.com",
+  "page_title": "Amazon",
+  "page_intent": "product",
+  "amount_cents": 5000
+}
+```
+
+### Admin Catalog Endpoints
+
+- `admin-catalog-create-card`
+- `admin-catalog-review-update`
+
+Both require `profiles.role = admin` before service-role writes occur.
+
 ## Standard Error Shape
 
 ```json

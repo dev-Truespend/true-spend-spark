@@ -1,0 +1,10 @@
+CREATE UNIQUE INDEX IF NOT EXISTS idx_card_catalog_slug ON public.card_catalog(card_slug);
+CREATE INDEX IF NOT EXISTS idx_card_catalog_issuer ON public.card_catalog(issuer);
+CREATE INDEX IF NOT EXISTS idx_card_reward_rules_card_category ON public.card_reward_rules(card_catalog_id, category);
+CREATE INDEX IF NOT EXISTS idx_user_credit_cards_user ON public.user_credit_cards(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_overrides_card ON public.user_card_reward_overrides(user_credit_card_id);
+CREATE INDEX IF NOT EXISTS idx_merchant_domains_domain ON public.merchant_domains(domain);
+CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON public.transactions(user_id, transaction_date DESC);
+CREATE INDEX IF NOT EXISTS idx_transactions_user_category ON public.transactions(user_id, normalized_category);
+CREATE INDEX IF NOT EXISTS idx_ai_recommendations_user_status ON public.ai_recommendations(user_id, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_extension_events_user_domain ON public.extension_events(user_id, domain, created_at DESC);

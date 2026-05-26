@@ -53,7 +53,14 @@ import Transactions from "@/features/transactions/pages/Transactions";
 import Budgets from "@/features/budgets/pages/Budgets";
 import Insights from "@/features/insights/pages/Insights";
 import Recommendations from "@/features/recommendations/pages/Recommendations";
-import CreditCards from "@/features/credit-cards/pages/CreditCards";
+import CardsPage from "@/features/cards/pages/CardsPage";
+import NewCardPage from "@/features/cards/pages/NewCardPage";
+import CardDetailPage from "@/features/cards/pages/CardDetailPage";
+import CardRewardsPage from "@/features/cards/pages/CardRewardsPage";
+import ExtensionSetup from "@/features/extension-setup/pages/ExtensionSetup";
+import AdminCatalogPage from "@/features/admin/catalog/pages/AdminCatalogPage";
+import AdminCatalogReviewPage from "@/features/admin/catalog/pages/AdminCatalogReviewPage";
+import ValidationPage from "@/features/debug/pages/ValidationPage";
 import Settings from "@/features/settings/pages/Settings";
 import Billing from "@/features/settings/pages/Billing";
 import Onboarding from "@/features/onboarding/pages/Onboarding";
@@ -207,16 +214,22 @@ function App() {
 
                     {/* Canonical app routes */}
                     <Route path="/app/dashboard"       element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
-                    <Route path="/app/cards"           element={<ProtectedRoute><CreditCards /></ProtectedRoute>} />
-                    <Route path="/app/cards/:id"       element={<ProtectedRoute><CreditCards /></ProtectedRoute>} />
-                    <Route path="/app/cards/:id/rewards" element={<ProtectedRoute><CreditCards /></ProtectedRoute>} />
+                    <Route path="/app/cards"           element={<ProtectedRoute><CardsPage /></ProtectedRoute>} />
+                    <Route path="/app/cards/new"       element={<ProtectedRoute><NewCardPage /></ProtectedRoute>} />
+                    <Route path="/app/cards/:id"       element={<ProtectedRoute><CardDetailPage /></ProtectedRoute>} />
+                    <Route path="/app/cards/:id/rewards" element={<ProtectedRoute><CardRewardsPage /></ProtectedRoute>} />
                     <Route path="/app/transactions"    element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
                     <Route path="/app/recommendations" element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
                     <Route path="/app/missed-rewards"  element={<ProtectedRoute requirePro><Insights /></ProtectedRoute>} />
+                    <Route path="/app/extension"       element={<ProtectedRoute><ExtensionSetup /></ProtectedRoute>} />
                     <Route path="/app/billing"         element={<ProtectedRoute><Billing /></ProtectedRoute>} />
                     <Route path="/app/settings"        element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                     <Route path="/app/settings/security" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                     <Route path="/app/settings/data"   element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/app/admin/catalog"   element={<ProtectedRoute requireRole="admin"><AdminCatalogPage /></ProtectedRoute>} />
+                    <Route path="/app/admin/catalog/review" element={<ProtectedRoute requireRole="admin"><AdminCatalogReviewPage /></ProtectedRoute>} />
+                    <Route path="/app/admin/catalog/:id" element={<ProtectedRoute requireRole="admin"><AdminCatalogPage /></ProtectedRoute>} />
+                    <Route path="/app/debug/validation" element={<ProtectedRoute requireRole="admin"><ValidationPage /></ProtectedRoute>} />
 
                     {/* User app routes */}
                     <Route path="/dashboard"       element={<Navigate to="/app/dashboard" replace />} />
