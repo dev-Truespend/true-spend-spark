@@ -37,11 +37,11 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high
+          args: --severity-threshold=high --sarif-file-output=snyk.sarif
           
       - name: Upload Snyk report
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && hashFiles('snyk.sarif') != ''
         with:
           sarif_file: snyk.sarif
           
