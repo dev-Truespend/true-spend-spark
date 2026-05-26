@@ -30,6 +30,7 @@ import {
   ChevronRight,
   Settings as SettingsIcon,
   MapPin,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -163,6 +164,22 @@ export default function UserDashboard() {
     },
   });
 
+  // ── AI nudge: pull recommendation from cached insights (free ride on Insights page cache) ──
+  const aiNudge = useQuery({
+    queryKey: ["spending-analysis", "month", user?.id],
+    enabled:  !!user,
+    staleTime: 60 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("ai-analyze-spending", {
+        body: { period: "month" },
+      });
+      if (error) throw error;
+      return data as { recommendations?: string[]; insights?: string[] };
+    },
+  });
+
+  const nudgeText = aiNudge.data?.recommendations?.[0] ?? aiNudge.data?.insights?.[0] ?? null;
+
   // Derived
   const activeBudgetCount = budgets.data?.length ?? null;
   const atRiskCount       = budgets.data?.filter((b) => b.percent >= 80).length ?? 0;
@@ -236,6 +253,24 @@ export default function UserDashboard() {
             </Button>
           </div>
         </div>
+
+        {/* ── AI nudge banner ──────────────────────────────────────────── */}
+        {nudgeText && (
+          <div className="mb-6 flex items-start gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+              <Lightbulb className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-0.5">AI insight</p>
+              <p className="text-sm leading-relaxed">{nudgeText}</p>
+            </div>
+            <Link to="/insights" className="shrink-0">
+              <Button variant="ghost" size="sm" className="gap-1 text-primary text-xs">
+                See all <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* ── Metric tiles ─────────────────────────────────────────────── */}
         <ErrorBoundary fallback={<SectionError label="monthly stats" />}>

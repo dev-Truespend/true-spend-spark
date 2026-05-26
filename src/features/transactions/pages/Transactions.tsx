@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import {
   Loader2, Plus, TrendingDown, TrendingUp, MapPin, Camera, Search,
   X as XIcon, ChevronLeft, ChevronRight, Filter, AlertTriangle,
-  Trash2, Receipt as ReceiptIcon,
+  Trash2, Receipt as ReceiptIcon, Sparkles,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -70,7 +70,13 @@ export default function Transactions() {
 
   // ── Dialog state ─────────────────────────────────────────────────────
   const [isAddOpen, setIsAddOpen] = useState(false);
+  // Default to today's date in local YYYY-MM-DD format for the date picker
+  const todayLocal = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  };
   const [newTransaction, setNewTransaction] = useState<Partial<TransactionInput>>({ category: "Other" });
+  const [txDate, setTxDate] = useState<string>(todayLocal());
   const [isCategorizing, setIsCategorizing] = useState(false);
   const [currentGeofence, setCurrentGeofence] = useState<GeofenceRow | null>(null);
   const [isReceiptCaptureOpen, setIsReceiptCaptureOpen] = useState(false);
@@ -155,6 +161,7 @@ export default function Transactions() {
       toast.success('Transaction added');
       setIsAddOpen(false);
       setNewTransaction({ category: "Other" });
+      setTxDate(todayLocal());
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to add transaction');
@@ -209,17 +216,28 @@ export default function Transactions() {
       toast.error('Enter a valid amount');
       return;
     }
-    addTransactionMutation.mutate(newTransaction as TransactionInput);
+    // Build a timestamp: combine the chosen date with current wall-clock time
+    // so same-day ordering is preserved, but the date is accurate
+    const [y, mo, d] = txDate.split('-').map(Number);
+    const now2 = new Date();
+    const ts = new Date(y, mo - 1, d, now2.getHours(), now2.getMinutes(), now2.getSeconds()).toISOString();
+    addTransactionMutation.mutate({ ...newTransaction, timestamp: ts } as TransactionInput);
   };
 
   const handleReceiptExtracted = (tx: {
     amount: number; description: string; merchant?: string; category?: string; timestamp: string;
   }) => {
+    // Pre-fill the date picker with the receipt's date (truncate to YYYY-MM-DD)
+    if (tx.timestamp) {
+      const d = new Date(tx.timestamp);
+      setTxDate(
+        `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+      );
+    }
     setNewTransaction({
       amount:      tx.amount,
       description: tx.description,
       category:    tx.category || 'Other',
-      timestamp:   tx.timestamp,
     });
     setIsReceiptCaptureOpen(false);
     setIsAddOpen(true);
@@ -229,6 +247,12 @@ export default function Transactions() {
   const total      = txQuery.data?.pagination.total ?? 0;
   const totalPages = Math.max(1, txQuery.data?.pagination.totalPages ?? 1);
   const rows       = (txQuery.data?.transactions ?? []) as TxRow[];
+
+  // Page-level spending total (expenses only)
+  const pageTotal = useMemo(
+    () => rows.reduce((sum, tx) => sum + Math.max(0, Number(tx.amount)), 0),
+    [rows]
+  );
 
   const activeFilterCount = useMemo(() => {
     let n = 0;
@@ -256,7 +280,21 @@ export default function Transactions() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Transactions</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {txQuery.isLoading ? "Loading…" : `${total.toLocaleString()} ${total === 1 ? "transaction" : "transactions"}`}
+            {txQuery.isLoading
+              ? "Loading…"
+              : total === 0
+              ? "No transactions"
+              : (
+                <>
+                  {total.toLocaleString()} {total === 1 ? "transaction" : "transactions"}
+                  {rows.length > 0 && pageTotal > 0 && (
+                    <span className="ml-2 text-foreground font-medium">
+                      · <span className="tabular-nums">${pageTotal.toFixed(2)}</span> this page
+                    </span>
+                  )}
+                </>
+              )
+            }
           </p>
         </div>
 
@@ -319,8 +357,12 @@ export default function Transactions() {
                       onClick={handleAICategorize}
                       disabled={isCategorizing || !newTransaction.description}
                       title="Auto-categorize with AI"
+                      className="gap-1.5 shrink-0"
                     >
-                      {isCategorizing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'AI'}
+                      {isCategorizing
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : <Sparkles className="h-4 w-4 text-primary" />}
+                      <span className="hidden sm:inline text-sm">Categorize</span>
                     </Button>
                   </div>
                 </div>
@@ -337,6 +379,17 @@ export default function Transactions() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tx-date">Date</Label>
+                  <Input
+                    id="tx-date"
+                    type="date"
+                    value={txDate}
+                    max={todayLocal()}
+                    onChange={(e) => setTxDate(e.target.value)}
+                    required
+                  />
                 </div>
                 <Button type="submit" className="w-full" disabled={addTransactionMutation.isPending}>
                   {addTransactionMutation.isPending ? (
@@ -540,6 +593,12 @@ export default function Transactions() {
                             <MapPin className="h-3 w-3" />
                             {tx.geofence.name}
                           </Badge>
+                        )}
+                        {tx.receipt_url && (
+                          <span title="Receipt captured" className="hidden sm:inline-flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/50 px-1.5 py-0.5 rounded-full">
+                            <ReceiptIcon className="h-2.5 w-2.5" />
+                            Receipt
+                          </span>
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CreditCard as CreditCardIcon, TrendingUp, TrendingDown } from 'lucide-react';
+import { CreditCard as CreditCardIcon, TrendingUp, TrendingDown, AlertTriangle, Clock } from 'lucide-react';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { CreditCardDetails } from './CreditCardDetails';
@@ -29,6 +29,15 @@ export function CreditCardTile({ card }: CreditCardTileProps) {
   const rawUtilization = creditLimit > 0 ? (balance / creditLimit) * 100 : 0;
   const utilizationPercent = Math.min(100, rawUtilization);
   const isOverUtilized = rawUtilization > 100;
+
+  // Due-date urgency
+  const daysUntilDue = (() => {
+    if (!card.due_date) return null;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const due = new Date(card.due_date); due.setHours(0,0,0,0);
+    return Math.ceil((due.getTime() - today.getTime()) / 86_400_000);
+  })();
+  const isDueUrgent = daysUntilDue !== null && daysUntilDue >= 0 && daysUntilDue <= 5;
 
   return (
     <>
@@ -121,8 +130,10 @@ export function CreditCardTile({ card }: CreditCardTileProps) {
               {card.due_date && (
                 <div>
                   <p className="text-muted-foreground">Due Date</p>
-                  <p className="font-semibold">
+                  <p className={cn("font-semibold flex items-center gap-1", isDueUrgent && "text-amber-600 dark:text-amber-400")}>
+                    {isDueUrgent && <Clock className="h-3.5 w-3.5 shrink-0" />}
                     {new Date(card.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {daysUntilDue === 0 ? ' · Today!' : isDueUrgent && daysUntilDue !== null ? ` · ${daysUntilDue}d` : ''}
                   </p>
                 </div>
               )}

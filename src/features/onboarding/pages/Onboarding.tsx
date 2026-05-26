@@ -44,6 +44,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const completeOnboarding = useCompleteOnboarding();
   const [step, setStep] = useState<Step>("welcome");
+  const [confirmSkip, setConfirmSkip] = useState(false);
 
   // ── Guards ──────────────────────────────────────────────────────────
   // If user is already onboarded, send them to the dashboard. We allow
@@ -73,12 +74,7 @@ export default function Onboarding() {
     });
   };
 
-  // Skip-all link visible on every step except 'done'
-  const handleSkipAll = () => {
-    if (confirm("Skip the rest of the setup? You can always do this later from Settings.")) {
-      finish();
-    }
-  };
+  const handleSkipAll = () => setConfirmSkip(true);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
@@ -113,14 +109,26 @@ export default function Onboarding() {
           )}
 
           {step !== "done" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSkipAll}
-              className="text-muted-foreground hover:text-foreground text-xs"
-            >
-              Skip setup
-            </Button>
+            confirmSkip ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Skip setup?</span>
+                <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => setConfirmSkip(false)}>
+                  No, continue
+                </Button>
+                <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-muted-foreground" onClick={finish}>
+                  Yes, skip
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSkipAll}
+                className="text-muted-foreground hover:text-foreground text-xs"
+              >
+                Skip setup
+              </Button>
+            )
           )}
         </div>
       </div>
