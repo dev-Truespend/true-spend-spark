@@ -43,8 +43,8 @@ export default function Documentation() {
       title: "Privacy & Security",
       description: "How we protect your data",
       topics: [
-        "End-to-end encryption",
-        "Local-first storage",
+        "Account security",
+        "Cloud sync and RLS",
         "Data export and deletion",
         "Security best practices",
       ],

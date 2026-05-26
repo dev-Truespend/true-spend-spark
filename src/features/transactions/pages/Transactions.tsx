@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { bffClient, TransactionInput } from "@/lib/api/bffClient";
 import { useGPSTracking } from "@/hooks/useGPSTracking";
 import { useAuth } from "@/hooks/useAuth";
+import { useBffTransactions } from "@/shared/hooks/useBffTransactions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,6 +85,7 @@ export default function Transactions() {
   const [dateTo, setDateTo]                 = useState<string>("");
   const [sortOrder, setSortOrder]           = useState<"newest" | "oldest" | "highest" | "lowest">("newest");
   const [showFilters, setShowFilters]       = useState(false);
+  const [refreshKey, setRefreshKey]         = useState(0);
 
   const search = useDebouncedValue(searchInput, 300);
 
@@ -121,47 +123,21 @@ export default function Transactions() {
     setCurrentGeofence(null);
   }, [isAddOpen, position, userGeofences.data]);
 
-  // ── Main transactions query (paginated + filtered) ──────────────────
-  const txQuery = useQuery({
-    queryKey: ['transactions', { page, search, geofenceFilter, categoryFilter, dateFrom, dateTo, sortOrder }],
-    enabled:  !!user,
-    placeholderData: keepPreviousData,
-    staleTime: 1000 * 15,
-    queryFn: async () => {
-      const from = (page - 1) * PAGE_SIZE;
-      const to   = from + PAGE_SIZE - 1;
-
-      let q = supabase
-        .from('transactions')
-        .select('id, amount, category, description, timestamp, receipt_url, credit_card_id, geofence_id, merchant:merchants(id, name), geofence:geofences(id, name)', { count: 'exact' })
-        .eq('user_id', user!.id);
-
-      if (search.trim())         q = q.ilike('description', `%${search.trim()}%`);
-      if (categoryFilter !== "all") q = q.eq('category', categoryFilter);
-      if (geofenceFilter === 'none')  q = q.is('geofence_id', null);
-      else if (geofenceFilter !== 'all') q = q.eq('geofence_id', geofenceFilter);
-      if (dateFrom)              q = q.gte('timestamp', new Date(dateFrom).toISOString());
-      if (dateTo) {
-        // Make the upper bound inclusive by extending to end-of-day
-        const end = new Date(dateTo);
-        end.setHours(23, 59, 59, 999);
-        q = q.lte('timestamp', end.toISOString());
-      }
-
-      switch (sortOrder) {
-        case 'oldest':  q = q.order('timestamp', { ascending: true });  break;
-        case 'highest': q = q.order('amount',    { ascending: false }); break;
-        case 'lowest':  q = q.order('amount',    { ascending: true });  break;
-        case 'newest':
-        default:        q = q.order('timestamp', { ascending: false });
-      }
-
-      q = q.range(from, to);
-
-      const { data, error, count } = await q;
-      if (error) throw error;
-      return { rows: (data || []) as unknown as TxRow[], total: count ?? 0 };
-    },
+  // ── Main transactions query (BFF-backed pagination + filters) ───────
+  const txQuery = useBffTransactions({
+    page,
+    limit: PAGE_SIZE,
+    search: search.trim() || undefined,
+    category: categoryFilter !== "all" ? categoryFilter : undefined,
+    geofenceId: geofenceFilter !== "all" ? geofenceFilter : undefined,
+    dateFrom: dateFrom ? new Date(dateFrom).toISOString() : undefined,
+    dateTo: dateTo ? (() => {
+      const end = new Date(dateTo);
+      end.setHours(23, 59, 59, 999);
+      return end.toISOString();
+    })() : undefined,
+    sort: sortOrder,
+    refreshKey,
   });
 
   // ── Mutations ────────────────────────────────────────────────────────
@@ -172,6 +148,8 @@ export default function Transactions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['bff-transactions'] });
+      setRefreshKey((key) => key + 1);
       queryClient.invalidateQueries({ queryKey: ['dashboard-month-stats'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-recent-tx'] });
       toast.success('Transaction added');
@@ -190,6 +168,8 @@ export default function Transactions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['bff-transactions'] });
+      setRefreshKey((key) => key + 1);
       queryClient.invalidateQueries({ queryKey: ['dashboard-month-stats'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-recent-tx'] });
       toast.success('Transaction deleted');
@@ -246,9 +226,9 @@ export default function Transactions() {
   };
 
   // ── Derived ──────────────────────────────────────────────────────────
-  const total      = txQuery.data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const rows       = txQuery.data?.rows ?? [];
+  const total      = txQuery.data?.pagination.total ?? 0;
+  const totalPages = Math.max(1, txQuery.data?.pagination.totalPages ?? 1);
+  const rows       = (txQuery.data?.transactions ?? []) as TxRow[];
 
   const activeFilterCount = useMemo(() => {
     let n = 0;

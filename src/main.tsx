@@ -9,3 +9,11 @@ import { installGlobalErrorHandlers } from "@/shared/lib/observability/globalErr
 installGlobalErrorHandlers();
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+if ("serviceWorker" in navigator && import.meta.env.PROD && import.meta.env.VITE_PWA_ENABLED === "true") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((error) => {
+      console.warn("[PWA] Service worker registration failed:", error);
+    });
+  });
+}

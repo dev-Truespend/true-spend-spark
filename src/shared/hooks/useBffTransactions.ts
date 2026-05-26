@@ -40,11 +40,14 @@ export interface BffTransactionsFilters {
   page?: number;
   limit?: number;
   category?: string;
+  geofenceId?: string;
   dateFrom?: string;
   dateTo?: string;
   creditCardId?: string;
   search?: string;
   synced?: boolean;
+  sort?: "newest" | "oldest" | "highest" | "lowest";
+  refreshKey?: number;
 }
 
 // ── Hook ────────────────────────────────────────────────────────────────
@@ -72,11 +75,14 @@ export function useBffTransactions(filters: BffTransactionsFilters = {}) {
       if (filters.page         !== undefined) params.set("page",        String(filters.page));
       if (filters.limit        !== undefined) params.set("limit",       String(filters.limit));
       if (filters.category)                   params.set("category",    filters.category);
+      if (filters.geofenceId)                 params.set("geofenceId",  filters.geofenceId);
       if (filters.dateFrom)                   params.set("dateFrom",    filters.dateFrom);
       if (filters.dateTo)                     params.set("dateTo",      filters.dateTo);
       if (filters.creditCardId)               params.set("creditCardId", filters.creditCardId);
       if (filters.search)                     params.set("search",      filters.search);
       if (filters.synced       !== undefined) params.set("synced",      String(filters.synced));
+      if (filters.sort)                       params.set("sort",        filters.sort);
+      if (filters.refreshKey)                 params.set("refresh",     String(filters.refreshKey));
 
       // supabase.functions.invoke doesn't support query strings directly,
       // so we hit the function URL via fetch.

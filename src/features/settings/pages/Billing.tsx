@@ -146,6 +146,38 @@ export default function Billing() {
     }
   }
 
+  // ── In-app plan switch monthly/annual ────────────────────────────────
+  async function switchPlan(priceId: string, label: string) {
+    if (!priceId) {
+      toast({ title: "Plan unavailable", description: "Stripe price ID is not configured.", variant: "destructive" });
+      return;
+    }
+    setLoading(label);
+    try {
+      const { error } = await supabase.functions.invoke("stripe-update-subscription", {
+        body:    { priceId },
+        headers: authHeader(),
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Plan updated",
+        description: "Your subscription has been updated. Stripe will prorate the billing change.",
+      });
+      window.location.reload();
+    } catch (err) {
+      console.error("[Billing] plan switch error:", err);
+      toast({
+        title:       "Plan switch failed",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant:     "destructive",
+      });
+    } finally {
+      setLoading(null);
+    }
+  }
+
   // ── Status badge ──────────────────────────────────────────────────────
   const statusBadge = () => {
     if (!subscription) return null;
@@ -242,6 +274,11 @@ export default function Billing() {
           {PLANS.map((p) => {
             const isCurrent = plan === p.id;
             const canUpgrade = !isPro && p.id === "pro";
+            const currentPriceId = subscription?.stripe_price_id ?? null;
+            const proMonthlyPriceId = p.id === "pro" ? p.priceId : null;
+            const proAnnualPriceId = p.id === "pro" && "annualPriceId" in p ? p.annualPriceId : null;
+            const canSwitchMonthly = isPro && p.id === "pro" && !!proMonthlyPriceId && currentPriceId !== proMonthlyPriceId;
+            const canSwitchAnnual = isPro && p.id === "pro" && !!proAnnualPriceId && currentPriceId !== proAnnualPriceId;
 
             return (
               <Card
@@ -281,7 +318,33 @@ export default function Billing() {
                     ))}
                   </ul>
 
-                  {isCurrent ? (
+                  {isCurrent && p.id === "pro" ? (
+                    <div className="space-y-2">
+                      <Button variant="outline" disabled className="w-full">
+                        Current plan
+                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant={currentPriceId === proMonthlyPriceId ? "secondary" : "outline"}
+                          size="sm"
+                          onClick={() => proMonthlyPriceId && switchPlan(proMonthlyPriceId, "switch_monthly")}
+                          disabled={!canSwitchMonthly || !!loading}
+                        >
+                          {loading === "switch_monthly" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                          Monthly
+                        </Button>
+                        <Button
+                          variant={currentPriceId === proAnnualPriceId ? "secondary" : "outline"}
+                          size="sm"
+                          onClick={() => proAnnualPriceId && switchPlan(proAnnualPriceId, "switch_annual")}
+                          disabled={!canSwitchAnnual || !!loading}
+                        >
+                          {loading === "switch_annual" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                          Annual
+                        </Button>
+                      </div>
+                    </div>
+                  ) : isCurrent ? (
                     <Button variant="outline" disabled className="w-full">
                       Current plan
                     </Button>

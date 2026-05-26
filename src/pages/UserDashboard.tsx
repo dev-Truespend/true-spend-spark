@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/shared/hooks/useSubscription";
@@ -48,6 +49,16 @@ interface BudgetRow {
   period:       string;
 }
 
+interface UpcomingBill {
+  id: string;
+  name: string;
+  mask: string | null;
+  dueDate: Date;
+  minimumPayment: number | null;
+  balance: number | null;
+  daysUntilDue: number;
+}
+
 // ── Section error fallback so one query failure doesn't kill the page ──
 function SectionError({ label }: { label: string }) {
   return (
@@ -64,7 +75,7 @@ function SectionError({ label }: { label: string }) {
 export default function UserDashboard() {
   const { user, profile }     = useAuth();
   const { plan, isPro }       = useSubscription();
-  const { cards, cardCount }  = useCreditCards();
+  const { cards, cardCount, isLoading: cardsLoading }  = useCreditCards();
 
   const isRestricted = profile?.status === "pending_verification";
 
@@ -155,6 +166,35 @@ export default function UserDashboard() {
   // Derived
   const activeBudgetCount = budgets.data?.length ?? null;
   const atRiskCount       = budgets.data?.filter((b) => b.percent >= 80).length ?? 0;
+
+  const upcomingBills = useMemo<UpcomingBill[]>(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const windowEnd = new Date(today);
+    windowEnd.setDate(windowEnd.getDate() + 30);
+
+    return cards
+      .map((card) => {
+        if (!card.due_date) return null;
+        const dueDate = new Date(card.due_date);
+        if (Number.isNaN(dueDate.getTime())) return null;
+        dueDate.setHours(0, 0, 0, 0);
+        const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / 86_400_000);
+        if (dueDate < today || dueDate > windowEnd) return null;
+        return {
+          id: card.id,
+          name: card.account_name || "Credit card",
+          mask: card.account_mask,
+          dueDate,
+          minimumPayment: card.minimum_payment,
+          balance: card.current_balance,
+          daysUntilDue,
+        };
+      })
+      .filter((bill): bill is UpcomingBill => bill !== null)
+      .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
+      .slice(0, 5);
+  }, [cards]);
 
   const greeting =
     now.getHours() < 12 ? "Good morning" :
@@ -449,6 +489,88 @@ export default function UserDashboard() {
                       <p className="text-sm font-semibold tabular-nums">
                         ${Math.abs(c.current_balance || 0).toFixed(2)}
                       </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </ErrorBoundary>
+
+        {/* ── Upcoming bills ─────────────────────────────────────────── */}
+        <ErrorBoundary fallback={<SectionError label="upcoming bills" />}>
+          <Card className="mb-8">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  Upcoming bills
+                </CardTitle>
+                <CardDescription>Minimum payments due in the next 30 days</CardDescription>
+              </div>
+              <Button asChild variant="ghost" size="sm" className="gap-1">
+                <Link to="/credit-cards">
+                  Manage <ChevronRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {cardsLoading ? (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-20 rounded-lg" />
+                  ))}
+                </div>
+              ) : upcomingBills.length === 0 ? (
+                <EmptyState
+                  icon={<Calendar className="h-8 w-8 text-muted-foreground/50" />}
+                  title="No bills due soon"
+                  description={
+                    cardCount === 0
+                      ? "Connect a credit card to track due dates and minimum payments."
+                      : "No connected cards have payments due in the next 30 days."
+                  }
+                  cta={
+                    <Button asChild size="sm" variant="outline" className="gap-1">
+                      <Link to="/credit-cards">
+                        <CreditCard className="h-3.5 w-3.5" /> Manage cards
+                      </Link>
+                    </Button>
+                  }
+                />
+              ) : (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {upcomingBills.map((bill) => (
+                    <Link
+                      key={bill.id}
+                      to="/credit-cards"
+                      className={cn(
+                        "rounded-lg border p-3 transition-all hover:border-primary/50 hover:shadow-sm",
+                        bill.daysUntilDue <= 3 && "border-amber-500/40 bg-amber-500/5"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{bill.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {bill.mask ? `•••• ${bill.mask}` : "Card"}
+                          </p>
+                        </div>
+                        <Badge variant={bill.daysUntilDue <= 3 ? "secondary" : "outline"}>
+                          {bill.daysUntilDue === 0 ? "Today" : `${bill.daysUntilDue}d`}
+                        </Badge>
+                      </div>
+                      <div className="mt-3 flex items-end justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Minimum due</p>
+                          <p className="text-lg font-semibold tabular-nums">
+                            ${(bill.minimumPayment ?? 0).toFixed(2)}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {bill.dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </p>
+                      </div>
                     </Link>
                   ))}
                 </div>

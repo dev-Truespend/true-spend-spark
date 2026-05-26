@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Authentication Smoke Tests', () => {
   test('login page loads correctly', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/auth');
     
     // Check for auth form elements
     await expect(page.locator('input[type="email"]')).toBeVisible();
@@ -11,7 +11,7 @@ test.describe('Authentication Smoke Tests', () => {
   });
 
   test('shows validation errors for invalid email', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/auth');
     
     // Fill in invalid email
     await page.fill('input[type="email"]', 'invalid-email');
@@ -23,14 +23,14 @@ test.describe('Authentication Smoke Tests', () => {
   });
 
   test('Google sign-in button is present', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/auth');
     
     // Check for Google sign-in button
     await expect(page.locator('button:has-text("Google")')).toBeVisible();
   });
 
   test('forgot password link works', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/auth');
     
     // Click forgot password
     await page.click('text=/forgot.*password/i');
@@ -47,6 +47,14 @@ test.describe('Password Reset Flow', () => {
     
     await expect(page.locator('input[type="email"]')).toBeVisible();
     await expect(page.locator('button[type="submit"]')).toBeVisible();
+  });
+
+  test('reset password rejects missing or invalid token safely', async ({ page }) => {
+    await page.goto('/reset-password');
+    await expect(page.locator('text=/invalid|expired|request a new/i')).toBeVisible({ timeout: 5000 });
+
+    await page.goto('/reset-password?token=invalid-token');
+    await expect(page.locator('text=/invalid|expired|request a new/i')).toBeVisible({ timeout: 5000 });
   });
 });
 
