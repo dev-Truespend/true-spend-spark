@@ -31,6 +31,7 @@ import {
   Settings as SettingsIcon,
   MapPin,
   Lightbulb,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -655,6 +656,15 @@ export default function UserDashboard() {
             disabled={isRestricted}
             disabledHint="Verify your email to access"
             badge={!isPro ? <Badge variant="outline" className="text-[10px]">Pro</Badge> : undefined}
+          />
+          <FeatureCard
+            to="/recommendations"
+            icon={<Bot className="h-5 w-5" />}
+            color="text-emerald-600 bg-emerald-500/10"
+            title="AI Assistant"
+            description="Ask Claude about your money"
+            disabled={isRestricted}
+            disabledHint="Verify your email to access"
           />
           <FeatureCard
             to="/location-history"
