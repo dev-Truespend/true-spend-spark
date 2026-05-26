@@ -44,9 +44,9 @@ Recommendation: use **Stripe first** for the US/international launch path. Add R
 ### AI Agent
 
 - [ ] Set `ANTHROPIC_API_KEY` in Supabase secrets.
-- [ ] Add cost and timeout guardrails for `ai-agent`.
+- [x] Add cost guardrails for `ai-agent` with per-user rate limiting, response caching, lower-cost model routing, and deterministic fallback.
 - [ ] Migrate remaining user-facing AI calls to `ai-agent`.
-- [ ] Add deterministic fallback responses for provider downtime.
+- [x] Add deterministic fallback responses for provider downtime and provider rate limits.
 - [ ] Log prompt/tool failures without storing sensitive financial details in plaintext logs.
 
 ### Email
@@ -76,6 +76,7 @@ Resend is a good free/cheap starting point. It is simpler than running your own 
 - [ ] Add Playwright E2E tests for the main website flows.
 - [ ] Add onboarding checklist for first-time users.
 - [ ] Add user-friendly provider outage messages for Plaid, Stripe, AI, and email.
+- [ ] Review admin-only ML/Hugging Face/Modal pages and either finish them or hide them from production navigation.
 
 ## P2 — Scale And Retention
 

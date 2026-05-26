@@ -318,7 +318,7 @@ export default function Pricing() {
             <Card className="border-2 hover:border-brand-blue/30 transition-colors">
               <CardContent className="pt-6">
                 <h3 className="text-lg font-semibold mb-2">Is the free plan really free forever?</h3>
-                <p className="text-muted-foreground">Absolutely! Our Free plan includes unlimited expense tracking, receipt scanning, and end-to-end encryption—forever, no credit card required.</p>
+                <p className="text-muted-foreground">Absolutely. Our Free plan includes expense tracking, receipt scanning, and secure account-based data protection with no credit card required.</p>
               </CardContent>
             </Card>
             

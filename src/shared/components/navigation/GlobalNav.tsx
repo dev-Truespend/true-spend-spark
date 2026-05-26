@@ -43,7 +43,7 @@ const navItems = [
   { id: 'location-history', label: 'Location',       route: '/location-history', icon: MapPin,          roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'favorites',        label: 'Favorites',    route: '/favorites',        icon: Heart,           roles: ['user', 'developer', 'admin'], authRequired: true },
   { id: 'settings',         label: 'Settings',     route: '/settings',         icon: Settings,        roles: ['user', 'developer', 'admin'], authRequired: true },
-  { id: 'monitoring',       label: 'Monitoring',   route: '/monitoring',       icon: Activity,        roles: ['admin', 'developer'],         authRequired: true },
+  { id: 'monitoring',       label: 'Monitoring',   route: '/admin/observability', icon: Activity,     roles: ['admin'],                    authRequired: true },
   { id: 'admin',            label: 'Admin',        route: '/admin',            icon: ShieldCheck,     roles: ['admin'],                      authRequired: true },
 ];
 

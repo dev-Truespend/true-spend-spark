@@ -678,9 +678,9 @@ export default function Auth() {
           <div className="text-center text-xs text-muted-foreground space-y-2 pt-4">
             <p className="flex items-center justify-center gap-2">
               <Shield className="w-4 h-4 text-brand-blue" />
-              Your data never leaves your control
+              Your account is protected with Supabase auth and database policies
             </p>
-            <p>Protected by end-to-end encryption • GDPR compliant • No tracking</p>
+            <p>Encrypted in transit • Account-scoped access • No data resale</p>
           </div>
           </div>
         </div>

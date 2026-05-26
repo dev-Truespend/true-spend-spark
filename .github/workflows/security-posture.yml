@@ -22,8 +22,9 @@ jobs:
         run: |
           echo "🔍 Checking security headers for production deployment..."
           
-          # Check if app is deployed (using Lovable preview URL pattern)
-          PREVIEW_URL="https://lovable.app"
+          # Set PRODUCTION_URL in repo/environment variables after Cloudflare
+          # Pages is connected. Until then this check remains informational.
+          PREVIEW_URL="${PRODUCTION_URL:-https://truespend.org}"
           
           echo "Testing security headers..."
           RESPONSE=$(curl -sI "$PREVIEW_URL" || echo "FAILED")

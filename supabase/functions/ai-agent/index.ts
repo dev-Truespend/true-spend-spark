@@ -1,13 +1,13 @@
 /**
  * @function ai-agent
- * @description TrueSpend's single AI intelligence hub. Uses Claude claude-sonnet-4-6 with tool use
+ * @description TrueSpend's single AI intelligence hub. Uses Claude with tool use
  *   to analyze spending, recommend the best card for any purchase, calculate missed rewards,
  *   suggest new cards to apply for, detect anomalies, and answer freeform financial questions.
  * @trigger HTTP POST — authenticated
  * @auth Required — validates Supabase JWT
  * @input { intent: string, payload?: object }
  * @output { response: string, data?: object, intent: string }
- * @calls anthropic claude-sonnet-4-6, supabase DB
+ * @calls anthropic, supabase DB
  * @sideEffects writes to: ai_recommendations (when save_recommendation tool is called)
  */
 
@@ -20,7 +20,97 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const anthropic = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY") });
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+const MODEL_AGENT = Deno.env.get("ANTHROPIC_MODEL_AGENT") || "claude-sonnet-4-6";
+const MODEL_FAST = Deno.env.get("ANTHROPIC_MODEL_FAST") || "claude-haiku-4-5-20251001";
+const AI_AGENT_RPM_PER_USER = Number(Deno.env.get("AI_AGENT_RPM_PER_USER") || 12);
+const AI_AGENT_CACHE_TTL_SECONDS = Number(Deno.env.get("AI_AGENT_CACHE_TTL_SECONDS") || 3600);
+const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
+
+const CACHEABLE_INTENTS = new Set([
+  "analyze_spending",
+  "missed_rewards",
+  "apply_recommendations",
+  "anomaly_check",
+]);
+
+type SupabaseClient = ReturnType<typeof createClient>;
+
+function modelForIntent(intent: string): string {
+  return intent === "chat" || intent === "apply_recommendations" ? MODEL_AGENT : MODEL_FAST;
+}
+
+function maxTokensForIntent(intent: string): number {
+  if (intent === "chat") return 1200;
+  if (intent === "apply_recommendations") return 1600;
+  return 900;
+}
+
+function daysForPeriod(period: unknown): number {
+  if (period === "week") return 7;
+  if (period === "quarter") return 90;
+  return 30;
+}
+
+function stablePayload(payload: Record<string, unknown>): string {
+  return JSON.stringify(Object.keys(payload).sort().reduce<Record<string, unknown>>((acc, key) => {
+    acc[key] = payload[key];
+    return acc;
+  }, {}));
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const encoded = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function isRateLimitError(error: unknown): boolean {
+  const maybe = error as { status?: number; message?: string };
+  return maybe?.status === 429 || maybe?.message?.toLowerCase().includes("rate limit") === true;
+}
+
+function getAdminClient(): SupabaseClient | null {
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  if (!serviceRoleKey || !supabaseUrl) return null;
+  return createClient(supabaseUrl, serviceRoleKey);
+}
+
+async function checkUserRateLimit(admin: SupabaseClient | null, userId: string, intent: string): Promise<{ allowed: boolean; retryAfterSeconds?: number }> {
+  if (!admin || !AI_AGENT_RPM_PER_USER || AI_AGENT_RPM_PER_USER < 1) return { allowed: true };
+
+  const windowSizeSeconds = 60;
+  const now = new Date();
+  const windowStart = new Date(Math.floor(now.getTime() / (windowSizeSeconds * 1000)) * windowSizeSeconds * 1000).toISOString();
+  const endpoint = `ai-agent:${intent}`;
+
+  const { data: existing } = await admin
+    .from("rate_limits")
+    .select("id, request_count")
+    .eq("identifier", userId)
+    .eq("endpoint", endpoint)
+    .eq("window_start", windowStart)
+    .eq("window_size_seconds", windowSizeSeconds)
+    .maybeSingle();
+
+  const nextCount = ((existing as { request_count?: number } | null)?.request_count ?? 0) + 1;
+  if (nextCount > AI_AGENT_RPM_PER_USER) {
+    return { allowed: false, retryAfterSeconds: windowSizeSeconds - now.getSeconds() };
+  }
+
+  const existingId = (existing as { id?: string } | null)?.id;
+  await admin.from("rate_limits").upsert({
+    ...(existingId ? { id: existingId } : {}),
+    identifier: userId,
+    endpoint,
+    request_count: nextCount,
+    window_start: windowStart,
+    window_size_seconds: windowSizeSeconds,
+  }, { onConflict: "identifier,endpoint,window_start" });
+
+  return { allowed: true };
+}
 
 // ── TOOL DEFINITIONS ──────────────────────────────────────────────────────────
 
@@ -162,7 +252,65 @@ After generating a significant insight (missed rewards > $10, apply suggestion >
 
 // ── TOOL IMPLEMENTATIONS ──────────────────────────────────────────────────────
 
-type SupabaseClient = ReturnType<typeof createClient>;
+interface AgentResult {
+  response: string;
+  data: unknown;
+  intent: string;
+  cached?: boolean;
+  degraded?: boolean;
+  model?: string;
+}
+
+async function getCachedAgentResult(
+  supabase: SupabaseClient,
+  userId: string,
+  intent: string,
+  payload: Record<string, unknown>
+): Promise<AgentResult | null> {
+  if (!CACHEABLE_INTENTS.has(intent)) return null;
+
+  const payloadHash = await sha256Hex(stablePayload(payload));
+  const { data, error } = await supabase
+    .from("ai_agent_cache")
+    .select("response")
+    .eq("user_id", userId)
+    .eq("intent", intent)
+    .eq("payload_hash", payloadHash)
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+
+  if (error) {
+    console.warn("[ai-agent] cache read skipped:", error.message);
+    return null;
+  }
+
+  const cached = (data as { response?: AgentResult } | null)?.response;
+  return cached ? { ...cached, cached: true } : null;
+}
+
+async function saveCachedAgentResult(
+  supabase: SupabaseClient,
+  userId: string,
+  intent: string,
+  payload: Record<string, unknown>,
+  result: AgentResult
+): Promise<void> {
+  if (!CACHEABLE_INTENTS.has(intent)) return;
+
+  const payloadHash = await sha256Hex(stablePayload(payload));
+  const expiresAt = new Date(Date.now() + AI_AGENT_CACHE_TTL_SECONDS * 1000).toISOString();
+  const { error } = await supabase.from("ai_agent_cache").upsert({
+    user_id: userId,
+    intent,
+    payload_hash: payloadHash,
+    response: { ...result, cached: false },
+    expires_at: expiresAt,
+  }, { onConflict: "user_id,intent,payload_hash" });
+
+  if (error) {
+    console.warn("[ai-agent] cache write skipped:", error.message);
+  }
+}
 
 async function executeToolCall(
   toolName: string,
@@ -496,6 +644,87 @@ function buildUserMessage(intent: string, payload: Record<string, unknown>): str
   }
 }
 
+function summarizeDeterministic(intent: string, data: unknown): string {
+  const value = data as Record<string, unknown>;
+
+  if (intent === "analyze_spending") {
+    const total = value.total_spent_dollars ?? "0.00";
+    const txCount = value.transaction_count ?? 0;
+    const top = Array.isArray(value.top_categories) ? value.top_categories[0] as { category?: string; total_dollars?: string } : null;
+    return top
+      ? `You spent $${total} across ${txCount} transactions. Your top category is ${top.category} at $${top.total_dollars}.`
+      : `You spent $${total} across ${txCount} transactions. Add more transaction history for stronger recommendations.`;
+  }
+
+  if (intent === "best_card_now" && Array.isArray(data)) {
+    const best = data[0] as { card_name?: string; rewards_rate?: number; earned_dollars?: string } | undefined;
+    return best
+      ? `Use ${best.card_name}. It should earn about ${best.rewards_rate}% back, or $${best.earned_dollars} for this purchase.`
+      : "Add a credit card first so TrueSpend can compare rewards.";
+  }
+
+  if (intent === "missed_rewards") {
+    return `Estimated missed rewards for this period: $${value.missed_dollars ?? "0.00"}.`;
+  }
+
+  if (intent === "apply_recommendations") {
+    const recs = (value.top_recommendations as Array<{ card_product_name?: string; net_value_after_fee_dollars?: string }> | undefined) ?? [];
+    const best = recs[0];
+    return best
+      ? `${best.card_product_name} currently looks like the strongest card to review, with estimated net annual value around $${best.net_value_after_fee_dollars}.`
+      : "No card application recommendation is available yet. Add cards and sync transactions first.";
+  }
+
+  if (intent === "anomaly_check") {
+    const anomalies = (value.anomalies as unknown[] | undefined) ?? [];
+    return anomalies.length
+      ? `Found ${anomalies.length} item${anomalies.length === 1 ? "" : "s"} worth reviewing.`
+      : "No obvious duplicate or unusually large transactions were found in the scan window.";
+  }
+
+  return "AI chat requires the Claude API key. The app is still usable, but conversational recommendations are paused.";
+}
+
+async function executeDeterministicIntent(
+  intent: string,
+  payload: Record<string, unknown>,
+  supabase: SupabaseClient,
+  userId: string
+): Promise<AgentResult> {
+  let data: unknown = null;
+
+  switch (intent) {
+    case "analyze_spending":
+      data = await executeToolCall("get_spending_summary", { days: daysForPeriod(payload.period) }, supabase, userId);
+      break;
+    case "best_card_now":
+      data = await executeToolCall("get_best_card_for_purchase", {
+        merchant_category: payload.category || "other",
+        amount_cents: payload.amount_cents,
+      }, supabase, userId);
+      break;
+    case "missed_rewards":
+      data = await executeToolCall("calculate_missed_rewards", { period_days: payload.days || 30 }, supabase, userId);
+      break;
+    case "apply_recommendations":
+      data = await executeToolCall("get_card_apply_recommendations", {}, supabase, userId);
+      break;
+    case "anomaly_check":
+      data = await executeToolCall("detect_anomalies", { days: payload.days || 30 }, supabase, userId);
+      break;
+    default:
+      data = { message: "Claude API key is required for chat." };
+  }
+
+  return {
+    response: summarizeDeterministic(intent, data),
+    data,
+    intent,
+    degraded: true,
+    model: "deterministic-fallback",
+  };
+}
+
 // ── MAIN HANDLER ──────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -518,80 +747,129 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "intent is required" }), { status: 400, headers: corsHeaders });
     }
 
+    const admin = getAdminClient();
+    const rateLimit = await checkUserRateLimit(admin, user.id, intent);
+    if (!rateLimit.allowed) {
+      return new Response(JSON.stringify({
+        error: "AI request rate limit exceeded",
+        retryAfterSeconds: rateLimit.retryAfterSeconds ?? 60,
+      }), {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "Retry-After": String(rateLimit.retryAfterSeconds ?? 60),
+        },
+      });
+    }
+
+    const cached = await getCachedAgentResult(supabase, user.id, intent, payload as Record<string, unknown>);
+    if (cached) {
+      return new Response(JSON.stringify(cached), {
+        headers: { ...corsHeaders, "Content-Type": "application/json", "X-AI-Cache": "HIT" },
+      });
+    }
+
+    if (!anthropic) {
+      const fallback = await executeDeterministicIntent(intent, payload as Record<string, unknown>, supabase, user.id);
+      await saveCachedAgentResult(supabase, user.id, intent, payload as Record<string, unknown>, fallback);
+      return new Response(JSON.stringify(fallback), {
+        headers: { ...corsHeaders, "Content-Type": "application/json", "X-AI-Provider": "fallback" },
+      });
+    }
+
     const userMessage = buildUserMessage(intent, payload as Record<string, unknown>);
     const messages: Anthropic.MessageParam[] = [{ role: "user", content: userMessage }];
 
     let finalResponse = "";
     let structuredData: unknown = null;
     let iterations = 0;
-    const MAX_ITERATIONS = 12;
+    const MAX_ITERATIONS = 6;
+    const model = modelForIntent(intent);
 
     // ── Agentic loop ────────────────────────────────────────────────────────
-    while (iterations < MAX_ITERATIONS) {
-      iterations++;
+    try {
+      while (iterations < MAX_ITERATIONS) {
+        iterations++;
 
-      const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-6",
-        max_tokens: 2048,
-        system: SYSTEM_PROMPT,
-        tools: TOOLS,
-        messages,
+        const response = await anthropic.messages.create({
+          model,
+          max_tokens: maxTokensForIntent(intent),
+          system: SYSTEM_PROMPT,
+          tools: TOOLS,
+          messages,
+        });
+
+        if (response.stop_reason === "end_turn") {
+          finalResponse = response.content
+            .filter((b) => b.type === "text")
+            .map((b) => (b as Anthropic.TextBlock).text)
+            .join("");
+          break;
+        }
+
+        if (response.stop_reason === "tool_use") {
+          const toolUseBlocks = response.content.filter((b) => b.type === "tool_use") as Anthropic.ToolUseBlock[];
+          messages.push({ role: "assistant", content: response.content });
+
+          const toolResults: Anthropic.ToolResultBlockParam[] = await Promise.all(
+            toolUseBlocks.map(async (toolUse) => {
+              try {
+                const result = await executeToolCall(
+                  toolUse.name,
+                  toolUse.input as Record<string, unknown>,
+                  supabase,
+                  user.id
+                );
+                // Capture structured data from key tools for direct use in UI
+                if (toolUse.name === "get_spending_summary") structuredData = result;
+                if (toolUse.name === "get_best_card_for_purchase") structuredData = result;
+                if (toolUse.name === "calculate_missed_rewards") structuredData = result;
+                if (toolUse.name === "get_card_apply_recommendations") structuredData = result;
+                if (toolUse.name === "detect_anomalies") structuredData = result;
+                return {
+                  type: "tool_result" as const,
+                  tool_use_id: toolUse.id,
+                  content: JSON.stringify(result),
+                };
+              } catch (e) {
+                console.error(`Tool ${toolUse.name} error:`, e);
+                return {
+                  type: "tool_result" as const,
+                  tool_use_id: toolUse.id,
+                  content: `Error: ${e instanceof Error ? e.message : "Unknown error"}`,
+                  is_error: true,
+                };
+              }
+            })
+          );
+
+          messages.push({ role: "user", content: toolResults });
+          continue;
+        }
+
+        break; // Unexpected stop reason
+      }
+    } catch (error) {
+      if (!isRateLimitError(error)) throw error;
+
+      const fallback = await executeDeterministicIntent(intent, payload as Record<string, unknown>, supabase, user.id);
+      await saveCachedAgentResult(supabase, user.id, intent, payload as Record<string, unknown>, fallback);
+      return new Response(JSON.stringify({
+        ...fallback,
+        response: `${fallback.response} AI wording is temporarily using a lower-cost fallback because the model rate limit was reached.`,
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "X-AI-Provider": "fallback-rate-limit" },
       });
-
-      if (response.stop_reason === "end_turn") {
-        finalResponse = response.content
-          .filter((b) => b.type === "text")
-          .map((b) => (b as Anthropic.TextBlock).text)
-          .join("");
-        break;
-      }
-
-      if (response.stop_reason === "tool_use") {
-        const toolUseBlocks = response.content.filter((b) => b.type === "tool_use") as Anthropic.ToolUseBlock[];
-        messages.push({ role: "assistant", content: response.content });
-
-        const toolResults: Anthropic.ToolResultBlockParam[] = await Promise.all(
-          toolUseBlocks.map(async (toolUse) => {
-            try {
-              const result = await executeToolCall(
-                toolUse.name,
-                toolUse.input as Record<string, unknown>,
-                supabase,
-                user.id
-              );
-              // Capture structured data from key tools for direct use in UI
-              if (toolUse.name === "get_spending_summary") structuredData = result;
-              if (toolUse.name === "get_best_card_for_purchase") structuredData = result;
-              if (toolUse.name === "calculate_missed_rewards") structuredData = result;
-              if (toolUse.name === "get_card_apply_recommendations") structuredData = result;
-              return {
-                type: "tool_result" as const,
-                tool_use_id: toolUse.id,
-                content: JSON.stringify(result),
-              };
-            } catch (e) {
-              console.error(`Tool ${toolUse.name} error:`, e);
-              return {
-                type: "tool_result" as const,
-                tool_use_id: toolUse.id,
-                content: `Error: ${e instanceof Error ? e.message : "Unknown error"}`,
-                is_error: true,
-              };
-            }
-          })
-        );
-
-        messages.push({ role: "user", content: toolResults });
-        continue;
-      }
-
-      break; // Unexpected stop reason
     }
 
-    return new Response(
-      JSON.stringify({ response: finalResponse, data: structuredData, intent }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    const result: AgentResult = { response: finalResponse, data: structuredData, intent, cached: false, model };
+    await saveCachedAgentResult(supabase, user.id, intent, payload as Record<string, unknown>, result);
+
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, "Content-Type": "application/json", "X-AI-Cache": "MISS" },
+    });
   } catch (error) {
     console.error("[ai-agent] error:", error);
     return new Response(
