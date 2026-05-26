@@ -39,3 +39,45 @@ export interface UserCreditCard {
   is_active: boolean;
   rewards_confirmed_by_user: boolean;
 }
+
+export interface CardSignupBonus {
+  id: string;
+  card_catalog_id: string;
+  bonus_description: string;
+  bonus_value_cents: number | null;
+  spend_requirement_cents: number | null;
+  window_days: number | null;
+  status: 'proposed' | 'verified' | 'retired';
+  source_url: string | null;
+  effective_from: string | null;
+  effective_until: string | null;
+}
+
+export type CardFeedbackType =
+  | 'correct'
+  | 'incorrect'
+  | 'outdated'
+  | 'special_offer'
+  | 'other';
+
+export interface CardUserFeedback {
+  id: string;
+  user_id: string;
+  card_catalog_id: string | null;
+  card_reward_rule_id: string | null;
+  feedback_type: CardFeedbackType;
+  note: string | null;
+  status: 'new' | 'reviewed' | 'applied' | 'dismissed';
+  created_at: string;
+}
+
+export interface CatalogExtractionResult {
+  card_id: string;
+  mode: 'extract' | 'refresh';
+  page_status: number;
+  page_chars: number;
+  extraction_confidence: number;
+  proposed_rule_count: number;
+  change_count: number;
+  extraction_notes: string | null;
+}
