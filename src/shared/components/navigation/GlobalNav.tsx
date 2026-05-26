@@ -38,6 +38,18 @@ const navItems = [
   { id: 'admin', label: 'Admin', route: '/admin', icon: Settings, roles: ['admin'], authRequired: true },
 ];
 
+const AUTH_NAV_HIDDEN_PATHS = new Set([
+  '/auth',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+  '/confirm-email-change',
+]);
+
+function shouldHideNav(pathname: string): boolean {
+  return pathname.startsWith('/auth/') || AUTH_NAV_HIDDEN_PATHS.has(pathname);
+}
+
 export function GlobalNav() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -85,7 +97,7 @@ export function GlobalNav() {
     }
   };
 
-  if (location.pathname === '/auth') return null;
+  if (shouldHideNav(location.pathname)) return null;
 
   const accessibleItems = navItems.filter(item => {
     // Show public items when not authenticated
@@ -100,7 +112,7 @@ export function GlobalNav() {
   });
 
   const handleLogoClick = () => {
-    window.location.href = '/';
+    navigate('/');
   };
 
   return (

@@ -1,9 +1,9 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { Toaster } from "@/shared/components/ui/toaster";
 import { Toaster as Sonner } from "@/shared/components/ui/sonner";
 import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/features/auth/hooks/useAuth";
 import { useSessionActivity } from "@/features/auth/hooks/useSessionActivity";
 import { ContinueSessionDialog } from "@/features/auth/components/ContinueSessionDialog";
@@ -68,6 +68,7 @@ import Settings from "@/features/settings/pages/Settings";
 import Billing from "@/features/settings/pages/Billing";
 import Onboarding from "@/features/onboarding/pages/Onboarding";
 import { PendingDeletionBanner } from "@/features/settings/components/PendingDeletionBanner";
+import { hasRecentLogoutFlag } from "@/shared/lib/auth/clearAuthState";
 
 const PageSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -107,6 +108,50 @@ function SessionActivityManager() {
   );
 }
 
+const AUTH_CHROME_PATHS = new Set([
+  "/auth",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+  "/confirm-email-change",
+]);
+
+function shouldHideAppChrome(pathname: string): boolean {
+  return pathname.startsWith("/auth/") || AUTH_CHROME_PATHS.has(pathname);
+}
+
+function BackForwardCacheAuthGuard() {
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted && hasRecentLogoutFlag()) {
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
+  return null;
+}
+
+function AppShell({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const hideChrome = shouldHideAppChrome(location.pathname);
+
+  return (
+    <>
+      {!hideChrome && <GlobalNav />}
+      {!hideChrome && <PendingDeletionBanner />}
+      {!hideChrome && <RateLimitStatus />}
+      <div className={hideChrome ? "min-h-screen" : "pt-14"}>
+        {children}
+        {!hideChrome && <Footer />}
+      </div>
+    </>
+  );
+}
+
 function App() {
   if (import.meta.env.VITE_MAINTENANCE_MODE === 'true') {
     return (
@@ -130,13 +175,11 @@ function App() {
             <BrowserRouter>
               <AuthProvider>
                 <SessionActivityManager />
+                <BackForwardCacheAuthGuard />
                 <Toaster />
                 <Sonner />
                 <CSPViolationReporter />
-                <GlobalNav />
-                <PendingDeletionBanner />
-                <RateLimitStatus />
-                <div className="pt-14">
+                <AppShell>
                   <Routes>
                     <Route path="/" element={<Suspense fallback={<PageSpinner />}>{React.createElement(lazy(() => import('@/pages/marketing/Home')))}</Suspense>} />
 
@@ -235,8 +278,7 @@ function App() {
 
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                  <Footer />
-                </div>
+                </AppShell>
               </AuthProvider>
             </BrowserRouter>
           </ErrorBoundary>

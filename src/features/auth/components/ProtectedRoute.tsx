@@ -28,6 +28,7 @@ export function ProtectedRoute({
   const { roles, loading: roleLoading } = useUserRole();
   const { isPro, isLoading: subLoading } = useSubscription();
   const location = useLocation();
+  const intendedPath = `${location.pathname}${location.search}${location.hash}`;
 
   // ── 1. Auth loading ─────────────────────────────────────────────────────
   if (authLoading) {
@@ -41,7 +42,7 @@ export function ProtectedRoute({
   // ── 2. Not authenticated → redirect to /auth, preserving intended URL ──
   if (!user || !session) {
     return (
-      <Navigate to={redirectTo} state={{ from: location.pathname }} replace />
+      <Navigate to={redirectTo} state={{ from: intendedPath }} replace />
     );
   }
 
@@ -70,7 +71,7 @@ export function ProtectedRoute({
   // else. Skip the check on /onboarding itself (would loop) and on routes
   // that opt out (e.g. the page that completes onboarding).
   if (!skipOnboardingCheck && profile && profile.status === 'active' && !profile.onboarding_completed_at) {
-    return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
+    return <Navigate to="/onboarding" state={{ from: intendedPath }} replace />;
   }
 
   // ── 5. Subscription gating ──────────────────────────────────────────────
@@ -83,7 +84,7 @@ export function ProtectedRoute({
       );
     }
     if (!isPro) {
-      return <Navigate to="/settings/billing" state={{ from: location.pathname }} replace />;
+      return <Navigate to="/settings/billing" state={{ from: intendedPath }} replace />;
     }
   }
 

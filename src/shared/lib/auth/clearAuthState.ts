@@ -1,5 +1,8 @@
 import type { QueryClient } from "@tanstack/react-query";
 
+const JUST_LOGGED_OUT_KEY = "ts:just-logged-out";
+const LOGOUT_FLAG_TTL_MS = 30_000;
+
 /**
  * Clear all client-side state that could leak data between users.
  *
@@ -46,9 +49,26 @@ export function clearAuthState(opts: { queryClient?: QueryClient } = {}): void {
   //    a clean state (preventing BFCache from showing the previous
   //    user's pages when they hit Back).
   try {
-    sessionStorage.setItem("ts:just-logged-out", String(Date.now()));
+    sessionStorage.setItem(JUST_LOGGED_OUT_KEY, String(Date.now()));
   } catch {
     /* non-fatal */
+  }
+}
+
+function isRecentLogoutStamp(stamp: string | null): boolean {
+  if (!stamp) return false;
+
+  const timestamp = Number(stamp);
+  if (!Number.isFinite(timestamp)) return false;
+
+  return Date.now() - timestamp < LOGOUT_FLAG_TTL_MS;
+}
+
+export function hasRecentLogoutFlag(): boolean {
+  try {
+    return isRecentLogoutStamp(sessionStorage.getItem(JUST_LOGGED_OUT_KEY));
+  } catch {
+    return false;
   }
 }
 
@@ -58,11 +78,9 @@ export function clearAuthState(opts: { queryClient?: QueryClient } = {}): void {
  */
 export function consumeJustLoggedOutFlag(): boolean {
   try {
-    const stamp = sessionStorage.getItem("ts:just-logged-out");
-    if (!stamp) return false;
-    sessionStorage.removeItem("ts:just-logged-out");
-    // Only honour the flag for 30 seconds — older stamps are stale.
-    return Date.now() - Number(stamp) < 30_000;
+    const stamp = sessionStorage.getItem(JUST_LOGGED_OUT_KEY);
+    sessionStorage.removeItem(JUST_LOGGED_OUT_KEY);
+    return isRecentLogoutStamp(stamp);
   } catch {
     return false;
   }

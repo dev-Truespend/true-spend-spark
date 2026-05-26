@@ -77,10 +77,10 @@ jobs:
       - name: Verify lockfile updated
         if: steps.check-changes.outputs.package_json_changed == 'true'
         run: |
-          if git diff --name-only HEAD^ HEAD | grep -q "bun.lockb"; then
+          if git diff --name-only HEAD^ HEAD | grep -q "bun.lock"; then
             echo "✅ Lockfile updated with package.json changes"
           else
-            echo "❌ ERROR: package.json was modified but bun.lockb was not updated!"
+            echo "❌ ERROR: package.json was modified but bun.lock was not updated!"
             echo "Please run: bun install"
             exit 1
           fi

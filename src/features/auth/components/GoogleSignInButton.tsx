@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { Button } from "@/shared/components/ui/button";
 import { useToast } from "@/shared/hooks/use-toast";
@@ -22,7 +21,6 @@ export function GoogleSignInButton({
   const [isLoading, setIsLoading] = useState(false);
   const { signInWithGoogle } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -51,7 +49,7 @@ export function GoogleSignInButton({
         setIsLoading(false);
       }
       // If successful, redirect happens automatically (keep loading state)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Unexpected error during Google sign-in:', err);
       toast({
         title: "Sign-In Error",

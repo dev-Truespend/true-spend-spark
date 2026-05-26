@@ -87,7 +87,7 @@
         <!-- ═══════════════════════════════════════════
              FLOW 3: PLAID BANK LINK + SYNC
              ═══════════════════════════════════════════ -->
-        <mxCell id="T3" value="FLOW 3 — Plaid Bank Link + Auto-Sync  (Phase 6 🟡 50%)" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;fontColor=#333333;" vertex="1" parent="1">
+        <mxCell id="T3" value="FLOW 3 — Plaid Bank Link + Auto-Sync  (Phase 6 🟡 75%)" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;fontColor=#333333;" vertex="1" parent="1">
           <mxGeometry x="40" y="510" width="600" height="24" as="geometry" />
         </mxCell>
 
@@ -117,7 +117,7 @@
         <mxCell id="F3_UPS" value="UPSERT transactions&#xa;✅ Done&#xa;REMOVED soft-delete ❌" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="700" y="650" width="200" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="F3_STR" value="💳 Stripe Billing&#xa;❌ 0% — Not started&#xa;REVENUE BLOCKER" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="F3_STR" value="💳 Stripe Billing&#xa;🟡 Code implemented&#xa;Products + webhook replay pending" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="950" y="650" width="200" height="70" as="geometry" />
         </mxCell>
 

@@ -80,20 +80,36 @@ export default defineConfig(({ mode }) => ({
               // cache them independently (changing app code doesn't bust
               // the vendor caches).
               if (id.includes('node_modules')) {
-                if (id.includes('react-dom')) return 'vendor-react-dom';
-                if (id.includes('@tanstack/react-query')) return 'vendor-react-query';
-                if (/[\\/]react[\\/]/.test(id) || id.includes('react/jsx-runtime')) {
-                  return 'vendor-react';
+                const normalizedId = id.replace(/\\/g, '/');
+                const diagramPackages = [
+                  '@braintree/sanitize-url',
+                  '@iconify/utils',
+                  '@mermaid-js',
+                  '@upsetjs/venn.js',
+                  'cytoscape',
+                  'd3',
+                  'd3-',
+                  'dagre',
+                  'dagre-d3-es',
+                  'dayjs',
+                  'dompurify',
+                  'elkjs',
+                  'es-toolkit',
+                  'graphlib',
+                  'khroma',
+                  'marked',
+                  'mermaid',
+                  'roughjs',
+                  'stylis',
+                  'ts-dedent',
+                  'uuid',
+                ];
+
+                if (diagramPackages.some((pkg) => normalizedId.includes(`/node_modules/${pkg}`))) {
+                  return undefined;
                 }
+
                 if (id.includes('@supabase')) return 'vendor-supabase';
-                if (id.includes('@radix-ui')) return 'vendor-radix';
-                if (id.includes('lucide-react')) return 'vendor-icons';
-                if (id.includes('react-hook-form') || id.includes('@hookform') || id.includes('/zod/')) {
-                  return 'vendor-forms';
-                }
-                if (id.includes('mermaid') || id.includes('cytoscape') || id.includes('d3-')) {
-                  return 'vendor-diagrams';
-                }
                 if (id.includes('recharts') || id.includes('chart.js')) {
                   return 'vendor-charts';
                 }
@@ -108,10 +124,9 @@ export default defineConfig(({ mode }) => ({
               // Admin pages are huge (observability dashboards etc.) and
               // never loaded for normal users — keep them out of the main
               // chunk completely.
-              if (id.includes('/pages/internal/') || id.includes('/features/observability/')) {
+              if (id.includes('/pages/internal/') || id.includes('/features/observability/') || id.includes('/features/ml/')) {
                 return 'admin';
               }
-              if (id.includes('/features/ml/')) return 'ml';
               if (id.includes('/pages/marketing/')) return 'marketing';
               if (id.includes('/pages/legal/')) return 'legal';
 

@@ -8,7 +8,7 @@ on:
     branches: [main, develop]
     paths:
       - 'package.json'
-      - 'bun.lockb'
+      - 'bun.lock'
   workflow_dispatch:
 
 jobs:
@@ -33,16 +33,16 @@ jobs:
           
           # Check if package.json changed in this PR
           PACKAGE_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c "package.json" || true)
-          LOCKFILE_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c "bun.lockb" || true)
+          LOCKFILE_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c "bun.lock" || true)
           
           if [ "$PACKAGE_CHANGED" -gt 0 ] && [ "$LOCKFILE_CHANGED" -eq 0 ]; then
-            echo "❌ package.json changed without bun.lockb"
-            echo "Please run 'bun install' and commit the updated bun.lockb"
+            echo "❌ package.json changed without bun.lock"
+            echo "Please run 'bun install' and commit the updated bun.lock"
             exit 1
           fi
           
           if [ "$LOCKFILE_CHANGED" -gt 0 ] && [ "$PACKAGE_CHANGED" -eq 0 ]; then
-            echo "⚠️  bun.lockb changed without package.json - please verify this is intentional"
+            echo "⚠️  bun.lock changed without package.json - please verify this is intentional"
           fi
           
           echo "✅ Lockfile integrity verified"

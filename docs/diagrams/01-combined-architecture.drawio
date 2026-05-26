@@ -45,7 +45,7 @@
         <mxCell id="AUTH" value="🔐 Supabase Auth&#xa;JWT · OAuth (Google) · MFA · TOTP · Backup Codes&#xa;Email verify · Password reset · Session activity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="60" y="318" width="420" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="BFF" value="⚡ BFF — 110 Edge Functions (Deno / Supabase)&#xa;bff-dashboard · ai-categorize · ocr-receipt · plaid-* · mfa-* · alert-* · ...&#xa;Phase 5 🟡 75% — bff-transactions missing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="BFF" value="⚡ BFF — 120 Edge Functions (Deno / Supabase)&#xa;bff-dashboard · bff-transactions · ai-categorize · ocr-receipt · plaid-* · mfa-* · alert-* · ...&#xa;Phase 5 🟡 85% — budgets/insights/geofences BFF pending" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="520" y="318" width="470" height="90" as="geometry" />
         </mxCell>
 
@@ -72,7 +72,7 @@
         </mxCell>
 
         <!-- ── STRIPE (missing) ── -->
-        <mxCell id="STR" value="💳 Stripe Billing&#xa;❌ 0% — Not started&#xa;Phase 6 REVENUE BLOCKER" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="STR" value="💳 Stripe Billing&#xa;🟡 Code implemented&#xa;Production products + webhook replay pending" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="890" y="468" width="100" height="100" as="geometry" />
         </mxCell>
 

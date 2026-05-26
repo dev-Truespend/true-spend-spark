@@ -1,8 +1,8 @@
 # TrueSpend — Project Milestone Tracker
 
-> **Last updated:** 2026-05-25 — statuses verified against actual source code  
-> **Overall progress:** ~65% complete · 9 of 16 phases production-ready  
-> **Revenue readiness:** Stripe integration (0%) is the primary blocker
+> **Last updated:** 2026-05-25 — statuses verified against actual source code
+> **Overall progress:** ~70% complete · 9 of 16 phases production-ready
+> **Revenue readiness:** Stripe code is implemented; production account setup and webhook replay are still blockers
 
 ---
 
@@ -10,10 +10,10 @@
 
 Every status below was checked against the actual codebase:
 - `src/` — React features, hooks, components, pages
-- `supabase/functions/` — 110 Edge Functions (Deno)
+- `supabase/functions/` — 120 Edge Functions (Deno)
 - `extension/` — Chrome MV3 extension
 - `ios/` & `android/` — Capacitor native project folders
-- `supabase/migrations/` — 132 SQL migration files (~127 tables)
+- `supabase/migrations/` — 137 SQL migration files (~127+ tables)
 
 ---
 
@@ -25,8 +25,8 @@ Every status below was checked against the actual codebase:
 | ✅ | Phase 2 — Security & Ingress | 100% | Production | Code confirmed |
 | ✅ | Phase 3 — Geofencing | 100% | Production | Code confirmed |
 | ✅ | Phase 4 — Auth & Supply Chain Security | 98% | Production | Code confirmed |
-| 🟡 | Phase 5 — BFF, AI & Rules Engine | 75% | In Progress | `bff-transactions` missing |
-| 🟡 | Phase 6 — Payment Integration | 50% | **REVENUE BLOCKER** | Stripe = 0%, Plaid sync ✅ |
+| 🟡 | Phase 5 — BFF, AI & Rules Engine | 85% | In Progress | `bff-transactions` now exists |
+| 🟡 | Phase 6 — Payment Integration | 75% | **REVENUE BLOCKER** | Stripe code ✅, production setup pending |
 | ✅ | Phase 7 — Location Intelligence | 100% | Production | Code confirmed |
 | ✅ | Phase 8 — Messaging & Events | 100% | Production | Code confirmed |
 | ✅ | Phase 9 — Data Planes & DR | 100% | Production | Code confirmed |
@@ -48,10 +48,10 @@ Every status below was checked against the actual codebase:
 
 | Priority | Blocker | What's Missing | Impact |
 |---|---|---|---|
-| 🔴 P0 | **Stripe subscription billing** | 3 Edge Functions + gating | No revenue at all |
+| 🔴 P0 | **Stripe production activation** | Live products, price IDs, webhook secret, replay tests | No real revenue until configured |
 | 🟠 P1 | **Plaid webhook hardening** | JWT verify + REMOVED/PENDING→POSTED | Data integrity risk |
-| 🟠 P1 | **`bff-transactions` Edge Function** | Missing BFF endpoint | Frontend calls Supabase directly |
-| 🟠 P1 | **UserDashboard real data** | `$0.00` hardcoded | Misleading user-facing metric |
+| 🟠 P1 | **Transaction/BFF frontend adoption** | Move transaction page reads fully through `bff-transactions` | Consistent caching/pagination |
+| 🟠 P1 | **Dashboard metric validation** | Seeded data verification | Prevent misleading user-facing metrics |
 | 🟡 P2 | Extension build pipeline | No Vite config for extension | Extension not publishable |
 | 🟡 P2 | iOS / Android on-device builds | Folders exist, builds unverified | Apps not in stores |
 | 🟡 P2 | Cloudflare full WAF + cache rules | Partial setup | CDN not fully optimised |
@@ -165,9 +165,9 @@ Advanced ML (ranking, forecasting, RL)          ❌ Phase 15
 ---
 
 ### 🟡 Phase 5 — BFF, AI & Rules Engine
-**Weeks 20–24 · 75% Complete · In Progress**
+**Weeks 20–24 · 85% Complete · In Progress**
 
-> **Code audit finding:** `bff-transactions` Edge Function does NOT exist. Frontend calls Supabase directly for transactions. Only `bff-dashboard` and `location-analytics-bff` are implemented BFF endpoints.
+> **Code audit finding:** `bff-transactions` now exists with pagination, filters, and Redis caching. Remaining work is frontend adoption for all transaction reads and BFF coverage for budgets/insights/geofences.
 
 | Week | Milestone | Status | Evidence |
 |---|---|---|---|
@@ -181,16 +181,16 @@ Advanced ML (ranking, forecasting, RL)          ❌ Phase 15
 | Week 23 | Webhook receiver + retry queue | ✅ Done | `supabase/functions/resend-webhook-handler/`, `retry-processor/` |
 | Week 24 | `plaid-create-link-token` Edge Function | ✅ Done | `supabase/functions/plaid-create-link-token/` |
 | Week 24 | `plaid-exchange-token` Edge Function | ✅ Done | `supabase/functions/plaid-exchange-token/` |
-| **Missing** | **`bff-transactions` Edge Function** | ❌ Not built | Frontend calls Supabase REST directly |
+| Week 24 | `bff-transactions` Edge Function | ✅ Done | `supabase/functions/bff-transactions/` |
 | **Missing** | **`bff-insights`, `bff-budgets`, `bff-geofences` endpoints** | ❌ Not built | No BFF layer for these |
-| **Gate** | **All BFF endpoints live; Plaid exchange working** | 🟡 Partial | bff-dashboard ✅, bff-transactions ❌ |
+| **Gate** | **All BFF endpoints live; Plaid exchange working** | 🟡 Partial | dashboard/transactions ✅; budgets/insights/geofences pending |
 
 ---
 
 ### 🟡 Phase 6 — Payment Integration ⚠️ REVENUE BLOCKER
-**Weeks 25–29 · 50% Complete · In Progress**
+**Weeks 25–29 · 75% Complete · In Progress**
 
-> **Code audit finding:** Plaid sync IS substantially implemented — `webhook-plaid` handles `SYNC_UPDATES_AVAILABLE` and upserts transactions via `/transactions/sync`. However, JWT signature verification is incomplete (header is checked but not cryptographically verified), `TRANSACTIONS_REMOVED` soft-delete is not implemented, and `PENDING→POSTED` transitions are not handled. Stripe is 0% — no Edge Functions, no billing UI, no subscription gating exist anywhere in the codebase.
+> **Code audit finding:** Plaid sync IS substantially implemented — `webhook-plaid` handles `SYNC_UPDATES_AVAILABLE` and upserts transactions via `/transactions/sync`. However, JWT signature verification is incomplete (header is checked but not cryptographically verified), `TRANSACTIONS_REMOVED` soft-delete is not implemented, and `PENDING→POSTED` transitions are not handled. Stripe code is implemented, but live products, price IDs, secrets, and webhook replay are still required before launch.
 
 | Week | Milestone | Status | Evidence |
 |---|---|---|---|
@@ -202,12 +202,14 @@ Advanced ML (ranking, forecasting, RL)          ❌ Phase 15
 | **Week 26** | **Plaid webhook JWT signature verification** | ❌ Incomplete | Header checked, not cryptographically verified |
 | **Week 27** | **`TRANSACTIONS_REMOVED` → soft-delete in DB** | ❌ Not done | Logs count, no DB write |
 | **Week 27** | **`PENDING → POSTED` status transition** | ❌ Not done | Not handled |
-| **Week 28** | **Stripe: `stripe-create-checkout-session` Edge Function** | ❌ Not started | No file exists |
-| **Week 28** | **Stripe: `stripe-create-portal-session` Edge Function** | ❌ Not started | No file exists |
-| **Week 29** | **Stripe: `stripe-webhook` Edge Function** | ❌ Not started | No file exists |
-| **Week 29** | **Subscription gating in `ProtectedRoute`** | ❌ Not done | `src/integrations/stripe/index.ts` is a stub |
-| **Week 29** | **Billing UI (plan selector, invoices)** | ❌ Not done | No billing page exists |
-| **Gate** | **User links bank → transactions sync → Stripe charges** | 🔴 Not passed | Stripe = 0% |
+| Week 28 | Stripe: `stripe-create-checkout-session` Edge Function | ✅ Done | `supabase/functions/stripe-create-checkout-session/` |
+| Week 28 | Stripe: `stripe-create-portal-session` Edge Function | ✅ Done | `supabase/functions/stripe-create-portal-session/` |
+| Week 28 | Stripe: `stripe-update-subscription` Edge Function | ✅ Done | `supabase/functions/stripe-update-subscription/` |
+| Week 29 | Stripe: `stripe-webhook` Edge Function | ✅ Done | `supabase/functions/stripe-webhook/` |
+| Week 29 | Subscription gating in `ProtectedRoute` | ✅ Done | `requirePro` + `useSubscription` |
+| Week 29 | Billing UI (plan selector, portal, plan switch) | ✅ Done | `src/features/settings/pages/Billing.tsx` |
+| **Remaining** | **Stripe production activation** | ❌ Pending | Products, price IDs, webhook secret, replay tests |
+| **Gate** | **User links bank → transactions sync → Stripe charges** | 🟡 Not passed | Code exists; production provider setup pending |
 
 ---
 
@@ -411,12 +413,9 @@ Advanced ML (ranking, forecasting, RL)          ❌ Phase 15
 
 ### 🔴 P0 — Cannot ship without
 
-- [ ] **Stripe: `stripe-create-checkout-session` Edge Function**
-- [ ] **Stripe: `stripe-webhook` Edge Function (subscription lifecycle)**
-- [ ] **Stripe: `stripe-create-portal-session` Edge Function**
-- [ ] **Subscription gating in `ProtectedRoute`** (free vs. paid)
-- [ ] **Billing UI** (plan selector, current plan, invoice history)
-- [ ] **`bff-transactions` Edge Function** (currently bypassed)
+- [ ] **Stripe production activation** (products, price IDs, webhook secret, replay tests)
+- [ ] **Payment provider decision** (Stripe default; Razorpay only if India/UPI is a primary launch market)
+- [ ] **Transaction page adoption of `bff-transactions`** where direct Supabase reads remain
 - [ ] **Sentry error monitoring** (can't diagnose production issues without it)
 - [ ] **CI/CD pipeline** (lint → test → build → deploy on merge)
 - [ ] **Unit + integration tests on critical paths**
@@ -426,7 +425,7 @@ Advanced ML (ranking, forecasting, RL)          ❌ Phase 15
 - [ ] **Plaid webhook JWT signature verification** (security gap)
 - [ ] **`TRANSACTIONS_REMOVED` soft-delete** in webhook-plaid
 - [ ] **`PENDING → POSTED` transition** in webhook-plaid
-- [ ] **UserDashboard real data** — replace hardcoded `$0.00` with real Supabase query
+- [ ] **UserDashboard metric validation** with seeded production-like data
 - [ ] **Extension popup: budget spending calculation** (currently always $0)
 - [ ] **Extension popup: one-click expense capture form**
 - [ ] **Extension build pipeline** (separate Vite config for `extension/`)
@@ -444,7 +443,7 @@ Advanced ML (ranking, forecasting, RL)          ❌ Phase 15
 - [ ] Receipt OCR fallback chain (Google Vision → HuggingFace → manual)
 - [ ] RLS edge-case audit
 - [ ] Security penetration test
-- [ ] Lazy-loading for internal/admin pages (reduce 3.2 MB bundle)
+- [ ] Lazy-loading for internal/admin pages and heavy diagram tooling
 
 ### 🔵 P3 — Post-launch backlog
 
@@ -464,7 +463,7 @@ Advanced ML (ranking, forecasting, RL)          ❌ Phase 15
 
 | Integration | Stub Location | What's Needed |
 |---|---|---|
-| **Stripe** | `src/integrations/stripe/index.ts` | 3 Edge Functions + `VITE_STRIPE_PUBLISHABLE_KEY` |
+| **Stripe** | `src/integrations/stripe/index.ts`, `supabase/functions/stripe-*` | Production products, price IDs, webhook secret, replay tests |
 | **Google Maps** | `src/integrations/google-maps/index.ts` | Maps JS key + `@vis.gl/react-google-maps` (Edge Fns already exist) |
 | **Foursquare** | `supabase/functions/foursquare-*/` (5 functions exist) | Frontend integration + API key |
 | **Plaid hardening** | `supabase/functions/webhook-plaid/` | JWT verify + REMOVED/PENDING→POSTED |
@@ -477,9 +476,9 @@ Advanced ML (ranking, forecasting, RL)          ❌ Phase 15
 
 | Metric | Verified Value | Previous (estimated) |
 |---|---|---|
-| Edge Functions | **110** | 96 (incorrect) |
+| Edge Functions | **120** | 96 (incorrect) |
 | Database tables | **~127** (from migration `CREATE TABLE` count) | 99 (incorrect) |
-| Migration files | **132** | — |
+| Migration files | **137** | — |
 | React feature pages | ~45 pages across all features | — |
 | Custom hooks (use*.ts/tsx) | **29** | 45 (incorrect) |
 | Capacitor plugins | BackgroundGeolocation · PushNotifications · Camera | — |
@@ -499,10 +498,10 @@ Advanced ML (ranking, forecasting, RL)          ❌ Phase 15
 | Maps | Leaflet, react-leaflet, Turf k-means, ngeohash | 1.9 |
 | AI / ML | Claude API, Gemini Pro, GPT-4, HuggingFace Transformers | 3.8 |
 | Extension | Chrome MV3, Service Worker, Content Scripts | — |
-| Payments | react-plaid-link (active), Stripe (stub only) | 4.1.1 |
+| Payments | react-plaid-link, Stripe Checkout/Portal/Webhooks | Plaid 4.1.1, Stripe.js 9.6 |
 | Observability | Performance API, structured logs, Supabase metrics, SLOs | — |
 | Security | Snyk, Dependabot, OWASP WAF, RLS, CSP, Vault secrets | — |
 
 ---
 
-*Last verified: 2026-05-25 against commit `f9432f0` on `main` (otherservices/true-spend-spark). Update the status column whenever a milestone is completed.*
+*Last verified: 2026-05-25 against branch `fix/website-auth-flow-hardening` (otherservices/true-spend-spark). Update the status column whenever a milestone is completed.*
