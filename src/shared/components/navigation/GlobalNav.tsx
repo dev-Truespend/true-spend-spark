@@ -5,6 +5,11 @@ import {
   Settings,
   LayoutDashboard,
   BarChart3,
+  Receipt,
+  TrendingUp,
+  Sparkles,
+  Activity,
+  ShieldCheck,
   RefreshCw,
   MapPin,
   Heart,
@@ -21,21 +26,23 @@ import { Separator } from '@/components/ui/separator';
 import { VersionDisplay } from '@/components/version/VersionDisplay';
 import { UserProfileDropdown } from '@/components/auth/UserProfileDropdown';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Logo } from '@/components/brand/Logo';
 import { cn } from '@/shared/lib/utils';
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', route: '/dashboard', icon: LayoutDashboard, roles: ['user', 'developer', 'admin'], authRequired: true },
-  { id: 'credit-cards', label: 'Credit Cards', route: '/credit-cards', icon: CreditCard, roles: ['user', 'developer', 'admin'], authRequired: true },
-  { id: 'transactions', label: 'Transactions', route: '/transactions', icon: BarChart3, roles: ['user', 'developer', 'admin'], authRequired: true },
-  { id: 'budgets', label: 'Budgets', route: '/budgets', icon: BarChart3, roles: ['user', 'developer', 'admin'], authRequired: true },
-  { id: 'insights', label: 'Insights', route: '/insights', icon: BarChart3, roles: ['user', 'developer', 'admin'], authRequired: true },
-  { id: 'location-history', label: 'Location', route: '/location-history', icon: MapPin, roles: ['user', 'developer', 'admin'], authRequired: true },
-  { id: 'favorites', label: 'Favorites', route: '/favorites', icon: Heart, roles: ['user', 'developer', 'admin'], authRequired: true },
-  { id: 'settings', label: 'Settings', route: '/settings', icon: Settings, roles: ['user', 'developer', 'admin'], authRequired: true },
-  { id: 'monitoring', label: 'Monitoring', route: '/monitoring', icon: BarChart3, roles: ['admin', 'developer'], authRequired: true },
-  { id: 'admin', label: 'Admin', route: '/admin', icon: Settings, roles: ['admin'], authRequired: true },
+  { id: 'dashboard',        label: 'Dashboard',    route: '/dashboard',        icon: LayoutDashboard, roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'credit-cards',     label: 'Credit Cards', route: '/credit-cards',     icon: CreditCard,     roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'transactions',     label: 'Transactions', route: '/transactions',     icon: Receipt,         roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'budgets',          label: 'Budgets',      route: '/budgets',          icon: TrendingUp,      roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'insights',         label: 'Insights',     route: '/insights',         icon: Sparkles,        roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'location-history', label: 'Location',     route: '/location-history', icon: MapPin,          roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'favorites',        label: 'Favorites',    route: '/favorites',        icon: Heart,           roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'settings',         label: 'Settings',     route: '/settings',         icon: Settings,        roles: ['user', 'developer', 'admin'], authRequired: true },
+  { id: 'monitoring',       label: 'Monitoring',   route: '/monitoring',       icon: Activity,        roles: ['admin', 'developer'],         authRequired: true },
+  { id: 'admin',            label: 'Admin',        route: '/admin',            icon: ShieldCheck,     roles: ['admin'],                      authRequired: true },
 ];
 
 export function GlobalNav() {
@@ -45,6 +52,22 @@ export function GlobalNav() {
   const { user, profile, signOut } = useAuth();
   const [showDebug, setShowDebug] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // ── Anomaly count for the Insights badge (lightweight count-only query) ──
+  const { data: anomalyCount = 0 } = useQuery({
+    queryKey: ['nav-anomaly-count', user?.id],
+    enabled:  !!user,
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000, // re-check every 5 min in background
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('anomaly_detections')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      if (error) return 0;
+      return count ?? 0;
+    },
+  });
 
   // Close the mobile sheet whenever the route changes — otherwise the
   // drawer stays open after a click and feels broken.
@@ -184,6 +207,7 @@ export function GlobalNav() {
                   {accessibleItems.slice(0, 6).map(item => {
                     const isActive = location.pathname.startsWith(item.route) && item.route !== '/'
                                   || (item.route === '/' && location.pathname === '/');
+                    const showBadge = item.id === 'insights' && anomalyCount > 0;
 
                     return (
                       <Link
@@ -198,6 +222,11 @@ export function GlobalNav() {
                         }`}>
                           {item.label}
                         </span>
+                        {showBadge && (
+                          <span className="absolute -top-1.5 -right-3 h-4 min-w-4 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center px-1">
+                            {anomalyCount > 9 ? '9+' : anomalyCount}
+                          </span>
+                        )}
                         <span className={`absolute -bottom-1 left-0 h-[2px] bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal transition-all duration-300 ${
                           isActive ? 'w-full' : 'w-0 group-hover:w-full'
                         }`}></span>
@@ -245,6 +274,7 @@ export function GlobalNav() {
                       {accessibleItems.map((item) => {
                         const isActive = location.pathname.startsWith(item.route);
                         const Icon = item.icon;
+                        const showBadge = item.id === 'insights' && anomalyCount > 0;
                         return (
                           <Link
                             key={item.id}
@@ -254,8 +284,13 @@ export function GlobalNav() {
                               isActive && "bg-muted/60 text-foreground border-l-2 border-primary"
                             )}
                           >
-                            <Icon className="h-4 w-4 text-muted-foreground" />
-                            {item.label}
+                            <Icon className={cn("h-4 w-4", isActive ? "text-primary" : "text-muted-foreground")} />
+                            <span className="flex-1">{item.label}</span>
+                            {showBadge && (
+                              <span className="h-5 min-w-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1.5">
+                                {anomalyCount > 9 ? '9+' : anomalyCount}
+                              </span>
+                            )}
                           </Link>
                         );
                       })}

@@ -12,9 +12,10 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   Loader2, TrendingUp, Lightbulb, AlertCircle, Sparkles, AlertTriangle,
-  RefreshCw, BarChart3, PieChart,
+  RefreshCw, BarChart3, PieChart, CheckCheck, X as XIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
 
 // ── Types ─────────────────────────────────────────────────────────────
 interface TopCategory {
@@ -56,6 +57,7 @@ export default function Insights() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [period, setPeriod] = useState<Period>("month");
+  const [analysisTimestamp, setAnalysisTimestamp] = useState<Date | null>(null);
 
   // ── Analysis query ─────────────────────────────────────────────────
   const analysisQuery = useQuery<SpendingAnalysis>({
@@ -74,6 +76,7 @@ export default function Insights() {
         }
         throw error;
       }
+      setAnalysisTimestamp(new Date());
       return data;
     },
   });
@@ -98,6 +101,22 @@ export default function Insights() {
       await analysisQuery.refetch();
     },
     onSuccess: () => toast.success("Insights refreshed"),
+  });
+
+  // ── Dismiss anomaly ────────────────────────────────────────────────
+  const dismissAnomaly = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("anomaly_detections")
+        .update({ status: "dismissed" })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["anomalies"] });
+      toast.success("Dismissed");
+    },
+    onError: () => toast.error("Could not dismiss — try again"),
   });
 
   // ── Anomalies query ────────────────────────────────────────────────
@@ -129,12 +148,15 @@ export default function Insights() {
             AI Insights
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Smart analysis of your spending patterns · {PERIOD_LABEL[period]}
-            {analysis?.cached && (
-              <Badge variant="outline" className="ml-2 gap-1 text-[10px]">
-                <Sparkles className="h-3 w-3" />
-                Cached
-              </Badge>
+            {analysisQuery.isFetching || refresh.isPending ? (
+              <span className="inline-flex items-center gap-1.5">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Analyzing your spending…
+              </span>
+            ) : analysisTimestamp ? (
+              `Last analyzed ${formatDistanceToNow(analysisTimestamp, { addSuffix: true })} · ${PERIOD_LABEL[period]}`
+            ) : (
+              `Smart analysis of your spending · ${PERIOD_LABEL[period]}`
             )}
           </p>
         </div>
@@ -143,6 +165,7 @@ export default function Insights() {
           onClick={() => refresh.mutate()}
           disabled={refresh.isPending || analysisQuery.isFetching}
           variant="outline"
+          size="sm"
           className="gap-2 self-start"
         >
           {(refresh.isPending || analysisQuery.isFetching) ? (
@@ -150,7 +173,7 @@ export default function Insights() {
           ) : (
             <RefreshCw className="h-4 w-4" />
           )}
-          Refresh
+          Analyze now
         </Button>
       </div>
 
@@ -325,14 +348,14 @@ export default function Insights() {
                 <div className="space-y-2">
                   {anomalies.map((a) => (
                     <div key={a.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-card border">
-                      <div className="flex items-start gap-3 min-w-0">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
                         <AlertCircle className={cn(
                           "h-4 w-4 mt-0.5 shrink-0",
                           a.severity === 'critical' ? "text-red-600" :
                           a.severity === 'warning'  ? "text-orange-600" :
                                                        "text-blue-600"
                         )} />
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="font-medium text-sm capitalize truncate">
                             {a.anomaly_type.replace(/_/g, ' ')}
                           </p>
@@ -347,9 +370,25 @@ export default function Insights() {
                           )}
                         </div>
                       </div>
-                      <Badge variant={a.severity === 'critical' ? 'destructive' : 'outline'} className="capitalize shrink-0">
-                        {a.severity}
-                      </Badge>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant={a.severity === 'critical' ? 'destructive' : 'outline'} className="capitalize">
+                          {a.severity}
+                        </Badge>
+                        <button
+                          type="button"
+                          onClick={() => dismissAnomaly.mutate(a.id)}
+                          disabled={dismissAnomaly.isPending}
+                          title="Dismiss — mark as expected"
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                          aria-label="Dismiss anomaly"
+                        >
+                          {dismissAnomaly.isPending ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <CheckCheck className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
