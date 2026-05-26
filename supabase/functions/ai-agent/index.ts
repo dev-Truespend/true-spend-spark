@@ -560,6 +560,7 @@ serve(async (req) => {
                 user.id
               );
               // Capture structured data from key tools for direct use in UI
+              if (toolUse.name === "get_spending_summary") structuredData = result;
               if (toolUse.name === "get_best_card_for_purchase") structuredData = result;
               if (toolUse.name === "calculate_missed_rewards") structuredData = result;
               if (toolUse.name === "get_card_apply_recommendations") structuredData = result;

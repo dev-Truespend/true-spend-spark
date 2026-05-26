@@ -103,7 +103,7 @@ export const BackupStatusDashboard = () => {
           
           <div className="space-y-2">
             <div className="text-sm text-muted-foreground">Retention</div>
-            <div className="font-medium">30 days (Lovable Cloud)</div>
+            <div className="font-medium">30 days (Supabase PITR)</div>
           </div>
         </div>
         
@@ -114,7 +114,7 @@ export const BackupStatusDashboard = () => {
               <div className="flex-1">
                 <div className="font-medium text-destructive">Backup Warning</div>
                 <div className="text-sm text-destructive/80">
-                  Last backup is more than 25 hours old. Expected daily backups from Lovable Cloud.
+                  Last backup is more than 25 hours old. Expected daily backups from Supabase.
                 </div>
               </div>
             </div>

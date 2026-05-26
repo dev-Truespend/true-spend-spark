@@ -65,8 +65,8 @@ export default function Insights() {
     enabled:  !!user,
     staleTime: 60 * 60 * 1000, // 1 hour client-side (server caches 24h)
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('ai-analyze-spending', {
-        body: { period },
+      const { data, error } = await supabase.functions.invoke('ai-agent', {
+        body: { intent: 'analyze_spending', payload: { period } },
       });
       if (error) {
         if (error.message?.includes('Rate limit')) {
@@ -77,25 +77,34 @@ export default function Insights() {
         throw error;
       }
       setAnalysisTimestamp(new Date());
-      return data;
+      const summary = data?.data as {
+        total_spent_dollars?: string;
+        transaction_count?: number;
+        top_categories?: Array<{ category: string; total_dollars: string; percentage: number }>;
+      } | null;
+
+      return {
+        insights: data?.response ? [data.response] : [],
+        patterns: [],
+        recommendations: [],
+        topCategories: summary?.top_categories?.map((cat) => ({
+          category: cat.category,
+          spent: Number(cat.total_dollars),
+          percentage: cat.percentage,
+        })) ?? [],
+        totalSpent: Number(summary?.total_spent_dollars ?? 0),
+        txCount: summary?.transaction_count ?? 0,
+        cached: false,
+      };
     },
   });
 
   // ── Force-refresh mutation (bypass cache) ──────────────────────────
-  // The Edge Function reads from spending_patterns first; deleting the
-  // current period's cache row before refetch forces a fresh AI call.
+  // Agent calls are cached client-side; invalidating the current period
+  // forces a fresh call.
   const refresh = useMutation({
     mutationFn: async () => {
       if (!user) return;
-      const patternType = period === 'week' ? 'weekly' : period === 'quarter' ? 'quarterly' : 'monthly';
-      // Best-effort cache bust — ignore errors (RLS may block, the
-      // Edge Function will fall back to whatever's in the cache).
-      await supabase
-        .from('spending_patterns')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('pattern_type', patternType);
-
       qc.invalidateQueries({ queryKey: ['spending-analysis', period] });
       // Wait for refetch so the spinner is honest
       await analysisQuery.refetch();

@@ -85,11 +85,11 @@ jobs:
       - name: Verify lockfile updated
         if: steps.check-changes.outputs.dependency_blocks_changed == 'true'
         run: |
-          if git diff --name-only HEAD^ HEAD | grep -q "bun.lock"; then
+          if git diff --name-only HEAD^ HEAD | grep -q "package-lock.json"; then
             echo "✅ Lockfile updated with package.json changes"
           else
-            echo "❌ ERROR: package.json was modified but bun.lock was not updated!"
-            echo "Please run: bun install"
+            echo "❌ ERROR: package.json was modified but package-lock.json was not updated!"
+            echo "Please run: npm install"
             exit 1
           fi
 
@@ -113,11 +113,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       - name: Run security audit
         run: |

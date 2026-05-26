@@ -8,7 +8,7 @@ on:
     branches: [main, develop]
     paths:
       - 'package.json'
-      - 'bun.lock'
+      - 'package-lock.json'
   workflow_dispatch:
 
 jobs:
@@ -22,10 +22,11 @@ jobs:
         with:
           fetch-depth: 2
         
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node
+        uses: actions/setup-node@v5
         with:
-          bun-version: latest
+          node-version: 20
+          cache: npm
           
       - name: Check if package.json changed without lockfile
         run: |
@@ -41,16 +42,16 @@ jobs:
               PACKAGE_CHANGED=1
             fi
           fi
-          LOCKFILE_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c "bun.lock" || true)
+          LOCKFILE_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c "package-lock.json" || true)
           
           if [ "$PACKAGE_CHANGED" -gt 0 ] && [ "$LOCKFILE_CHANGED" -eq 0 ]; then
-            echo "❌ package.json dependency blocks changed without bun.lock"
-            echo "Please run 'bun install' and commit the updated bun.lock"
+            echo "❌ package.json dependency blocks changed without package-lock.json"
+            echo "Please run 'npm install' and commit the updated package-lock.json"
             exit 1
           fi
           
           if [ "$LOCKFILE_CHANGED" -gt 0 ] && [ "$PACKAGE_CHANGED" -eq 0 ]; then
-            echo "⚠️  bun.lock changed without package.json - please verify this is intentional"
+            echo "⚠️  package-lock.json changed without package.json - please verify this is intentional"
           fi
           
           echo "✅ Lockfile integrity verified"
@@ -59,8 +60,7 @@ jobs:
         run: |
           echo "🔍 Verifying lockfile is up to date..."
           
-          # Install dependencies
-          bun install --frozen-lockfile
+          npm ci
           
           echo "✅ Lockfile is up to date"
           

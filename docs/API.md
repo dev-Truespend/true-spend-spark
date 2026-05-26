@@ -1,183 +1,150 @@
 # Edge Functions API Reference
 
-All functions are Deno-based Supabase Edge Functions invoked via `supabase.functions.invoke()` or direct HTTP.
+Base URL:
 
-**Base URL:** `https://<project>.supabase.co/functions/v1/`
+```text
+https://<project-ref>.supabase.co/functions/v1/<function-name>
+```
 
-**Auth:** All endpoints require the `Authorization: Bearer <supabase-jwt>` header unless noted.
+Most functions require:
 
-**Common request headers:**
-- `x-request-id` — UUID per request (auto-set by `bffClient`)
-- `x-correlation-id` — trace ID (auto-set by `bffClient`)
+```http
+Authorization: Bearer <supabase-user-jwt>
+Content-Type: application/json
+```
 
----
+Provider webhooks use provider signatures instead of a user JWT.
 
-## bff-dashboard
+## Standard Error Shape
 
-Aggregated dashboard data in a single round-trip.
-
-**Method:** `GET`
-
-**Response:**
 ```json
 {
-  "transactions": [...],
-  "budgets": [...],
-  "alerts": [...],
-  "geofences": [...],
-  "patterns": [...],
-  "summary": {
-    "totalSpent": 1234.56,
-    "avgTransaction": 45.20,
-    "transactionCount": 27,
-    "activeBudgets": 3,
-    "alertCount": 1
-  },
-  "meta": {
-    "responseTime": "142ms",
-    "cached": false
+  "ok": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "User must be signed in",
+    "correlationId": "request-id"
   }
 }
 ```
 
----
+## `ai-agent`
 
-## process-transaction
-
-Create a transaction with geofence matching, merchant resolution, and rule evaluation.
+Primary AI orchestration endpoint. New user-facing AI features should use this endpoint instead of creating another single-purpose AI function.
 
 **Method:** `POST`
 
 **Body:**
+
 ```json
 {
-  "amount": 42.50,
-  "category": "Dining",
-  "description": "Starbucks Coffee",
-  "location_lat": 37.7749,
-  "location_lng": -122.4194,
-  "timestamp": "2025-05-24T10:30:00Z",
-  "idempotency_key": "txn-1716549000-abc123"
+  "intent": "analyze_spending",
+  "payload": {
+    "period": "month"
+  }
 }
 ```
+
+Supported intents:
+
+| Intent | Payload |
+| --- | --- |
+| `analyze_spending` | `{ "period": "week" | "month" | "quarter" }` |
+| `best_card_now` | `{ "merchant": "Whole Foods", "category": "groceries", "amount": 87.32 }` |
+| `missed_rewards` | `{ "period": "month" }` |
+| `recommend_card_to_apply` | `{ "goal": "maximize dining rewards" }` |
+| `chat` | `{ "message": "What's my best card for Amazon?" }` |
 
 **Response:**
+
 ```json
 {
-  "transaction": { "id": "uuid", "amount": 42.50, ... },
-  "geofence_matched": true,
-  "rules_applied": 2
+  "response": "Your highest spend this month is dining...",
+  "data": {
+    "top_categories": [
+      { "category": "Dining", "amount": 420.5, "percentage": 34 }
+    ]
+  },
+  "toolCalls": ["get_spending_summary"]
 }
 ```
 
----
+## AI Compatibility Endpoints
 
-## ai-categorize-transaction
+These endpoints remain for existing callers. Prefer `ai-agent` for new code.
 
-Infer a spending category from a description using LLM.
+### `ai-analyze-spending`
 
-**Method:** `POST`
+Returns the legacy spending-analysis shape for Insights and older clients.
 
-**Body:**
-```json
-{
-  "description": "WHOLEFDS MKT #10",
-  "amount": 87.32,
-  "merchant_name": "Whole Foods",
-  "location_type": "grocery"
-}
-```
-
-**Response:**
-```json
-{
-  "category": "Groceries",
-  "confidence": 0.97,
-  "merchant_normalized": "Whole Foods Market",
-  "original_description": "WHOLEFDS MKT #10"
-}
-```
-
----
-
-## ai-analyze-spending
-
-Generate AI-powered insights for a given time period.
-
-**Method:** `POST`
-
-**Body:**
 ```json
 { "period": "month" }
 ```
 
-`period` values: `"week"` | `"month"` | `"quarter"`
+### `ai-categorize-transaction`
 
-**Response:**
 ```json
 {
-  "insights": ["You spent 23% more on dining this month vs last month"],
-  "patterns": ["Weekly grocery shop every Saturday"],
-  "recommendations": ["Set a $200 dining budget to save $80/month"],
-  "topCategories": [
-    { "category": "Dining", "spent": 420.00, "percentage": 34 }
-  ],
-  "cached": false
+  "description": "WHOLEFDS MKT #10",
+  "merchant_name": "Whole Foods",
+  "amount": 87.32,
+  "location_type": "grocery"
 }
 ```
 
----
+### `location-insights-ai`
 
-## ocr-receipt
+Legacy location insight generator. Keep only until location features are migrated to `ai-agent`.
 
-Extract transaction data from a receipt image.
+## Transactions
 
-**Method:** `POST`
+### `process-transaction`
 
-**Body:**
+Creates a manual transaction, resolves merchant/geofence context, and evaluates budget rules.
+
 ```json
 {
-  "image": "<base64-encoded-image>",
-  "mimeType": "image/jpeg"
-}
-```
-
-**Response:**
-```json
-{
-  "amount": 24.99,
-  "description": "Coffee and pastry",
-  "merchant": "Blue Bottle Coffee",
+  "amount": 42.5,
   "category": "Dining",
-  "timestamp": "2025-05-24T09:15:00Z",
-  "confidence": 0.89
+  "description": "Coffee",
+  "timestamp": "2026-05-26T10:30:00Z",
+  "location_lat": 37.7749,
+  "location_lng": -122.4194,
+  "idempotency_key": "txn-uuid"
 }
 ```
 
----
+### `bff-transactions`
 
-## plaid-link-token-create
+Paginated transaction read API with filters and optional Redis caching.
 
-Create a Plaid Link token to initialise the Plaid Link UI.
+Query params:
 
-**Method:** `POST`
+| Param | Example |
+| --- | --- |
+| `page` | `1` |
+| `limit` | `25` |
+| `category` | `Dining` |
+| `dateFrom` | `2026-05-01` |
+| `dateTo` | `2026-05-31` |
+| `creditCardId` | `uuid` |
+| `search` | `whole foods` |
+| `synced` | `true` |
 
-**Body:** `{}`
+## Plaid
 
-**Response:**
+### `plaid-create-link-token`
+
+Creates a Plaid Link token for the current user.
+
 ```json
-{ "link_token": "link-sandbox-..." }
+{}
 ```
 
----
+### `plaid-exchange-token`
 
-## plaid-exchange-token
+Exchanges Plaid's public token for stored access credentials.
 
-Exchange a Plaid public token for an access token after the user completes Link.
-
-**Method:** `POST`
-
-**Body:**
 ```json
 {
   "public_token": "public-sandbox-...",
@@ -186,36 +153,104 @@ Exchange a Plaid public token for an access token after the user completes Link.
 }
 ```
 
-**Response:**
-```json
-{ "success": true, "accounts_linked": 2 }
-```
+### `plaid-sync-transactions`
 
----
-
-## plaid-webhook
-
-Receives Plaid webhook events. Not called by the frontend — configured as the Plaid webhook URL in your Plaid dashboard.
-
-**Method:** `POST`
-
-Processes `TRANSACTIONS_DEFAULT_UPDATE`, `TRANSACTIONS_INITIAL_UPDATE`, and `TRANSACTIONS_REMOVED` events. Syncs new transactions to the `transactions` table.
-
----
-
-## Error Format
-
-All functions return errors in this shape:
+Manually triggers transaction sync for a linked item.
 
 ```json
 {
-  "ok": false,
-  "error": {
-    "code": "RATE_LIMIT_EXCEEDED",
-    "message": "Too many requests. Retry after 60 seconds.",
-    "correlationId": "1716549000-abc123"
-  }
+  "item_id": "uuid"
 }
 ```
 
-Common error codes: `UNAUTHORIZED`, `RATE_LIMIT_EXCEEDED`, `AI_CREDITS_DEPLETED`, `PLAID_ERROR`, `VALIDATION_ERROR`.
+### `webhook-plaid`
+
+Provider webhook. Configure in Plaid dashboard:
+
+```text
+https://<project-ref>.supabase.co/functions/v1/webhook-plaid
+```
+
+Production gaps:
+
+- JWT signature verification must be completed.
+- Removed transactions must soft-delete or mark inactive.
+- Pending-to-posted transitions must deduplicate correctly.
+
+## Stripe
+
+### `stripe-create-checkout-session`
+
+Creates Stripe Checkout for a subscription plan.
+
+```json
+{
+  "priceId": "price_...",
+  "successUrl": "https://app.example.com/settings/billing?success=true",
+  "cancelUrl": "https://app.example.com/settings/billing?canceled=true"
+}
+```
+
+### `stripe-create-portal-session`
+
+Creates a Stripe customer portal session.
+
+```json
+{
+  "returnUrl": "https://app.example.com/settings/billing"
+}
+```
+
+### `stripe-update-subscription`
+
+Changes the current user's subscription price.
+
+```json
+{
+  "priceId": "price_..."
+}
+```
+
+### `stripe-webhook`
+
+Provider webhook. Configure in Stripe dashboard:
+
+```text
+https://<project-ref>.supabase.co/functions/v1/stripe-webhook
+```
+
+Requires `STRIPE_WEBHOOK_SECRET`.
+
+## Email
+
+### `send-email-notification`
+
+Sends transactional email through the configured email provider.
+
+### `send-verification-email`
+
+Sends or resends email verification.
+
+### `request-password-reset` / `complete-password-reset`
+
+Password reset flow wrappers around Supabase Auth.
+
+## OCR
+
+### `ocr-process-receipt`
+
+Extracts structured receipt data from an uploaded image URL.
+
+```json
+{
+  "imageUrl": "https://<storage-url>/receipt.jpg"
+}
+```
+
+## Endpoint Design Rules
+
+- Use `ai-agent` for new AI behavior.
+- Use direct table queries only for simple RLS-safe reads.
+- Put provider secrets and webhook handling in Edge Functions.
+- Keep response shapes stable for frontend callers.
+- Add idempotency keys to any endpoint that creates financial records.

@@ -10,8 +10,7 @@
   ],
   "host_permissions": [
     "https://uolpwcngftpmgkopltwz.supabase.co/*",
-    "https://truespend.org/*",
-    "https://*.lovable.app/*"
+    "https://truespend.org/*"
   ],
   "background": {
     "service_worker": "background.js",

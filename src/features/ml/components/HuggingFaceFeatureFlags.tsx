@@ -82,7 +82,7 @@ export function HuggingFaceFeatureFlags() {
         return {
           title: 'HF Primary OCR',
           description: 'Use HF Inference API as primary OCR service',
-          impact: 'May increase latency but provides alternative to Lovable AI'
+          impact: 'May increase latency but provides an independent OCR fallback'
         };
       default:
         return {

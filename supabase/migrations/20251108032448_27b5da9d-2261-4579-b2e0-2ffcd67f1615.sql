@@ -105,7 +105,7 @@ VALUES (
   'Medium',
   0,
   5,
-  'Build AI-powered location insights and merchant discovery: background geolocation tracking, geofence entry/exit detection, location-based budget rules, and AI location analysis using Lovable AI (Gemini 2.5 Flash)',
+  'Build AI-powered location insights and merchant discovery: background geolocation tracking, geofence entry/exit detection, location-based budget rules, and AI location analysis using the AI agent (Gemini 2.5 Flash)',
   '["External Communication"]'::jsonb
 );
 
