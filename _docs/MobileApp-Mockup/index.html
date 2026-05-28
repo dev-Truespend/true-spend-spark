@@ -20,7 +20,7 @@
     online from a URL, or in real life via location. Multi-category stores ask what you're buying, missed
     rewards are flagged, and Pro adds unlimited linking, receipts, geofences, budgets, and missed-savings insights.
   </p>
-  <span class="page-meta"><span class="dot"></span> 39 screens · Basic: 3 Plaid + 2 manual · Pro: unlimited · 7-day free trial</span>
+  <span class="page-meta"><span class="dot"></span> 42 screens · Basic: 3 Plaid + 2 manual · Pro: unlimited · 7-day free trial</span>
 </header>
 
 <!-- ════════════════ SECTION 1: AUTH ════════════════ -->
@@ -155,7 +155,7 @@
               <div class="onboard-illust">🏦</div>
               <h2 class="onboard-title">Connect your bank</h2>
               <p class="onboard-text">
-                We use Plaid to securely import your cards and transactions. Read-only —
+                We use Plaid to securely identify your cards and account metadata. Read-only —
                 we never see your password and can't move money.
               </p>
             </div>
@@ -276,7 +276,7 @@
                 <input class="input" placeholder="Travel card" />
               </div>
               <div class="form-row">
-                <label>Last 4 (for matching transactions)</label>
+                <label>Last 4 (for display)</label>
                 <input class="input" placeholder="•• 4821" maxlength="4" />
               </div>
               <div class="row" style="margin-top: 6px;">
@@ -359,7 +359,7 @@
               <div class="price">$2.99 <small>/month</small></div>
               <div class="feat"><span class="check">✓</span> Up to 3 Plaid + 2 manual cards</div>
               <div class="feat"><span class="check">✓</span> Best-card recommendations</div>
-              <div class="feat"><span class="check">✓</span> 5 receipts/month</div>
+              <div class="feat"><span class="check">✓</span> Manual transaction tracking</div>
             </div>
 
             <div class="plan-card featured">
@@ -369,8 +369,8 @@
               </div>
               <div class="price">$7.99 <small>/month</small></div>
               <div class="feat"><span class="check">✓</span> Unlimited Plaid + manual linking</div>
-              <div class="feat"><span class="check">✓</span> Geofences & background nudges</div>
-              <div class="feat"><span class="check">✓</span> Unlimited receipts · budgets · AI insights</div>
+              <div class="feat"><span class="check">✓</span> Phase 2 geofences, receipts, budgets</div>
+              <div class="feat"><span class="check">✓</span> Missed-rewards insights + AI nudges</div>
             </div>
 
             <div class="reason-card" style="margin-top: 10px; background: hsl(var(--brand-teal) / .08); border-color: hsl(var(--brand-teal) / .3);">
@@ -378,9 +378,9 @@
               <p>Whichever plan you pick, the first 7 days are free. We'll remind you 2 days before billing starts.</p>
             </div>
 
-            <button class="btn btn-primary" style="margin-top: 12px;">Start free trial with Basic</button>
+            <button class="btn btn-primary" style="margin-top: 12px;">Continue to Stripe checkout</button>
             <button class="btn btn-outline" style="margin-top: 8px;">Switch to Pro free trial</button>
-            <p class="phone-muted center" style="font-size: .66rem; margin-top: 8px;">No charge until day 8. Cancel anytime in Settings.</p>
+            <p class="phone-muted center" style="font-size: .66rem; margin-top: 8px;">No charge until day 8. Stripe shows Apple Pay on iOS and Google Pay on Android when available.</p>
           </div>
           <div class="home-indicator"></div>
         </div>
@@ -460,14 +460,13 @@
 
             <div class="trial-banner">
               <h4>✦ Upgrade to Pro</h4>
-              <p>Unlimited Plaid and manual links, missed-rewards insights, receipts, geofences, budgets.</p>
+              <p>Unlimited Plaid and manual links now, plus Phase 2 receipts, geofences, and budgets.</p>
               <button class="btn btn-primary btn-sm" style="width: auto;">Get Pro</button>
             </div>
           </div>
           <div class="tab-bar">
             <div class="tab-item active"><span class="icon">🏠</span>Home</div>
             <div class="tab-item"><span class="icon">💳</span>Cards</div>
-            <div class="tab-item"><span class="icon">🔍</span>Search</div>
             <div class="tab-item"><span class="icon">📊</span>Insights</div>
             <div class="tab-item"><span class="icon">👤</span>Profile</div>
           </div>
@@ -520,8 +519,7 @@
             </div>
 
             <div class="quick-actions">
-              <div class="quick-btn"><div class="qi">📷</div>Scan receipt</div>
-              <div class="quick-btn"><div class="qi">🌐</div>Online</div>
+              <div class="quick-btn"><div class="qi">＋</div>Log txn</div>
               <div class="quick-btn"><div class="qi">💳</div>My cards</div>
               <div class="quick-btn"><div class="qi">📊</div>Insights</div>
             </div>
@@ -547,7 +545,6 @@
           <div class="tab-bar">
             <div class="tab-item active"><span class="icon">🏠</span>Home</div>
             <div class="tab-item"><span class="icon">💳</span>Cards</div>
-            <div class="tab-item"><span class="icon">🔍</span>Search</div>
             <div class="tab-item"><span class="icon">📊</span>Insights</div>
             <div class="tab-item"><span class="icon">👤</span>Profile</div>
           </div>
@@ -617,8 +614,7 @@
             </div>
 
             <div class="quick-actions">
-              <div class="quick-btn"><div class="qi">📷</div>Scan receipt</div>
-              <div class="quick-btn"><div class="qi">🌐</div>Online</div>
+              <div class="quick-btn"><div class="qi">＋</div>Log txn</div>
               <div class="quick-btn"><div class="qi">💳</div>My cards</div>
               <div class="quick-btn"><div class="qi">📊</div>Insights</div>
             </div>
@@ -626,7 +622,6 @@
           <div class="tab-bar">
             <div class="tab-item active"><span class="icon">🏠</span>Home</div>
             <div class="tab-item"><span class="icon">💳</span>Cards</div>
-            <div class="tab-item"><span class="icon">🔍</span>Search</div>
             <div class="tab-item"><span class="icon">📊</span>Insights</div>
             <div class="tab-item"><span class="icon">👤</span>Profile</div>
           </div>
@@ -702,7 +697,6 @@
           <div class="tab-bar">
             <div class="tab-item active"><span class="icon">🏠</span>Home</div>
             <div class="tab-item"><span class="icon">💳</span>Cards</div>
-            <div class="tab-item"><span class="icon">🔍</span>Search</div>
             <div class="tab-item"><span class="icon">📊</span>Insights</div>
             <div class="tab-item"><span class="icon">👤</span>Profile</div>
           </div>
@@ -710,47 +704,6 @@
         </div>
       </div>
       <div class="phone-label"><span class="phone-label-num">3.4</span>At Walmart<span class="phone-caption">Same pattern · code-coverage warning</span></div>
-    </div>
-
-    <!-- 3.5 Geofence push nudge (lock-screen-ish) -->
-    <div class="phone-wrap">
-      <div class="phone">
-        <div class="phone-screen" style="background: linear-gradient(180deg, hsl(218 50% 18%), hsl(274 50% 25%));">
-          <div class="status-bar dark"><span>9:41</span><span class="right">5G · 100%</span></div>
-          <div class="screen-body" style="padding-top: 12px;">
-            <div style="text-align: center; color: white; margin: 24px 0 28px;">
-              <div style="font-size: 4rem; font-weight: 200; line-height: 1;">9:41</div>
-              <div style="font-size: .9rem; opacity: .85; font-weight: 500; margin-top: 2px;">Tuesday, May 26</div>
-            </div>
-
-            <div style="background: rgba(255,255,255,0.13); backdrop-filter: blur(20px); border-radius: 18px; padding: 14px; color: white;">
-              <div class="row between" style="margin-bottom: 8px;">
-                <div class="row" style="gap: 8px;">
-                  <div class="brand-mark" style="width: 28px; height: 28px; font-size: .9rem; border-radius: 8px;">T</div>
-                  <span style="font-size: .75rem; font-weight: 600;">TrueSpend</span>
-                </div>
-                <span style="font-size: .65rem; opacity: .7;">now</span>
-              </div>
-              <div style="font-size: .85rem; font-weight: 700; margin-bottom: 4px;">📍 You just walked into Whole Foods</div>
-              <div style="font-size: .78rem; opacity: .85; line-height: 1.4;">Use <strong>Amex Gold</strong> ••1903 for 4× points on groceries. Tap to see why.</div>
-            </div>
-
-            <div style="background: rgba(255,255,255,0.13); backdrop-filter: blur(20px); border-radius: 18px; padding: 14px; color: white; margin-top: 8px;">
-              <div class="row between" style="margin-bottom: 8px;">
-                <div class="row" style="gap: 8px;">
-                  <div class="brand-mark" style="width: 28px; height: 28px; font-size: .9rem; border-radius: 8px;">T</div>
-                  <span style="font-size: .75rem; font-weight: 600;">TrueSpend</span>
-                </div>
-                <span style="font-size: .65rem; opacity: .7;">12m</span>
-              </div>
-              <div style="font-size: .85rem; font-weight: 700; margin-bottom: 4px;">💸 Missed +$4.50 in rewards</div>
-              <div style="font-size: .78rem; opacity: .85; line-height: 1.4;">Best Buy on Sapphire (2×) instead of Flex (5×).</div>
-            </div>
-          </div>
-          <div class="home-indicator"></div>
-        </div>
-      </div>
-      <div class="phone-label"><span class="phone-label-num">3.5</span>Lock-screen nudge<span class="phone-caption">Geofenced push notification</span></div>
     </div>
 
   </div>
@@ -830,7 +783,6 @@
           <div class="tab-bar">
             <div class="tab-item"><span class="icon">🏠</span>Home</div>
             <div class="tab-item active"><span class="icon">💳</span>Cards</div>
-            <div class="tab-item"><span class="icon">🔍</span>Search</div>
             <div class="tab-item"><span class="icon">📊</span>Insights</div>
             <div class="tab-item"><span class="icon">👤</span>Profile</div>
           </div>
@@ -963,7 +915,6 @@
           <div class="tab-bar">
             <div class="tab-item"><span class="icon">🏠</span>Home</div>
             <div class="tab-item active"><span class="icon">💳</span>Cards</div>
-            <div class="tab-item"><span class="icon">🔍</span>Search</div>
             <div class="tab-item"><span class="icon">📊</span>Insights</div>
             <div class="tab-item"><span class="icon">👤</span>Profile</div>
           </div>
@@ -1125,16 +1076,6 @@
               </div>
               <div class="list-amount">$150.00</div>
             </div>
-            <div class="list-item">
-              <div class="list-icon teal">📷</div>
-              <div class="list-body">
-                <div class="list-title">CVS Pharmacy <span class="badge" style="background: hsl(var(--brand-teal) / .12); color: hsl(var(--brand-teal)); margin-left: 4px;">Manual</span></div>
-                <div class="list-meta">Savor ••9988 · receipt scanned</div>
-                <div class="list-tag">+$0.34 cash</div>
-              </div>
-              <div class="list-amount">$11.20</div>
-            </div>
-
             <p class="section-label">May 24</p>
             <div class="list-item">
               <div class="list-icon teal">🚗</div>
@@ -1168,7 +1109,6 @@
           <div class="tab-bar">
             <div class="tab-item"><span class="icon">🏠</span>Home</div>
             <div class="tab-item"><span class="icon">💳</span>Cards</div>
-            <div class="tab-item"><span class="icon">🔍</span>Search</div>
             <div class="tab-item active"><span class="icon">📊</span>Insights</div>
             <div class="tab-item"><span class="icon">👤</span>Profile</div>
           </div>
@@ -1176,6 +1116,72 @@
         </div>
       </div>
       <div class="phone-label"><span class="phone-label-num">6.1</span>Insights → Transactions<span class="phone-caption">Sub-tab · search · filter · missed callout</span></div>
+    </div>
+
+    <!-- 6.1b Manual transaction entry -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="status-bar"><span>9:41</span><span class="right">5G · 100%</span></div>
+          <div class="screen-body">
+            <div class="row between" style="padding: 8px 0;">
+              <button class="btn-ghost" style="font-size: .9rem; padding: 4px;">Cancel</button>
+              <span style="font-weight: 700; font-size: .9rem;">Log transaction</span>
+              <button class="btn-ghost" style="font-size: .82rem; font-weight: 700; color: hsl(var(--primary));">Save</button>
+            </div>
+
+            <div style="text-align: center; padding: 12px 0 8px;">
+              <input class="input" style="font-size: 2rem; font-weight: 800; text-align: center; border: 0; background: transparent;" value="$150.00" />
+              <p class="phone-muted" style="font-size: .72rem; margin-top: 2px;">Manual transaction amount</p>
+            </div>
+
+            <div class="stack-sm">
+              <div class="form-row">
+                <label>Merchant</label>
+                <input class="input" value="Best Buy" />
+              </div>
+              <div class="two-col">
+                <div class="form-row">
+                  <label>Date</label>
+                  <input class="input" value="May 26, 2026" />
+                </div>
+                <div class="form-row">
+                  <label>Time</label>
+                  <input class="input" value="4:38 PM" />
+                </div>
+              </div>
+              <div class="form-row">
+                <label>Category</label>
+                <select class="input">
+                  <option>Electronics</option><option>Groceries</option><option>Dining</option><option>Travel</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>Card used</label>
+                <select class="input">
+                  <option>Chase Sapphire Preferred ••4821</option>
+                  <option>Chase Freedom Flex ••7740 (best here)</option>
+                  <option>Amex Gold ••1903</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>Location (optional)</label>
+                <input class="input" value="Union Square" />
+              </div>
+            </div>
+
+            <div class="reason-card" style="margin-top: 12px; background: hsl(var(--brand-amber) / .08); border-color: hsl(var(--brand-amber) / .3);">
+              <h4 style="color: hsl(35 92% 38%);">💡 Reward check</h4>
+              <p>Freedom Flex appears better for this electronics purchase. Save anyway or switch the card used.</p>
+            </div>
+
+            <button class="btn btn-primary" style="margin-top: 12px;">Save transaction</button>
+            <button class="btn btn-outline" style="margin-top: 8px;">Use suggested card instead</button>
+          </div>
+          <div class="home-indicator"></div>
+        </div>
+      </div>
+      <div class="phone-label"><span class="phone-label-num">6.1b</span>Manual transaction<span class="phone-caption">Amount · merchant · card · category</span></div>
     </div>
 
     <!-- 6.2 Transaction detail -->
@@ -1213,7 +1219,7 @@
               </div>
               <div class="reward-row" style="padding: 6px 0;">
                 <div class="left"><div class="icon">📥</div><div class="label">Source</div></div>
-                <div class="multiplier" style="font-size: .82rem;">Plaid import</div>
+                <div class="multiplier" style="font-size: .82rem;">Manual entry</div>
               </div>
             </div>
 
@@ -1227,7 +1233,6 @@
               <button class="btn btn-outline">Edit category</button>
               <button class="btn btn-outline">Change card</button>
             </div>
-            <button class="btn btn-outline" style="margin-top: 8px;">Open receipt 📷</button>
             <button class="btn btn-outline" style="margin-top: 8px; color: hsl(var(--destructive)); border-color: hsl(var(--destructive) / .3);">Delete transaction</button>
           </div>
           <div class="home-indicator"></div>
@@ -1327,7 +1332,6 @@
           <div class="tab-bar">
             <div class="tab-item"><span class="icon">🏠</span>Home</div>
             <div class="tab-item"><span class="icon">💳</span>Cards</div>
-            <div class="tab-item"><span class="icon">🔍</span>Search</div>
             <div class="tab-item active"><span class="icon">📊</span>Insights</div>
             <div class="tab-item"><span class="icon">👤</span>Profile</div>
           </div>
@@ -1392,14 +1396,6 @@
                 <div class="notif-text">Best Buy purchase on Sapphire (2×) — Flex was eligible (5×). Lost ~$4.50.</div>
               </div>
             </div>
-            <div class="notif">
-              <div class="notif-icon" style="background: linear-gradient(135deg, hsl(45 90% 55%), hsl(35 92% 40%));">📊</div>
-              <div class="notif-body">
-                <div class="row between"><div class="notif-title">Budget at 85%</div><span class="notif-time">5h</span></div>
-                <div class="notif-text">Groceries — $512 of $600 used this month.</div>
-              </div>
-            </div>
-
             <p class="section-label">Yesterday</p>
             <div class="notif">
               <div class="notif-icon" style="background: hsl(var(--destructive));">🚨</div>
@@ -1413,13 +1409,6 @@
               <div class="notif-body">
                 <div class="row between"><div class="notif-title">Weekly summary</div><span class="notif-time">1d</span></div>
                 <div class="notif-text">You earned 2,684 points this week. Dining was your biggest category.</div>
-              </div>
-            </div>
-            <div class="notif">
-              <div class="notif-icon" style="background: linear-gradient(135deg, hsl(194 75% 37%), hsl(218 91% 59%));">🧾</div>
-              <div class="notif-body">
-                <div class="row between"><div class="notif-title">Receipt saved · Trader Joe's</div><span class="notif-time">1d</span></div>
-                <div class="notif-text">Extracted $28.99 · Groceries · Amex Gold. Tap to review.</div>
               </div>
             </div>
           </div>
@@ -1522,7 +1511,7 @@
                 <div class="list-icon purple">✉️</div>
                 <div class="list-body">
                   <div class="list-title">Email</div>
-                  <div class="list-meta">Daily digest + receipts</div>
+                  <div class="list-meta">Daily digest + missed rewards</div>
                 </div>
                 <div class="switch on"></div>
               </div>
@@ -1553,22 +1542,6 @@
                   <div class="list-meta">Every Sunday</div>
                 </div>
                 <div class="switch"></div>
-              </div>
-              <div class="list-item" style="padding: 10px 12px;">
-                <div class="list-icon">📊</div>
-                <div class="list-body">
-                  <div class="list-title">Budget warnings <span class="pro-lock">Pro</span></div>
-                  <div class="list-meta">Threshold + over-budget</div>
-                </div>
-                <div class="switch on"></div>
-              </div>
-              <div class="list-item" style="padding: 10px 12px;">
-                <div class="list-icon teal">🧾</div>
-                <div class="list-body">
-                  <div class="list-title">Receipt processing</div>
-                  <div class="list-meta">When OCR completes</div>
-                </div>
-                <div class="switch on"></div>
               </div>
               <div class="list-item" style="padding: 10px 12px;">
                 <div class="list-icon" style="background: hsl(var(--destructive) / .12); color: hsl(var(--destructive));">🚨</div>
@@ -1663,7 +1636,7 @@
                 <div class="list-icon amber">📷</div>
                 <div class="list-body">
                   <div class="list-title">Camera</div>
-                  <div class="list-meta">For receipt scans</div>
+                  <div class="list-meta">For Phase 2 receipt scans</div>
                 </div>
                 <div class="switch on"></div>
               </div>
@@ -1718,7 +1691,6 @@
           <div class="tab-bar">
             <div class="tab-item"><span class="icon">🏠</span>Home</div>
             <div class="tab-item"><span class="icon">💳</span>Cards</div>
-            <div class="tab-item"><span class="icon">🔍</span>Search</div>
             <div class="tab-item"><span class="icon">📊</span>Insights</div>
             <div class="tab-item active"><span class="icon">👤</span>Profile</div>
           </div>
@@ -1837,9 +1809,9 @@
               <div class="price">$2.99 <small>/month</small></div>
               <div class="feat"><span class="check">✓</span> Up to 3 Plaid connections</div>
               <div class="feat"><span class="check">✓</span> Up to 2 manual cards</div>
-              <div class="feat"><span class="check">✓</span> Best-card recommendations (in-store & online)</div>
-              <div class="feat"><span class="check">✓</span> 5 receipts/month</div>
-              <div class="feat" style="opacity: .5;"><span style="color: hsl(var(--muted-foreground));">✗</span> Geofences & background nudges</div>
+              <div class="feat"><span class="check">✓</span> Best-card recommendations in store</div>
+              <div class="feat"><span class="check">✓</span> Manual transaction tracking</div>
+              <div class="feat" style="opacity: .5;"><span style="color: hsl(var(--muted-foreground));">✗</span> Phase 2 geofence nudges</div>
             </div>
 
             <div class="plan-card featured">
@@ -1850,8 +1822,8 @@
               <div class="price">$7.99 <small>/month</small></div>
               <div class="feat"><span class="check">✓</span> Everything in Basic</div>
               <div class="feat"><span class="check">✓</span> Unlimited Plaid + manual linking</div>
-              <div class="feat"><span class="check">✓</span> Unlimited receipt scans (OCR)</div>
-              <div class="feat"><span class="check">✓</span> Geofences & background suggestions</div>
+              <div class="feat"><span class="check">✓</span> Phase 2 receipt scans (OCR)</div>
+              <div class="feat"><span class="check">✓</span> Phase 2 geofences & background suggestions</div>
               <div class="feat"><span class="check">✓</span> Missed-rewards insights + AI nudges</div>
               <div class="feat"><span class="check">✓</span> Budgets (weekly · monthly · quarterly)</div>
               <div class="feat"><span class="check">✓</span> Unusual transaction alerts</div>
@@ -1860,12 +1832,12 @@
             <p class="section-label">Payment method</p>
             <div class="list-item">
               <div class="list-icon">💳</div>
-              <div class="list-body"><div class="list-title">Apple Pay</div><div class="list-meta">Visa ••0421</div></div>
+              <div class="list-body"><div class="list-title">Device wallet</div><div class="list-meta">Stripe shows Apple Pay on iOS and Google Pay on Android when available</div></div>
               <span style="color: hsl(var(--muted-foreground));">›</span>
             </div>
 
-            <button class="btn btn-primary" style="margin-top: 10px;">Upgrade to Pro</button>
-            <button class="btn btn-outline" style="margin-top: 8px;">Manage subscription</button>
+            <button class="btn btn-primary" style="margin-top: 10px;">Upgrade with Stripe</button>
+            <button class="btn btn-outline" style="margin-top: 8px;">Manage in Stripe portal</button>
             <p class="phone-muted center" style="font-size: .66rem; margin-top: 10px;">Cancel anytime. Pro keeps working until the end of the billing period.</p>
           </div>
           <div class="home-indicator"></div>
@@ -1920,7 +1892,7 @@
                 <div class="list-icon teal">🧹</div>
                 <div class="flex-1" style="margin-left: 8px;">
                   <div style="font-weight: 700; font-size: .85rem;">Clear location history</div>
-                  <div class="phone-muted" style="font-size: .7rem;">Geofences keep working</div>
+                  <div class="phone-muted" style="font-size: .7rem;">In-store suggestions keep working</div>
                 </div>
                 <span style="color: hsl(var(--muted-foreground));">›</span>
               </div>
@@ -1998,14 +1970,6 @@
               </div>
               <span class="badge badge-amber">Queued</span>
             </div>
-            <div class="list-item">
-              <div class="list-icon amber">⏳</div>
-              <div class="list-body">
-                <div class="list-title">Receipt photo · CVS</div>
-                <div class="list-meta">2.4 MB · will OCR after upload</div>
-              </div>
-              <span class="badge badge-amber">Queued</span>
-            </div>
             <div class="list-item" style="background: hsl(var(--destructive) / .04); border-radius: 8px; padding: 8px;">
               <div class="list-icon red">⚠️</div>
               <div class="list-body">
@@ -2018,7 +1982,7 @@
             <p class="section-label">Recent sync events</p>
             <div class="toast success">
               <div class="ti">✓</div>
-              <div>Synced 42 transactions · 4 cards · 3 geofences (3h ago)</div>
+              <div>Synced 42 manual transactions · 4 cards (3h ago)</div>
             </div>
             <div class="toast error">
               <div class="ti">!</div>
@@ -2426,6 +2390,66 @@
       <div class="phone-label"><span class="phone-label-num">P2.6</span>OCR review<span class="phone-caption">Edit extracted fields · low-conf warn</span></div>
     </div>
 
+    <!-- P2.6b Receipts in context -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="status-bar"><span>9:41</span><span class="right">5G · 100%</span></div>
+          <div class="screen-body">
+            <div class="row between" style="padding: 8px 0;">
+              <span style="font-weight: 700; font-size: .9rem;">Receipts in context</span>
+              <span class="badge badge-amber" style="font-size: .58rem;">Phase 2</span>
+            </div>
+            <p class="phone-muted" style="font-size: .72rem; margin-top: -2px;">Where Phase 2 receipts surface across existing screens.</p>
+
+            <p class="section-label">In 6.1 — Transactions list</p>
+            <div class="list-item">
+              <div class="list-icon teal">📷</div>
+              <div class="list-body">
+                <div class="list-title">CVS Pharmacy <span class="badge" style="background: hsl(var(--brand-teal) / .12); color: hsl(var(--brand-teal)); margin-left: 4px;">Receipt</span></div>
+                <div class="list-meta">Savor ••9988 · receipt scanned</div>
+                <div class="list-tag">+$0.34 cash</div>
+              </div>
+              <div class="list-amount">$11.20</div>
+            </div>
+
+            <p class="section-label">In 7.1 — Notifications inbox</p>
+            <div class="notif">
+              <div class="notif-icon" style="background: linear-gradient(135deg, hsl(194 75% 37%), hsl(218 91% 59%));">🧾</div>
+              <div class="notif-body">
+                <div class="row between"><div class="notif-title">Receipt saved · Trader Joe's</div><span class="notif-time">1d</span></div>
+                <div class="notif-text">Extracted $28.99 · Groceries · Amex Gold. Tap to review.</div>
+              </div>
+            </div>
+
+            <p class="section-label">In 7.3 — Notification settings</p>
+            <div class="card" style="padding: 0;">
+              <div class="list-item" style="padding: 10px 12px;">
+                <div class="list-icon teal">🧾</div>
+                <div class="list-body">
+                  <div class="list-title">Receipt processing <span class="pro-lock">Pro</span></div>
+                  <div class="list-meta">When OCR completes</div>
+                </div>
+                <div class="switch on"></div>
+              </div>
+            </div>
+
+            <p class="section-label">In 8.5 — Sync queue</p>
+            <div class="list-item">
+              <div class="list-icon amber">⏳</div>
+              <div class="list-body">
+                <div class="list-title">Receipt photo · CVS</div>
+                <div class="list-meta">2.4 MB · will OCR after upload</div>
+              </div>
+              <span class="badge badge-amber">Queued</span>
+            </div>
+          </div>
+          <div class="home-indicator"></div>
+        </div>
+      </div>
+      <div class="phone-label"><span class="phone-label-num">P2.6b</span>Receipts in context<span class="phone-caption">List · inbox · settings · sync</span></div>
+    </div>
+
   </div>
 </section>
 
@@ -2527,6 +2551,47 @@
         </div>
       </div>
       <div class="phone-label"><span class="phone-label-num">P2.7</span>Places & geofences<span class="phone-caption">Map · active zones · history</span></div>
+    </div>
+
+    <!-- P2.7b Geofence push nudge (lock-screen-ish) -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-screen" style="background: linear-gradient(180deg, hsl(218 50% 18%), hsl(274 50% 25%));">
+          <div class="status-bar dark"><span>9:41</span><span class="right">5G · 100%</span></div>
+          <div class="screen-body" style="padding-top: 12px;">
+            <div style="text-align: center; color: white; margin: 24px 0 28px;">
+              <div style="font-size: 4rem; font-weight: 200; line-height: 1;">9:41</div>
+              <div style="font-size: .9rem; opacity: .85; font-weight: 500; margin-top: 2px;">Tuesday, May 26</div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.13); backdrop-filter: blur(20px); border-radius: 18px; padding: 14px; color: white;">
+              <div class="row between" style="margin-bottom: 8px;">
+                <div class="row" style="gap: 8px;">
+                  <div class="brand-mark" style="width: 28px; height: 28px; font-size: .9rem; border-radius: 8px;">T</div>
+                  <span style="font-size: .75rem; font-weight: 600;">TrueSpend</span>
+                </div>
+                <span style="font-size: .65rem; opacity: .7;">now</span>
+              </div>
+              <div style="font-size: .85rem; font-weight: 700; margin-bottom: 4px;">📍 You just walked into Whole Foods</div>
+              <div style="font-size: .78rem; opacity: .85; line-height: 1.4;">Use <strong>Amex Gold</strong> ••1903 for 4× points on groceries. Tap to see why.</div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.13); backdrop-filter: blur(20px); border-radius: 18px; padding: 14px; color: white; margin-top: 8px;">
+              <div class="row between" style="margin-bottom: 8px;">
+                <div class="row" style="gap: 8px;">
+                  <div class="brand-mark" style="width: 28px; height: 28px; font-size: .9rem; border-radius: 8px;">T</div>
+                  <span style="font-size: .75rem; font-weight: 600;">TrueSpend</span>
+                </div>
+                <span style="font-size: .65rem; opacity: .7;">12m</span>
+              </div>
+              <div style="font-size: .85rem; font-weight: 700; margin-bottom: 4px;">💸 Missed +$4.50 in rewards</div>
+              <div style="font-size: .78rem; opacity: .85; line-height: 1.4;">Best Buy on Sapphire (2×) instead of Flex (5×).</div>
+            </div>
+          </div>
+          <div class="home-indicator"></div>
+        </div>
+      </div>
+      <div class="phone-label"><span class="phone-label-num">P2.7b</span>Lock-screen nudge<span class="phone-caption">Phase 2 geofenced push</span></div>
     </div>
 
     <!-- 8.2 Create / edit geofence -->
@@ -2770,6 +2835,45 @@
       <div class="phone-label"><span class="phone-label-num">P2.10</span>Create budget<span class="phone-caption">Category · period · alerts</span></div>
     </div>
 
+    <!-- P2.10b Budgets in context -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="status-bar"><span>9:41</span><span class="right">5G · 100%</span></div>
+          <div class="screen-body">
+            <div class="row between" style="padding: 8px 0;">
+              <span style="font-weight: 700; font-size: .9rem;">Budgets in context</span>
+              <span class="badge badge-amber" style="font-size: .58rem;">Phase 2</span>
+            </div>
+            <p class="phone-muted" style="font-size: .72rem; margin-top: -2px;">Where Phase 2 budgets surface across existing screens.</p>
+
+            <p class="section-label">In 7.1 — Notifications inbox</p>
+            <div class="notif">
+              <div class="notif-icon" style="background: linear-gradient(135deg, hsl(45 90% 55%), hsl(35 92% 40%));">📊</div>
+              <div class="notif-body">
+                <div class="row between"><div class="notif-title">Budget at 85%</div><span class="notif-time">5h</span></div>
+                <div class="notif-text">Groceries — $512 of $600 used this month.</div>
+              </div>
+            </div>
+
+            <p class="section-label">In 7.3 — Notification settings</p>
+            <div class="card" style="padding: 0;">
+              <div class="list-item" style="padding: 10px 12px;">
+                <div class="list-icon">📊</div>
+                <div class="list-body">
+                  <div class="list-title">Budget warnings <span class="pro-lock">Pro</span></div>
+                  <div class="list-meta">Threshold + over-budget</div>
+                </div>
+                <div class="switch on"></div>
+              </div>
+            </div>
+          </div>
+          <div class="home-indicator"></div>
+        </div>
+      </div>
+      <div class="phone-label"><span class="phone-label-num">P2.10b</span>Budgets in context<span class="phone-caption">Inbox · settings</span></div>
+    </div>
+
   </div>
 </section>
 
@@ -2777,7 +2881,7 @@
 <footer class="page-footer">
   <p>Static mockup — open in any browser. No build needed.</p>
   <p style="margin-top: .5rem;">
-    Phase 1: auth, onboarding, in-store recommendations, cards, transactions, notifications, profile. Phase 2: online purchase helper, receipts, geofencing, budgets.
+    Phase 1: auth, onboarding, in-store recommendations, cards, manual transactions, notifications, profile. Phase 2: online purchase helper, receipts, geofencing, budgets, credit-account alerts.
   </p>
   <p style="margin-top: .5rem;">
     See also: <a href="../Current-Web-Mockup/index.html">Web mockup</a> ·

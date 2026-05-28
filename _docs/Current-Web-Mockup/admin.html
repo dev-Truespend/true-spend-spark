@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — TrueSpend</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="nav-host"></div>
+
+  <main style="padding-top: 4rem;">
+    <div class="admin-shell">
+      <!-- Sidebar -->
+      <aside class="admin-sidebar">
+        <div class="admin-section">
+          <p class="admin-section-label">Project</p>
+          <a class="admin-link active">📊 Overview</a>
+          <a class="admin-link">🗓️ Timeline</a>
+          <a class="admin-link">📐 Architecture</a>
+          <a class="admin-link">✅ Tasks</a>
+          <a class="admin-link">🏁 Phases</a>
+        </div>
+        <div class="admin-section">
+          <p class="admin-section-label">Observability</p>
+          <a class="admin-link">📈 Metrics</a>
+          <a class="admin-link">📋 System logs</a>
+          <a class="admin-link">🔍 Tracing</a>
+          <a class="admin-link">🚨 Incidents</a>
+          <a class="admin-link">⚡ Real-time</a>
+          <a class="admin-link">📊 SLOs</a>
+        </div>
+        <div class="admin-section">
+          <p class="admin-section-label">ML & Experiments</p>
+          <a class="admin-link">🤖 ML Training</a>
+          <a class="admin-link">🧪 A/B Testing</a>
+          <a class="admin-link">🎚️ Feature flags</a>
+          <a class="admin-link">⚠️ Anomaly detection</a>
+          <a class="admin-link">🤗 HuggingFace</a>
+        </div>
+        <div class="admin-section">
+          <p class="admin-section-label">Platform</p>
+          <a class="admin-link">🛡️ Security</a>
+          <a class="admin-link">🗃️ Data planes</a>
+          <a class="admin-link">📍 Location metrics</a>
+          <a class="admin-link">🪝 Webhooks</a>
+        </div>
+      </aside>
+
+      <!-- Content -->
+      <section class="admin-content">
+        <div class="row between mb-4">
+          <div>
+            <h1 class="h2">Project overview</h1>
+            <p class="muted" style="font-size: .9rem;">Generated 2026-05-25 · Phase 11 of 16</p>
+          </div>
+          <span class="badge badge-blue">Admin</span>
+        </div>
+
+        <!-- KPI row -->
+        <div class="grid grid-4 mb-4">
+          <div class="metric blue">
+            <div class="metric-head"><span class="metric-label">Progress</span><div class="metric-icon">📊</div></div>
+            <div class="metric-value">65%</div>
+            <div class="metric-caption">9 of 16 phases production</div>
+          </div>
+          <div class="metric purple">
+            <div class="metric-head"><span class="metric-label">Edge Functions</span><div class="metric-icon">⚡</div></div>
+            <div class="metric-value">110</div>
+            <div class="metric-caption">Deployed to Supabase</div>
+          </div>
+          <div class="metric teal">
+            <div class="metric-head"><span class="metric-label">DB Tables</span><div class="metric-icon">🗃️</div></div>
+            <div class="metric-value">127</div>
+            <div class="metric-caption">131 migrations applied</div>
+          </div>
+          <div class="metric amber">
+            <div class="metric-head"><span class="metric-label">Blockers</span><div class="metric-icon">🚨</div></div>
+            <div class="metric-value">3</div>
+            <div class="metric-caption">P0 · Stripe, CI/CD, Sentry</div>
+          </div>
+        </div>
+
+        <!-- Phase status table -->
+        <div class="card mb-4">
+          <h3 class="card-title mb-2">Phase status</h3>
+          <ul class="list">
+            <li class="list-item">
+              <span class="badge badge-teal">100%</span>
+              <div class="list-body"><p class="list-title">Phase 1 — Foundation & Client</p><p class="list-meta">Production</p></div>
+              <span class="muted" style="font-size: .8rem;">Weeks 1-4</span>
+            </li>
+            <li class="list-item">
+              <span class="badge badge-teal">100%</span>
+              <div class="list-body"><p class="list-title">Phase 2 — Security & Ingress</p><p class="list-meta">Production</p></div>
+              <span class="muted" style="font-size: .8rem;">Weeks 5-10</span>
+            </li>
+            <li class="list-item">
+              <span class="badge badge-teal">100%</span>
+              <div class="list-body"><p class="list-title">Phase 4 — Auth & Supply Chain</p><p class="list-meta">Production · 98%</p></div>
+              <span class="muted" style="font-size: .8rem;">Weeks 15-19</span>
+            </li>
+            <li class="list-item">
+              <span class="badge badge-amber">75%</span>
+              <div class="list-body"><p class="list-title">Phase 5 — BFF, AI & Rules Engine</p><p class="list-meta">In progress · bff-transactions missing</p></div>
+              <span class="muted" style="font-size: .8rem;">Weeks 20-24</span>
+            </li>
+            <li class="list-item" style="background: hsl(var(--destructive) / .04);">
+              <span class="badge badge-red">50%</span>
+              <div class="list-body"><p class="list-title">Phase 6 — Payment Integration</p><p class="list-meta">🚨 Revenue blocker · Stripe = 0%</p></div>
+              <span class="muted" style="font-size: .8rem;">Weeks 25-29</span>
+            </li>
+            <li class="list-item">
+              <span class="badge badge-amber">55%</span>
+              <div class="list-body"><p class="list-title">Phase 11 — Browser Extension</p><p class="list-meta">Capture form & build pipeline pending</p></div>
+              <span class="muted" style="font-size: .8rem;">Weeks 46-47</span>
+            </li>
+            <li class="list-item">
+              <span class="badge badge-amber">35%</span>
+              <div class="list-body"><p class="list-title">Phase 12 — Native iOS & Android</p><p class="list-meta">Folders ready, builds unverified</p></div>
+              <span class="muted" style="font-size: .8rem;">Weeks 48-49</span>
+            </li>
+            <li class="list-item">
+              <span class="badge">0%</span>
+              <div class="list-body"><p class="list-title">Phase 15 — Advanced ML Models</p><p class="list-meta">UI scaffolds only · no trained models</p></div>
+              <span class="muted" style="font-size: .8rem;">Post-launch</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Live SLO + recent incidents -->
+        <div class="grid grid-2">
+          <div class="card">
+            <h3 class="card-title mb-2">📊 SLO health (last 24h)</h3>
+            <div class="col" style="gap: 1rem;">
+              <div>
+                <div class="row between" style="font-size: .85rem;"><span>API availability</span><span class="muted">99.97% / 99.9% target</span></div>
+                <div class="progress" style="height: .55rem;"><div class="progress-bar" style="width: 99%; background: hsl(var(--brand-teal));"></div></div>
+              </div>
+              <div>
+                <div class="row between" style="font-size: .85rem;"><span>p95 latency (BFF)</span><span class="muted">142ms / 250ms target</span></div>
+                <div class="progress" style="height: .55rem;"><div class="progress-bar" style="width: 57%; background: hsl(var(--brand-blue));"></div></div>
+              </div>
+              <div>
+                <div class="row between" style="font-size: .85rem;"><span>Error rate</span><span class="muted">0.03% / 0.1% target</span></div>
+                <div class="progress" style="height: .55rem;"><div class="progress-bar" style="width: 30%; background: hsl(var(--brand-purple));"></div></div>
+              </div>
+              <div>
+                <div class="row between" style="font-size: .85rem;"><span>Plaid sync success</span><span class="muted" style="color: hsl(35 92% 40%);">94.2% / 99% target</span></div>
+                <div class="progress" style="height: .55rem;"><div class="progress-bar warning" style="width: 94%;"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title mb-2">🚨 Recent incidents</h3>
+            <ul class="list">
+              <li class="list-item">
+                <div class="list-icon" style="background: hsl(var(--destructive) / .15); color: hsl(var(--destructive));">!</div>
+                <div class="list-body">
+                  <p class="list-title">Plaid webhook timeout spike</p>
+                  <p class="list-meta">May 24 · 11 min · Resolved</p>
+                </div>
+                <span class="badge badge-red">SEV-3</span>
+              </li>
+              <li class="list-item">
+                <div class="list-icon" style="background: hsl(35 92% 50% / .15); color: hsl(35 92% 40%);">!</div>
+                <div class="list-body">
+                  <p class="list-title">ai-categorize p95 degraded</p>
+                  <p class="list-meta">May 22 · 28 min · Resolved (rate-limit on Anthropic)</p>
+                </div>
+                <span class="badge badge-amber">SEV-4</span>
+              </li>
+              <li class="list-item">
+                <div class="list-icon" style="background: hsl(var(--brand-teal) / .15); color: hsl(var(--brand-teal));">i</div>
+                <div class="list-body">
+                  <p class="list-title">Read replica failover drill</p>
+                  <p class="list-meta">May 20 · 2 min · Planned · Successful</p>
+                </div>
+                <span class="badge badge-teal">Info</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — TrueSpend</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="nav-host"></div>
+
+  <main class="page">
+    <div class="container">
+      <h1 class="h2 mb-4">Settings</h1>
+
+      <div class="grid" style="grid-template-columns: 200px 1fr; gap: 2rem;">
+        <!-- Side tabs -->
+        <aside>
+          <div class="col" data-tabs="settings" style="gap: .25rem;">
+            <button data-tab="profile" class="admin-link active">👤 Profile</button>
+            <button data-tab="security" class="admin-link">🔐 Security & MFA</button>
+            <button data-tab="notif"    class="admin-link">🔔 Notifications</button>
+            <button data-tab="billing"  class="admin-link">💳 Billing</button>
+            <button data-tab="data"     class="admin-link">📦 Data & export</button>
+          </div>
+        </aside>
+
+        <!-- Panels -->
+        <section>
+          <!-- Profile -->
+          <div data-tab-panel="profile" data-tabs-group="settings" class="card">
+            <h3 class="card-title">Profile</h3>
+            <p class="card-desc mb-2">Update your name, email, and avatar.</p>
+            <div class="row mb-4" style="gap: 1rem;">
+              <div class="avatar" style="width: 64px; height: 64px; font-size: 1.2rem;">SR</div>
+              <button class="btn btn-outline btn-sm">Change photo</button>
+            </div>
+            <div class="grid grid-2">
+              <div class="field">
+                <label>First name</label>
+                <input type="text" value="Sravan" />
+              </div>
+              <div class="field">
+                <label>Last name</label>
+                <input type="text" value="Ravula" />
+              </div>
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input type="email" value="sravan4262@gmail.com" />
+            </div>
+            <div class="field">
+              <label>Default currency</label>
+              <select><option>USD ($)</option><option>EUR (€)</option><option>GBP (£)</option><option>INR (₹)</option></select>
+            </div>
+            <button class="btn btn-primary mt-2">Save changes</button>
+          </div>
+
+          <!-- Security -->
+          <div data-tab-panel="security" data-tabs-group="settings" class="card hidden">
+            <h3 class="card-title">Security & MFA</h3>
+            <p class="card-desc mb-2">Two-factor authentication adds an extra layer of protection.</p>
+            <div class="row between mb-2" style="padding: 1rem; background: hsl(var(--brand-teal) / .05); border: 1px solid hsl(var(--brand-teal) / .25); border-radius: .5rem;">
+              <div>
+                <p style="font-weight: 600; margin: 0;">✅ MFA enabled · TOTP</p>
+                <p class="muted" style="font-size: .85rem; margin: 0;">Enrolled May 1, 2026 · Authenticator app</p>
+              </div>
+              <button class="btn btn-outline btn-sm">Disable</button>
+            </div>
+            <div class="row between mb-2" style="padding: 1rem; background: hsl(var(--muted) / .5); border: 1px solid hsl(var(--border)); border-radius: .5rem;">
+              <div>
+                <p style="font-weight: 600; margin: 0;">Backup codes</p>
+                <p class="muted" style="font-size: .85rem; margin: 0;">10 single-use codes · 7 unused</p>
+              </div>
+              <button class="btn btn-outline btn-sm">Regenerate</button>
+            </div>
+            <h4 class="mt-4" style="margin-bottom: .5rem;">Password</h4>
+            <div class="field">
+              <label>Current password</label>
+              <input type="password" placeholder="••••••••" />
+            </div>
+            <div class="field">
+              <label>New password</label>
+              <input type="password" placeholder="At least 12 characters" />
+            </div>
+            <button class="btn btn-primary mt-2">Update password</button>
+          </div>
+
+          <!-- Notifications -->
+          <div data-tab-panel="notif" data-tabs-group="settings" class="card hidden">
+            <h3 class="card-title">Notifications</h3>
+            <p class="card-desc mb-2">Pick what you want to be told about, and where.</p>
+            <ul class="list">
+              <li class="list-item">
+                <div class="list-body">
+                  <p class="list-title">Budget threshold alerts</p>
+                  <p class="list-meta">When you cross 80% of a category limit</p>
+                </div>
+                <label class="row" style="gap: .35rem;"><input type="checkbox" checked /> Email</label>
+                <label class="row" style="gap: .35rem;"><input type="checkbox" checked /> Push</label>
+              </li>
+              <li class="list-item">
+                <div class="list-body">
+                  <p class="list-title">Weekly summary</p>
+                  <p class="list-meta">Sundays · spending vs. budget overview</p>
+                </div>
+                <label class="row" style="gap: .35rem;"><input type="checkbox" checked /> Email</label>
+                <label class="row" style="gap: .35rem;"><input type="checkbox" /> Push</label>
+              </li>
+              <li class="list-item">
+                <div class="list-body">
+                  <p class="list-title">Anomaly detected</p>
+                  <p class="list-meta">Unusual transaction flagged for review</p>
+                </div>
+                <label class="row" style="gap: .35rem;"><input type="checkbox" checked /> Email</label>
+                <label class="row" style="gap: .35rem;"><input type="checkbox" checked /> Push</label>
+              </li>
+              <li class="list-item">
+                <div class="list-body">
+                  <p class="list-title">Geofence deal alerts</p>
+                  <p class="list-meta">When you enter a zone with active deals</p>
+                </div>
+                <label class="row" style="gap: .35rem;"><input type="checkbox" /> Email</label>
+                <label class="row" style="gap: .35rem;"><input type="checkbox" checked /> Push</label>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Billing -->
+          <div data-tab-panel="billing" data-tabs-group="settings" class="card hidden">
+            <h3 class="card-title">Billing</h3>
+            <p class="card-desc mb-2">Manage your plan and view past invoices.</p>
+            <div class="card" style="background: linear-gradient(135deg, hsl(var(--brand-blue) / .08), hsl(var(--brand-purple) / .08)); border-color: hsl(var(--brand-purple) / .3);">
+              <div class="row between">
+                <div>
+                  <span class="badge badge-purple">Pro</span>
+                  <p style="font-weight: 600; margin: .5rem 0 0;">$8/mo · billed monthly</p>
+                  <p class="muted" style="font-size: .85rem;">Next payment Jun 1, 2026</p>
+                </div>
+                <div class="row">
+                  <button class="btn btn-outline btn-sm">Change plan</button>
+                  <button class="btn btn-ghost btn-sm">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <h4 class="mt-4" style="margin-bottom: .5rem;">Invoice history</h4>
+            <ul class="list">
+              <li class="list-item">
+                <div class="list-icon">PD</div>
+                <div class="list-body">
+                  <p class="list-title">May 2026 — TrueSpend Pro</p>
+                  <p class="list-meta">Paid · May 1, 2026 · Visa ••4821</p>
+                </div>
+                <span class="list-amount">$8.00</span>
+                <button class="btn btn-ghost btn-sm">⬇</button>
+              </li>
+              <li class="list-item">
+                <div class="list-icon">PD</div>
+                <div class="list-body">
+                  <p class="list-title">April 2026 — TrueSpend Pro</p>
+                  <p class="list-meta">Paid · Apr 1, 2026 · Visa ••4821</p>
+                </div>
+                <span class="list-amount">$8.00</span>
+                <button class="btn btn-ghost btn-sm">⬇</button>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Data -->
+          <div data-tab-panel="data" data-tabs-group="settings" class="card hidden">
+            <h3 class="card-title">Data & export</h3>
+            <p class="card-desc mb-2">Your data is yours. Download or delete it anytime.</p>
+            <div class="row mb-4" style="gap: .75rem;">
+              <button class="btn btn-outline">📤 Export as CSV</button>
+              <button class="btn btn-outline">📤 Export as JSON</button>
+            </div>
+            <div class="card" style="border-color: hsl(var(--destructive) / .35); background: hsl(var(--destructive) / .03);">
+              <h3 class="card-title" style="color: hsl(var(--destructive));">Danger zone</h3>
+              <p class="card-desc">Permanently delete your account and all data. This cannot be undone.</p>
+              <button class="btn btn-danger mt-2" data-modal-open="delete-account">Delete account</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- Delete modal -->
+  <div class="modal-overlay" id="delete-account">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <h3 class="modal-title" style="color: hsl(var(--destructive));">Delete account</h3>
+          <p class="modal-desc">All your transactions, budgets, and connections will be permanently deleted in 30 days.</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" data-modal-close>✕</button>
+      </div>
+      <div class="field">
+        <label>Type DELETE to confirm</label>
+        <input type="text" placeholder="DELETE" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" data-modal-close>Keep my account</button>
+        <button class="btn btn-danger" data-modal-close>Confirm delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer-host"></div>
+  <script src="js/app.js"></script>
+</body>
+</html>

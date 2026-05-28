@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — TrueSpend</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="nav-host"></div>
+
+  <main class="page">
+    <div class="container">
+      <!-- Greeting -->
+      <div class="row between wrap mb-4">
+        <div>
+          <h1 class="h2">Good afternoon, Sravan</h1>
+          <p class="muted" style="font-size: .9rem;">Here's a quick look at your finances <span class="badge badge-purple">Pro</span></p>
+        </div>
+        <div class="row">
+          <a href="credit-cards.html" class="btn btn-outline">💳 Manage cards</a>
+          <a href="transactions.html" class="btn btn-primary">+ Add transaction</a>
+        </div>
+      </div>
+
+      <!-- Metric tiles -->
+      <div class="grid grid-4 mb-4">
+        <div class="metric blue">
+          <div class="metric-head">
+            <span class="metric-label">Total Expenses</span>
+            <div class="metric-icon">💼</div>
+          </div>
+          <div class="metric-value">$2,847.32</div>
+          <div class="metric-caption">This month</div>
+        </div>
+        <div class="metric purple">
+          <div class="metric-head">
+            <span class="metric-label">Transactions</span>
+            <div class="metric-icon">📊</div>
+          </div>
+          <div class="metric-value">47</div>
+          <div class="metric-caption">This month</div>
+        </div>
+        <div class="metric teal">
+          <div class="metric-head">
+            <span class="metric-label">Receipts</span>
+            <div class="metric-icon">🧾</div>
+          </div>
+          <div class="metric-value">23</div>
+          <div class="metric-caption">Captured this month</div>
+        </div>
+        <div class="metric amber">
+          <div class="metric-head">
+            <span class="metric-label">Active Budgets</span>
+            <div class="metric-icon">📈</div>
+          </div>
+          <div class="metric-value">5</div>
+          <div class="metric-caption" style="color: hsl(35 92% 40%); font-weight: 500;">2 approaching limit</div>
+        </div>
+      </div>
+
+      <!-- Two-column -->
+      <div class="grid grid-2 mb-4">
+        <!-- Recent activity -->
+        <div class="card">
+          <div class="row between mb-2">
+            <div>
+              <h3 class="card-title">Recent activity</h3>
+              <p class="card-desc">Your latest transactions</p>
+            </div>
+            <a href="transactions.html" class="btn btn-ghost btn-sm">View all →</a>
+          </div>
+          <ul class="list">
+            <li class="list-item">
+              <div class="list-icon" style="background: hsl(var(--brand-blue) / .1); color: hsl(var(--brand-blue));">DI</div>
+              <div class="list-body">
+                <p class="list-title">Sweetgreen lunch</p>
+                <p class="list-meta">May 24 · Dining</p>
+              </div>
+              <span class="list-amount">$14.20</span>
+            </li>
+            <li class="list-item">
+              <div class="list-icon" style="background: hsl(var(--brand-purple) / .1); color: hsl(var(--brand-purple));">GR</div>
+              <div class="list-body">
+                <p class="list-title">Whole Foods</p>
+                <p class="list-meta">May 23 · Groceries</p>
+              </div>
+              <span class="list-amount">$83.47</span>
+            </li>
+            <li class="list-item">
+              <div class="list-icon" style="background: hsl(var(--brand-teal) / .1); color: hsl(var(--brand-teal));">TR</div>
+              <div class="list-body">
+                <p class="list-title">Uber to airport</p>
+                <p class="list-meta">May 22 · Transportation</p>
+              </div>
+              <span class="list-amount">$42.10</span>
+            </li>
+            <li class="list-item">
+              <div class="list-icon" style="background: hsl(35 92% 50% / .12); color: hsl(35 92% 40%);">EN</div>
+              <div class="list-body">
+                <p class="list-title">Netflix subscription</p>
+                <p class="list-meta">May 21 · Entertainment</p>
+              </div>
+              <span class="list-amount">$15.49</span>
+            </li>
+            <li class="list-item">
+              <div class="list-icon">SH</div>
+              <div class="list-body">
+                <p class="list-title">Amazon — kitchen supplies</p>
+                <p class="list-meta">May 20 · Shopping</p>
+              </div>
+              <span class="list-amount">$67.89</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Budgets -->
+        <div class="card">
+          <div class="row between mb-2">
+            <div>
+              <h3 class="card-title">Budgets at a glance</h3>
+              <p class="card-desc">This month's progress</p>
+            </div>
+            <a href="budgets.html" class="btn btn-ghost btn-sm">Manage →</a>
+          </div>
+          <div class="col" style="gap: 1rem;">
+            <div>
+              <div class="row between mb-1" style="font-size: .85rem;">
+                <span style="font-weight: 500;">Dining</span>
+                <span class="muted">$340 / $400</span>
+              </div>
+              <div class="progress"><div class="progress-bar" style="width: 85%;"></div></div>
+            </div>
+            <div>
+              <div class="row between mb-1" style="font-size: .85rem;">
+                <span style="font-weight: 500;">Groceries</span>
+                <span class="muted">$220 / $500</span>
+              </div>
+              <div class="progress"><div class="progress-bar" style="width: 44%;"></div></div>
+            </div>
+            <div>
+              <div class="row between mb-1" style="font-size: .85rem;">
+                <span style="font-weight: 500;">Transportation</span>
+                <span style="color: hsl(35 92% 40%); font-weight: 600;">$185 / $200</span>
+              </div>
+              <div class="progress"><div class="progress-bar warning" style="width: 92%;"></div></div>
+            </div>
+            <div>
+              <div class="row between mb-1" style="font-size: .85rem;">
+                <span style="font-weight: 500;">Entertainment</span>
+                <span style="color: hsl(var(--destructive)); font-weight: 600;">$165 / $150</span>
+              </div>
+              <div class="progress"><div class="progress-bar danger" style="width: 100%;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connected cards strip -->
+      <div class="card mb-4">
+        <div class="row between mb-2">
+          <div>
+            <h3 class="card-title">💳 Connected cards</h3>
+            <p class="card-desc">3 cards connected</p>
+          </div>
+          <a href="credit-cards.html" class="btn btn-ghost btn-sm">Manage →</a>
+        </div>
+        <div class="grid grid-3">
+          <a href="credit-cards.html" class="cc-card">
+            <div class="cc-row">
+              <span class="cc-label">Chase Sapphire</span>
+              <span style="font-size: 1.2rem;">💳</span>
+            </div>
+            <div>
+              <div class="cc-num">•••• 4821</div>
+              <div class="cc-row mt-1">
+                <span class="cc-name">Sravan R.</span>
+                <span class="cc-name">$1,247.32</span>
+              </div>
+            </div>
+          </a>
+          <a href="credit-cards.html" class="cc-card purple">
+            <div class="cc-row">
+              <span class="cc-label">Amex Gold</span>
+              <span style="font-size: 1.2rem;">💳</span>
+            </div>
+            <div>
+              <div class="cc-num">•••• 1903</div>
+              <div class="cc-row mt-1">
+                <span class="cc-name">Sravan R.</span>
+                <span class="cc-name">$847.20</span>
+              </div>
+            </div>
+          </a>
+          <a href="credit-cards.html" class="cc-card teal">
+            <div class="cc-row">
+              <span class="cc-label">Chase Freedom</span>
+              <span style="font-size: 1.2rem;">💳</span>
+            </div>
+            <div>
+              <div class="cc-num">•••• 7740</div>
+              <div class="cc-row mt-1">
+                <span class="cc-name">Sravan R.</span>
+                <span class="cc-name">$432.18</span>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Upcoming bills -->
+      <div class="card mb-4">
+        <div class="row between mb-2">
+          <div>
+            <h3 class="card-title">📅 Upcoming bills</h3>
+            <p class="card-desc">Minimum payments due in the next 30 days</p>
+          </div>
+          <a href="credit-cards.html" class="btn btn-ghost btn-sm">Manage →</a>
+        </div>
+        <div class="grid grid-3">
+          <a href="credit-cards.html" class="card card-hover" style="border-color: hsl(35 92% 50% / .4); background: hsl(35 92% 50% / .05);">
+            <div class="row between">
+              <div>
+                <p style="font-weight: 500;">Chase Sapphire</p>
+                <p class="muted" style="font-size: .8rem;">•••• 4821</p>
+              </div>
+              <span class="badge badge-amber">3d</span>
+            </div>
+            <div class="row between mt-2">
+              <div>
+                <p class="muted" style="font-size: .75rem;">Minimum due</p>
+                <p style="font-size: 1.15rem; font-weight: 600;">$35.00</p>
+              </div>
+              <p class="muted" style="font-size: .8rem;">May 28</p>
+            </div>
+          </a>
+          <a href="credit-cards.html" class="card card-hover">
+            <div class="row between">
+              <div>
+                <p style="font-weight: 500;">Amex Gold</p>
+                <p class="muted" style="font-size: .8rem;">•••• 1903</p>
+              </div>
+              <span class="badge badge-outline">12d</span>
+            </div>
+            <div class="row between mt-2">
+              <div>
+                <p class="muted" style="font-size: .75rem;">Minimum due</p>
+                <p style="font-size: 1.15rem; font-weight: 600;">$50.00</p>
+              </div>
+              <p class="muted" style="font-size: .8rem;">Jun 6</p>
+            </div>
+          </a>
+          <a href="credit-cards.html" class="card card-hover">
+            <div class="row between">
+              <div>
+                <p style="font-weight: 500;">Chase Freedom</p>
+                <p class="muted" style="font-size: .8rem;">•••• 7740</p>
+              </div>
+              <span class="badge badge-outline">18d</span>
+            </div>
+            <div class="row between mt-2">
+              <div>
+                <p class="muted" style="font-size: .75rem;">Minimum due</p>
+                <p style="font-size: 1.15rem; font-weight: 600;">$25.00</p>
+              </div>
+              <p class="muted" style="font-size: .8rem;">Jun 12</p>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Explore -->
+      <h2 class="muted" style="text-transform: uppercase; letter-spacing: .06em; font-size: .75rem; font-weight: 700; margin-bottom: .75rem;">Explore</h2>
+      <div class="feature-grid">
+        <a href="transactions.html" class="feature-card">
+          <div class="feature-icon blue">🧾</div>
+          <h3 class="card-title">Transactions</h3>
+          <p class="card-desc">Browse, filter, and add expenses</p>
+        </a>
+        <a href="budgets.html" class="feature-card">
+          <div class="feature-icon purple">📈</div>
+          <h3 class="card-title">Budgets</h3>
+          <p class="card-desc">Set spending limits per category</p>
+        </a>
+        <a href="credit-cards.html" class="feature-card">
+          <div class="feature-icon blue">💳</div>
+          <h3 class="card-title">Credit Cards</h3>
+          <p class="card-desc">Connect and manage cards</p>
+        </a>
+        <a href="insights.html" class="feature-card">
+          <div class="feature-icon purple">✨</div>
+          <h3 class="card-title">Insights <span class="badge badge-outline" style="font-size: .65rem;">Pro</span></h3>
+          <p class="card-desc">AI-powered spending analysis</p>
+        </a>
+        <a href="location.html" class="feature-card">
+          <div class="feature-icon teal">📍</div>
+          <h3 class="card-title">Location History</h3>
+          <p class="card-desc">Where you spend, mapped</p>
+        </a>
+        <a href="favorites.html" class="feature-card">
+          <div class="feature-icon amber">❤️</div>
+          <h3 class="card-title">Favorites</h3>
+          <p class="card-desc">Your top merchants</p>
+        </a>
+        <a href="settings.html" class="feature-card">
+          <div class="feature-icon blue">⚙️</div>
+          <h3 class="card-title">Settings</h3>
+          <p class="card-desc">Profile, security, billing</p>
+        </a>
+        <a href="admin.html" class="feature-card">
+          <div class="feature-icon purple">🛠️</div>
+          <h3 class="card-title">Admin</h3>
+          <p class="card-desc">Internal observability & ML</p>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-host"></div>
+  <script src="js/app.js"></script>
+</body>
+</html>

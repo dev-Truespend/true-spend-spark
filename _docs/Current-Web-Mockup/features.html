@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Features — TrueSpend</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="nav-host"></div>
+
+  <main class="page">
+    <div class="container">
+      <div class="text-center mb-6">
+        <span class="badge badge-blue">All features</span>
+        <h1 class="h1 mt-2">Everything in TrueSpend</h1>
+        <p class="lead mt-2" style="max-width: 640px; margin: 1rem auto 0;">
+          A complete view of the platform — across web, iOS, Android, and the Chrome extension.
+        </p>
+      </div>
+
+      <div class="grid grid-3">
+        <div class="feature-card">
+          <div class="feature-icon blue">🧾</div>
+          <h3 class="card-title">Receipt OCR</h3>
+          <p class="card-desc">Camera capture → Google Vision → HuggingFace fallback. Structured amount, merchant, date.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon purple">🤖</div>
+          <h3 class="card-title">AI categorization</h3>
+          <p class="card-desc">Claude → Gemini → GPT-4 cascade infers the right category automatically.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon teal">🎯</div>
+          <h3 class="card-title">Smart budgets</h3>
+          <p class="card-desc">Per-category, weekly/monthly/quarterly. Threshold alerts and over-budget warnings.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon amber">📍</div>
+          <h3 class="card-title">Geofenced budgets</h3>
+          <p class="card-desc">Spend limits tied to a place. Drawn on a Leaflet map, matched by Haversine.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon blue">💳</div>
+          <h3 class="card-title">Plaid bank sync</h3>
+          <p class="card-desc">Securely connect cards and accounts. Transactions imported via webhook.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon purple">🚨</div>
+          <h3 class="card-title">Anomaly detection</h3>
+          <p class="card-desc">Unusual transactions flagged for review. Configurable sensitivity.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon teal">🔐</div>
+          <h3 class="card-title">MFA & secure auth</h3>
+          <p class="card-desc">TOTP with backup codes, account lockout, session activity timeout.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon amber">🔁</div>
+          <h3 class="card-title">Offline-first sync</h3>
+          <p class="card-desc">IndexedDB locally with full conflict resolution on reconnect.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon blue">📱</div>
+          <h3 class="card-title">Multi-platform</h3>
+          <p class="card-desc">Web, iOS, Android (Capacitor), plus a Chrome extension for in-browser capture.</p>
+        </div>
+      </div>
+
+      <div class="text-center mt-6">
+        <a href="auth.html?signup=1" class="btn btn-primary btn-lg">Start free →</a>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-host"></div>
+  <script src="js/app.js"></script>
+</body>
+</html>

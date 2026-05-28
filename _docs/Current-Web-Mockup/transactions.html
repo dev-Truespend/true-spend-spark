@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transactions — TrueSpend</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="nav-host"></div>
+
+  <main class="page">
+    <div class="container">
+      <div class="row between wrap mb-4">
+        <div>
+          <h1 class="h2">Transactions</h1>
+          <p class="muted" style="font-size: .9rem;">47 transactions · $2,847.32 this month</p>
+        </div>
+        <div class="row">
+          <button class="btn btn-outline">📷 Scan receipt</button>
+          <button class="btn btn-primary" data-modal-open="add-tx">+ Add transaction</button>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <input class="grow" type="search" placeholder="🔍 Search description or merchant…" />
+        <select>
+          <option>All categories</option>
+          <option>Dining</option>
+          <option>Groceries</option>
+          <option>Transportation</option>
+          <option>Shopping</option>
+          <option>Entertainment</option>
+          <option>Health</option>
+          <option>Utilities</option>
+          <option>Travel</option>
+        </select>
+        <select>
+          <option>This month</option>
+          <option>Last 7 days</option>
+          <option>Last 30 days</option>
+          <option>This year</option>
+        </select>
+        <button class="btn btn-outline">Filters</button>
+      </div>
+
+      <!-- List -->
+      <div class="card" style="padding: .5rem;">
+        <ul class="list">
+          <li class="list-item">
+            <div class="list-icon" style="background: hsl(var(--brand-blue) / .1); color: hsl(var(--brand-blue));">DI</div>
+            <div class="list-body">
+              <p class="list-title">Sweetgreen — Union Square</p>
+              <p class="list-meta">May 24, 2026 · Dining · Chase Sapphire ••4821 · 📍 Downtown</p>
+            </div>
+            <div class="row" style="gap: 1.25rem;">
+              <span class="badge badge-blue">Dining</span>
+              <span class="list-amount">$14.20</span>
+            </div>
+          </li>
+          <li class="list-item">
+            <div class="list-icon" style="background: hsl(var(--brand-purple) / .1); color: hsl(var(--brand-purple));">GR</div>
+            <div class="list-body">
+              <p class="list-title">Whole Foods Market</p>
+              <p class="list-meta">May 23, 2026 · Groceries · Amex Gold ••1903 · 🧾 Receipt</p>
+            </div>
+            <div class="row" style="gap: 1.25rem;">
+              <span class="badge badge-purple">Groceries</span>
+              <span class="list-amount">$83.47</span>
+            </div>
+          </li>
+          <li class="list-item">
+            <div class="list-icon" style="background: hsl(var(--brand-teal) / .1); color: hsl(var(--brand-teal));">TR</div>
+            <div class="list-body">
+              <p class="list-title">Uber — to JFK</p>
+              <p class="list-meta">May 22, 2026 · Transportation · Chase Sapphire ••4821</p>
+            </div>
+            <div class="row" style="gap: 1.25rem;">
+              <span class="badge badge-teal">Transport</span>
+              <span class="list-amount">$42.10</span>
+            </div>
+          </li>
+          <li class="list-item">
+            <div class="list-icon" style="background: hsl(35 92% 50% / .12); color: hsl(35 92% 40%);">EN</div>
+            <div class="list-body">
+              <p class="list-title">Netflix subscription</p>
+              <p class="list-meta">May 21, 2026 · Entertainment · Recurring · Chase Freedom ••7740</p>
+            </div>
+            <div class="row" style="gap: 1.25rem;">
+              <span class="badge badge-amber">Entertainment</span>
+              <span class="list-amount">$15.49</span>
+            </div>
+          </li>
+          <li class="list-item">
+            <div class="list-icon">SH</div>
+            <div class="list-body">
+              <p class="list-title">Amazon — kitchen supplies</p>
+              <p class="list-meta">May 20, 2026 · Shopping · Amex Gold ••1903</p>
+            </div>
+            <div class="row" style="gap: 1.25rem;">
+              <span class="badge">Shopping</span>
+              <span class="list-amount">$67.89</span>
+            </div>
+          </li>
+          <li class="list-item" style="background: hsl(var(--destructive) / .04);">
+            <div class="list-icon" style="background: hsl(var(--destructive) / .15); color: hsl(var(--destructive));">⚠️</div>
+            <div class="list-body">
+              <p class="list-title">Unknown merchant — auth #XK7421</p>
+              <p class="list-meta">May 19, 2026 · Flagged as anomaly · Chase Sapphire ••4821</p>
+            </div>
+            <div class="row" style="gap: 1.25rem;">
+              <span class="badge badge-red">Anomaly</span>
+              <span class="list-amount">$249.00</span>
+            </div>
+          </li>
+          <li class="list-item">
+            <div class="list-icon" style="background: hsl(var(--brand-blue) / .1); color: hsl(var(--brand-blue));">DI</div>
+            <div class="list-body">
+              <p class="list-title">Joe's Pizza</p>
+              <p class="list-meta">May 18, 2026 · Dining · Cash</p>
+            </div>
+            <div class="row" style="gap: 1.25rem;">
+              <span class="badge badge-blue">Dining</span>
+              <span class="list-amount">$22.50</span>
+            </div>
+          </li>
+          <li class="list-item">
+            <div class="list-icon" style="background: hsl(194 75% 37% / .1); color: hsl(194 75% 37%);">UT</div>
+            <div class="list-body">
+              <p class="list-title">Con Edison — electric</p>
+              <p class="list-meta">May 17, 2026 · Utilities · ACH</p>
+            </div>
+            <div class="row" style="gap: 1.25rem;">
+              <span class="badge badge-teal">Utilities</span>
+              <span class="list-amount">$118.40</span>
+            </div>
+          </li>
+        </ul>
+        <div class="row between" style="padding: 1rem .5rem; font-size: .85rem;">
+          <span class="muted">Showing 1-8 of 47</span>
+          <div class="row">
+            <button class="btn btn-outline btn-sm">← Prev</button>
+            <button class="btn btn-outline btn-sm">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add transaction modal -->
+  <div class="modal-overlay" id="add-tx">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <h3 class="modal-title">Add transaction</h3>
+          <p class="modal-desc">AI will auto-categorize after you save.</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" data-modal-close>✕</button>
+      </div>
+      <form onsubmit="event.preventDefault(); this.closest('.modal-overlay').classList.remove('open');">
+        <div class="field">
+          <label>Amount</label>
+          <input type="number" step="0.01" placeholder="0.00" required />
+        </div>
+        <div class="field">
+          <label>Description / Merchant</label>
+          <input type="text" placeholder="e.g. Starbucks" required />
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select>
+            <option>🤖 Auto-detect</option>
+            <option>Dining</option>
+            <option>Groceries</option>
+            <option>Transportation</option>
+            <option>Shopping</option>
+            <option>Entertainment</option>
+            <option>Health</option>
+            <option>Utilities</option>
+            <option>Travel</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Card</label>
+          <select>
+            <option>Chase Sapphire ••4821</option>
+            <option>Amex Gold ••1903</option>
+            <option>Chase Freedom ••7740</option>
+            <option>Cash</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-modal-close>Cancel</button>
+          <button class="btn btn-primary">Save transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="footer-host"></div>
+  <script src="js/app.js"></script>
+</body>
+</html>

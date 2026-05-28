@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in — TrueSpend</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="nav-host"></div>
+
+  <main style="padding-top: 4rem;">
+    <div class="auth-shell">
+      <aside class="auth-art">
+        <div>
+          <div class="brand" style="color: white;">
+            <span class="brand-mark" style="background: rgba(255,255,255,0.18);">T</span>
+            <span style="font-size: 1.15rem;">TrueSpend</span>
+          </div>
+        </div>
+        <div>
+          <h2 style="font-size: 2rem; font-weight: 700; line-height: 1.2; margin: 0 0 1rem;">
+            Spend smarter. Stay private.
+          </h2>
+          <p style="opacity: .85; max-width: 380px; line-height: 1.6;">
+            AI-powered receipts, geofenced budgets, anomaly detection, and bank sync — all in one place.
+            Your data is encrypted and never sold.
+          </p>
+          <div class="row mt-4 wrap" style="opacity: .85; font-size: .875rem;">
+            <span>✓ MFA included</span>
+            <span>✓ Zero-knowledge</span>
+            <span>✓ Cancel anytime</span>
+          </div>
+        </div>
+        <div style="opacity: .65; font-size: .8rem;">© 2026 TrueSpend</div>
+      </aside>
+
+      <section class="auth-form-wrap">
+        <div class="auth-form">
+          <div class="row" data-tabs="auth" style="border: 1px solid hsl(var(--border)); border-radius: .5rem; padding: .2rem; margin-bottom: 1.5rem;">
+            <button data-tab="signin" class="btn btn-sm flex-1 active" style="background: var(--gradient-brand); color: white;">Sign in</button>
+            <button data-tab="signup" class="btn btn-sm flex-1 btn-ghost">Sign up</button>
+          </div>
+
+          <div data-tab-panel="signin" data-tabs-group="auth">
+            <h1 class="h2" style="font-size: 1.5rem;">Welcome back</h1>
+            <p class="muted" style="font-size: .875rem; margin-top: .35rem;">Enter your credentials to continue.</p>
+
+            <form class="mt-4" onsubmit="event.preventDefault(); location.href='dashboard.html';">
+              <div class="field">
+                <label>Email</label>
+                <input type="email" placeholder="you@example.com" required />
+              </div>
+              <div class="field">
+                <label>Password</label>
+                <input type="password" placeholder="••••••••" required />
+              </div>
+              <div class="row between" style="font-size: .8rem;">
+                <label class="row" style="gap: .35rem;"><input type="checkbox" /> Remember me</label>
+                <a href="#" class="muted">Forgot password?</a>
+              </div>
+              <button class="btn btn-primary mt-4" style="width: 100%;">Sign in →</button>
+              <button type="button" class="btn btn-outline mt-2" style="width: 100%;">Continue with Google</button>
+            </form>
+
+            <p class="text-center muted mt-4" style="font-size: .85rem;">
+              No account yet? <a href="#" data-tab="signup" style="color: hsl(var(--primary)); font-weight: 600;">Sign up free</a>
+            </p>
+          </div>
+
+          <div data-tab-panel="signup" data-tabs-group="auth" class="hidden">
+            <h1 class="h2" style="font-size: 1.5rem;">Create your account</h1>
+            <p class="muted" style="font-size: .875rem; margin-top: .35rem;">14-day Pro trial — no card required.</p>
+
+            <form class="mt-4" onsubmit="event.preventDefault(); location.href='dashboard.html';">
+              <div class="field">
+                <label>Full name</label>
+                <input type="text" placeholder="Jane Doe" required />
+              </div>
+              <div class="field">
+                <label>Email</label>
+                <input type="email" placeholder="you@example.com" required />
+              </div>
+              <div class="field">
+                <label>Password</label>
+                <input type="password" placeholder="At least 8 characters" required />
+              </div>
+              <label class="row" style="gap: .5rem; font-size: .8rem;">
+                <input type="checkbox" required />
+                I agree to the Terms & Privacy Policy
+              </label>
+              <button class="btn btn-primary mt-4" style="width: 100%;">Create account →</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

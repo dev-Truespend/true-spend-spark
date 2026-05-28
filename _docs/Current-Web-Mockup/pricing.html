@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pricing — TrueSpend</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="nav-host"></div>
+
+  <main class="page">
+    <div class="container">
+      <div class="text-center">
+        <span class="badge badge-blue">Simple pricing</span>
+        <h1 class="h1 mt-2">Choose your <span class="gradient-text">plan</span></h1>
+        <p class="lead mt-2">Free forever for personal use. Pro unlocks AI insights, unlimited cards, and bank sync.</p>
+      </div>
+
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <span class="badge">Free</span>
+          <div class="price">$0<span>/mo</span></div>
+          <p class="muted" style="font-size: .875rem;">Perfect for casual tracking.</p>
+          <ul class="feature-list">
+            <li>Manual transactions</li>
+            <li>Receipt scanning (10/mo)</li>
+            <li>3 active budgets</li>
+            <li>1 connected card</li>
+            <li>Basic spending charts</li>
+          </ul>
+          <a href="auth.html?signup=1" class="btn btn-outline" style="width: 100%;">Get started</a>
+        </div>
+
+        <div class="pricing-card featured">
+          <span class="badge badge-purple">Pro</span>
+          <div class="price">$8<span>/mo</span></div>
+          <p class="muted" style="font-size: .875rem;">For people serious about their money.</p>
+          <ul class="feature-list">
+            <li>Everything in Free</li>
+            <li>Unlimited receipts</li>
+            <li>Unlimited budgets</li>
+            <li>Unlimited cards via Plaid</li>
+            <li>AI insights (Claude/Gemini/GPT-4)</li>
+            <li>Geofenced budgets & deal alerts</li>
+            <li>Anomaly detection</li>
+            <li>Weekly summary emails</li>
+          </ul>
+          <a href="auth.html?signup=1&plan=pro" class="btn btn-primary" style="width: 100%;">Start 14-day trial</a>
+        </div>
+
+        <div class="pricing-card">
+          <span class="badge badge-teal">Family</span>
+          <div class="price">$15<span>/mo</span></div>
+          <p class="muted" style="font-size: .875rem;">Up to 5 members on one bill.</p>
+          <ul class="feature-list">
+            <li>Everything in Pro</li>
+            <li>Shared household budgets</li>
+            <li>Per-member spending caps</li>
+            <li>Combined reports</li>
+            <li>Priority support</li>
+          </ul>
+          <a href="auth.html?signup=1&plan=family" class="btn btn-outline" style="width: 100%;">Choose Family</a>
+        </div>
+      </div>
+
+      <div class="text-center mt-6 muted" style="font-size: .85rem;">
+        All plans include MFA, end-to-end encryption, and full data export.
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-host"></div>
+  <script src="js/app.js"></script>
+</body>
+</html>

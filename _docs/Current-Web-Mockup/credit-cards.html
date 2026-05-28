@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Credit Cards — TrueSpend</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="nav-host"></div>
+
+  <main class="page">
+    <div class="container">
+      <div class="row between wrap mb-4">
+        <div>
+          <h1 class="h2">Credit cards</h1>
+          <p class="muted" style="font-size: .9rem;">3 cards connected via Plaid · synced 2 minutes ago</p>
+        </div>
+        <button class="btn btn-primary" data-modal-open="link-card">+ Link new card</button>
+      </div>
+
+      <div class="grid grid-3 mb-4">
+        <div class="card">
+          <a href="#" style="text-decoration: none; color: inherit;">
+            <div class="cc-card">
+              <div class="cc-row">
+                <span class="cc-label">Chase Sapphire Preferred</span>
+                <span style="font-size: 1.2rem;">💳</span>
+              </div>
+              <div>
+                <div class="cc-num">•••• •••• •••• 4821</div>
+                <div class="cc-row mt-2">
+                  <div>
+                    <div class="cc-label">Card holder</div>
+                    <div class="cc-name">Sravan R.</div>
+                  </div>
+                  <div style="text-align: right;">
+                    <div class="cc-label">Balance</div>
+                    <div class="cc-name">$1,247.32</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </a>
+          <div class="row between mt-2" style="font-size: .85rem;">
+            <span class="muted">Min payment</span>
+            <span style="font-weight: 600;">$35.00 · due May 28</span>
+          </div>
+          <div class="row mt-2">
+            <span class="badge badge-blue">Primary</span>
+            <span class="badge badge-outline">Auto-pay on</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <a href="#" style="text-decoration: none; color: inherit;">
+            <div class="cc-card purple">
+              <div class="cc-row">
+                <span class="cc-label">American Express Gold</span>
+                <span style="font-size: 1.2rem;">💳</span>
+              </div>
+              <div>
+                <div class="cc-num">•••• •••• •••• 1903</div>
+                <div class="cc-row mt-2">
+                  <div>
+                    <div class="cc-label">Card holder</div>
+                    <div class="cc-name">Sravan R.</div>
+                  </div>
+                  <div style="text-align: right;">
+                    <div class="cc-label">Balance</div>
+                    <div class="cc-name">$847.20</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </a>
+          <div class="row between mt-2" style="font-size: .85rem;">
+            <span class="muted">Min payment</span>
+            <span style="font-weight: 600;">$50.00 · due Jun 6</span>
+          </div>
+          <div class="row mt-2">
+            <span class="badge badge-outline">Auto-pay off</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <a href="#" style="text-decoration: none; color: inherit;">
+            <div class="cc-card teal">
+              <div class="cc-row">
+                <span class="cc-label">Chase Freedom Unlimited</span>
+                <span style="font-size: 1.2rem;">💳</span>
+              </div>
+              <div>
+                <div class="cc-num">•••• •••• •••• 7740</div>
+                <div class="cc-row mt-2">
+                  <div>
+                    <div class="cc-label">Card holder</div>
+                    <div class="cc-name">Sravan R.</div>
+                  </div>
+                  <div style="text-align: right;">
+                    <div class="cc-label">Balance</div>
+                    <div class="cc-name">$432.18</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </a>
+          <div class="row between mt-2" style="font-size: .85rem;">
+            <span class="muted">Min payment</span>
+            <span style="font-weight: 600;">$25.00 · due Jun 12</span>
+          </div>
+          <div class="row mt-2">
+            <span class="badge badge-outline">Auto-pay on</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent card activity -->
+      <div class="card">
+        <h3 class="card-title mb-2">Recent card activity</h3>
+        <ul class="list">
+          <li class="list-item">
+            <div class="list-icon" style="background: hsl(var(--brand-blue) / .1); color: hsl(var(--brand-blue));">CS</div>
+            <div class="list-body">
+              <p class="list-title">Sweetgreen — Union Square</p>
+              <p class="list-meta">Chase Sapphire ••4821 · May 24</p>
+            </div>
+            <span class="list-amount">-$14.20</span>
+          </li>
+          <li class="list-item">
+            <div class="list-icon" style="background: hsl(var(--brand-purple) / .1); color: hsl(var(--brand-purple));">AG</div>
+            <div class="list-body">
+              <p class="list-title">Whole Foods Market</p>
+              <p class="list-meta">Amex Gold ••1903 · May 23</p>
+            </div>
+            <span class="list-amount">-$83.47</span>
+          </li>
+          <li class="list-item">
+            <div class="list-icon" style="background: hsl(var(--brand-teal) / .1); color: hsl(var(--brand-teal));">CS</div>
+            <div class="list-body">
+              <p class="list-title">Uber to JFK</p>
+              <p class="list-meta">Chase Sapphire ••4821 · May 22</p>
+            </div>
+            <span class="list-amount">-$42.10</span>
+          </li>
+          <li class="list-item">
+            <div class="list-icon" style="background: hsl(35 92% 50% / .12); color: hsl(35 92% 40%);">CF</div>
+            <div class="list-body">
+              <p class="list-title">Netflix subscription</p>
+              <p class="list-meta">Chase Freedom ••7740 · May 21</p>
+            </div>
+            <span class="list-amount">-$15.49</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- Link card (Plaid) modal -->
+  <div class="modal-overlay" id="link-card">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <h3 class="modal-title">Link a new card</h3>
+          <p class="modal-desc">We use Plaid for read-only access. We never see your credentials.</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" data-modal-close>✕</button>
+      </div>
+      <div style="text-align: center; padding: 2rem 0;">
+        <div style="font-size: 3rem;">🔐</div>
+        <h3 style="margin: .5rem 0;">Continue with Plaid</h3>
+        <p class="muted" style="font-size: .875rem;">
+          You'll be redirected to Plaid's secure flow to choose your bank and authorize access.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close>Cancel</button>
+        <button class="btn btn-primary" data-modal-close>Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer-host"></div>
+  <script src="js/app.js"></script>
+</body>
+</html>
