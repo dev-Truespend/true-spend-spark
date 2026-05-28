@@ -1755,12 +1755,48 @@ img { display: block; max-width: 100%; }
 }
 @media (max-width: 760px) {
   .landing-v2 .topnav {
+    position: relative;
+    height: auto;
     background: #040a1a;
+    padding: 1.35rem 0 0.5rem;
+  }
+  .landing-v2 .topnav-inner {
+    min-height: 3rem;
+  }
+  .landing-v2 .brand {
+    font-size: 1.15rem;
+  }
+  .landing-v2 .brand-mark {
+    width: 2rem;
+    height: 2rem;
   }
   .v2-hero {
     margin: 0;
     border-radius: 0;
-    padding-top: 3rem;
+    padding-top: 1.75rem;
+    padding-bottom: 3rem;
+    overflow: visible;
+  }
+  .v2-hero-copy h1 {
+    font-size: clamp(2.45rem, 13vw, 3.25rem);
+    line-height: 1.16;
+    max-width: 100%;
+    margin-top: 0;
+  }
+  .v2-hero-copy p {
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-top: 1.2rem;
+  }
+  .v2-form {
+    margin-top: 1.8rem;
+  }
+  .v2-trust-row {
+    gap: 1rem 1.25rem;
+  }
+  .v2-rec-panel {
+    max-width: 100%;
+    margin-top: 1.75rem;
   }
   .v2-dashboard,
   .dash-metrics,
