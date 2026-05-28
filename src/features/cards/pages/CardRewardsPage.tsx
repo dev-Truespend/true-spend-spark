@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { catalogTable } from "@/integrations/supabase/catalog";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { RewardRuleList, type RewardRuleListItem } from "../components/RewardRuleList";
 import type { RewardUnit } from "@/shared/types/rewards";
 
@@ -34,32 +36,25 @@ export default function CardRewardsPage() {
   const [card, setCard] = useState<CardRewardsData | null>(null);
   const [rows, setRows] = useState<OverrideFormRow[]>([{ category: "shopping", reward_rate: 1, reward_unit: "percent" }]);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadCard() {
       if (!id) return;
-      const db = supabase as any;
-      const { data } = await db
-        .from("user_credit_cards")
-        .select(`
-          id,
-          display_name,
-          card_catalog:card_catalog_id (
-            card_reward_rules (
-              id,
-              category,
-              reward_rate,
-              reward_unit,
-              cap_amount_cents,
-              cap_period,
-              requires_activation,
-              status
-            )
-          )
-        `)
+      setLoading(true);
+      const { data } = await catalogTable
+        .userCreditCards()
+        .select(
+          `id, display_name,
+           card_catalog:card_catalog_id (
+             card_reward_rules ( id, category, reward_rate, reward_unit,
+               cap_amount_cents, cap_period, requires_activation, status )
+           )`,
+        )
         .eq("id", id)
         .maybeSingle();
-      setCard(data as CardRewardsData | null);
+      setCard(data as unknown as CardRewardsData | null);
+      setLoading(false);
     }
     void loadCard();
   }, [id]);
@@ -97,7 +92,15 @@ export default function CardRewardsPage() {
           <Card>
             <CardHeader><CardTitle>Catalog defaults</CardTitle></CardHeader>
             <CardContent>
-              <RewardRuleList rules={card?.card_catalog?.card_reward_rules ?? []} />
+              {loading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-3/4" />
+                </div>
+              ) : (
+                <RewardRuleList rules={card?.card_catalog?.card_reward_rules ?? []} />
+              )}
             </CardContent>
           </Card>
 

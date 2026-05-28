@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { catalogTable } from "@/integrations/supabase/catalog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -17,10 +18,9 @@ export default function ValidationPage() {
   async function runChecks() {
     setRunning(true);
     const results: ValidationCheck[] = [];
-    const db = supabase as any;
 
-    const { count: cardCount, error: cardError } = await db
-      .from("card_catalog")
+    const { count: cardCount, error: cardError } = await catalogTable
+      .cardCatalog()
       .select("id", { count: "exact", head: true });
     results.push({
       name: "Card catalog seeded",
@@ -28,8 +28,8 @@ export default function ValidationPage() {
       details: cardError?.message ?? `${cardCount ?? 0} cards found`,
     });
 
-    const { count: merchantCount, error: merchantError } = await db
-      .from("merchant_domains")
+    const { count: merchantCount, error: merchantError } = await catalogTable
+      .merchantDomains()
       .select("id", { count: "exact", head: true })
       .eq("is_verified", true);
     results.push({
