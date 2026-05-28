@@ -1,0 +1,49 @@
+/* ------------------------------------------------------------------ *
+ * styles.css
+ * Tiny supplement to Tailwind Play CDN. Keep this short — Tailwind
+ * utility classes do the heavy lifting in index.html.
+ * ------------------------------------------------------------------ */
+
+/* Smoother default font rendering on macOS / iOS. */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Respect prefers-reduced-motion — kill the float + shimmer animations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Safe-area padding for iOS notch / Dynamic Island when this is opened
+   inside the future mobile web shell. */
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Brand-aware text selection. */
+::selection {
+  background-color: hsl(218 91% 59% / 0.25);
+  color: hsl(222.2 84% 4.9%);
+}
+
+/* Focus ring for keyboard users only — Tailwind's default focus-visible
+   doesn't catch all browsers consistently with CDN config. */
+:focus-visible {
+  outline: 2px solid hsl(218 91% 59%);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Smooth scroll anchors land just below the sticky header. */
+section[id] {
+  scroll-margin-top: 96px;
+}

@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#2680F5" />
+
+    <title>TrueSpend — Every purchase. Perfectly rewarded.</title>
+    <meta
+      name="description"
+      content="Smart credit-card rewards guidance that respects your privacy. Join the early-access wishlist — free for one month."
+    />
+
+    <!-- Open Graph / social -->
+    <meta property="og:title" content="TrueSpend — Every purchase. Perfectly rewarded." />
+    <meta property="og:description" content="Join the early-access wishlist. Free for one month for the first members." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="./assets/hero-cards-phone.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" type="image/png" href="./assets/truespend-icon-brand.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!--
+      Tailwind v3 via Play CDN. We extend the theme to use the SAME tokens as the main
+      TrueSpend app (src/index.css + tailwind.config.ts) so this page reads as one product
+      with the live web/iOS clients.
+    -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+            },
+            colors: {
+              brand: {
+                blue:   "hsl(218 91% 59%)",
+                purple: "hsl(274 81% 56%)",
+                teal:   "hsl(194 75% 37%)",
+              },
+              background: "hsl(0 0% 100%)",
+              foreground: "hsl(222.2 84% 4.9%)",
+              muted: {
+                DEFAULT: "hsl(210 40% 96.1%)",
+                foreground: "hsl(215.4 16.3% 46.9%)",
+              },
+              border: "hsl(214.3 31.8% 91.4%)",
+            },
+            boxShadow: {
+              premium:
+                "0 10px 30px -10px rgba(38, 128, 245, 0.35), 0 4px 12px -4px rgba(147, 51, 234, 0.2)",
+              large:
+                "0 20px 60px -15px rgba(15, 23, 42, 0.25)",
+            },
+            keyframes: {
+              floatSlow: {
+                "0%, 100%": { transform: "translateY(0px)" },
+                "50%":      { transform: "translateY(-10px)" },
+              },
+              pulseSlow: {
+                "0%, 100%": { opacity: "0.6" },
+                "50%":      { opacity: "1" },
+              },
+              shimmer: {
+                "0%":   { backgroundPosition: "-200% 0" },
+                "100%": { backgroundPosition: "200% 0" },
+              },
+            },
+            animation: {
+              "float-slow": "floatSlow 6s ease-in-out infinite",
+              "pulse-slow": "pulseSlow 4s ease-in-out infinite",
+              shimmer:      "shimmer 8s linear infinite",
+            },
+          },
+        },
+      };
+    </script>
+
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body class="font-sans bg-background text-foreground antialiased">
+    <!-- ─── Phases announcement banner ───────────────────────────────────── -->
+    <div
+      role="region"
+      aria-label="Development roadmap"
+      class="relative isolate overflow-hidden bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal text-white"
+    >
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,transparent_30%,rgba(255,255,255,0.18)_50%,transparent_70%)] bg-[length:200%_100%] animate-shimmer"
+      ></div>
+      <div class="container relative mx-auto max-w-6xl px-4 py-2.5">
+        <div class="flex flex-col items-center justify-center gap-2 text-xs sm:text-sm sm:flex-row sm:gap-5">
+          <span class="inline-flex items-center gap-2 font-semibold">
+            <span class="inline-flex h-2 w-2 animate-pulse rounded-full bg-white"></span>
+            We're shipping in phases:
+          </span>
+          <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 sm:gap-x-4">
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 font-medium backdrop-blur-sm">
+              <span class="inline-flex h-1.5 w-1.5 rounded-full bg-white"></span>
+              Phase 1 · iOS &amp; Android apps
+            </span>
+            <span class="hidden text-white/60 sm:inline">→</span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 font-medium">
+              Phase 2 · Browser extension
+            </span>
+            <span class="hidden text-white/60 sm:inline">→</span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 font-medium">
+              Phase 3 · Web app
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Top navigation ─────────────────────────────────────────────────── -->
+    <header class="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
+      <div class="container mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <a href="#top" class="flex items-center gap-2.5">
+          <img
+            src="./assets/truespend-icon-brand.png"
+            alt="TrueSpend"
+            class="h-8 w-8 animate-float-slow"
+            width="32"
+            height="32"
+          />
+          <span class="bg-gradient-to-r from-brand-blue to-brand-purple bg-clip-text text-xl font-bold text-transparent">
+            TrueSpend
+          </span>
+        </a>
+        <nav class="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
+          <a href="#features"     class="hover:text-foreground transition-colors">Features</a>
+          <a href="#how-it-works" class="hover:text-foreground transition-colors">How it works</a>
+          <a href="#trust"        class="hover:text-foreground transition-colors">Trust</a>
+          <a href="#wishlist"     class="hover:text-foreground transition-colors">Early access</a>
+        </nav>
+        <a
+          href="#wishlist"
+          class="inline-flex h-10 items-center justify-center gap-1.5 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 text-sm font-semibold text-white shadow-premium transition-opacity hover:opacity-90"
+        >
+          Join wishlist
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+            <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- ─── Hero ───────────────────────────────────────────────────────────── -->
+      <section class="px-6 pb-24 pt-20 sm:pt-24 lg:pt-32">
+        <div class="container mx-auto max-w-6xl">
+          <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+            <div class="space-y-8">
+              <span class="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground sm:text-sm">
+                Your rewards. Your data. Your control.
+              </span>
+              <h1 class="text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">
+                Every purchase.
+                <br />
+                <span class="bg-gradient-to-r from-brand-blue via-brand-purple to-brand-teal bg-clip-text text-transparent">
+                  Perfectly rewarded.
+                </span>
+              </h1>
+              <p class="max-w-lg text-lg leading-relaxed text-muted-foreground sm:text-xl">
+                AI-guided credit-card rewards that respect your privacy. Find the best card for every
+                purchase. Your financial data stays encrypted and is never sold.
+              </p>
+
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <a
+                  href="#wishlist"
+                  class="inline-flex h-14 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-8 text-base font-semibold text-white shadow-premium transition-opacity hover:opacity-90 sm:text-lg"
+                >
+                  Join early-access wishlist
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                    <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+                  </svg>
+                </a>
+                <span class="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-brand-teal">
+                    <path d="M20 6 9 17l-5-5"/>
+                  </svg>
+                  Free for 1 month for the first 500 members
+                </span>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-x-8 gap-y-2 pt-2 text-sm text-muted-foreground">
+                <span class="inline-flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-brand-teal">
+                    <path d="M20 6 9 17l-5-5"/>
+                  </svg>
+                  No credit card required
+                </span>
+                <span class="inline-flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-brand-teal">
+                    <path d="M20 6 9 17l-5-5"/>
+                  </svg>
+                  Cancel anytime
+                </span>
+                <span class="inline-flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-brand-teal">
+                    <path d="M20 6 9 17l-5-5"/>
+                  </svg>
+                  Built privacy-first
+                </span>
+              </div>
+            </div>
+
+            <div class="relative flex min-h-[420px] items-center justify-center sm:min-h-[600px]">
+              <div
+                aria-hidden="true"
+                class="absolute inset-0 animate-pulse-slow bg-gradient-to-br from-brand-blue/30 via-brand-purple/30 to-brand-teal/30 blur-3xl"
+              ></div>
+              <img
+                src="./assets/hero-cards-phone.png"
+                alt="TrueSpend on iPhone showing AI-powered rewards"
+                class="relative max-h-[600px] w-full animate-float-slow drop-shadow-2xl"
+                width="640"
+                height="640"
+                loading="eager"
+              />
+              <span class="absolute -left-2 top-8 rounded-full border border-brand-blue/20 bg-white/95 px-4 py-2 text-sm font-semibold text-brand-blue shadow-premium backdrop-blur-sm sm:-left-4">
+                🤖 AI Powered
+              </span>
+              <span class="absolute -right-2 bottom-12 rounded-full border border-brand-purple/20 bg-white/95 px-4 py-2 text-sm font-semibold text-brand-purple shadow-premium backdrop-blur-sm sm:-right-4" style="animation-delay: 1s">
+                🔒 100% Private
+              </span>
+              <span class="absolute -right-4 top-1/2 hidden rounded-full border border-brand-teal/20 bg-white/95 px-4 py-2 text-sm font-semibold text-brand-teal shadow-premium backdrop-blur-sm sm:-right-8 sm:inline-block" style="animation-delay: 2s">
+                ✨ Smart Rewards
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Privacy promise ────────────────────────────────────────────────── -->
+      <section class="bg-gradient-to-br from-brand-purple/10 via-background to-brand-blue/10 px-6 py-24">
+        <div class="container mx-auto max-w-6xl">
+          <div class="mx-auto mb-12 max-w-3xl text-center">
+            <span class="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground sm:text-sm">
+              Privacy first
+            </span>
+            <h2 class="mt-4 text-3xl font-bold sm:text-4xl md:text-5xl">
+              Your data is <span class="text-brand-purple">never</span> sold.
+            </h2>
+            <p class="mt-4 text-lg text-muted-foreground sm:text-xl">
+              Unlike data-broker products, TrueSpend is designed around account-scoped access,
+              encrypted transport, strict database policies, and clear user consent.
+            </p>
+          </div>
+
+          <div class="grid items-center gap-10 md:grid-cols-2">
+            <div class="relative">
+              <div
+                aria-hidden="true"
+                class="absolute inset-0 animate-pulse-slow bg-gradient-to-br from-brand-blue/20 via-brand-purple/20 to-brand-teal/20 blur-3xl"
+              ></div>
+              <img
+                src="./assets/privacy-premium.png"
+                alt="Privacy and security illustration"
+                class="relative w-full drop-shadow-2xl"
+                width="640"
+                height="480"
+                loading="lazy"
+              />
+            </div>
+            <ul class="space-y-6">
+              <li class="flex items-start gap-4">
+                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-blue/10">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-brand-blue">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </span>
+                <div>
+                  <h3 class="text-xl font-semibold">Secure data boundaries</h3>
+                  <p class="mt-1 text-muted-foreground">
+                    Sensitive data is protected in transit and stored behind Supabase row-level
+                    security and provider secret boundaries.
+                  </p>
+                </div>
+              </li>
+              <li class="flex items-start gap-4">
+                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-purple/10">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-brand-purple">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </span>
+                <div>
+                  <h3 class="text-xl font-semibold">Zero data tracking</h3>
+                  <p class="mt-1 text-muted-foreground">
+                    We don't track, analyze, or sell your spending habits to third parties. Ever.
+                  </p>
+                </div>
+              </li>
+              <li class="flex items-start gap-4">
+                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-brand-teal">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M3 5V19A9 3 0 0 0 21 19V5"/>
+                    <path d="M3 12A9 3 0 0 0 21 12"/>
+                  </svg>
+                </span>
+                <div>
+                  <h3 class="text-xl font-semibold">Secure cloud sync</h3>
+                  <p class="mt-1 text-muted-foreground">
+                    Your data syncs through Supabase with row-level security and account-scoped
+                    access controls.
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Features ──────────────────────────────────────────────────────── -->
+      <section id="features" class="px-6 py-24">
+        <div class="container mx-auto max-w-6xl">
+          <div class="mb-14 text-center">
+            <h2 class="text-3xl font-bold sm:text-4xl md:text-5xl">
+              Built for people who <span class="text-brand-blue">value every dollar</span>.
+            </h2>
+          </div>
+          <div class="grid gap-12 md:grid-cols-3">
+            <!-- 1 -->
+            <article class="space-y-6 text-center">
+              <div class="relative mx-auto h-64 w-64">
+                <div aria-hidden="true" class="absolute inset-0 animate-pulse-slow rounded-full bg-gradient-to-br from-brand-blue/20 to-brand-purple/20 blur-2xl"></div>
+                <img
+                  src="./assets/hero-premium.png"
+                  alt="AI rewards engine"
+                  class="relative h-64 w-64 animate-float-slow rounded-2xl object-cover drop-shadow-2xl"
+                  width="256"
+                  height="256"
+                  loading="lazy"
+                />
+              </div>
+              <div>
+                <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brand-blue/10">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-brand-blue">
+                    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                  </svg>
+                </div>
+                <h3 class="mt-4 text-2xl font-bold">Smart rewards</h3>
+                <p class="mt-3 leading-relaxed text-muted-foreground">
+                  Claude AI analyzes your spending and recommends the best card for every purchase —
+                  with the math shown.
+                </p>
+              </div>
+            </article>
+
+            <!-- 2 -->
+            <article class="space-y-6 text-center">
+              <div class="relative mx-auto h-64 w-64">
+                <div aria-hidden="true" class="absolute inset-0 animate-pulse-slow rounded-full bg-gradient-to-br from-brand-teal/20 to-brand-blue/20 blur-2xl"></div>
+                <img
+                  src="./assets/multi-device-ecosystem.png"
+                  alt="Multi-device sync"
+                  class="relative h-64 w-64 animate-float-slow rounded-2xl object-cover drop-shadow-2xl"
+                  style="animation-delay: 1s"
+                  width="256"
+                  height="256"
+                  loading="lazy"
+                />
+              </div>
+              <div>
+                <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brand-teal/10">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-brand-teal">
+                    <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+                    <path d="M12 18h.01"/>
+                  </svg>
+                </div>
+                <h3 class="mt-4 text-2xl font-bold">Everywhere you shop</h3>
+                <p class="mt-3 leading-relaxed text-muted-foreground">
+                  iPhone, Android, browser extension, and web app — all rolling out by phase. Your
+                  data syncs securely in real time.
+                </p>
+              </div>
+            </article>
+
+            <!-- 3 -->
+            <article class="space-y-6 text-center">
+              <div class="relative mx-auto h-64 w-64">
+                <div aria-hidden="true" class="absolute inset-0 animate-pulse-slow rounded-full bg-gradient-to-br from-brand-purple/20 to-brand-teal/20 blur-2xl"></div>
+                <img
+                  src="./assets/privacy-data.png"
+                  alt="Privacy first"
+                  class="relative h-64 w-64 animate-float-slow rounded-2xl object-cover drop-shadow-2xl"
+                  style="animation-delay: 2s"
+                  width="256"
+                  height="256"
+                  loading="lazy"
+                />
+              </div>
+              <div>
+                <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brand-purple/10">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-brand-purple">
+                    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+                  </svg>
+                </div>
+                <h3 class="mt-4 text-2xl font-bold">Privacy-first</h3>
+                <p class="mt-3 leading-relaxed text-muted-foreground">
+                  Encrypted transport, row-level security, and product decisions that put your
+                  consent ahead of every other priority.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── How it works ──────────────────────────────────────────────────── -->
+      <section id="how-it-works" class="bg-muted/40 px-6 py-24">
+        <div class="container mx-auto max-w-5xl">
+          <div class="mb-14 text-center">
+            <h2 class="text-3xl font-bold sm:text-4xl md:text-5xl">
+              Your best financial decision <span class="text-brand-purple">takes 60 seconds.</span>
+            </h2>
+            <p class="mt-4 text-lg text-muted-foreground sm:text-xl">
+              Three easy steps to smarter spending.
+            </p>
+          </div>
+
+          <ol class="space-y-12">
+            <li class="flex items-start gap-6 sm:gap-8">
+              <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-blue to-brand-purple text-xl font-bold text-white shadow-large sm:h-16 sm:w-16 sm:text-2xl">
+                1
+              </div>
+              <div>
+                <h3 class="text-xl font-bold sm:text-2xl">Join the early-access wishlist</h3>
+                <p class="mt-2 text-base leading-relaxed text-muted-foreground sm:text-lg">
+                  Drop your email below. First 500 members get the full subscription free for one
+                  month when we open the doors.
+                </p>
+              </div>
+            </li>
+            <li class="flex items-start gap-6 sm:gap-8">
+              <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-purple to-brand-teal text-xl font-bold text-white shadow-large sm:h-16 sm:w-16 sm:text-2xl">
+                2
+              </div>
+              <div>
+                <h3 class="text-xl font-bold sm:text-2xl">Add your credit cards</h3>
+                <p class="mt-2 text-base leading-relaxed text-muted-foreground sm:text-lg">
+                  Search our verified card catalog or sync via Plaid. We auto-extract the latest
+                  reward rules from each issuer's official page.
+                </p>
+              </div>
+            </li>
+            <li class="flex items-start gap-6 sm:gap-8">
+              <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-teal to-brand-blue text-xl font-bold text-white shadow-large sm:h-16 sm:w-16 sm:text-2xl">
+                3
+              </div>
+              <div>
+                <h3 class="text-xl font-bold sm:text-2xl">Get the best card for every purchase</h3>
+                <p class="mt-2 text-base leading-relaxed text-muted-foreground sm:text-lg">
+                  Real-time recommendations at checkout, monthly missed-rewards summaries, and
+                  AI-powered insights tailored to your spending.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- ─── Trust ─────────────────────────────────────────────────────────── -->
+      <section id="trust" class="px-6 py-24">
+        <div class="container mx-auto max-w-6xl">
+          <div class="mb-14 text-center">
+            <h2 class="text-3xl font-bold sm:text-4xl md:text-5xl">Built on trust.</h2>
+            <p class="mt-4 text-lg text-muted-foreground">
+              The numbers behind the product we're building.
+            </p>
+          </div>
+
+          <div class="grid gap-10 text-center md:grid-cols-3">
+            <div>
+              <div class="bg-gradient-to-r from-brand-blue to-brand-purple bg-clip-text text-5xl font-bold text-transparent">
+                50+
+              </div>
+              <p class="mt-2 text-lg text-muted-foreground">US credit cards in catalog</p>
+            </div>
+            <div>
+              <div class="bg-gradient-to-r from-brand-purple to-brand-teal bg-clip-text text-5xl font-bold text-transparent">
+                15-day
+              </div>
+              <p class="mt-2 text-lg text-muted-foreground">Auto-refresh from issuer pages</p>
+            </div>
+            <div>
+              <div class="bg-gradient-to-r from-brand-teal to-brand-blue bg-clip-text text-5xl font-bold text-transparent">
+                100%
+              </div>
+              <p class="mt-2 text-lg text-muted-foreground">Privacy-first by design</p>
+            </div>
+          </div>
+
+          <div class="mt-12 flex flex-wrap justify-center gap-3 opacity-70">
+            <span class="rounded-full border border-border bg-background px-4 py-1.5 text-sm text-muted-foreground">SOC 2 ready</span>
+            <span class="rounded-full border border-border bg-background px-4 py-1.5 text-sm text-muted-foreground">GDPR-compliant</span>
+            <span class="rounded-full border border-border bg-background px-4 py-1.5 text-sm text-muted-foreground">256-bit encryption</span>
+            <span class="rounded-full border border-border bg-background px-4 py-1.5 text-sm text-muted-foreground">Row-level security</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Wishlist signup ───────────────────────────────────────────────── -->
+      <section id="wishlist" class="px-6 py-24">
+        <div class="container mx-auto max-w-4xl">
+          <div class="overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-brand-blue/10 via-brand-purple/10 to-brand-teal/10 p-1 shadow-premium">
+            <div class="rounded-[calc(1.5rem-4px)] bg-background/95 p-8 backdrop-blur-xl sm:p-12">
+              <div class="mx-auto max-w-2xl text-center">
+                <span class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand-blue to-brand-purple px-3 py-1 text-xs font-semibold text-white sm:text-sm">
+                  🎁 Early access perk
+                </span>
+                <h2 class="mt-4 text-3xl font-bold sm:text-4xl md:text-5xl">
+                  Free for 1 month for the
+                  <span class="bg-gradient-to-r from-brand-blue to-brand-purple bg-clip-text text-transparent">
+                    first 500 members.
+                  </span>
+                </h2>
+                <p class="mt-4 text-base text-muted-foreground sm:text-lg">
+                  Join the wishlist and we'll email you when your platform is ready. No spam, no
+                  credit card, no commitment — just first dibs on the product.
+                </p>
+
+                <form
+                  id="wishlistForm"
+                  class="mx-auto mt-8 flex max-w-md flex-col gap-2 sm:flex-row"
+                  novalidate
+                >
+                  <label for="wishlistEmail" class="sr-only">Email address</label>
+                  <input
+                    id="wishlistEmail"
+                    name="email"
+                    type="email"
+                    required
+                    autocomplete="email"
+                    placeholder="you@email.com"
+                    class="h-12 flex-1 rounded-md border border-border bg-background px-4 text-base outline-none ring-offset-background transition placeholder:text-muted-foreground focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/30"
+                  />
+                  <button
+                    type="submit"
+                    class="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-6 text-base font-semibold text-white shadow-premium transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <span data-state="idle">Save my spot</span>
+                    <span data-state="loading" class="hidden">Saving…</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                      <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+                    </svg>
+                  </button>
+                </form>
+
+                <p id="wishlistMessage" class="mt-4 min-h-[1.5em] text-sm" role="status" aria-live="polite"></p>
+
+                <!-- Wishlist preference picker -->
+                <fieldset class="mt-8 text-left">
+                  <legend class="mb-3 block text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Tell us which platform to launch you on first (optional)
+                  </legend>
+                  <div class="flex flex-wrap justify-center gap-2">
+                    <label class="cursor-pointer">
+                      <input type="checkbox" name="platforms" value="ios"      class="peer sr-only" />
+                      <span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm transition peer-checked:border-brand-blue peer-checked:bg-brand-blue/10 peer-checked:text-brand-blue hover:bg-muted">
+                        🍎 iOS
+                      </span>
+                    </label>
+                    <label class="cursor-pointer">
+                      <input type="checkbox" name="platforms" value="android"  class="peer sr-only" />
+                      <span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm transition peer-checked:border-brand-blue peer-checked:bg-brand-blue/10 peer-checked:text-brand-blue hover:bg-muted">
+                        🤖 Android
+                      </span>
+                    </label>
+                    <label class="cursor-pointer">
+                      <input type="checkbox" name="platforms" value="extension" class="peer sr-only" />
+                      <span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm transition peer-checked:border-brand-blue peer-checked:bg-brand-blue/10 peer-checked:text-brand-blue hover:bg-muted">
+                        🧩 Browser extension
+                      </span>
+                    </label>
+                    <label class="cursor-pointer">
+                      <input type="checkbox" name="platforms" value="web"      class="peer sr-only" />
+                      <span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm transition peer-checked:border-brand-blue peer-checked:bg-brand-blue/10 peer-checked:text-brand-blue hover:bg-muted">
+                        🌐 Web app
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <div class="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+                  <span class="inline-flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5 text-brand-teal"><path d="M20 6 9 17l-5-5"/></svg>
+                    Your email is never sold
+                  </span>
+                  <span class="inline-flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5 text-brand-teal"><path d="M20 6 9 17l-5-5"/></svg>
+                    One-tap unsubscribe
+                  </span>
+                  <span class="inline-flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5 text-brand-teal"><path d="M20 6 9 17l-5-5"/></svg>
+                    Launch announcements only
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Roadmap (matches phases banner) ───────────────────────────────── -->
+      <section class="bg-muted/40 px-6 py-20">
+        <div class="container mx-auto max-w-5xl">
+          <div class="mb-12 text-center">
+            <h2 class="text-3xl font-bold sm:text-4xl">The roadmap.</h2>
+            <p class="mt-3 text-muted-foreground">A clear plan, shipped one phase at a time.</p>
+          </div>
+
+          <div class="grid gap-6 md:grid-cols-3">
+            <article class="relative overflow-hidden rounded-2xl border border-brand-blue/30 bg-background p-6 shadow-premium">
+              <span class="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-blue to-brand-purple px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+                <span class="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-white"></span>
+                In progress
+              </span>
+              <div class="text-3xl">📱</div>
+              <h3 class="mt-4 text-lg font-semibold">Phase 1</h3>
+              <p class="mt-1 text-sm font-medium text-brand-blue">iOS &amp; Android apps</p>
+              <p class="mt-3 text-sm text-muted-foreground">
+                Native mobile clients with camera receipt scan, geofence-triggered card
+                suggestions, and offline-first sync.
+              </p>
+            </article>
+
+            <article class="relative rounded-2xl border border-border bg-background p-6">
+              <span class="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Next
+              </span>
+              <div class="text-3xl">🧩</div>
+              <h3 class="mt-4 text-lg font-semibold">Phase 2</h3>
+              <p class="mt-1 text-sm font-medium text-muted-foreground">Browser extension</p>
+              <p class="mt-3 text-sm text-muted-foreground">
+                A Chrome &amp; Firefox extension that suggests the best card at checkout —
+                Amazon, Walmart, DoorDash, anywhere.
+              </p>
+            </article>
+
+            <article class="relative rounded-2xl border border-border bg-background p-6">
+              <span class="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                After that
+              </span>
+              <div class="text-3xl">🌐</div>
+              <h3 class="mt-4 text-lg font-semibold">Phase 3</h3>
+              <p class="mt-1 text-sm font-medium text-muted-foreground">Web app</p>
+              <p class="mt-3 text-sm text-muted-foreground">
+                The full dashboard in your browser — admin tools, deep analytics, monthly
+                missed-rewards summaries.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ─── Footer ─────────────────────────────────────────────────────────── -->
+    <footer class="border-t border-border bg-background">
+      <div class="container mx-auto max-w-6xl px-4 py-12">
+        <div class="flex flex-col items-center gap-6 text-center md:flex-row md:justify-between md:text-left">
+          <div class="flex items-center gap-2.5">
+            <img src="./assets/truespend-icon-brand.png" alt="" class="h-7 w-7" width="28" height="28" />
+            <span class="bg-gradient-to-r from-brand-blue to-brand-purple bg-clip-text text-lg font-bold text-transparent">
+              TrueSpend
+            </span>
+          </div>
+          <p class="text-sm text-muted-foreground">
+            Smart spending, smarter rewards. Your financial data, your control.
+          </p>
+          <div class="flex items-center gap-4 text-sm text-muted-foreground">
+            <a href="mailto:hello@truespend.org" class="hover:text-foreground transition-colors">Contact</a>
+            <span aria-hidden="true">·</span>
+            <a href="#wishlist" class="hover:text-foreground transition-colors">Wishlist</a>
+          </div>
+        </div>
+        <div class="mt-8 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 text-xs text-muted-foreground md:flex-row">
+          <p>© <span id="copyrightYear"></span> TrueSpend. All rights reserved.</p>
+          <p>Built privacy-first.</p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./script.js" defer></script>
+  </body>
+</html>

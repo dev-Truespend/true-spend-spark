@@ -1,0 +1,12 @@
+{
+  "name": "truespend-static-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static landing site for TrueSpend with wishlist signup. Zero build, deploys to Vercel/Netlify/Cloudflare in seconds.",
+  "scripts": {
+    "dev":     "npx --yes serve@14 . -l 4321",
+    "preview": "npx --yes serve@14 . -l 4321",
+    "deploy":  "npx --yes vercel --prod"
+  },
+  "keywords": ["truespend", "landing", "static", "wishlist"]
+}
