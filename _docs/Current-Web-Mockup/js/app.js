@@ -162,11 +162,26 @@
       });
     });
 
+    document.querySelectorAll("[data-country-select]").forEach(select => {
+      const form = select.closest("form");
+      const other = form?.querySelector("[data-country-other]");
+      if (!other) return;
+
+      const syncCountryOther = () => {
+        const isOther = select.value === "Other";
+        other.classList.toggle("hidden", !isOther);
+        other.required = isOther;
+        if (!isOther) other.value = "";
+      };
+
+      select.addEventListener("change", syncCountryOther);
+      syncCountryOther();
+    });
+
     document.querySelectorAll(".waitlist-form").forEach(form => {
       form.addEventListener("submit", async event => {
         event.preventDefault();
         const button = form.querySelector("button");
-        const email = form.querySelector('input[name="email"]');
         if (!button) return;
         const original = button.textContent;
         button.disabled = true;
@@ -182,7 +197,10 @@
           if (!response.ok) throw new Error("Form submission failed");
 
           button.textContent = "You're on the list";
-          if (email) email.value = "";
+          form.reset();
+          form.querySelectorAll("[data-country-select]").forEach(select => {
+            select.dispatchEvent(new Event("change"));
+          });
         } catch (error) {
           button.textContent = "Try again";
         } finally {
