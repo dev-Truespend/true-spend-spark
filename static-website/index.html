@@ -27,9 +27,9 @@
     />
 
     <!--
-      Tailwind v3 via Play CDN. We extend the theme to use the SAME tokens as the main
-      TrueSpend app (src/index.css + tailwind.config.ts) so this page reads as one product
-      with the live web/iOS clients.
+      Tailwind v3 via Play CDN. Theme is extended to use the SAME brand tokens
+      as the main app (src/index.css + tailwind.config.ts) so the landing
+      design stays in lock-step with the rest of the product.
     -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <script>
@@ -99,23 +99,24 @@
         class="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,transparent_30%,rgba(255,255,255,0.18)_50%,transparent_70%)] bg-[length:200%_100%] animate-shimmer"
       ></div>
       <div class="container relative mx-auto max-w-6xl px-4 py-2.5">
-        <div class="flex flex-col items-center justify-center gap-2 text-xs sm:text-sm sm:flex-row sm:gap-5">
+        <div class="flex flex-col items-center justify-center gap-2 text-xs sm:text-sm sm:flex-row sm:gap-4">
           <span class="inline-flex items-center gap-2 font-semibold">
             <span class="inline-flex h-2 w-2 animate-pulse rounded-full bg-white"></span>
-            We're shipping in phases:
+            TrueSpend is in active development
           </span>
-          <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 sm:gap-x-4">
+          <span class="hidden text-white/60 sm:inline">·</span>
+          <div class="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5">
             <span class="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 font-medium backdrop-blur-sm">
-              <span class="inline-flex h-1.5 w-1.5 rounded-full bg-white"></span>
-              Phase 1 · iOS &amp; Android apps
+              <span class="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-white"></span>
+              Phase 1 · in progress
             </span>
             <span class="hidden text-white/60 sm:inline">→</span>
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 font-medium">
-              Phase 2 · Browser extension
+            <span class="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 font-medium">
+              Phase 2
             </span>
             <span class="hidden text-white/60 sm:inline">→</span>
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 font-medium">
-              Phase 3 · Web app
+            <span class="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 font-medium">
+              Phase 3
             </span>
           </div>
         </div>
@@ -138,7 +139,6 @@
           </span>
         </a>
         <nav class="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
-          <a href="#features"     class="hover:text-foreground transition-colors">Features</a>
           <a href="#how-it-works" class="hover:text-foreground transition-colors">How it works</a>
           <a href="#trust"        class="hover:text-foreground transition-colors">Trust</a>
           <a href="#wishlist"     class="hover:text-foreground transition-colors">Early access</a>
@@ -172,8 +172,9 @@
                 </span>
               </h1>
               <p class="max-w-lg text-lg leading-relaxed text-muted-foreground sm:text-xl">
-                AI-guided credit-card rewards that respect your privacy. Find the best card for every
-                purchase. Your financial data stays encrypted and is never sold.
+                Smart, private spending guidance for people who value every dollar. Built
+                privacy-first. Join the wishlist to be among the first to try it — free for one
+                month.
               </p>
 
               <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -236,7 +237,7 @@
                 🔒 100% Private
               </span>
               <span class="absolute -right-4 top-1/2 hidden rounded-full border border-brand-teal/20 bg-white/95 px-4 py-2 text-sm font-semibold text-brand-teal shadow-premium backdrop-blur-sm sm:-right-8 sm:inline-block" style="animation-delay: 2s">
-                ✨ Smart Rewards
+                ✨ Early access
               </span>
             </div>
           </div>
@@ -325,111 +326,18 @@
         </div>
       </section>
 
-      <!-- ─── Features ──────────────────────────────────────────────────────── -->
-      <section id="features" class="px-6 py-24">
-        <div class="container mx-auto max-w-6xl">
-          <div class="mb-14 text-center">
-            <h2 class="text-3xl font-bold sm:text-4xl md:text-5xl">
-              Built for people who <span class="text-brand-blue">value every dollar</span>.
-            </h2>
-          </div>
-          <div class="grid gap-12 md:grid-cols-3">
-            <!-- 1 -->
-            <article class="space-y-6 text-center">
-              <div class="relative mx-auto h-64 w-64">
-                <div aria-hidden="true" class="absolute inset-0 animate-pulse-slow rounded-full bg-gradient-to-br from-brand-blue/20 to-brand-purple/20 blur-2xl"></div>
-                <img
-                  src="./assets/hero-premium.png"
-                  alt="AI rewards engine"
-                  class="relative h-64 w-64 animate-float-slow rounded-2xl object-cover drop-shadow-2xl"
-                  width="256"
-                  height="256"
-                  loading="lazy"
-                />
-              </div>
-              <div>
-                <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brand-blue/10">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-brand-blue">
-                    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
-                  </svg>
-                </div>
-                <h3 class="mt-4 text-2xl font-bold">Smart rewards</h3>
-                <p class="mt-3 leading-relaxed text-muted-foreground">
-                  Claude AI analyzes your spending and recommends the best card for every purchase —
-                  with the math shown.
-                </p>
-              </div>
-            </article>
-
-            <!-- 2 -->
-            <article class="space-y-6 text-center">
-              <div class="relative mx-auto h-64 w-64">
-                <div aria-hidden="true" class="absolute inset-0 animate-pulse-slow rounded-full bg-gradient-to-br from-brand-teal/20 to-brand-blue/20 blur-2xl"></div>
-                <img
-                  src="./assets/multi-device-ecosystem.png"
-                  alt="Multi-device sync"
-                  class="relative h-64 w-64 animate-float-slow rounded-2xl object-cover drop-shadow-2xl"
-                  style="animation-delay: 1s"
-                  width="256"
-                  height="256"
-                  loading="lazy"
-                />
-              </div>
-              <div>
-                <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brand-teal/10">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-brand-teal">
-                    <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
-                    <path d="M12 18h.01"/>
-                  </svg>
-                </div>
-                <h3 class="mt-4 text-2xl font-bold">Everywhere you shop</h3>
-                <p class="mt-3 leading-relaxed text-muted-foreground">
-                  iPhone, Android, browser extension, and web app — all rolling out by phase. Your
-                  data syncs securely in real time.
-                </p>
-              </div>
-            </article>
-
-            <!-- 3 -->
-            <article class="space-y-6 text-center">
-              <div class="relative mx-auto h-64 w-64">
-                <div aria-hidden="true" class="absolute inset-0 animate-pulse-slow rounded-full bg-gradient-to-br from-brand-purple/20 to-brand-teal/20 blur-2xl"></div>
-                <img
-                  src="./assets/privacy-data.png"
-                  alt="Privacy first"
-                  class="relative h-64 w-64 animate-float-slow rounded-2xl object-cover drop-shadow-2xl"
-                  style="animation-delay: 2s"
-                  width="256"
-                  height="256"
-                  loading="lazy"
-                />
-              </div>
-              <div>
-                <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brand-purple/10">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-brand-purple">
-                    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
-                  </svg>
-                </div>
-                <h3 class="mt-4 text-2xl font-bold">Privacy-first</h3>
-                <p class="mt-3 leading-relaxed text-muted-foreground">
-                  Encrypted transport, row-level security, and product decisions that put your
-                  consent ahead of every other priority.
-                </p>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
+      <!-- Features section intentionally removed — we don't expose product
+           specifics before launch. See README "Roadmap controls". -->
 
       <!-- ─── How it works ──────────────────────────────────────────────────── -->
       <section id="how-it-works" class="bg-muted/40 px-6 py-24">
         <div class="container mx-auto max-w-5xl">
           <div class="mb-14 text-center">
             <h2 class="text-3xl font-bold sm:text-4xl md:text-5xl">
-              Your best financial decision <span class="text-brand-purple">takes 60 seconds.</span>
+              From wishlist to early access <span class="text-brand-purple">in three steps.</span>
             </h2>
             <p class="mt-4 text-lg text-muted-foreground sm:text-xl">
-              Three easy steps to smarter spending.
+              No commitment. No credit card. No spam.
             </p>
           </div>
 
@@ -439,10 +347,10 @@
                 1
               </div>
               <div>
-                <h3 class="text-xl font-bold sm:text-2xl">Join the early-access wishlist</h3>
+                <h3 class="text-xl font-bold sm:text-2xl">Join the wishlist</h3>
                 <p class="mt-2 text-base leading-relaxed text-muted-foreground sm:text-lg">
-                  Drop your email below. First 500 members get the full subscription free for one
-                  month when we open the doors.
+                  Drop your email below. First 500 members lock in one month free when the doors
+                  open. Takes about 8 seconds.
                 </p>
               </div>
             </li>
@@ -451,10 +359,10 @@
                 2
               </div>
               <div>
-                <h3 class="text-xl font-bold sm:text-2xl">Add your credit cards</h3>
+                <h3 class="text-xl font-bold sm:text-2xl">Stay in the loop</h3>
                 <p class="mt-2 text-base leading-relaxed text-muted-foreground sm:text-lg">
-                  Search our verified card catalog or sync via Plaid. We auto-extract the latest
-                  reward rules from each issuer's official page.
+                  We'll email you the moment each phase is ready — and only then. No newsletters,
+                  no drip sequences, no upsells.
                 </p>
               </div>
             </li>
@@ -463,10 +371,10 @@
                 3
               </div>
               <div>
-                <h3 class="text-xl font-bold sm:text-2xl">Get the best card for every purchase</h3>
+                <h3 class="text-xl font-bold sm:text-2xl">Try it free for 1 month</h3>
                 <p class="mt-2 text-base leading-relaxed text-muted-foreground sm:text-lg">
-                  Real-time recommendations at checkout, monthly missed-rewards summaries, and
-                  AI-powered insights tailored to your spending.
+                  Wishlist members skip the line and get the full experience free for the first
+                  month — no credit card required, cancel anytime.
                 </p>
               </div>
             </li>
@@ -480,22 +388,22 @@
           <div class="mb-14 text-center">
             <h2 class="text-3xl font-bold sm:text-4xl md:text-5xl">Built on trust.</h2>
             <p class="mt-4 text-lg text-muted-foreground">
-              The numbers behind the product we're building.
+              The values that go into every line of code.
             </p>
           </div>
 
           <div class="grid gap-10 text-center md:grid-cols-3">
             <div>
               <div class="bg-gradient-to-r from-brand-blue to-brand-purple bg-clip-text text-5xl font-bold text-transparent">
-                50+
+                0
               </div>
-              <p class="mt-2 text-lg text-muted-foreground">US credit cards in catalog</p>
+              <p class="mt-2 text-lg text-muted-foreground">Trackers, ever</p>
             </div>
             <div>
               <div class="bg-gradient-to-r from-brand-purple to-brand-teal bg-clip-text text-5xl font-bold text-transparent">
-                15-day
+                0
               </div>
-              <p class="mt-2 text-lg text-muted-foreground">Auto-refresh from issuer pages</p>
+              <p class="mt-2 text-lg text-muted-foreground">Data brokers, ever</p>
             </div>
             <div>
               <div class="bg-gradient-to-r from-brand-teal to-brand-blue bg-clip-text text-5xl font-bold text-transparent">
@@ -506,10 +414,10 @@
           </div>
 
           <div class="mt-12 flex flex-wrap justify-center gap-3 opacity-70">
-            <span class="rounded-full border border-border bg-background px-4 py-1.5 text-sm text-muted-foreground">SOC 2 ready</span>
-            <span class="rounded-full border border-border bg-background px-4 py-1.5 text-sm text-muted-foreground">GDPR-compliant</span>
-            <span class="rounded-full border border-border bg-background px-4 py-1.5 text-sm text-muted-foreground">256-bit encryption</span>
+            <span class="rounded-full border border-border bg-background px-4 py-1.5 text-sm text-muted-foreground">Encryption in transit</span>
+            <span class="rounded-full border border-border bg-background px-4 py-1.5 text-sm text-muted-foreground">Account-scoped access</span>
             <span class="rounded-full border border-border bg-background px-4 py-1.5 text-sm text-muted-foreground">Row-level security</span>
+            <span class="rounded-full border border-border bg-background px-4 py-1.5 text-sm text-muted-foreground">Clear consent</span>
           </div>
         </div>
       </section>
@@ -530,8 +438,8 @@
                   </span>
                 </h2>
                 <p class="mt-4 text-base text-muted-foreground sm:text-lg">
-                  Join the wishlist and we'll email you when your platform is ready. No spam, no
-                  credit card, no commitment — just first dibs on the product.
+                  Join the wishlist and we'll email you the moment we're ready. No spam, no
+                  credit card, no commitment — just first dibs.
                 </p>
 
                 <form
@@ -563,39 +471,6 @@
 
                 <p id="wishlistMessage" class="mt-4 min-h-[1.5em] text-sm" role="status" aria-live="polite"></p>
 
-                <!-- Wishlist preference picker -->
-                <fieldset class="mt-8 text-left">
-                  <legend class="mb-3 block text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Tell us which platform to launch you on first (optional)
-                  </legend>
-                  <div class="flex flex-wrap justify-center gap-2">
-                    <label class="cursor-pointer">
-                      <input type="checkbox" name="platforms" value="ios"      class="peer sr-only" />
-                      <span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm transition peer-checked:border-brand-blue peer-checked:bg-brand-blue/10 peer-checked:text-brand-blue hover:bg-muted">
-                        🍎 iOS
-                      </span>
-                    </label>
-                    <label class="cursor-pointer">
-                      <input type="checkbox" name="platforms" value="android"  class="peer sr-only" />
-                      <span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm transition peer-checked:border-brand-blue peer-checked:bg-brand-blue/10 peer-checked:text-brand-blue hover:bg-muted">
-                        🤖 Android
-                      </span>
-                    </label>
-                    <label class="cursor-pointer">
-                      <input type="checkbox" name="platforms" value="extension" class="peer sr-only" />
-                      <span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm transition peer-checked:border-brand-blue peer-checked:bg-brand-blue/10 peer-checked:text-brand-blue hover:bg-muted">
-                        🧩 Browser extension
-                      </span>
-                    </label>
-                    <label class="cursor-pointer">
-                      <input type="checkbox" name="platforms" value="web"      class="peer sr-only" />
-                      <span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm transition peer-checked:border-brand-blue peer-checked:bg-brand-blue/10 peer-checked:text-brand-blue hover:bg-muted">
-                        🌐 Web app
-                      </span>
-                    </label>
-                  </div>
-                </fieldset>
-
                 <div class="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
                   <span class="inline-flex items-center gap-1.5">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5 text-brand-teal"><path d="M20 6 9 17l-5-5"/></svg>
@@ -616,12 +491,14 @@
         </div>
       </section>
 
-      <!-- ─── Roadmap (matches phases banner) ───────────────────────────────── -->
+      <!-- ─── Roadmap (generic — no product specifics until launch) ──────────── -->
       <section class="bg-muted/40 px-6 py-20">
         <div class="container mx-auto max-w-5xl">
           <div class="mb-12 text-center">
-            <h2 class="text-3xl font-bold sm:text-4xl">The roadmap.</h2>
-            <p class="mt-3 text-muted-foreground">A clear plan, shipped one phase at a time.</p>
+            <h2 class="text-3xl font-bold sm:text-4xl">Shipping in phases.</h2>
+            <p class="mt-3 text-muted-foreground">
+              Built deliberately. Wishlist members hear about each phase first.
+            </p>
           </div>
 
           <div class="grid gap-6 md:grid-cols-3">
@@ -630,12 +507,12 @@
                 <span class="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-white"></span>
                 In progress
               </span>
-              <div class="text-3xl">📱</div>
+              <div class="text-3xl">🛠️</div>
               <h3 class="mt-4 text-lg font-semibold">Phase 1</h3>
-              <p class="mt-1 text-sm font-medium text-brand-blue">iOS &amp; Android apps</p>
+              <p class="mt-1 text-sm font-medium text-brand-blue">Currently building</p>
               <p class="mt-3 text-sm text-muted-foreground">
-                Native mobile clients with camera receipt scan, geofence-triggered card
-                suggestions, and offline-first sync.
+                Heads-down on the core experience. Wishlist members get the first
+                invite when this is ready.
               </p>
             </article>
 
@@ -643,12 +520,12 @@
               <span class="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Next
               </span>
-              <div class="text-3xl">🧩</div>
+              <div class="text-3xl">🚧</div>
               <h3 class="mt-4 text-lg font-semibold">Phase 2</h3>
-              <p class="mt-1 text-sm font-medium text-muted-foreground">Browser extension</p>
+              <p class="mt-1 text-sm font-medium text-muted-foreground">Planned</p>
               <p class="mt-3 text-sm text-muted-foreground">
-                A Chrome &amp; Firefox extension that suggests the best card at checkout —
-                Amazon, Walmart, DoorDash, anywhere.
+                Details revealed once Phase 1 ships. Drop your email to be among
+                the first to know.
               </p>
             </article>
 
@@ -656,12 +533,12 @@
               <span class="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 After that
               </span>
-              <div class="text-3xl">🌐</div>
+              <div class="text-3xl">🔮</div>
               <h3 class="mt-4 text-lg font-semibold">Phase 3</h3>
-              <p class="mt-1 text-sm font-medium text-muted-foreground">Web app</p>
+              <p class="mt-1 text-sm font-medium text-muted-foreground">Planned</p>
               <p class="mt-3 text-sm text-muted-foreground">
-                The full dashboard in your browser — admin tools, deep analytics, monthly
-                missed-rewards summaries.
+                The rest of the picture comes into focus after Phase 2. One
+                clean phase at a time, no over-promises.
               </p>
             </article>
           </div>
