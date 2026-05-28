@@ -163,15 +163,34 @@
     });
 
     document.querySelectorAll(".waitlist-form").forEach(form => {
-      form.addEventListener("submit", event => {
+      form.addEventListener("submit", async event => {
         event.preventDefault();
         const button = form.querySelector("button");
+        const email = form.querySelector('input[name="email"]');
         if (!button) return;
         const original = button.textContent;
-        button.textContent = "You're on the list";
-        setTimeout(() => {
-          button.textContent = original;
-        }, 1800);
+        button.disabled = true;
+        button.textContent = "Joining...";
+
+        try {
+          const response = await fetch(form.action, {
+            method: "POST",
+            body: new FormData(form),
+            headers: { Accept: "application/json" },
+          });
+
+          if (!response.ok) throw new Error("Form submission failed");
+
+          button.textContent = "You're on the list";
+          if (email) email.value = "";
+        } catch (error) {
+          button.textContent = "Try again";
+        } finally {
+          setTimeout(() => {
+            button.disabled = false;
+            button.textContent = original;
+          }, 2200);
+        }
       });
     });
   }
