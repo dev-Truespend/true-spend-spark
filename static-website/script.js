@@ -2,20 +2,22 @@
  * script.js
  *
  * Vanilla JS that powers the wishlist form. No framework, no bundle —
- * deployable as static files on Vercel, Netlify, Cloudflare Pages, or
- * any static host.
+ * deployable as static files on Vercel.
  *
- * To wire the form to a real backend, set WISHLIST_ENDPOINT below to:
- *  - a Formspree URL (https://formspree.io/f/xxxxxxxx), or
- *  - a Getform URL, or
- *  - your own Supabase Edge Function URL, or
- *  - a Cloudflare Worker / serverless endpoint that accepts JSON
+ * Backend: posts to /api/wishlist, a Vercel Serverless Function in
+ * api/wishlist.js that adds the contact to a Resend Audience. Configure
+ * RESEND_API_KEY and RESEND_AUDIENCE_ID in Vercel → Project Settings →
+ * Environment Variables. See README.md for full setup.
  *
- * Until you set it, submissions are stored in localStorage so the
- * visitor still sees a confirmation while we're in dev/preview.
+ * If the endpoint is unreachable (running locally without `vercel dev`,
+ * or env vars not set), submissions fall back to localStorage so the
+ * visitor still gets a confirmation.
  * ------------------------------------------------------------------ */
 
-const WISHLIST_ENDPOINT = ""; // ← set me before going live
+// Same-origin POST — works on Vercel, on `vercel dev`, on any host where
+// /api/wishlist is mounted. Set this to a full URL if you ever host the
+// static files and the API on different domains.
+const WISHLIST_ENDPOINT = "/api/wishlist";
 
 const STORAGE_KEY = "truespend.wishlist.local";
 
@@ -72,7 +74,14 @@ async function postToBackend(payload) {
       },
       body: JSON.stringify(payload),
     });
-    return { ok: response.ok, status: response.status };
+    const data = await response.json().catch(() => ({}));
+    return {
+      ok: response.ok,
+      status: response.status,
+      message: data?.message ?? null,
+      alreadyMember: Boolean(data?.already_member),
+      error: response.ok ? null : data?.error ?? `HTTP ${response.status}`,
+    };
   } catch (error) {
     return { ok: false, error: error?.message ?? "Network error" };
   }
@@ -109,21 +118,30 @@ form?.addEventListener("submit", async (event) => {
 
   setLoading(false);
 
-  if (result.skipped) {
+  if (result.ok && result.alreadyMember) {
+    setStatus("✓ You're already on the list — we've got you covered.", "success");
+  } else if (result.ok) {
     setStatus(
-      "✓ You're on the list! (preview mode — wire WISHLIST_ENDPOINT in script.js before launch)",
+      "✓ You're on the list! We'll email you the moment your platform is ready.",
       "success",
     );
-  } else if (result.ok) {
-    setStatus("✓ You're on the list! We'll email you the moment your platform is ready.", "success");
+  } else if (result.skipped) {
+    // No endpoint configured at all (script edited locally to disable backend)
+    setStatus("✓ You're on the list! (local mode — no backend configured)", "success");
+  } else if (result.status === 503) {
+    // Backend exists but env vars not set on Vercel
+    setStatus(
+      "Saved locally — backend isn't wired yet. (Admin: set RESEND_API_KEY in Vercel.)",
+      "error",
+    );
   } else {
     setStatus(
-      "Saved locally — we'll retry sync next time. (server: " + (result.error ?? result.status) + ")",
+      "Saved locally — we'll retry sync next time. (" + (result.error ?? "network error") + ")",
       "error",
     );
   }
 
-  // Reset the form but keep the platform pills selected — most users want to
-  // add a +1 to the same platforms.
+  // Reset the email input but keep the platform pills selected — most users
+  // want to add a +1 to the same platforms.
   emailInput.value = "";
 });
