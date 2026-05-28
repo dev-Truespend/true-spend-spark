@@ -14,9 +14,9 @@ brand-blue → brand-purple → brand-teal gradient, same shadows and curves.
 | Element | Main app | This static site |
 |---|---|---|
 | Sign-in / sign-up | `/auth` route + Supabase | **Removed entirely** |
-| Primary CTA | "Get Started Free" → auth | **"Join early-access wishlist"** → email capture |
+| Primary CTA | "Get Started Free" → auth | **"Join early-access wishlist"** → Resend Audience signup |
 | Top of page | (none) | **Roadmap banner** — Phase 1 iOS/Android, Phase 2 browser extension, Phase 3 web app |
-| Backend | Supabase + Edge Functions | None — pure static, optional form POST |
+| Backend | Supabase + many Edge Functions | One Vercel Serverless Function (`api/wishlist.js`) → Resend |
 
 ---
 
@@ -27,13 +27,16 @@ static-website/
 ├── index.html       ← The whole site, one file
 ├── styles.css       ← Tiny supplement to Tailwind CDN
 ├── script.js        ← Wishlist form handler (vanilla JS)
-├── vercel.json      ← Vercel routing + security headers
+├── api/
+│   └── wishlist.js  ← Vercel Serverless Function → Resend Audiences
+├── vercel.json      ← Routing + security headers
 ├── assets/          ← PNG images copied from src/assets
 └── README.md        ← You are here
 ```
 
-No `package.json`, no build step, no Node. Open `index.html` in a browser
-and it works.
+No build step. Open `index.html` in a browser and the page works
+(form falls back to localStorage). Deploy to Vercel and the form becomes
+fully live once you set `RESEND_API_KEY` + `RESEND_AUDIENCE_ID` env vars.
 
 ---
 
@@ -74,48 +77,66 @@ Upload every file in this folder to your static host's webroot. That's it.
 
 ---
 
-## Wire the wishlist form to a real backend
+## How the wishlist signup works
 
-Right now form submissions are saved to `localStorage` so visitors get a
-confirmation. To actually receive emails, edit `script.js`:
+`index.html` → `script.js` → `POST /api/wishlist` → `api/wishlist.js`
+(Vercel Serverless Function) → Resend Audiences API.
 
-```js
-const WISHLIST_ENDPOINT = "https://formspree.io/f/xxxxxxxx"; // or your endpoint
-```
+The contact lands in your Resend audience with their email + a structured
+prefix in `first_name` showing which platform they want first:
+`[ios,android] Early access`.
 
-Any of these work — the form POSTs JSON with `{ email, platforms, referrer,
-landing_path, user_agent, timestamp }`:
+### One-time Resend setup (~3 minutes)
 
-| Service | Setup time | Free tier |
+1. Go to **https://resend.com** and sign up (free tier covers 100 emails/day
+   and 3,000 contacts — plenty for an early-access wishlist).
+2. Verify your sending domain at **resend.com/domains** (skip if you'll only
+   use Resend for the contact list — domain verification is only needed when
+   you start *sending* broadcasts).
+3. Create an audience at **resend.com/audiences** → "Add audience" → name it
+   e.g. "TrueSpend wishlist" → copy the **audience ID** (a UUID).
+4. Create an API key at **resend.com/api-keys** → "Create API key" → Full
+   Access → copy the key (starts with `re_`).
+
+### Tell Vercel about them
+
+In Vercel → your project → **Settings → Environment Variables**, add:
+
+| Key | Value | Environments |
 |---|---|---|
-| **[Formspree](https://formspree.io)** | 2 min | 50 submissions/month |
-| **[Getform](https://getform.io)** | 2 min | 50 submissions/month |
-| **[Resend Audiences](https://resend.com)** | 5 min | 100 emails/day |
-| **Supabase Edge Function** | 10 min | 500k invocations/month |
-| **Cloudflare Worker → Workers KV** | 10 min | 100k req/day |
+| `RESEND_API_KEY` | `re_xxxxxxxxxxxxxxxxxxxxxxxx` | Production, Preview |
+| `RESEND_AUDIENCE_ID` | `aud_xxxxx-xxxxx-xxxxx` (the UUID) | Production, Preview |
+| `ALLOWED_ORIGIN` *(optional)* | `https://truespend.org` | Production |
 
-### Supabase example (matches the main app stack)
+Click **Save**, then redeploy (Vercel → Deployments → "..." → Redeploy) so
+the function picks up the new env. From then on, every form submission
+silently adds the contact to your Resend audience.
 
-Create a `wishlist_signups` table:
+### Local dev with the API
 
-```sql
-create table public.wishlist_signups (
-  id          uuid primary key default gen_random_uuid(),
-  email       text not null unique,
-  platforms   text[],
-  referrer    text,
-  landing_path text,
-  user_agent  text,
-  created_at  timestamptz default now()
-);
-alter table public.wishlist_signups enable row level security;
--- only the service role can read; anyone can insert
-create policy "anyone can join" on public.wishlist_signups
-  for insert with check (true);
+The static `npm run dev` command serves files but doesn't run the API
+function. To test the form locally with a real backend, install the Vercel
+CLI and use `vercel dev`:
+
+```bash
+npx vercel link            # one-time, link to your Vercel project
+npx vercel env pull        # pulls your env vars into .env.local
+npx vercel dev             # runs static + /api on http://localhost:3000
 ```
 
-Create an Edge Function `wishlist-signup` that accepts the JSON payload and
-inserts into the table. Set `WISHLIST_ENDPOINT` in `script.js` to its URL.
+### Don't want Resend?
+
+The function is ~120 lines and easy to swap. The relevant fetch call in
+`api/wishlist.js` is the one to `https://api.resend.com/audiences/.../contacts`.
+Replace with a call to:
+
+- **Formspree** → POST `https://formspree.io/f/xxxxxxxx`
+- **Supabase** → insert into a `wishlist_signups` table via supabase-js
+- **Cloudflare Worker KV** → put email into a namespace
+- **SendGrid Marketing Contacts** → PUT `https://api.sendgrid.com/v3/marketing/contacts`
+
+The shape of the JSON payload from the frontend never changes; only the
+function body does.
 
 ---
 
