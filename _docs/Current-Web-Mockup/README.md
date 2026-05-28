@@ -9,14 +9,14 @@ colors as `src/index.css` (brand-blue `218 91% 59%`, brand-purple `274 81% 56%`,
 Just open `index.html` in a browser. No build step, no server required.
 
 ```
-open _docs/index.html        # macOS
+open _docs/Current-Web-Mockup/index.html        # macOS
 # or double-click the file in Finder
 ```
 
 If you want clean URLs / live reload, serve the folder:
 
 ```
-cd _docs && python3 -m http.server 8000
+cd _docs/Current-Web-Mockup && python3 -m http.server 8000
 # then open http://localhost:8000
 ```
 
@@ -25,10 +25,10 @@ cd _docs && python3 -m http.server 8000
 | File | Page |
 |---|---|
 | `index.html`        | Marketing landing — hero, features, privacy promise |
+| `screens.html`      | Web screen inventory matching the mobile mockup flows |
 | `features.html`     | Full feature grid |
 | `pricing.html`      | Free / Pro / Family tiers |
 | `about.html`        | About + stack |
-| `auth.html`         | Sign in / sign up split view (tabbed) |
 | `dashboard.html`    | User dashboard — metric tiles, recent activity, budgets, cards, bills, explore grid |
 | `transactions.html` | Filterable transaction list + Add modal |
 | `budgets.html`      | Budget cards with progress bars + Create modal |
@@ -44,10 +44,10 @@ cd _docs && python3 -m http.server 8000
 ```
 _docs/
 ├── index.html          (marketing)
+├── screens.html        (all mobile mockup screens adapted for web)
 ├── features.html
 ├── pricing.html
 ├── about.html
-├── auth.html
 ├── dashboard.html      (app)
 ├── transactions.html
 ├── budgets.html
@@ -69,6 +69,7 @@ marketing page or an app page. Click any link in the nav, footer, or feature car
 
 - Top nav links (highlights the active page)
 - Modals: Add transaction, New budget, Link card (Plaid), New geofence, Delete account
-- Tab switching: Sign in / Sign up, Settings sidebar
+- Tab switching: Settings sidebar
+- Screen inventory filter: All / Phase 1 / Phase 2 / Phase 3
 - Hover states on all cards & buttons
-- Form submissions navigate to the dashboard (no real auth)
+- Form submissions stay in the mockup; account entry is intentionally removed for now

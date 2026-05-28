@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Screens — TrueSpend</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="nav-host"></div>
+
+  <main class="page mockup-page">
+    <div class="container">
+      <div class="mockup-hero">
+        <div>
+          <span class="badge badge-blue">Web mockup parity</span>
+          <h1 class="h1 mt-2">All TrueSpend screens from the mobile mockup, adapted for web</h1>
+          <p class="lead mt-2">
+            This page mirrors the mobile mockup screens in a simple HTML, CSS, and JavaScript web format.
+            Account entry is intentionally removed for now, so the prototype opens directly into the product.
+          </p>
+        </div>
+        <div class="mockup-summary">
+          <div>
+            <span class="metric-label">Mobile screens covered</span>
+            <strong>42 + website phase</strong>
+          </div>
+          <div>
+            <span class="metric-label">Build order</span>
+            <strong>Mobile → Extension → Website</strong>
+          </div>
+        </div>
+      </div>
+
+      <section class="section-tight">
+        <div class="section-title-row">
+          <div>
+            <span class="badge badge-teal">Core features</span>
+            <h2 class="h2 mt-1">What a normal user gets</h2>
+          </div>
+          <p class="muted">
+            These are the main product promises written in plain language.
+          </p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="feature-icon blue">💳</div>
+            <h3 class="card-title">Know which card to use</h3>
+            <p class="card-desc">When you are shopping, TrueSpend tells you which of your cards gives the best rewards for that purchase.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon teal">🏬</div>
+            <h3 class="card-title">Works in stores and online</h3>
+            <p class="card-desc">Use your location for nearby stores, or paste a website link when shopping online.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon amber">🛒</div>
+            <h3 class="card-title">Handles stores with many categories</h3>
+            <p class="card-desc">For places like Target or Walmart, the app asks what you are buying before recommending a card.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon purple">📈</div>
+            <h3 class="card-title">Shows missed rewards</h3>
+            <p class="card-desc">See where you used the wrong card and how much cash back or points you could have earned.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon blue">🧾</div>
+            <h3 class="card-title">Saves receipts</h3>
+            <p class="card-desc">Take a photo of a receipt and TrueSpend reads the merchant, amount, date, and items for you.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon teal">🔔</div>
+            <h3 class="card-title">Sends useful alerts</h3>
+            <p class="card-desc">Get reminders for better card choices, budget limits, receipt issues, and account sync problems.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon amber">🎯</div>
+            <h3 class="card-title">Tracks budgets</h3>
+            <p class="card-desc">Set spending limits by category and get warned before you go over.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon purple">🔒</div>
+            <h3 class="card-title">Gives control over data</h3>
+            <p class="card-desc">Export your information, delete your account data, and manage how sync works.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-tight">
+        <div class="section-title-row">
+          <div>
+            <span class="badge badge-purple">Three phases</span>
+            <h2 class="h2 mt-1">Product rollout</h2>
+          </div>
+        </div>
+
+        <div class="phase-strip">
+          <article class="phase-card active">
+            <span class="phase-num">1</span>
+            <h3>Mobile app</h3>
+            <p>First release for iOS and Android. It covers card recommendations, card linking, transactions, insights, notifications, privacy, and settings.</p>
+          </article>
+          <article class="phase-card">
+            <span class="phase-num">2</span>
+            <h3>Browser extension</h3>
+            <p>Second release for online shopping. It helps pick the best card while browsing merchant websites.</p>
+          </article>
+          <article class="phase-card">
+            <span class="phase-num">3</span>
+            <h3>Website</h3>
+            <p>Third release for desktop use. It gives users larger screens for reports, budgets, receipts, cards, and account management.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-tight">
+        <div class="mockup-toolbar">
+          <div>
+            <span class="badge badge-outline">Screen inventory</span>
+            <h2 class="h2 mt-1">Web screens</h2>
+          </div>
+          <div class="segmented" data-screen-filter>
+            <button class="seg active" data-phase="all">All</button>
+            <button class="seg" data-phase="phase-1">Phase 1</button>
+            <button class="seg" data-phase="phase-2">Phase 2</button>
+            <button class="seg" data-phase="phase-3">Phase 3</button>
+          </div>
+        </div>
+
+        <div class="screen-grid">
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>1.1</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Splash</h3>
+            <p>Brand opening state before the user lands inside the app.</p>
+            <div class="screen-preview splash-preview"><strong>TrueSpend</strong><small>Earn more on every purchase</small></div>
+          </article>
+          <article class="screen-card removed" data-phase="phase-1">
+            <div class="screen-top"><span>1.2</span><span class="badge badge-red">Removed from web</span></div>
+            <h3>Account entry removed</h3>
+            <p>The mobile account entry flow exists, but the web mockup skips it for now.</p>
+            <div class="screen-preview muted-preview"><strong>No account entry screen</strong><small>Prototype opens to dashboard</small></div>
+          </article>
+          <article class="screen-card removed" data-phase="phase-1">
+            <div class="screen-top"><span>1.3</span><span class="badge badge-red">Removed from web</span></div>
+            <h3>OTP entry</h3>
+            <p>One-time-code verification is intentionally not part of the current web mockup.</p>
+            <div class="screen-preview muted-preview"><strong>Verification skipped</strong><small>Auth deferred</small></div>
+          </article>
+
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>2.1</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Connect bank</h3>
+            <p>Explains why TrueSpend needs card information and offers Plaid or manual setup.</p>
+            <div class="screen-preview"><button class="btn btn-primary">Connect with Plaid</button><button class="btn btn-outline">Add manually</button></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>2.2</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Plaid bank picker</h3>
+            <p>Searchable list of banks and credit card issuers.</p>
+            <div class="screen-preview list-preview"><span>Chase</span><span>Amex</span><span>Capital One</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>2.3</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Manual card</h3>
+            <p>Add a card by issuer and product name without entering the full card number.</p>
+            <div class="screen-preview form-preview"><span>Issuer</span><span>Card product</span><span>Last 4 digits</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>2.4</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Location permission</h3>
+            <p>Asks for location access so the app can recommend cards for nearby stores.</p>
+            <div class="screen-preview permission-preview"><strong>Allow location?</strong><button class="btn btn-primary btn-sm">Allow</button></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>2.5</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Pick your plan</h3>
+            <p>Compares Basic limits with Pro unlimited linking and advanced tools.</p>
+            <div class="screen-preview split-preview"><span>Basic</span><span>Pro</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>2.6</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Notifications and all set</h3>
+            <p>Lets the user turn on useful alerts before entering the home screen.</p>
+            <div class="screen-preview"><strong>You are all set</strong><small>Alerts ready</small></div>
+          </article>
+
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>3.1</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Home empty</h3>
+            <p>Empty dashboard state with a clear add-card action.</p>
+            <div class="screen-preview empty-preview"><strong>No cards yet</strong><button class="btn btn-primary btn-sm">Add card</button></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>3.2</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>At Best Buy</h3>
+            <p>Single-category store recommendation with one clear card answer.</p>
+            <div class="screen-preview rec-preview"><strong>Use Chase Sapphire</strong><small>Best for electronics</small></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>3.3</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>At Target</h3>
+            <p>Multi-category purchase flow where the user picks what they are buying.</p>
+            <div class="screen-preview chips-preview"><span>Groceries</span><span>Clothing</span><span>Home</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>3.4</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>At Walmart</h3>
+            <p>Same multi-category pattern with a warning when card reward terms are unclear.</p>
+            <div class="screen-preview warning-preview"><strong>Check category</strong><small>Some codes vary</small></div>
+          </article>
+
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>5.1</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>My cards</h3>
+            <p>Scrollable card wallet with balances, reward strengths, and quick actions.</p>
+            <div class="screen-preview cards-preview"><span></span><span></span><span></span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>5.2</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Card detail</h3>
+            <p>Shows bonus categories, reward multipliers, terms, and edit controls.</p>
+            <div class="screen-preview list-preview"><span>4x dining</span><span>4x groceries</span><span>1x everything</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>5.3</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Cards empty</h3>
+            <p>Explains Basic card limits and offers an upgrade path for more cards.</p>
+            <div class="screen-preview empty-preview"><strong>Add your first card</strong><small>Basic: 3 linked + 2 manual</small></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>5.4</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Plaid connections</h3>
+            <p>Manage linked institutions, re-authorize expired connections, or disconnect.</p>
+            <div class="screen-preview list-preview"><span>Chase connected</span><span>Amex needs review</span></div>
+          </article>
+
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>6.1</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Transactions</h3>
+            <p>Search, filter, and review transactions with missed-reward callouts.</p>
+            <div class="screen-preview table-preview"><span>Target</span><span>$82.44</span><span>Missed +$2.10</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>6.1b</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Manual transaction</h3>
+            <p>Add amount, merchant, card, and category when a transaction is not synced.</p>
+            <div class="screen-preview form-preview"><span>Amount</span><span>Merchant</span><span>Card</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>6.2</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Transaction detail</h3>
+            <p>Explains why rewards were missed and allows edit or delete.</p>
+            <div class="screen-preview rec-preview"><strong>You could have earned more</strong><small>Use Amex Gold next time</small></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>6.3</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Insights</h3>
+            <p>Summarizes missed savings and simple AI-generated suggestions.</p>
+            <div class="screen-preview chart-preview"><span style="height:40%"></span><span style="height:72%"></span><span style="height:52%"></span><span style="height:88%"></span></div>
+          </article>
+
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>7.1</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Notifications</h3>
+            <p>Inbox with filters, unread states, and mark-all-read action.</p>
+            <div class="screen-preview list-preview"><span>Better card nearby</span><span>Budget alert</span><span>Sync issue</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>7.2</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Notification detail</h3>
+            <p>Deep link into missed rewards or the recommended next action.</p>
+            <div class="screen-preview rec-preview"><strong>Missed $4.20</strong><small>Open transaction</small></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>7.3</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Notification settings</h3>
+            <p>Control alert channels, alert types, and quiet hours.</p>
+            <div class="screen-preview toggles-preview"><span></span><span></span><span></span></div>
+          </article>
+
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>8.1</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Profile</h3>
+            <p>Account details, preferences, subscription summary, and privacy shortcuts.</p>
+            <div class="screen-preview profile-preview"><strong>SR</strong><small>Pro trial</small></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>8.2</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Edit profile</h3>
+            <p>Edit name, phone, app preferences, and biometric unlock settings.</p>
+            <div class="screen-preview form-preview"><span>Name</span><span>Phone</span><span>Face ID</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>8.3</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Billing and Pro</h3>
+            <p>Compare Basic and Pro, view trial status, and manage subscription choices.</p>
+            <div class="screen-preview split-preview"><span>Basic</span><span>Pro</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>8.4</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Privacy and data</h3>
+            <p>Export personal data, delete stored data, and review privacy choices.</p>
+            <div class="screen-preview list-preview"><span>Export CSV</span><span>Delete data</span><span>Privacy controls</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-1">
+            <div class="screen-top"><span>8.5</span><span class="badge badge-blue">Phase 1</span></div>
+            <h3>Sync and offline</h3>
+            <p>Shows pending updates, conflicts, retries, and last successful sync.</p>
+            <div class="screen-preview sync-preview"><strong>3 pending</strong><small>Last sync: 2 min ago</small></div>
+          </article>
+
+          <article class="screen-card" data-phase="phase-2">
+            <div class="screen-top"><span>P2.1</span><span class="badge badge-amber">Phase 2</span></div>
+            <h3>Search merchant</h3>
+            <p>Type a merchant, paste a URL, or choose from recent online stores.</p>
+            <div class="screen-preview form-preview"><span>amazon.com</span><span>Recent merchants</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-2">
+            <div class="screen-top"><span>P2.2</span><span class="badge badge-amber">Phase 2</span></div>
+            <h3>Pick online category</h3>
+            <p>Choose what the purchase is for before card recommendation is shown.</p>
+            <div class="screen-preview chips-preview"><span>Electronics</span><span>Home</span><span>Beauty</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-2">
+            <div class="screen-top"><span>P2.3</span><span class="badge badge-amber">Phase 2</span></div>
+            <h3>Online result</h3>
+            <p>Explains why the recommended card beats the other cards in the wallet.</p>
+            <div class="screen-preview rec-preview"><strong>Use Prime Visa</strong><small>Best for Amazon</small></div>
+          </article>
+
+          <article class="screen-card" data-phase="phase-2">
+            <div class="screen-top"><span>P2.4</span><span class="badge badge-amber">Phase 2</span></div>
+            <h3>Camera capture</h3>
+            <p>Receipt camera view with quality feedback before processing.</p>
+            <div class="screen-preview camera-preview"><span></span><button class="btn btn-outline btn-sm">Capture</button></div>
+          </article>
+          <article class="screen-card" data-phase="phase-2">
+            <div class="screen-top"><span>P2.5</span><span class="badge badge-amber">Phase 2</span></div>
+            <h3>OCR processing</h3>
+            <p>Shows progress while the receipt image is being read.</p>
+            <div class="screen-preview progress-preview"><span style="width:70%"></span><small>Reading receipt</small></div>
+          </article>
+          <article class="screen-card" data-phase="phase-2">
+            <div class="screen-top"><span>P2.6</span><span class="badge badge-amber">Phase 2</span></div>
+            <h3>OCR review</h3>
+            <p>Review and fix extracted merchant, total, date, and line items.</p>
+            <div class="screen-preview form-preview"><span>Merchant</span><span>Total</span><span>Items</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-2">
+            <div class="screen-top"><span>P2.6b</span><span class="badge badge-amber">Phase 2</span></div>
+            <h3>Receipts in context</h3>
+            <p>Receipt list, inbox links, settings, and sync state.</p>
+            <div class="screen-preview list-preview"><span>Target receipt</span><span>Amazon receipt</span><span>Needs review</span></div>
+          </article>
+
+          <article class="screen-card" data-phase="phase-2">
+            <div class="screen-top"><span>P2.7</span><span class="badge badge-amber">Phase 2</span></div>
+            <h3>Places and geofences</h3>
+            <p>Map, active zones, store history, and default card hints.</p>
+            <div class="screen-preview map-preview"><span>Best Buy</span><span>Target</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-2">
+            <div class="screen-top"><span>P2.7b</span><span class="badge badge-amber">Phase 2</span></div>
+            <h3>Lock-screen nudge</h3>
+            <p>Geofenced push alert telling the user which card to use nearby.</p>
+            <div class="screen-preview notification-preview"><strong>At Target?</strong><small>Use Amex Gold</small></div>
+          </article>
+          <article class="screen-card" data-phase="phase-2">
+            <div class="screen-top"><span>P2.8</span><span class="badge badge-amber">Phase 2</span></div>
+            <h3>Create geofence</h3>
+            <p>Name a place, set a radius, and choose a default card.</p>
+            <div class="screen-preview form-preview"><span>Place name</span><span>Radius</span><span>Default card</span></div>
+          </article>
+
+          <article class="screen-card" data-phase="phase-2">
+            <div class="screen-top"><span>P2.9</span><span class="badge badge-amber">Phase 2</span></div>
+            <h3>Budgets</h3>
+            <p>Budget progress, category totals, and over-budget warnings.</p>
+            <div class="screen-preview progress-preview"><span style="width:84%"></span><small>Dining budget</small></div>
+          </article>
+          <article class="screen-card" data-phase="phase-2">
+            <div class="screen-top"><span>P2.10</span><span class="badge badge-amber">Phase 2</span></div>
+            <h3>Create budget</h3>
+            <p>Choose category, period, amount, and warning threshold.</p>
+            <div class="screen-preview form-preview"><span>Category</span><span>Period</span><span>Alert at 80%</span></div>
+          </article>
+          <article class="screen-card" data-phase="phase-2">
+            <div class="screen-top"><span>P2.10b</span><span class="badge badge-amber">Phase 2</span></div>
+            <h3>Budgets in context</h3>
+            <p>Budget alerts appear in the inbox and notification settings.</p>
+            <div class="screen-preview list-preview"><span>Dining warning</span><span>Grocery safe</span><span>Travel over</span></div>
+          </article>
+
+          <article class="screen-card" data-phase="phase-3">
+            <div class="screen-top"><span>W3.1</span><span class="badge badge-teal">Phase 3</span></div>
+            <h3>Website dashboard</h3>
+            <p>Desktop-first home for reporting, larger charts, bulk review, and account management.</p>
+            <div class="screen-preview dashboard-preview"><span></span><span></span><span></span><span></span></div>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="footer-host"></div>
+  <script src="js/app.js"></script>
+</body>
+</html>

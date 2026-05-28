@@ -8,130 +8,68 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body>
+<body class="landing-page">
   <div id="nav-host"></div>
 
   <main>
-    <!-- Hero -->
-    <section class="hero">
-      <div class="container hero-grid">
-        <div>
-          <span class="badge badge-outline mb-2">Your Rewards. Your Data. Your Control.</span>
-          <h1 class="h1">
-            Every Purchase.<br/>
-            <span class="gradient-text">Perfectly Rewarded.</span>
-          </h1>
-          <p class="lead mt-2" style="max-width: 480px;">
-            AI-powered expense tracking that respects your privacy. Receipt OCR, geofenced budgets,
-            anomaly detection — and your data stays yours.
+    <section class="waitlist-hero">
+      <div class="container waitlist-hero-grid">
+        <div class="waitlist-copy">
+          <span class="mini-pill">AI rewards optimizer</span>
+          <h1>Every Purchase. <span>Perfectly Rewarded.</span></h1>
+          <p>
+            TrueSpend helps you choose the best credit card for every purchase, maximize rewards
+            automatically, and understand where your money goes with privacy-first insights.
           </p>
-          <div class="row mt-4">
-            <a href="auth.html?signup=1" class="btn btn-primary btn-lg">Get Started Free →</a>
-            <a href="features.html" class="btn btn-outline btn-lg">See features</a>
-          </div>
-          <div class="row mt-4 wrap" style="gap: 1.5rem;">
-            <span class="muted" style="font-size: .85rem;">✓ No credit card</span>
-            <span class="muted" style="font-size: .85rem;">✓ Free forever tier</span>
-            <span class="muted" style="font-size: .85rem;">✓ Cancel anytime</span>
-          </div>
-        </div>
-        <div class="hero-art">
-          <span class="hero-card t">🤖 AI Powered</span>
-          <span class="hero-card m">✨ Smart Rewards</span>
-          <span class="hero-card b">🔒 100% Private</span>
-          <div style="text-align: center; padding: 2rem;">
-            <div style="font-size: 4rem;">💳</div>
-            <div style="font-size: 1.25rem; font-weight: 600; margin-top: .5rem;">$2,847.32</div>
-            <div style="opacity: .8; font-size: .85rem;">Spent this month · 47 transactions</div>
+          <form class="waitlist-form" id="waitlist">
+            <input type="email" placeholder="Enter your email" aria-label="Email address" />
+            <button class="btn btn-primary" type="submit">Join the Waitlist</button>
+          </form>
+          <div class="hero-trust-row">
+            <span><i>AI</i> AI-Powered</span>
+            <span><i>✓</i> Privacy-First</span>
+            <span><i>NA</i> Built for North America</span>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- Feature highlights -->
-    <section class="section">
-      <div class="container">
-        <div class="text-center mb-6">
-          <span class="badge badge-blue mb-2">Everything you need</span>
-          <h2 class="h2 mt-1">Smart finance, in one place</h2>
-          <p class="lead mt-2">Receipts, budgets, bank sync, and AI insights — all working together.</p>
-        </div>
-
-        <div class="feature-grid">
-          <a class="feature-card" href="transactions.html">
-            <div class="feature-icon blue">🧾</div>
-            <h3 class="card-title">Receipt OCR</h3>
-            <p class="card-desc">Scan any receipt — Google Vision + HuggingFace fallback auto-extract amount, merchant, date.</p>
-          </a>
-          <a class="feature-card" href="insights.html">
-            <div class="feature-icon purple">✨</div>
-            <h3 class="card-title">AI Insights</h3>
-            <p class="card-desc">Spending patterns, anomaly detection, and weekly recommendations from Claude, Gemini & GPT-4.</p>
-          </a>
-          <a class="feature-card" href="location.html">
-            <div class="feature-icon teal">📍</div>
-            <h3 class="card-title">Geofenced budgets</h3>
-            <p class="card-desc">Set budgets that activate by location. Trigger deal alerts as you enter a zone.</p>
-          </a>
-          <a class="feature-card" href="credit-cards.html">
-            <div class="feature-icon amber">💳</div>
-            <h3 class="card-title">Plaid bank sync</h3>
-            <p class="card-desc">Securely connect credit cards and bank accounts. Transactions sync automatically.</p>
-          </a>
-          <a class="feature-card" href="budgets.html">
-            <div class="feature-icon blue">🎯</div>
-            <h3 class="card-title">Per-category budgets</h3>
-            <p class="card-desc">Weekly, monthly, quarterly limits. Threshold alerts before you go over.</p>
-          </a>
-          <a class="feature-card" href="dashboard.html">
-            <div class="feature-icon purple">🛡️</div>
-            <h3 class="card-title">MFA & end-to-end</h3>
-            <p class="card-desc">TOTP with backup codes. Row-level security on every table. CSP, audit logs, the works.</p>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Privacy promise -->
-    <section class="section" style="background: linear-gradient(135deg, hsl(218 91% 59% / .05), hsl(274 81% 56% / .05));">
-      <div class="container">
-        <div class="row wrap" style="justify-content: space-between; gap: 3rem; align-items: center;">
-          <div style="flex: 1; min-width: 280px;">
-            <span class="badge badge-purple mb-2">Privacy First</span>
-            <h2 class="h2 mt-1">Your data is <span style="color: hsl(var(--brand-purple));">never</span> sold.</h2>
-            <p class="lead mt-2">
-              We don't profit from your information. End-to-end encrypted. Stored with you in control —
-              export or delete at any time.
-            </p>
-            <div class="row mt-4">
-              <a href="pricing.html" class="btn btn-outline">See pricing</a>
-              <a href="auth.html?signup=1" class="btn btn-primary">Start free</a>
+        <div class="phone-stage" aria-label="TrueSpend recommendation preview">
+          <div class="landing-phone">
+            <div class="phone-top">
+              <strong>9:41</strong>
+              <span></span>
+              <small>5G</small>
             </div>
-          </div>
-          <div style="flex: 1; min-width: 280px;">
-            <div class="card">
-              <div class="row" style="gap: 1rem;">
-                <div class="feature-icon teal">🔒</div>
-                <div>
-                  <h3 class="card-title">End-to-end encrypted</h3>
-                  <p class="card-desc">All financial data is encrypted in transit and at rest.</p>
+            <div class="phone-content">
+              <div class="phone-title-row">
+                <h2>Best Card to Use</h2>
+                <strong>$142.35</strong>
+              </div>
+              <div class="merchant-row">
+                <span>Walmart</span>
+                <small>Groceries</small>
+              </div>
+              <div class="recommend-card">
+                <small>Recommended</small>
+                <div class="recommend-body">
+                  <div class="mini-card">
+                    <span>TrueSpend</span>
+                    <strong>Amex Cobalt</strong>
+                    <em>•• 7901</em>
+                  </div>
+                  <div>
+                    <h3>Amex Cobalt</h3>
+                    <p>5x Points on Groceries</p>
+                    <strong>+$11.40</strong>
+                    <small>more rewards</small>
+                  </div>
                 </div>
               </div>
-              <hr style="border: none; border-top: 1px solid hsl(var(--border)); margin: 1rem 0;" />
-              <div class="row" style="gap: 1rem;">
-                <div class="feature-icon purple">👁️</div>
-                <div>
-                  <h3 class="card-title">Zero-knowledge</h3>
-                  <p class="card-desc">We can't read your transactions even if we wanted to.</p>
-                </div>
-              </div>
-              <hr style="border: none; border-top: 1px solid hsl(var(--border)); margin: 1rem 0;" />
-              <div class="row" style="gap: 1rem;">
-                <div class="feature-icon blue">📤</div>
-                <div>
-                  <h3 class="card-title">Own your data</h3>
-                  <p class="card-desc">Export to CSV/JSON. Permanent delete in one click.</p>
-                </div>
+              <p class="phone-section-label">Other options</p>
+              <div class="option-row"><span></span><div><strong>TD Cashback Visa</strong><small>1% Cashback</small></div><em>+$1.42</em></div>
+              <div class="option-row"><span></span><div><strong>Rogers World Elite</strong><small>1.5% Cashback</small></div><em>+$2.13</em></div>
+              <div class="why-card">
+                <strong>Why this card?</strong>
+                <p>Amex Cobalt earns 5x points on eligible grocery purchases. That's an extra $11.40 in rewards.</p>
               </div>
             </div>
           </div>
@@ -139,20 +77,118 @@
       </div>
     </section>
 
-    <!-- CTA -->
-    <section class="section">
-      <div class="container text-center">
-        <h2 class="h2">Ready to spend smarter?</h2>
-        <p class="lead mt-2">Free forever for personal use. Upgrade for AI insights & bank sync.</p>
-        <div class="row mt-4" style="justify-content: center;">
-          <a href="auth.html?signup=1" class="btn btn-primary btn-lg">Create free account →</a>
-          <a href="dashboard.html" class="btn btn-outline btn-lg">Try the demo</a>
+    <section class="problem-section">
+      <div class="container">
+        <div class="center-heading">
+          <span>The problem</span>
+          <h2>You could be leaving hundreds in rewards on the table.</h2>
+        </div>
+        <div class="problem-grid">
+          <div><i>▣</i><p>Using the wrong card for everyday purchases.</p></div>
+          <div><i>↻</i><p>Reward programs change constantly.</p></div>
+          <div><i>▤</i><p>Tracking categories manually is hard.</p></div>
+          <div><i>$</i><p>It's tough to know where you're missing out.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="steps-section" id="how-it-works">
+      <div class="container">
+        <div class="center-heading">
+          <span>How it works</span>
+          <h2>Smarter rewards in 3 simple steps</h2>
+        </div>
+        <div class="steps-row">
+          <article class="step-card">
+            <b>1</b>
+            <div class="step-icon">▣</div>
+            <div>
+              <h3>Add Your Cards</h3>
+              <p>Tell TrueSpend which credit cards you already use.</p>
+            </div>
+          </article>
+          <span class="step-arrow">→</span>
+          <article class="step-card">
+            <b>2</b>
+            <div class="step-icon">▥</div>
+            <div>
+              <h3>Connect Spending</h3>
+              <p>Securely connect your accounts or upload receipts.</p>
+            </div>
+          </article>
+          <span class="step-arrow">→</span>
+          <article class="step-card">
+            <b>3</b>
+            <div class="step-icon">↗</div>
+            <div>
+              <h3>Get Smart Recommendations</h3>
+              <p>See the best card for every purchase and spot missed rewards.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="features-section" id="features">
+      <div class="container">
+        <div class="center-heading">
+          <span>What you get</span>
+          <h2>Everything you need to maximize rewards</h2>
+        </div>
+        <div class="landing-feature-grid">
+          <article><i>☆</i><h3>Best Card Recommendations</h3><p>Know which card to use before you pay.</p></article>
+          <article><i>□</i><h3>Missed Rewards Report</h3><p>See how much rewards you're leaving behind.</p></article>
+          <article><i>◔</i><h3>Spending Insights</h3><p>Understand your habits and where money goes.</p></article>
+          <article><i>▤</i><h3>Receipt Scanning</h3><p>Upload receipts and categorize automatically.</p></article>
+          <article><i>◌</i><h3>Subscription Tracking</h3><p>Track and manage subscriptions easily.</p></article>
+          <article><i>◇</i><h3>Unusual Charge Detection</h3><p>Get alerts for unusual or unexpected charges.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="privacy-band" id="privacy">
+      <div class="container">
+        <div class="privacy-panel">
+          <div class="privacy-title">
+            <i>✓</i>
+            <h2>Built with privacy from day one.</h2>
+          </div>
+          <div class="privacy-points">
+            <span>We never sell your data</span>
+            <span>Secure bank-level encryption</span>
+            <span>We don't store bank passwords</span>
+            <span>You control connected accounts</span>
+            <span>Trusted partners like Plaid</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="final-cta">
+      <div class="container">
+        <div class="final-cta-panel">
+          <div>
+            <h2>Stop leaving rewards on the table.</h2>
+            <p>Join the TrueSpend waitlist and be among the first to optimize your spending with AI.</p>
+            <form class="waitlist-form compact">
+              <input type="email" placeholder="Enter your email" aria-label="Email address" />
+              <button class="btn btn-primary" type="submit">Join the Waitlist</button>
+            </form>
+            <div class="waitlist-proof">
+              <span class="proof-avatars">
+                <i></i><i></i><i></i><i></i><i></i>
+              </span>
+              <small>Join 2,500+ people on the waitlist</small>
+            </div>
+          </div>
+          <div class="reward-art">
+            <div class="floating-card-one">+$128<br><span>Estimated Rewards This Month</span></div>
+            <div class="floating-card-two"></div>
+          </div>
         </div>
       </div>
     </section>
   </main>
-
-  <div id="footer-host"></div>
   <script src="js/app.js"></script>
 </body>
 </html>

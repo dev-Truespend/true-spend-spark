@@ -7,13 +7,14 @@
 (function () {
   const PAGES = {
     public: [
-      { href: "index.html",    label: "Home" },
-      { href: "features.html", label: "Features" },
-      { href: "pricing.html",  label: "Pricing" },
-      { href: "about.html",    label: "About" },
+      { href: "index.html#how-it-works", label: "How It Works" },
+      { href: "index.html#features",     label: "Features" },
+      { href: "index.html#privacy",      label: "Privacy" },
+      { href: "about.html",              label: "About" },
     ],
     app: [
       { href: "dashboard.html",    label: "Dashboard" },
+      { href: "screens.html",      label: "Screens" },
       { href: "transactions.html", label: "Transactions" },
       { href: "budgets.html",      label: "Budgets" },
       { href: "credit-cards.html", label: "Cards" },
@@ -38,13 +39,9 @@
     const right = isAppPage
       ? `
         <a href="settings.html" class="btn btn-ghost btn-sm" aria-label="Settings">⚙️</a>
-        <a href="index.html" class="btn btn-outline btn-sm">Sign out</a>
         <div class="avatar" title="You">SR</div>
       `
-      : `
-        <a href="auth.html" class="btn btn-ghost btn-sm">Sign in</a>
-        <a href="auth.html?signup=1" class="btn btn-primary btn-sm">Get Started</a>
-      `;
+      : `<a href="index.html#waitlist" class="btn btn-primary btn-sm">Join Waitlist</a>`;
 
     return `
       <header class="topnav">
@@ -81,6 +78,7 @@
             <div>
               <h4>Product</h4>
               <a href="features.html">Features</a>
+              <a href="screens.html">Screens</a>
               <a href="pricing.html">Pricing</a>
               <a href="dashboard.html">Dashboard</a>
               <a href="insights.html">Insights</a>
@@ -145,6 +143,35 @@
           const target = document.querySelector(`[data-tab-panel="${t.dataset.tab}"]`);
           target?.classList.remove("hidden");
         });
+      });
+    });
+
+    // Screen inventory filter on screens.html
+    document.querySelectorAll("[data-screen-filter]").forEach(filter => {
+      const buttons = filter.querySelectorAll("[data-phase]");
+      const cards = document.querySelectorAll(".screen-card[data-phase]");
+      buttons.forEach(button => {
+        button.addEventListener("click", () => {
+          buttons.forEach(item => item.classList.remove("active"));
+          button.classList.add("active");
+          const phase = button.dataset.phase;
+          cards.forEach(card => {
+            card.classList.toggle("hidden", phase !== "all" && card.dataset.phase !== phase);
+          });
+        });
+      });
+    });
+
+    document.querySelectorAll(".waitlist-form").forEach(form => {
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        const button = form.querySelector("button");
+        if (!button) return;
+        const original = button.textContent;
+        button.textContent = "You're on the list";
+        setTimeout(() => {
+          button.textContent = original;
+        }, 1800);
       });
     });
   }

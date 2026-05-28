@@ -38,11 +38,136 @@
       </div>
 
       <h2 class="h2 mt-6">The stack</h2>
-      <p class="muted mt-2" style="font-size: .9rem;">
-        React 18 · TypeScript · Vite · Tailwind · shadcn/ui · TanStack Query · Supabase (Postgres + Auth +
-        Edge Functions) · Plaid · Capacitor · Chrome Extension MV3 · Claude / Gemini / GPT-4 · HuggingFace ·
-        Leaflet · Cloudflare WAF.
+      <p class="muted mt-2" style="font-size: .95rem;">
+        A full inventory of the tools, services, and libraries TrueSpend is being built on — across mobile,
+        browser extension, and web.
       </p>
+
+      <div class="grid grid-2 mt-4">
+        <div class="card">
+          <div class="feature-icon blue">📱</div>
+          <h3 class="card-title">Mobile (Phase 1 · iOS &amp; Android)</h3>
+          <p class="card-desc">
+            <strong>Capacitor 6</strong> · <strong>React 18</strong> · <strong>TypeScript</strong> ·
+            React Router · Vite · Tailwind CSS · shadcn/ui · TanStack Query · Zustand · React Hook Form ·
+            Zod · Capacitor Camera, Geolocation, Push Notifications, Secure Storage, Biometrics ·
+            Native iOS (Swift / Xcode) &amp; Android (Kotlin / Gradle) build targets · Sentry mobile SDK.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="feature-icon purple">🧩</div>
+          <h3 class="card-title">Browser extension (Phase 2)</h3>
+          <p class="card-desc">
+            <strong>Chrome &amp; Edge Manifest V3</strong> · TypeScript · Vite + CRXJS · React popup UI ·
+            Content scripts &amp; service workers · WebExtension Polyfill · IndexedDB (Dexie) ·
+            chrome.storage.sync · OAuth flow to Supabase · merchant-page DOM scrapers for purchase capture.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="feature-icon teal">💻</div>
+          <h3 class="card-title">Web app (Phase 3)</h3>
+          <p class="card-desc">
+            <strong>React 18</strong> · TypeScript · Vite · React Router · Tailwind · shadcn/ui · Radix UI ·
+            TanStack Query · TanStack Table · Recharts · Leaflet (maps) · Framer Motion · Lucide icons ·
+            React Hook Form · Zod · date-fns.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="feature-icon amber">⚙️</div>
+          <h3 class="card-title">Backend &amp; data</h3>
+          <p class="card-desc">
+            <strong>Supabase</strong> — Postgres 15, Row-Level Security, Auth (email/OTP + OAuth), Realtime,
+            Storage, Edge Functions (Deno) · Database migrations · pgvector for AI memory ·
+            Redis (Upstash) for rate limiting &amp; caching · Cron via Supabase scheduled functions.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="feature-icon blue">🤖</div>
+          <h3 class="card-title">AI &amp; OCR</h3>
+          <p class="card-desc">
+            <strong>Anthropic Claude</strong> (primary) · <strong>Google Gemini</strong> · <strong>OpenAI GPT-4</strong>
+            (cascade fallback for categorization &amp; insights) · <strong>Google Vision API</strong> for receipt OCR ·
+            <strong>HuggingFace Inference</strong> (Donut / LayoutLM) as OCR fallback · Vercel AI SDK ·
+            Anomaly detection via custom statistical models.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="feature-icon purple">🔌</div>
+          <h3 class="card-title">Integrations</h3>
+          <p class="card-desc">
+            <strong>Plaid</strong> — Link, Transactions, Auth, Identity, Webhooks · <strong>Stripe</strong> for billing &amp;
+            subscriptions · <strong>RevenueCat</strong> for mobile in-app purchases · <strong>Resend</strong> for
+            transactional email · <strong>Twilio</strong> for SMS / MFA · <strong>Mapbox + Leaflet</strong> for geofencing.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="feature-icon teal">🛡️</div>
+          <h3 class="card-title">Security &amp; privacy</h3>
+          <p class="card-desc">
+            End-to-end encryption (libsodium) · TOTP MFA with backup codes · WebAuthn / passkeys ·
+            <strong>Cloudflare WAF</strong> + rate limiting · CSP, HSTS, SRI · Audit logs · Row-level security ·
+            <strong>1Password Secrets Automation</strong> · GitHub secret scanning · Snyk &amp; Dependabot.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="feature-icon amber">☁️</div>
+          <h3 class="card-title">Hosting &amp; infra</h3>
+          <p class="card-desc">
+            <strong>Vercel</strong> (web + extension preview builds) · <strong>Supabase Cloud</strong> US-East with
+            cross-region replication · <strong>Cloudflare</strong> DNS, WAF, R2 (object storage) ·
+            <strong>Apple App Store</strong> &amp; <strong>Google Play</strong> for mobile distribution ·
+            <strong>Chrome Web Store</strong> &amp; <strong>Edge Add-ons</strong> for extension.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="feature-icon blue">🧪</div>
+          <h3 class="card-title">Testing &amp; quality</h3>
+          <p class="card-desc">
+            <strong>Vitest</strong> · <strong>Playwright</strong> (E2E) · <strong>React Testing Library</strong> ·
+            <strong>Detox</strong> (mobile E2E) · MSW (API mocking) · Storybook · ESLint · Prettier ·
+            TypeScript strict · Husky pre-commit hooks · Lighthouse CI.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="feature-icon purple">📊</div>
+          <h3 class="card-title">Observability</h3>
+          <p class="card-desc">
+            <strong>Sentry</strong> (errors + performance, web &amp; mobile) · <strong>PostHog</strong> (product analytics,
+            self-hosted) · <strong>Logflare</strong> for Supabase logs · <strong>Better Stack</strong> uptime &amp; status page ·
+            <strong>Grafana</strong> dashboards for SLOs.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="feature-icon teal">🔧</div>
+          <h3 class="card-title">DevEx &amp; tooling</h3>
+          <p class="card-desc">
+            <strong>pnpm</strong> monorepo · <strong>Turborepo</strong> · <strong>GitHub Actions</strong> CI/CD ·
+            <strong>Fastlane</strong> for mobile release automation · EAS Build (fallback) ·
+            <strong>Claude Code</strong> &amp; <strong>Cursor</strong> as primary AI pair-programmers ·
+            Figma for design · Linear for project management.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="feature-icon amber">📦</div>
+          <h3 class="card-title">Shared libraries</h3>
+          <p class="card-desc">
+            <strong>Zod</strong> schemas shared across mobile / extension / web · <strong>tRPC</strong>-style typed
+            Edge Function clients · shared design tokens · shared Plaid &amp; AI client packages ·
+            shared analytics event taxonomy.
+          </p>
+        </div>
+      </div>
     </div>
   </main>
   <div id="footer-host"></div>
