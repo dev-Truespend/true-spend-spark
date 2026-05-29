@@ -1267,14 +1267,14 @@ img { display: block; max-width: 100%; }
   line-height: 1.12;
 }
 .v2-problem-pane h2 {
-  max-width: 390px;
+  max-width: 240px;
   font-size: clamp(2rem, 3vw, 2.9rem);
 }
 .v2-problem-pane h2 span {
   color: hsl(var(--brand-purple));
 }
 .v2-problem-pane p {
-  max-width: 330px;
+  max-width: 240px;
   color: hsl(var(--muted-foreground));
   line-height: 1.55;
   font-size: 0.86rem;
@@ -1284,6 +1284,9 @@ img { display: block; max-width: 100%; }
   list-style: none;
   padding: 0;
   margin: 1rem 0;
+}
+.v2-problem-pane ul {
+  max-width: 240px;
 }
 .v2-problem-pane li,
 .v2-privacy-dark li {
@@ -1304,40 +1307,90 @@ img { display: block; max-width: 100%; }
 .v2-problem-pane h3 {
   margin: 1.4rem 0 0;
   font-size: 0.95rem;
+  max-width: 240px;
 }
 .card-orbit {
   position: absolute;
-  right: 1.3rem;
+  right: 2.5rem;
   bottom: 2rem;
-  width: 280px;
-  height: 250px;
-  border: 1px solid hsl(var(--brand-purple) / 0.16);
+  width: 230px;
+  height: 210px;
+}
+.orbit-glow {
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, hsl(var(--brand-purple) / 0.18), transparent 62%);
+  filter: blur(2px);
+}
+.orbit-ring {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px dashed hsl(var(--brand-purple) / 0.18);
 }
 .orbit-card {
   position: absolute;
-  width: 155px;
-  height: 92px;
-  border-radius: var(--surface-radius);
-  box-shadow: 0 18px 40px -26px rgba(15,23,42,0.45);
+  width: 132px;
+  height: 82px;
+  border-radius: 12px;
+  box-shadow:
+    0 22px 36px -22px rgba(15, 23, 42, 0.55),
+    0 2px 0 rgba(255, 255, 255, 0.5) inset;
+  overflow: hidden;
+}
+.orbit-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.28), transparent 55%);
+  pointer-events: none;
+}
+.oc-chip {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 22px;
+  height: 16px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #f5d27a, #b88a30);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.oc-dot {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: -8px 0 0 rgba(255, 255, 255, 0.45);
 }
 .orbit-card.light {
-  left: 6px;
-  bottom: 54px;
-  background: linear-gradient(135deg, #f8fafc, #dbe2ee);
-  transform: rotate(18deg);
+  left: 4px;
+  bottom: 52px;
+  background: linear-gradient(135deg, #ffffff, #e2e8f0);
+  transform: rotate(16deg);
+}
+.orbit-card.light .oc-dot {
+  background: hsl(var(--brand-purple) / 0.85);
+  box-shadow: -8px 0 0 hsl(var(--brand-purple) / 0.45);
 }
 .orbit-card.dark {
-  right: 26px;
-  top: 44px;
-  background: linear-gradient(135deg, #111827, #020617);
-  transform: rotate(-10deg);
+  right: 18px;
+  top: 36px;
+  background: linear-gradient(135deg, #1f2937, #02060f);
+  transform: rotate(-12deg);
 }
 .orbit-card.purple {
-  right: 62px;
-  bottom: 8px;
+  right: 56px;
+  bottom: 4px;
   background: var(--gradient-brand);
   transform: rotate(14deg);
+  box-shadow:
+    0 26px 44px -22px hsl(var(--brand-purple) / 0.55),
+    0 2px 0 rgba(255, 255, 255, 0.45) inset;
 }
 .v2-steps-pane {
   text-align: center;
@@ -1590,12 +1643,21 @@ img { display: block; max-width: 100%; }
   margin-top: 0;
   color: white;
 }
+.v2-privacy-dark h2 {
+  max-width: 320px;
+}
 .v2-privacy-dark p,
 .v2-purple-cta p {
   color: rgba(255,255,255,0.76);
   max-width: 430px;
   font-size: 0.82rem;
   line-height: 1.55;
+}
+.v2-privacy-dark p {
+  max-width: 320px;
+}
+.v2-privacy-dark ul {
+  max-width: 320px;
 }
 .v2-privacy-dark li {
   color: rgba(255,255,255,0.9);
@@ -1605,8 +1667,8 @@ img { display: block; max-width: 100%; }
 }
 .shield-art {
   position: absolute;
-  right: 7rem;
-  top: 5.2rem;
+  right: 1.75rem;
+  top: 4.5rem;
   width: 150px;
   height: 170px;
   background: linear-gradient(180deg, hsl(var(--brand-blue)), hsl(var(--brand-purple)));
@@ -1786,6 +1848,10 @@ img { display: block; max-width: 100%; }
   }
   .v2-feature-grid {
     grid-template-columns: repeat(4, 1fr);
+  }
+  .card-orbit,
+  .shield-art {
+    display: none;
   }
 }
 @media (max-width: 760px) {
