@@ -26,16 +26,18 @@
   };
 
   const here = (location.pathname.split("/").pop() || "index.html").toLowerCase();
-  const logoMarkup = `
+  function logoMarkup() {
+    return `
     <img
       src="/assets/web-logo/truespend-logo-cropped.png"
       alt=""
       class="brand-logo"
       aria-hidden="true"
-      onerror="this.onerror=null;this.src='/public/assets/web-logo/truespend-logo-cropped.png';"
+      onerror="this.onerror=null;this.src='assets/web-logo/truespend-logo-cropped.png';"
     />
     <span class="sr-only">TrueSpend</span>
   `;
+  }
   // "App" pages get the in-app top nav; everything else gets the marketing nav.
   const appPages = new Set([
     "dashboard.html","transactions.html","budgets.html","credit-cards.html",
@@ -57,7 +59,7 @@
       <header class="topnav">
         <div class="container topnav-inner">
           <a href="${isAppPage ? 'dashboard.html' : 'index.html'}" class="brand">
-            ${logoMarkup}
+            ${logoMarkup()}
           </a>
           <nav class="nav-links">
             ${links.map(p => `
@@ -77,7 +79,7 @@
           <div class="footer-grid">
             <div>
               <div class="brand mb-2">
-                ${logoMarkup}
+                ${logoMarkup()}
               </div>
               <p class="muted" style="font-size: .875rem; max-width: 280px;">
                 AI-powered personal finance. Your data stays yours — encrypted, never sold.
