@@ -8,7 +8,7 @@ This is the short tool/service checklist for the MVP architecture.
 |---|---|
 | **Azure** | Resource group, Container Apps Environment, Azure Container Registry, Azure Key Vault, Azure Service Bus, Log Analytics / Application Insights |
 | **Supabase** | Supabase project, Auth, Postgres database, Storage, service-role key |
-| **Upstash** | Redis database |
+| **Azure Cache for Redis** | Redis database |
 | **Apple** | Apple Developer account, iOS app identifier, APNs key/certificate |
 | **Google / Firebase** | Google Cloud project, Google Places API, Firebase project, FCM |
 | **RewardsCC** | API account/key and plan/usage confirmation |
@@ -19,11 +19,12 @@ This is the short tool/service checklist for the MVP architecture.
 
 | Tool / Vendor | Services / Setup |
 |---|---|
-| **Azure Container Apps** | YARP gateway container, .NET API container, event consumer container, scheduled catalog job container |
+| **Azure Gateway** | Public routing, gateway policies, TLS/WAF configuration |
+| **Azure Container Apps** | .NET API container, event consumer container, scheduled catalog job container |
 | **Azure Service Bus** | Topics, subscriptions, retry policy, dead-letter queue |
 | **Azure Key Vault** | Store Plaid, RewardsCC, Supabase service-role, APNs, FCM, and other service secrets |
 | **Supabase** | Database migrations, RLS policies, auth integration, storage buckets |
-| **Upstash Redis** | Rate-limit keys, short-lived cache, consumer idempotency keys |
+| **Azure Cache for Redis** | Rate-limit keys, short-lived cache, consumer idempotency keys |
 | **Apple MapKit** | iOS nearby merchant lookup |
 | **Google Places** | Android nearby merchant lookup, quotas, billing limits |
 | **APNs / FCM** | Push token registration and push delivery testing |

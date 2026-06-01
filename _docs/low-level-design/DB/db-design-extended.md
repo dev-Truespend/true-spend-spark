@@ -20,8 +20,9 @@ Conventions:
 - `display_name` (text)
 - `email` (text) — mirrored from `auth.users` for joins/RLS convenience
 - `phone` (text, nullable)
-- `avatar_url` (text, nullable)
+- `avatar_url` (text, nullable) — defaults to OAuth provider photo (Google/Apple) on first sign-in; replaced with a Supabase Storage URL when the user uploads their own
 - `country_id` (smallint, FK → `billing.countries.id`, nullable) — drives pricing & supported-country gating
+- `currency_id` (smallint, FK → `lookup.currencies.id`, nullable) — primary spending currency; if null, derived from `country_id`
 - `created_at` (timestamptz)
 - `updated_at` (timestamptz)
 
@@ -60,6 +61,21 @@ Conventions:
 - `created_at` (timestamptz)
 - `updated_at` (timestamptz)
 
+### `user_device_permissions` — latest OS permission state per user device
+
+- `id` (int, PK)
+- `user_id` (uuid, FK → `auth.users.id`)
+- `device_id` (int, FK → `messaging.devices.id`)
+- `location_permission_id` (smallint, FK → `lookup.permission_states.id`)
+- `camera_permission_id` (smallint, FK → `lookup.permission_states.id`)
+- `notification_permission_id` (smallint, FK → `lookup.permission_states.id`)
+- `location_accuracy` (text, nullable) — e.g. `'full' | 'reduced'`
+- `raw_platform_payload` (jsonb, nullable) — platform-specific permission details for iOS/Android
+- `last_reported_at` (timestamptz)
+- `created_at` (timestamptz)
+- `updated_at` (timestamptz)
+- **Unique:** `(user_id, device_id)`
+
 ## `catalog`
 
 ### `card_issuers` — issuer master data
@@ -87,6 +103,21 @@ Conventions:
 - `base_reward_rate` (numeric(6,4), default 1.0) — earn rate for uncategorized spend
 - `rewardscc_id` (text, nullable, unique)
 - `is_active` (boolean, default true)
+- `created_at` (timestamptz)
+- `updated_at` (timestamptz)
+
+### `card_product_requests` — user-submitted catalog additions for admin review
+
+- `id` (int, PK)
+- `user_id` (uuid, FK → `auth.users.id`)
+- `issuer_name` (text) — bank/issuer name as submitted by the user
+- `card_name` (text) — card product name as submitted by the user
+- `status` (text, default `'pending'`) — `'pending' | 'approved' | 'rejected' | 'merged'`
+- `approved_issuer_id` (smallint, FK → `catalog.card_issuers.id`, nullable)
+- `approved_card_product_id` (int, FK → `catalog.card_products.id`, nullable)
+- `reviewed_by_user_id` (uuid, FK → `auth.users.id`, nullable)
+- `reviewed_at` (timestamptz, nullable)
+- `review_notes` (text, nullable)
 - `created_at` (timestamptz)
 - `updated_at` (timestamptz)
 
@@ -136,6 +167,8 @@ Conventions:
 - `access_token_encrypted` (text) — encrypted at rest
 - `status_id` (smallint, FK → `lookup.plaid_item_statuses.id`)
 - `last_sync_at` (timestamptz, nullable)
+- `transaction_sync_cursor` (text, nullable) — Plaid transactions/sync cursor
+- `last_transaction_sync_at` (timestamptz, nullable)
 - `last_error` (text, nullable)
 - `created_at` (timestamptz)
 - `updated_at` (timestamptz)
@@ -151,13 +184,46 @@ Conventions:
 - `created_at` (timestamptz)
 - `updated_at` (timestamptz)
 
+### `plaid_webhook_events` — idempotency log for inbound Plaid webhooks
+
+- `id` (int, PK)
+- `plaid_event_id` (text, unique) — provider-supplied or handler-derived dedup key
+- `webhook_type` (text) — e.g. `'ITEM'`, `'TRANSACTIONS'`
+- `webhook_code` (text) — e.g. `'NEW_ACCOUNTS_AVAILABLE'`, `'ITEM_LOGIN_REQUIRED'`, `'ERROR'`
+- `plaid_item_id` (text, nullable) — Plaid's item ID from the payload
+- `payload` (jsonb)
+- `received_at` (timestamptz)
+- `processed_at` (timestamptz, nullable)
+- `processing_error` (text, nullable)
+- `created_at` (timestamptz)
+
+### `foursquare_webhook_events` — idempotency log for inbound Foursquare webhooks
+
+Inbound webhook log for Foursquare geofence/place enter events. Mirrors `plaid_webhook_events` / `billing.stripe_webhook_events` shape so the same outbox + consumer pattern applies.
+
+- `id` (int, PK)
+- `foursquare_event_id` (text, unique) — Foursquare's `id` field; dedup key
+- `event_type` (text) — e.g. `'user.entered_geofence'`, `'user.entered_place'`
+- `foursquare_user_id` (text, nullable) — Foursquare's external user id (we set this to `auth.users.id`)
+- `user_id` (uuid, FK → `auth.users.id`, nullable) — resolved from `foursquare_user_id`
+- `merchant_id` (int, FK → `finance.merchants.id`, nullable) — resolved from place metadata
+- `payload` (jsonb)
+- `received_at` (timestamptz)
+- `processed_at` (timestamptz, nullable)
+- `processing_error` (text, nullable)
+- `created_at` (timestamptz)
+
 ### `user_cards` — user's cards (linked + manual)
 
 - `id` (int, PK)
 - `user_id` (uuid, FK → `auth.users.id`)
 - `card_product_id` (int, FK → `catalog.card_products.id`, nullable) — null if unknown product
+- `catalog_request_id` (int, FK → `catalog.card_product_requests.id`, nullable) — pending/approved catalog request for custom manual cards
 - `plaid_account_id` (int, FK → `finance.plaid_accounts.id`, nullable) — null for manual
 - `source_id` (smallint, FK → `lookup.card_sources.id`)
+- `sync_status` (text, default `'active'`) — `'active' | 'login_required' | 'error' | 'disconnected'`; used for Plaid-backed cards and shown as disconnected after Plaid disconnect
+- `custom_issuer_name` (text, nullable) — used when `card_product_id` is null
+- `custom_card_name` (text, nullable) — used when `card_product_id` is null
 - `nickname` (text, nullable)
 - `last_four` (text, nullable)
 - `is_primary` (boolean, default false)
@@ -212,17 +278,22 @@ Conventions:
 - `generated_at` (timestamptz)
 - `created_at` (timestamptz)
 
-### `manual_transactions` — user-entered transactions
+### `transactions` — user transactions (manual + Plaid-imported)
 
 - `id` (int, PK)
 - `user_id` (uuid, FK → `auth.users.id`)
+- `source` (text, default `'manual'`) — `'manual' | 'plaid'`
+- `plaid_transaction_id` (text, nullable, unique) — Plaid transaction ID for idempotent import
+- `plaid_account_id` (int, FK → `finance.plaid_accounts.id`, nullable)
 - `user_card_id` (int, FK → `finance.user_cards.id`)
 - `merchant_id` (int, FK → `finance.merchants.id`, nullable)
 - `category_id` (smallint, FK → `catalog.categories.id`, nullable)
 - `amount` (numeric(12,2))
 - `transaction_date` (date)
 - `transaction_time` (time, nullable)
+- `is_pending` (boolean, default false)
 - `description` (text, nullable)
+- `location_label` (text, nullable)
 - `location_lat` (numeric, nullable)
 - `location_lng` (numeric, nullable)
 - `created_at` (timestamptz)
@@ -231,7 +302,7 @@ Conventions:
 ### `transaction_reward_results` — computed reward per transaction
 
 - `id` (int, PK)
-- `transaction_id` (int, FK → `finance.manual_transactions.id`, unique)
+- `transaction_id` (int, FK → `finance.transactions.id`, unique)
 - `earned_rate` (numeric(6,4))
 - `earned_amount` (numeric(12,4))
 - `reward_currency_id` (smallint, FK → `lookup.reward_currencies.id`)
@@ -242,7 +313,7 @@ Conventions:
 ### `missed_reward_events` — "you could've earned more"
 
 - `id` (int, PK)
-- `transaction_id` (int, FK → `finance.manual_transactions.id`, unique)
+- `transaction_id` (int, FK → `finance.transactions.id`, unique)
 - `better_user_card_id` (int, FK → `finance.user_cards.id`)
 - `actual_reward_amount` (numeric(12,4))
 - `potential_reward_amount` (numeric(12,4))
@@ -380,10 +451,12 @@ Conventions:
 - `id` (int, PK)
 - `user_id` (uuid, FK → `auth.users.id`)
 - `platform_id` (smallint, FK → `lookup.device_platforms.id`)
-- `push_token` (text, unique) — APNs or FCM token
+- `push_token` (text, nullable, unique) — APNs or FCM token; null before notification permission/token is available
 - `device_name` (text, nullable)
 - `app_version` (text, nullable)
 - `os_version` (text, nullable)
+- `locale` (text, nullable)
+- `timezone` (text, nullable) — IANA, e.g. `'America/New_York'`
 - `is_active` (boolean, default true)
 - `last_seen_at` (timestamptz)
 - `registered_at` (timestamptz)
@@ -431,7 +504,7 @@ Conventions:
 - `notification_type_id` (smallint, FK → `messaging.notification_types.id`)
 - `title` (text)
 - `body` (text)
-- `related_transaction_id` (int, FK → `finance.manual_transactions.id`, nullable)
+- `related_transaction_id` (int, FK → `finance.transactions.id`, nullable)
 - `related_missed_reward_event_id` (int, FK → `finance.missed_reward_events.id`, nullable)
 - `payload` (jsonb, nullable) — for deep-link refs not covered by the explicit FKs
 - `is_read` (boolean, default false)
@@ -464,7 +537,53 @@ Conventions:
 - `error_message` (text, nullable)
 - `attempted_at` (timestamptz)
 - `delivered_at` (timestamptz, nullable)
+- `next_attempt_at` (timestamptz, nullable) — when retry should run
+- `attempt_count` (smallint, default 0)
 - `created_at` (timestamptz)
+
+### `event_outbox` — domain events queued for async fan-out (transactional outbox)
+
+- `id` (int, PK)
+- `event_type` (text) — `domain.entity.action` format, e.g. `'finance.transaction.created'`
+- `aggregate_type` (text) — e.g. `'transaction'`, `'user_card'`, `'subscription'`, `'plaid_item'`
+- `aggregate_id` (int) — polymorphic reference, resolved via `aggregate_type`
+- `user_id` (uuid, FK → `auth.users.id`, nullable) — for user-scoped events
+- `payload` (jsonb) — opaque to outbox; include `payload.version` for forward compatibility
+- `idempotency_key` (text, nullable, unique) — caller-supplied dedup (e.g. `clientGeneratedId`)
+- `status_id` (smallint, FK → `lookup.event_outbox_statuses.id`)
+- `attempt_count` (int, default 0) — dispatch sweep attempts
+- `last_error` (text, nullable)
+- `created_at` (timestamptz) — written in the same DB tx as the source change
+- `available_at` (timestamptz, default `now()`) — for delayed events
+- `dispatched_at` (timestamptz, nullable) — first dispatch that created deliveries
+- `processed_at` (timestamptz, nullable) — set when all subscribed deliveries are terminal
+
+### `event_subscriptions` — registry of consumers per event type (seeded + admin-editable)
+
+- `id` (smallint, PK)
+- `event_type` (text)
+- `consumer_name` (text) — e.g. `'MissedRewardNotificationProducer'`, `'AnalyticsRecomputeConsumer'`
+- `is_active` (boolean, default true)
+- `max_retries` (smallint, default 5)
+- `retry_backoff_seconds` (int, default 60) — base for exponential backoff
+- `created_at` (timestamptz)
+- `updated_at` (timestamptz)
+- **Unique:** `(event_type, consumer_name)`
+
+### `event_deliveries` — per-consumer delivery attempt for an event_outbox row
+
+- `id` (int, PK)
+- `event_outbox_id` (int, FK → `messaging.event_outbox.id`)
+- `consumer_name` (text)
+- `status_id` (smallint, FK → `lookup.event_delivery_statuses.id`)
+- `attempt_count` (smallint, default 0)
+- `next_attempt_at` (timestamptz, nullable)
+- `last_attempted_at` (timestamptz, nullable)
+- `completed_at` (timestamptz, nullable)
+- `error_message` (text, nullable)
+- `created_at` (timestamptz)
+- `updated_at` (timestamptz)
+- **Unique:** `(event_outbox_id, consumer_name)`
 
 ## `insights`
 
@@ -587,7 +706,7 @@ Conventions:
 ### `permission_states` — app/device permission states (seeded)
 
 - `id` (smallint, PK)
-- `code` (text, unique) — `'not_determined' | 'denied' | 'when_in_use' | 'always'`
+- `code` (text, unique) — `'not_determined' | 'denied' | 'restricted' | 'authorized' | 'authorized_when_in_use' | 'authorized_always' | 'authorized_once' | 'provisional' | 'limited'`
 - `display_name` (text)
 - `created_at` (timestamptz)
 
@@ -629,14 +748,14 @@ Conventions:
 ### `recommendation_contexts` — recommendation entry points (seeded)
 
 - `id` (smallint, PK)
-- `code` (text, unique) — `'home' | 'in_store'`
+- `code` (text, unique) — `'home' | 'in_store' | 'geofence_arrival'`
 - `display_name` (text)
 - `created_at` (timestamptz)
 
 ### `location_event_types` — location sample event types (seeded)
 
 - `id` (smallint, PK)
-- `code` (text, unique) — `'stop' | 'visit' | 'recommendation_request'`
+- `code` (text, unique) — `'stop' | 'visit' | 'recommendation_request' | 'geofence_entered'`
 - `display_name` (text)
 - `created_at` (timestamptz)
 
@@ -724,7 +843,7 @@ Conventions:
 ### `entity_types` — sync entity types (seeded)
 
 - `id` (smallint, PK)
-- `code` (text, unique) — `'manual_transactions'`, `'user_cards'`, `'card_reward_overrides'`, `'notifications'`, `'notification_reminders'`
+- `code` (text, unique) — `'transactions'`, `'user_cards'`, `'card_reward_overrides'`, `'notifications'`, `'notification_reminders'`
 - `display_name` (text)
 - `created_at` (timestamptz)
 
@@ -742,6 +861,20 @@ Conventions:
 - `display_name` (text)
 - `created_at` (timestamptz)
 
+### `event_outbox_statuses` — messaging event outbox statuses (seeded)
+
+- `id` (smallint, PK)
+- `code` (text, unique) — `'queued' | 'dispatched' | 'succeeded' | 'partially_failed' | 'failed'`
+- `display_name` (text)
+- `created_at` (timestamptz)
+
+### `event_delivery_statuses` — per-consumer event delivery statuses (seeded)
+
+- `id` (smallint, PK)
+- `code` (text, unique) — `'pending' | 'processing' | 'succeeded' | 'failed' | 'dead_lettered'`
+- `display_name` (text)
+- `created_at` (timestamptz)
+
 ### `conflict_resolutions` — sync conflict resolution outcomes (seeded)
 
 - `id` (smallint, PK)
@@ -752,7 +885,7 @@ Conventions:
 ### `event_types` — sync event types (seeded)
 
 - `id` (smallint, PK)
-- `code` (text, unique) — `'pull_started'`, `'pull_completed'`, `'push_started'`, `'push_completed'`, `'conflict_detected'`, `'retry_scheduled'`
+- `code` (text, unique) — `'pull_started'`, `'pull_completed'`, `'push_started'`, `'push_completed'`, `'conflict_detected'`, `'conflict_resolved'`, `'retry_scheduled'`
 - `display_name` (text)
 - `created_at` (timestamptz)
 

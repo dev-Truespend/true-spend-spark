@@ -2,6 +2,33 @@
 
 Only mobile Phase 1 screen contracts are listed. All writes use `POST`.
 
+## Auth Bootstrap
+
+### `POST /api/v1/auth/bootstrap`
+
+Request: `AuthBootstrapRequest`
+
+- `locale`
+- `timezone`
+- `countryCode`
+- `device.platformCode`
+- `device.pushToken` (nullable)
+- `device.deviceName`
+- `device.appVersion`
+- `device.osVersion`
+
+Response: `AuthBootstrapResponse`
+
+- `profile`
+- `preferences`
+- `permissions`
+- `onboarding`
+- `entitlements`
+- `roles`
+- `deviceId`
+
+Behavior: requires a valid Supabase JWT, derives `user_id` from the token, creates missing first-login rows, upserts the current `messaging.devices` row when device metadata is supplied, and returns the initial app state for mobile cache hydration.
+
 ## Shared View Models
 
 ### `LookupVm`
@@ -27,6 +54,28 @@ Only mobile Phase 1 screen contracts are listed. All writes use `POST`.
 - `syncStatus`
 - `cardArtUrl`
 
+### `CardLimitsResponse`
+
+- `plaidUsed` (integer)
+- `plaidLimit` (integer, nullable when unlimited)
+- `manualUsed` (integer)
+- `manualLimit` (integer, nullable when unlimited)
+- `unlimited` (boolean)
+
+### `CardTermsVm`
+
+- `annualFee`
+- `purchaseApr`
+- `foreignTransactionFee`
+- `termsSummary`
+
+### `MonthlyRewardContributionVm`
+
+- `points`
+- `estimatedValue`
+- `currencyCode`
+- `periodLabel`
+
 ### `RewardRuleVm`
 
 - `categoryCode`
@@ -34,6 +83,14 @@ Only mobile Phase 1 screen contracts are listed. All writes use `POST`.
 - `multiplier`
 - `capDisplay`
 - `notes`
+
+### `RecommendationCardVm`
+
+- `card`
+- `expectedRewardRate`
+- `expectedReward`
+- `reason`
+- `rank`
 
 ### `MerchantVm`
 
@@ -49,8 +106,6 @@ Only mobile Phase 1 screen contracts are listed. All writes use `POST`.
 - `merchant`
 - `categoryCode`
 - `recommendedCard`
-- `expectedRewardRate`
-- `expectedReward`
 - `reason`
 - `runnerUpCards`
 - `coverageWarning`
@@ -66,6 +121,8 @@ Only mobile Phase 1 screen contracts are listed. All writes use `POST`.
 - `transactionDate`
 - `transactionTime`
 - `locationLabel`
+- `source`
+- `isPending`
 - `earnedReward`
 - `missedReward`
 - `syncStatus`
@@ -136,6 +193,15 @@ Only mobile Phase 1 screen contracts are listed. All writes use `POST`.
 - `missedReward`
 - `isDismissed`
 
+### `RewardBreakdownItemVm`
+
+Shared shape for `RewardsSummaryResponse.dailyBreakdown` (one row per day) and `RewardsSummaryResponse.categoryBreakdown` (one row per category).
+
+- `key` — ISO date for daily, category code for category
+- `label` — human-readable label (e.g. `'Mon May 25'`, `'Dining'`)
+- `earned` (`MoneyVm`)
+- `missed` (`MoneyVm`)
+
 ### `AIInsightVm`
 
 - `id`
@@ -159,6 +225,34 @@ Only mobile Phase 1 screen contracts are listed. All writes use `POST`.
 - `lastFour`
 - `isDefault`
 
+### `PlanVm`
+
+- `code` — `'basic' | 'pro'`
+- `displayName`
+- `description`
+- `trialDays`
+
+### `PlanPriceVm`
+
+- `planCode`
+- `countryCode`
+- `periodCode` — from `lookup.periods`
+- `amount` (`MoneyVm`)
+- `stripePriceId` — opaque to the client, used by `POST /billing/checkout`
+
+### `PlanFeatureVm`
+
+- `code` — `'card_link_limit' | 'ai_insights_enabled' | …`
+- `displayName`
+- `description`
+- `valueType` — `'integer' | 'boolean' | 'string'`
+- `valuesByPlan` (`PlanFeatureValueVm[]`)
+
+### `PlanFeatureValueVm`
+
+- `planCode`
+- `value` — string; parsed per the feature's `valueType`
+
 ### `SyncConflictVm`
 
 - `id`
@@ -167,6 +261,23 @@ Only mobile Phase 1 screen contracts are listed. All writes use `POST`.
 - `localPayload`
 - `remotePayload`
 - `detectedAt`
+
+### `SyncEventVm`
+
+One item in `SyncStatusResponse.recentEvents`. Drives the success/error/reconnect rows on screen 8.5.
+
+- `type` — from `lookup.event_types.code` (`'pull_completed'`, `'push_completed'`, `'conflict_detected'`, `'conflict_resolved'`, `'retry_scheduled'`, …)
+- `severity` — `'info' | 'warning' | 'error'`
+- `message` — short human-readable summary
+- `occurredAt`
+- `action` — optional `{ code, label }` for tap-through (e.g. `code: 'reconnect_plaid'`, `label: 'Reconnect'`)
+
+### `SyncCachedEntityCountVm`
+
+One row per entity type in `SyncStatusResponse.cachedCounts`. Lets 8.5 show "120 transactions cached, 4 cards cached" instead of a single scalar.
+
+- `entityType` — from `lookup.entity_types.code` (`'transactions'`, `'cards'`, `'notifications'`, `'notification_reminders'`, `'card_reward_overrides'`)
+- `count`
 
 ## Profile
 
@@ -177,8 +288,9 @@ Response: `ProfileResponse`
 - `displayName`
 - `email`
 - `phone`
-- `avatarUrl`
+- `avatarUrl` — provider photo (Google/Apple) by default; replaced with the user's uploaded photo URL after `POST /api/v1/profile/avatar`
 - `countryCode`
+- `currencyCode` — primary spending currency from `lookup.currencies`; falls back to the country's default when null in DB
 - `currentPlanCode`
 
 ### `POST /api/v1/profile`
@@ -188,6 +300,17 @@ Request: `UpdateProfileRequest`
 - `displayName`
 - `phone`
 - `countryCode`
+- `currencyCode` — from `GET /api/v1/lookups/currencies`
+
+Response: `ProfileResponse`
+
+### `POST /api/v1/profile/avatar`
+
+Multipart upload of a user-selected photo. Server stores the file in Supabase Storage and updates `app.profiles.avatar_url` with the resulting URL.
+
+Request: multipart/form-data
+
+- `file` (binary, required)
 
 Response: `ProfileResponse`
 
@@ -224,17 +347,24 @@ Response: `PermissionsResponse`
 - `location`
 - `camera`
 - `notifications`
+- `device`
 - `lastReportedAt`
 
 ### `POST /api/v1/permissions`
 
 Request: `UpdatePermissionsRequest`
 
-- `location`
-- `camera`
-- `notifications`
+- `deviceId`
+- `platformCode`
+- `location.state`
+- `location.accuracy`
+- `camera.state`
+- `notifications.state`
+- `rawPlatformPayload`
 
 Response: `PermissionsResponse`
+
+Behavior: writes `app.user_device_permissions` for the current device, updates the `app.user_permissions` user-level summary, and returns the canonical permission state for mobile cache replacement.
 
 ## Onboarding
 
@@ -293,6 +423,8 @@ Response: `PlaidConnectionResponse`
 - `connections`
 - `cards`
 
+Behavior: writes discovered `finance.user_cards` and durable outbox events for card/cache invalidation in the same transaction.
+
 ### `GET /api/v1/plaid/connections`
 
 Response: `PlaidConnectionsResponse`
@@ -306,6 +438,8 @@ Request: `SyncPlaidConnectionRequest`
 - `connectionId`
 
 Response: `PlaidConnectionResponse`
+
+Behavior: writes durable outbox events for Plaid/card cache invalidation when local connection/card state changes.
 
 ### `POST /api/v1/plaid/connections/reconnect`
 
@@ -322,6 +456,25 @@ Request: `DisconnectPlaidConnectionRequest`
 - `connectionId`
 
 Response: `PlaidConnectionResponse`
+
+Behavior: marks the Plaid connection disconnected and keeps related user cards active/visible with `syncStatus = disconnected`; writes durable outbox events for cards, connections, and recommendations.
+
+### `POST /api/v1/plaid/transactions/sync`
+
+Request: `SyncPlaidTransactionsRequest`
+
+- `connectionId`
+- `force`
+
+Response: `PlaidTransactionSyncResponse`
+
+- `connectionId`
+- `importedCount`
+- `updatedCount`
+- `removedCount`
+- `lastTransactionSyncAt`
+
+Behavior: runs Plaid transactions/sync for the connection, upserts `finance.transactions` by `plaid_transaction_id`, updates `finance.plaid_items.transaction_sync_cursor`, computes reward/missed-reward rows, and writes transaction outbox events.
 
 ## Cards
 
@@ -353,6 +506,8 @@ Request: `CreateManualCardRequest`
 
 Response: `CardDetailResponse`
 
+Behavior: writes `finance.user_cards` and a durable outbox event for card/recommendation cache invalidation.
+
 ### `POST /api/v1/cards/{cardId}`
 
 Request: `UpdateCardRequest`
@@ -363,17 +518,23 @@ Request: `UpdateCardRequest`
 
 Response: `CardDetailResponse`
 
+Behavior: writes `finance.user_cards` and a durable outbox event for card/recommendation cache invalidation.
+
 ### `POST /api/v1/cards/{cardId}/delete`
 
 Request: empty
 
 Response: `CardsResponse`
 
+Behavior: soft-deletes/deactivates the card and writes a durable outbox event for card/recommendation cache invalidation.
+
 ### `POST /api/v1/cards/{cardId}/primary`
 
 Request: empty
 
 Response: `CardsResponse`
+
+Behavior: updates the primary-card flag and writes a durable outbox event for card/recommendation cache invalidation.
 
 ### `GET /api/v1/cards/limits`
 
@@ -401,6 +562,8 @@ Request: `UpsertRewardOverrideRequest`
 
 Response: `RewardOverridesResponse`
 
+Behavior: writes `finance.card_reward_overrides` and a durable outbox event for card detail, recommendation, and transaction reward recalculation caches.
+
 ### `POST /api/v1/cards/{cardId}/reward-overrides/delete`
 
 Request: `DeleteRewardOverrideRequest`
@@ -408,6 +571,8 @@ Request: `DeleteRewardOverrideRequest`
 - `categoryCode`
 
 Response: `RewardOverridesResponse`
+
+Behavior: deletes or deactivates the override and writes a durable outbox event for card detail, recommendation, and transaction reward recalculation caches.
 
 ## Card Catalog
 
@@ -431,6 +596,24 @@ Request: query
 - `issuerId`
 
 Response: `CardProductsResponse`
+
+### `POST /api/v1/card-catalog/requests`
+
+Request: `CreateCardProductRequest`
+
+- `issuerName`
+- `cardName`
+- `createUserCard`
+- `nickname`
+- `lastFour`
+- `isPrimary`
+
+Response: `CardProductRequestResponse`
+
+- `request`
+- `userCard`
+
+Behavior: server normalizes `issuerName` and `cardName` for duplicate checks before writing. User input creates a pending catalog request; it does not directly create trusted catalog rows.
 
 ### `GET /api/v1/card-catalog/products/{cardProductId}`
 
@@ -457,6 +640,60 @@ Response: `CategoryAliasesResponse`
 Response: `RewardRulesResponse`
 
 - `rewardRules`
+
+## Admin Card Catalog
+
+### `GET /api/v1/admin/card-catalog/requests`
+
+Request: query
+
+- `status`
+
+Response: `CardProductRequestsResponse`
+
+- `requests`
+
+### `GET /api/v1/admin/card-catalog/requests/{requestId}`
+
+Response: `CardProductRequestResponse`
+
+- `request`
+- `userCard`
+
+### `POST /api/v1/admin/card-catalog/requests/{requestId}/approve`
+
+Request: `ApproveCardProductRequest`
+
+- `issuerName`
+- `cardName`
+- `networkCode`
+- `rewardCurrencyCode`
+- `notes`
+
+Response: `CardProductRequestResponse`
+
+Behavior: creates missing `catalog.card_issuers` / `catalog.card_products`, updates the request as approved, and invalidates catalog caches so the bank/card appears in dropdowns/search.
+
+### `POST /api/v1/admin/card-catalog/requests/{requestId}/merge`
+
+Request: `MergeCardProductRequest`
+
+- `cardProductId`
+- `notes`
+
+Response: `CardProductRequestResponse`
+
+Behavior: links the request to an existing `catalog.card_products` row, updates the request as merged, and invalidates affected request/card caches.
+
+### `POST /api/v1/admin/card-catalog/requests/{requestId}/reject`
+
+Request: `RejectCardProductRequest`
+
+- `reason`
+
+Response: `CardProductRequestResponse`
+
+Behavior: marks the request rejected. No catalog issuer or product is created.
 
 ## Merchants
 
@@ -494,6 +731,8 @@ Request: `CreateMerchantVisitRequest`
 - `visitedAt`
 
 Response: `MerchantVisitsResponse`
+
+Behavior: writes `finance.merchant_visits` and a `finance.merchant_visit.created` row in `messaging.event_outbox` in the same transaction. Outbox consumers handle recommendation preference refresh and cache invalidation.
 
 ## Recommendations
 
@@ -557,7 +796,7 @@ Response: `TransactionDetailResponse`
 
 ### `POST /api/v1/transactions`
 
-Request: `CreateManualTransactionRequest`
+Request: `CreateTransactionRequest`
 
 - `merchantName`
 - `amount`
@@ -571,20 +810,33 @@ Request: `CreateManualTransactionRequest`
 
 Response: `TransactionDetailResponse`
 
+Behavior: creates a manual transaction and computed reward/missed-reward rows, then writes `finance.transaction.created` to `messaging.event_outbox` in the same transaction.
+
 ### `POST /api/v1/transactions/{transactionId}`
 
 Request: `UpdateTransactionRequest`
 
+- `merchantName`
+- `amount`
 - `cardId`
 - `categoryCode`
+- `transactionDate`
+- `transactionTime`
+- `locationLabel`
+- `locationLat`
+- `locationLng`
 
 Response: `TransactionDetailResponse`
+
+Behavior: updates the transaction and recomputed reward/missed-reward rows, then writes `finance.transaction.updated` to `messaging.event_outbox` in the same transaction.
 
 ### `POST /api/v1/transactions/{transactionId}/delete`
 
 Request: empty
 
 Response: `TransactionsResponse`
+
+Behavior: deletes or deactivates the transaction and writes `finance.transaction.deleted` to `messaging.event_outbox` in the same transaction.
 
 ### `GET /api/v1/transactions/search`
 
@@ -615,6 +867,8 @@ Request: empty
 
 Response: `TransactionDetailResponse`
 
+Behavior: updates the missed-reward event and writes `finance.missed_reward.not_a_miss` to `messaging.event_outbox` in the same transaction.
+
 ## Analytics
 
 ### `GET /api/v1/analytics/rewards-summary`
@@ -625,13 +879,13 @@ Request: query
 
 Response: `RewardsSummaryResponse`
 
-- `earned`
-- `missed`
-- `earnedDelta`
-- `missedDelta`
-- `dailyBreakdown`
-- `categoryBreakdown`
-- `topMissedRewards`
+- `earned` (`MoneyVm`)
+- `missed` (`MoneyVm`)
+- `earnedDelta` (`MoneyVm`) — vs prior comparable period
+- `missedDelta` (`MoneyVm`) — vs prior comparable period
+- `dailyBreakdown` (`RewardBreakdownItemVm[]`)
+- `categoryBreakdown` (`RewardBreakdownItemVm[]`)
+- `topMissedRewards` (`MissedRewardVm[]`)
 
 ### `GET /api/v1/analytics/missed-rewards-summary`
 
@@ -641,9 +895,9 @@ Request: query
 
 Response: `MissedRewardsSummaryResponse`
 
-- `missed`
-- `missedDelta`
-- `topMissedRewards`
+- `missed` (`MoneyVm`)
+- `missedDelta` (`MoneyVm`)
+- `topMissedRewards` (`MissedRewardVm[]`)
 
 ## AI Insights
 
@@ -678,7 +932,7 @@ Response: `AIInsightsResponse`
 
 Request: query
 
-- `filter`
+- `filter` — one of `all`, `unread`, `rewards`, `security`. Defaults to `all`.
 
 Response: `NotificationsResponse`
 
@@ -739,6 +993,8 @@ Response: `NotificationTypesResponse`
 
 ### `POST /api/v1/notification-settings/types`
 
+Saves one type preference per request; the mobile settings screen calls this once per toggle change.
+
 Request: `UpdateNotificationTypePreferenceRequest`
 
 - `typeCode`
@@ -778,10 +1034,12 @@ Response: `NotificationRemindersResponse`
 Request: `RegisterDeviceRequest`
 
 - `platformCode`
-- `pushToken`
+- `pushToken` (nullable)
 - `deviceName`
 - `appVersion`
 - `osVersion`
+- `locale`
+- `timezone`
 
 Response: `DeviceResponse`
 
@@ -818,7 +1076,7 @@ Response: `CountriesResponse`
 
 Response: `PlansResponse`
 
-- `plans`
+- `plans` (`PlanVm[]`)
 
 ### `GET /api/v1/billing/prices`
 
@@ -829,13 +1087,13 @@ Request: query
 
 Response: `PlanPricesResponse`
 
-- `plans`
+- `plans` (`PlanPriceVm[]`) — one row per plan for the requested country/period
 
 ### `GET /api/v1/billing/features`
 
 Response: `PlanFeaturesResponse`
 
-- `features`
+- `features` (`PlanFeatureVm[]`) — feature catalog with `valuesByPlan` embedded
 
 ### `GET /api/v1/billing/subscription`
 
@@ -859,6 +1117,7 @@ Request: `CreateCheckoutSessionRequest`
 
 - `planCode`
 - `periodCode`
+- `returnContextCode` — `'billing' | 'onboarding'`. Server resolves the matching deep-link `success_url`/`cancel_url` for Stripe Checkout: `'billing'` returns to screen 8.3, `'onboarding'` returns to Home (2.5 is the last onboarding step).
 
 Response: `HostedBillingResponse`
 
@@ -971,8 +1230,8 @@ Response: `SyncStatusResponse`
 - `online`
 - `lastSyncAt`
 - `pendingCount`
-- `cachedItemCount`
-- `recentEvents`
+- `cachedCounts` (`SyncCachedEntityCountVm[]`) — replaces the prior scalar `cachedItemCount`; one row per entity type
+- `recentEvents` (`SyncEventVm[]`)
 
 ### `GET /api/v1/sync/pull`
 
@@ -1020,6 +1279,87 @@ Response: `SyncConflictsResponse`
 Request: empty
 
 Response: `SyncStatusResponse`
+
+## Webhooks
+
+Inbound webhook endpoints. Each handler verifies the provider signature, deduplicates against its provider-specific event log, updates local DB, and publishes a domain event to `messaging.event_outbox` for in-app fan-out. See `_docs/Workflows/webhook-handlers.md`.
+
+### `POST /api/v1/webhooks/stripe`
+
+Auth: Stripe signature verification (`Stripe-Signature` header). Reject `400` on mismatch.
+
+Request: raw Stripe event payload (jsonb).
+
+Response: `WebhookAckResponse`
+
+- `received` (boolean)
+- `deduplicated` (boolean, optional) — true when `stripe_event_id` already exists in `billing.stripe_webhook_events`
+
+### `POST /api/v1/webhooks/plaid`
+
+Auth: Plaid signature verification (`Plaid-Verification` JWT). Reject `400` on mismatch.
+
+Request: raw Plaid webhook payload (jsonb).
+
+Response: `WebhookAckResponse`
+
+### `POST /api/v1/webhooks/foursquare`
+
+Auth: Foursquare webhook signature verification (`Foursquare-Signature` header). Reject `400` on mismatch.
+
+Handles `user.entered_geofence` and `user.entered_place` events. Inserts `finance.foursquare_webhook_events` for dedup, resolves the merchant, generates an in-store recommendation, creates a `messaging.notifications` row (`type = best_card_alert`), and publishes `messaging.notification.created` so the existing `PushFanOutConsumer` delivers the push.
+
+Request: raw Foursquare event payload (jsonb).
+
+Response: `WebhookAckResponse`
+
+## Push Payloads
+
+These are the JSON data payloads delivered to the device via APNs / FCM — **not REST endpoints**. The mobile app parses one of these on notification tap to deep-link the user to the right screen. The discriminator `type` matches `messaging.notification_types.code` exactly. Producers in [notification-production.md](../../Workflows/notification-production.md) construct one of these per `messaging.notifications` row.
+
+### `BasePushPayloadVm`
+
+Common fields embedded in every push payload below. Defined once so per-type schemas only declare their type-specific routing fields.
+
+- `type` — from `messaging.notification_types.code`; discriminator for the union
+- `notificationId` — `messaging.notifications.id`; opens inbox detail (7.2) as the default deep link
+
+### `MissedRewardsPushPayload`
+
+Routes to transaction detail (6.2) showing the missed reward. Producer: `MissedRewardNotificationProducer`.
+
+- `BasePushPayloadVm` (`type = 'missed_rewards'`)
+- `transactionId` — `finance.transactions.id`
+- `missedRewardEventId` — `finance.missed_reward_events.id`
+
+### `BestCardAlertPushPayload`
+
+Routes to the in-app recommendation surface for the detected merchant. Producer: `BestCardAlertProducer` — fired inline from `POST /api/v1/webhooks/foursquare` in Phase 1 ([10-geo-recommendations.md](../../Workflows/10-geo-recommendations.md)).
+
+- `BasePushPayloadVm` (`type = 'best_card_alert'`)
+- `recommendationId` — `finance.recommendations.id`
+- `merchantId` — `finance.merchants.id`
+
+### `WeeklySummaryPushPayload`
+
+Routes to the Insights tab (6.3). Producer: `WeeklySummaryProducer`.
+
+- `BasePushPayloadVm` (`type = 'weekly_summary'`)
+
+### `UnusualTransactionPushPayload`
+
+Routes to transaction detail (6.2). Producer: `UnusualTransactionProducer`.
+
+- `BasePushPayloadVm` (`type = 'unusual_transaction'`)
+- `transactionId` — `finance.transactions.id`
+
+### `SystemPushPayload`
+
+System / operational pushes. Phase 1 uses this for Plaid re-auth nudges; future system pushes (admin announcements, security alerts) extend the same shape via `subtype`. Producer for Plaid re-auth: `PlaidReauthNotificationProducer` ([webhook-handlers.md](../../Workflows/webhook-handlers.md)).
+
+- `BasePushPayloadVm` (`type = 'system'`)
+- `subtype` — e.g. `'plaid_reauth'`; defaults the routing destination
+- `plaidItemId` — present when `subtype = 'plaid_reauth'`; routes to Plaid connections (5.4)
 
 ## Lookups
 

@@ -21,19 +21,18 @@ flowchart TB
 
   Auth[Supabase Auth]
 
+  %% ===== Edge tier =====
+  AzureGateway[Azure Gateway - public]
+
   %% ===== Compute tier =====
   subgraph ACA[Azure Container Apps Environment]
     direction TB
-    Ingress[ACA Ingress - public]
-    YARP[YARP Gateway - public]
     subgraph Internal[Internal-only containers]
       direction TB
       API[.NET API - validates Supabase JWT]
       Consumer[Event Consumer]
       CatalogJob[Catalog Job - scheduled]
     end
-    Ingress --> YARP
-    YARP -->|forwards JWT| API
   end
 
   %% ===== Messaging tier =====
@@ -54,7 +53,7 @@ flowchart TB
   subgraph Ext[External Services - egress]
     direction TB
     RewardsCC[RewardsCC API]
-    Plaid[Plaid - card metadata only]
+    Plaid[Plaid - card metadata and transactions]
     Stripe[Stripe - billing & subscriptions]
     AzureOpenAI[Azure OpenAI - insights]
     APNs[APNs]
@@ -63,7 +62,7 @@ flowchart TB
   %% ===== Cross-cutting infrastructure =====
   subgraph Infra[Cross-cutting Infrastructure]
     direction TB
-    Redis[Upstash Redis]
+    Redis[Azure Cache for Redis]
     KeyVault[Azure Key Vault]
     Obs[Log Analytics / App Insights]
   end
@@ -72,7 +71,8 @@ flowchart TB
   IOS <-->|sign-in / JWT| Auth
 
   %% ===== Primary request path =====
-  IOS -->|Bearer JWT| Ingress
+  IOS -->|Bearer JWT| AzureGateway
+  AzureGateway -->|forwards JWT| API
 
   %% ===== API outbound =====
   API --> DB
@@ -84,7 +84,7 @@ flowchart TB
   API --> APNs
 
   %% ===== Stripe inbound webhooks =====
-  Stripe -->|webhook events| Ingress
+  Stripe -->|webhook events| AzureGateway
 
   %% ===== Async path =====
   Topic --> Consumer
@@ -112,7 +112,7 @@ flowchart TB
   Consumer -.-> Obs
   CatalogJob -.-> KeyVault
   CatalogJob -.-> Obs
-  YARP -.-> Obs
+  AzureGateway -.-> Obs
 ```
 
 ## iOS MVP Choices
@@ -124,10 +124,9 @@ flowchart TB
 - Keep Apple MapKit / MKLocalSearch-derived place data on-device only; do not persist MapKit-derived merchant results to Supabase or server-side caches.
 - Use Supabase Auth for sign-in and JWT issuance.
 - Send the Supabase JWT from the iOS app to the backend in the `Authorization` header.
-- Use Azure Container Apps ingress only for inbound iOS traffic.
-- Make YARP the only public-facing application container.
+- Use Azure Gateway as the public entry point for inbound iOS traffic.
 - Keep the .NET API, event consumer, and catalog job internal-only inside the Container Apps environment.
-- Use YARP for reverse proxy, routing, request shaping, and gateway policies.
+- Use Azure Gateway for routing, request shaping, and gateway policies.
 - Validate Supabase JWTs in the .NET API using Supabase JWKS.
 - Use a separate .NET API container for business APIs.
 - Send push notifications through APNs.
@@ -137,15 +136,17 @@ flowchart TB
 - Use Service Bus dead-letter queues for failed messages that exceed retry limits.
 - Use a separate event consumer container for queued/background work.
 - Have the event consumer subscribe to both API-published events and Catalog Job-published events so catalog changes can trigger cache invalidation and notifications.
+- Run all background work as **.NET Worker Service** containers in Azure Container Apps: the event consumer pulls from Service Bus, and the scheduled jobs (catalog refresh, Plaid sync, notification dispatch, AI insight generation, reminder firing, weekly summary, outbox dispatcher) fire from a cron-style scheduler inside the worker.
+- The scheduler library is **TBD** — Hangfire is a candidate (Postgres-backed state, retries, dashboard) but alternatives like Quartz.NET, Coravel, native `IHostedService` timers, or Azure Container Apps Jobs will be evaluated before commit. See [job-architecture.md § Hosting Model](../low-level-design/Service/job-architecture.md#hosting-model).
 - Use Supabase for auth, Postgres storage, and file storage.
-- Use Upstash Redis for rate limits, short-lived cache, and distributed coordination when needed.
+- Use Azure Cache for Redis for rate limits, short-lived cache, and distributed coordination when needed.
 - Use Azure Key Vault for Plaid, RewardsCC, Stripe, Azure OpenAI, Supabase service-role, APNs, and other service secrets.
 - Use Log Analytics / Application Insights for gateway, API, consumer, and catalog job telemetry.
 - Use RewardsCC as the card/reward provider, subject to its caching and storage terms.
-- Use Plaid optionally for account/card metadata only, not transactions or liabilities.
+- Use Plaid optionally for account/card metadata and linked transaction import, not liabilities.
 - Use Stripe for paid plan billing, the 7-day free trial, subscription lifecycle, payment-method management, and webhook-driven entitlement updates.
 - Create the Stripe customer from the .NET API on first paid action; expose `/api/v1/billing/checkout` and `/api/v1/billing/portal` that return Stripe-hosted URLs the iOS app opens via in-app browser.
-- Validate Stripe webhook signatures at YARP/API, persist entitlement state in Postgres, and publish a `subscription.changed` event to Service Bus for downstream consumers.
+- Validate Stripe webhook signatures at Azure Gateway/API, persist entitlement state in Postgres, and publish a `subscription.changed` event to Service Bus for downstream consumers.
 - Note: on iOS, Apple's App Store rules generally require Apple In-App Purchase for digital subscriptions consumed in-app. Confirm the Stripe-only flow against the current App Store Review Guidelines (reader-app exception, external-link entitlement, or web-only checkout) before shipping.
 - Use Azure OpenAI for reward-optimization AI insights surfaced in the Insights tab and for personalized nudges.
 - Generate AI insights asynchronously: the API enqueues an `insights.generate` event, the Event Consumer calls Azure OpenAI, persists the result in Postgres, and pushes via APNs when complete.
@@ -170,19 +171,18 @@ flowchart TB
 
   Auth[Supabase Auth]
 
+  %% ===== Edge tier =====
+  AzureGateway[Azure Gateway - public]
+
   %% ===== Compute tier =====
   subgraph ACA[Azure Container Apps Environment]
     direction TB
-    Ingress[ACA Ingress - public]
-    YARP[YARP Gateway - public]
     subgraph Internal[Internal-only containers]
       direction TB
       API[.NET API - validates Supabase JWT]
       Consumer[Event Consumer]
       CatalogJob[Catalog Job - scheduled]
     end
-    Ingress --> YARP
-    YARP -->|forwards JWT| API
   end
 
   %% ===== Messaging tier =====
@@ -203,7 +203,7 @@ flowchart TB
   subgraph Ext[External Services - egress]
     direction TB
     RewardsCC[RewardsCC API]
-    Plaid[Plaid - card metadata only]
+    Plaid[Plaid - card metadata and transactions]
     Stripe[Stripe - billing & subscriptions]
     AzureOpenAI[Azure OpenAI - insights]
     FCM[FCM]
@@ -212,7 +212,7 @@ flowchart TB
   %% ===== Cross-cutting infrastructure =====
   subgraph Infra[Cross-cutting Infrastructure]
     direction TB
-    Redis[Upstash Redis]
+    Redis[Azure Cache for Redis]
     KeyVault[Azure Key Vault]
     Obs[Log Analytics / App Insights]
   end
@@ -221,7 +221,8 @@ flowchart TB
   Android <-->|sign-in / JWT| Auth
 
   %% ===== Primary request path =====
-  Android -->|Bearer JWT| Ingress
+  Android -->|Bearer JWT| AzureGateway
+  AzureGateway -->|forwards JWT| API
 
   %% ===== API outbound =====
   API --> DB
@@ -233,7 +234,7 @@ flowchart TB
   API --> FCM
 
   %% ===== Stripe inbound webhooks =====
-  Stripe -->|webhook events| Ingress
+  Stripe -->|webhook events| AzureGateway
 
   %% ===== Async path =====
   Topic --> Consumer
@@ -261,7 +262,7 @@ flowchart TB
   Consumer -.-> Obs
   CatalogJob -.-> KeyVault
   CatalogJob -.-> Obs
-  YARP -.-> Obs
+  AzureGateway -.-> Obs
 ```
 
 ## Android MVP Choices
@@ -274,10 +275,9 @@ flowchart TB
 - Add backend quotas for Android place lookups to control Google Places spend.
 - Use Supabase Auth for sign-in and JWT issuance.
 - Send the Supabase JWT from the Android app to the backend in the `Authorization` header.
-- Use Azure Container Apps ingress only for inbound Android traffic.
-- Make YARP the only public-facing application container.
+- Use Azure Gateway as the public entry point for inbound Android traffic.
 - Keep the .NET API, event consumer, and catalog job internal-only inside the Container Apps environment.
-- Use YARP for reverse proxy, routing, request shaping, and gateway policies.
+- Use Azure Gateway for routing, request shaping, and gateway policies.
 - Validate Supabase JWTs in the .NET API using Supabase JWKS.
 - Use a separate .NET API container for business APIs.
 - Send push notifications through FCM.
@@ -287,15 +287,17 @@ flowchart TB
 - Use Service Bus dead-letter queues for failed messages that exceed retry limits.
 - Use a separate event consumer container for queued/background work.
 - Have the event consumer subscribe to both API-published events and Catalog Job-published events so catalog changes can trigger cache invalidation and notifications.
+- Run all background work as **.NET Worker Service** containers in Azure Container Apps: the event consumer pulls from Service Bus, and the scheduled jobs (catalog refresh, Plaid sync, notification dispatch, AI insight generation, reminder firing, weekly summary, outbox dispatcher) fire from a cron-style scheduler inside the worker.
+- The scheduler library is **TBD** — Hangfire is a candidate (Postgres-backed state, retries, dashboard) but alternatives like Quartz.NET, Coravel, native `IHostedService` timers, or Azure Container Apps Jobs will be evaluated before commit. See [job-architecture.md § Hosting Model](../low-level-design/Service/job-architecture.md#hosting-model).
 - Use Supabase for auth, Postgres storage, and file storage.
-- Use Upstash Redis for rate limits, short-lived cache, and distributed coordination when needed.
+- Use Azure Cache for Redis for rate limits, short-lived cache, and distributed coordination when needed.
 - Use Azure Key Vault for Plaid, RewardsCC, Stripe, Azure OpenAI, Supabase service-role, FCM, and other service secrets.
 - Use Log Analytics / Application Insights for gateway, API, consumer, and catalog job telemetry.
 - Use RewardsCC as the card/reward provider, subject to its caching and storage terms.
-- Use Plaid optionally for account/card metadata only, not transactions or liabilities.
+- Use Plaid optionally for account/card metadata and linked transaction import, not liabilities.
 - Use Stripe for paid plan billing, the 7-day free trial, subscription lifecycle, payment-method management, and webhook-driven entitlement updates.
 - Create the Stripe customer from the .NET API on first paid action; expose `/api/v1/billing/checkout` and `/api/v1/billing/portal` that return Stripe-hosted URLs the Android app opens via Custom Tabs.
-- Validate Stripe webhook signatures at YARP/API, persist entitlement state in Postgres, and publish a `subscription.changed` event to Service Bus for downstream consumers.
+- Validate Stripe webhook signatures at Azure Gateway/API, persist entitlement state in Postgres, and publish a `subscription.changed` event to Service Bus for downstream consumers.
 - Note: on Android, Google Play Billing is required for digital subscriptions distributed via the Play Store. Confirm the Stripe-only flow against current Play Console policy (Payments Policy exemptions, alternative billing pilot, or web-only checkout) before shipping.
 - Use Azure OpenAI for reward-optimization AI insights surfaced in the Insights tab and for personalized nudges.
 - Generate AI insights asynchronously: the API enqueues an `insights.generate` event, the Event Consumer calls Azure OpenAI, persists the result in Postgres, and pushes via FCM when complete.
@@ -303,9 +305,9 @@ flowchart TB
 
 ## Upgrade Points
 
-- Add more YARP, API, and consumer replicas as traffic grows.
+- Add more API and consumer replicas as traffic grows.
 - Add more Service Bus topics/subscriptions when async workflows split by domain.
-- Add Azure Front Door or Application Gateway if managed edge routing, WAF, or global balancing is required.
+- Add Azure Gateway capacity or Azure Front Door if managed edge routing, WAF, or global balancing is required.
 - Add separate consumers for heavier domains such as transaction analytics, notifications, catalog sync, or receipt processing.
 
 ## Related Docs

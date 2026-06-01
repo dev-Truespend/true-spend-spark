@@ -15,17 +15,19 @@
 
 ## Tables
 
-### `app` - 4
+### `app` - 5
 
 - `profiles`
 - `onboarding_states`
 - `user_preferences`
 - `user_permissions`
+- `user_device_permissions`
 
-### `catalog` - 5
+### `catalog` - 6
 
 - `card_issuers`
 - `card_products`
+- `card_product_requests`
 - `categories`
 - `category_aliases`
 - `reward_rules`
@@ -39,7 +41,7 @@
 - `merchants`
 - `merchant_visits`
 - `recommendations`
-- `manual_transactions`
+- `transactions`
 - `transaction_reward_results`
 - `missed_reward_events`
 - `location_events`
@@ -125,4 +127,4 @@
 ## Total
 
 - Schemas: 10
-- Tables: 77
+- Tables: 79

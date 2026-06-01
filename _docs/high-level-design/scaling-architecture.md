@@ -15,11 +15,10 @@ flowchart TB
   end
 
   subgraph Edge[Azure Edge]
-    FrontDoor[Azure Front Door or App Gateway\nTLS, WAF, health probes]
+    AzureGateway[Azure Gateway\nrouting, TLS, WAF, health probes]
   end
 
   subgraph Azure[Azure Container Apps]
-    YARP[YARP Gateway\n2+ replicas]
     APIBlue[.NET API Blue]
     APIGreen[.NET API Green]
     Worker[Background Worker]
@@ -45,13 +44,12 @@ flowchart TB
   IOS --> AppleMapKit
   Android --> GooglePlaces
 
-  IOS --> FrontDoor
-  Android --> FrontDoor
-  FrontDoor --> YARP
+  IOS --> AzureGateway
+  Android --> AzureGateway
 
-  YARP --> APIBlue
-  YARP --> APIGreen
-  YARP --> Redis
+  AzureGateway --> APIBlue
+  AzureGateway --> APIGreen
+  AzureGateway --> Redis
 
   APIBlue --> Auth
   APIGreen --> Auth
@@ -75,8 +73,7 @@ flowchart TB
   CatalogJob --> DB
   CatalogJob --> ServiceBus
 
-  FrontDoor --> Observability
-  YARP --> Observability
+  AzureGateway --> Observability
   APIBlue --> Observability
   APIGreen --> Observability
   Worker --> Observability
@@ -85,11 +82,10 @@ flowchart TB
 
 ## Scaling Choices
 
-- Front Door or Application Gateway handles managed edge routing, TLS, WAF, and health probes.
-- YARP remains the application gateway for route-level logic, transforms, blue/green routing, and app-aware policies.
+- Azure Gateway handles managed edge routing, TLS, WAF, health probes, route-level policies, and request shaping.
 - Redis stores distributed rate-limit counters, short-lived merchant/category cache, feature flags, and locks.
 - Azure Service Bus replaces the Postgres queue for durable jobs, retries, scheduled messages, and dead-letter handling.
-- API blue/green revisions can receive weighted traffic through YARP or Container Apps revision traffic.
+- API blue/green revisions can receive weighted traffic through Azure Gateway or Container Apps revision traffic.
 - Background workers consume durable jobs for push notifications, Plaid refreshes, merchant enrichment, and other async work.
 
 ## Code Design Requirement

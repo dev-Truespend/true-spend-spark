@@ -106,8 +106,8 @@ Recommended defaults:
 
 | Function | Current auth | Should be | External calls | Contract |
 |---|---|---|---|---|
-| `bff-dashboard` | Requires user JWT. | User JWT; all queries scoped to `user.id`. | Upstash Redis. | Req: none. Res: dashboard aggregate with cache metadata or `{ error }`. |
-| `bff-transactions` | Requires user JWT. | User JWT; all filters scoped to `user.id`. | Upstash Redis. | Query: `page`, `limit`, `category`, `geofenceId`, `dateFrom`, `dateTo`, `creditCardId`, `search`, `synced`, `sort`, `refresh`. Res: paged transactions plus cache flag or `{ error }`. |
+| `bff-dashboard` | Requires user JWT. | User JWT; all queries scoped to `user.id`. | Azure Cache for Redis. | Req: none. Res: dashboard aggregate with cache metadata or `{ error }`. |
+| `bff-transactions` | Requires user JWT. | User JWT; all filters scoped to `user.id`. | Azure Cache for Redis. | Query: `page`, `limit`, `category`, `geofenceId`, `dateFrom`, `dateTo`, `creditCardId`, `search`, `synced`, `sort`, `refresh`. Res: paged transactions plus cache flag or `{ error }`. |
 | `process-transaction` | Requires user JWT. | User JWT; writes only current user's transaction. | None. | Req: transaction input body. Res: `{ ok, data }` or typed `{ ok: false, error }`. |
 | `auto-categorize-transaction` | No auth; service role. | User/internal only; transaction ownership should be checked. | None. | Req: `{ transactionId, merchantName, description, amount }`. Res: `{ category, method, confidence? }` or `{ error }`. |
 | `ai-categorize-transaction` | Requires user JWT. | User JWT; current user's categorization/logs only. | Lovable AI gateway. | Req: categorization input, especially `description`. Res: `{ ok, data }` or typed error. |
@@ -122,9 +122,9 @@ Recommended defaults:
 
 | Function | Current auth | Should be | External calls | Contract |
 |---|---|---|---|---|
-| `location-analytics-bff` | Requires user JWT. | User JWT; current user's locations/geofences only. | Upstash Redis. | Req: `{ period_days = 30, geofence_id }`. Res: analytics aggregate with cache info or `{ error }`. |
+| `location-analytics-bff` | Requires user JWT. | User JWT; current user's locations/geofences only. | Azure Cache for Redis. | Req: `{ period_days = 30, geofence_id }`. Res: analytics aggregate with cache info or `{ error }`. |
 | `location-insights-ai` | Requires user JWT. | User JWT; current user's location/transaction data only. | Lovable AI gateway. | Req: none. Res: `{ success, insights, stats }` or AI/auth error. |
-| `merchant-discovery` | Requires user JWT. | User JWT; paid Google access should remain server-side and rate-limited. | Upstash Redis, Google Places nearby search. | Req: `{ lat, lng, category, deals_only }`. Res: `{ merchants, cache_hit, cache_layer }` or `{ error }`. |
+| `merchant-discovery` | Requires user JWT. | User JWT; paid Google access should remain server-side and rate-limited. | Azure Cache for Redis, Google Places nearby search. | Req: `{ lat, lng, category, deals_only }`. Res: `{ merchants, cache_hit, cache_layer }` or `{ error }`. |
 | `deal-notification-trigger` | Requires user JWT. | User JWT; geofence must belong to user. | None. | Req: `{ geofence_id, lat, lng }`. Res: notification counts/deals or auth/validation error. |
 | `notify-nearby-deals` | Requires user JWT. | User JWT; user-scoped deal lookup. | None. | Req: `{ latitude, longitude, radiusMiles = 5 }`. Res: `{ ok, deals, count }` or `{ error }`. |
 | `geofence-processor` | No auth; service role. | Internal worker/cron only. | Internal: `foursquare-enrich-geofence`. | Req: none. Res: `{ success, processed, timestamp }` or `{ error }`. |
@@ -185,7 +185,7 @@ Recommended defaults:
 | `metrics-collector` | Uses anon client with forwarded auth; supports POST/query actions. | User/admin JWT depending on metric action; writes should authenticate source. | None. | Query: `action`, `timeRange`, `metric`; body metric data for POST. Res: stored metrics or queried metrics. |
 | `extension-telemetry` | Requires user JWT. | User JWT; events attributed to current user and extension origin should be constrained. | None. | Req: `{ events }`. Res: `{ success, count }` or auth/validation/insert error. |
 | `metrics-aggregator` | No auth. | Cron/internal only. | None. | Req: none. Res: aggregation success timestamp or `{ error }`. |
-| `redis-metrics` | Requires user JWT. | Admin only because it exposes cache metrics/config. | Upstash Redis. | Req: none. Res: Redis INFO/config metrics or `{ error }`. |
+| `redis-metrics` | Requires user JWT. | Admin only because it exposes cache metrics/config. | Azure Cache for Redis. | Req: none. Res: Redis INFO/config metrics or `{ error }`. |
 | `performance-analyzer` | Requires user JWT and admin role. | Admin only. | None. | Req: `{ timeWindow = "24h" }`. Res: performance analysis or auth/error. |
 | `backup-verification` | No auth. | Admin/internal scheduled job only. | None. | Req: none. Res: backup verification status or `{ error }`. |
 | `cache-eviction` | No auth. | Internal scheduled job only. | None. | Req: none. Res: eviction summary or `{ error }`. |
