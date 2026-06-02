@@ -8,6 +8,11 @@ build/
 .env.*
 !.env.example
 
+# Claude Code — personal overrides (team-shared settings.json is committed)
+.claude/settings.local.json
+# Claude Code — session state (workflow gate for Stop hook)
+.claude/.workflow-state
+
 # Vercel local project metadata
 .vercel/
 
