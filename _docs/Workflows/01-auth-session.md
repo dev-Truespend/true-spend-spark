@@ -4,6 +4,27 @@
 
 Phase 1 online auth/session behavior for splash, sign-in, OTP, deep-link return, session restore, first-login provisioning, routing to onboarding or home, expired auth recovery, and sign-out entry from profile. Supabase Auth owns provider authentication; TrueSpend APIs start after the mobile app has a valid Supabase session.
 
+## Progress
+
+| User story | Status | Notes |
+|---|---|---|
+| User can see the TrueSpend splash screen when opening the mobile app | Done |  |
+| User can start sign-in from the welcome screen | Done |  |
+| User can sign in with Apple from the mobile app | Done |  |
+| User can sign in with Google from the mobile app | Done |  |
+| User can sign in with phone OTP from the mobile app | Done |  |
+| User can sign in with email OTP from the mobile app | Done |  |
+| User can create a new passwordless account | Done |  |
+| User can stay signed in across app restarts | Done |  |
+| User can be redirected to onboarding after first sign-in | Done |  |
+| User can be redirected to the home recommendation screen after onboarding | Done |  |
+| User can recover from expired authentication | Done |  |
+| User can complete email OTP deep links from mobile | Done |  |
+| User can complete OAuth callback deep links from mobile | Done |  |
+| User can use app navigation after returning from external auth | Done |  |
+| User can see a loading state during sign-in | Done |  |
+| User can sign out from profile settings | Done |  |
+
 ## Screens Covered
 
 | Screen | Name | Notes |
@@ -130,4 +151,6 @@ Expired auth
 
 ## Design Gaps
 
-None currently open.
+| Gap | Owner | Notes |
+|---|---|---|
+| None currently open. |  |  |

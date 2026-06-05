@@ -1,5 +1,33 @@
 # Cards Workflow
 
+## Progress
+
+| User story | Status | Notes |
+|---|---|---|
+| User can view all linked and manually added cards | Done | |
+| User can see card visuals with issuer and product names | Done | |
+| User can see the last four digits of each card | Done | |
+| User can see whether a card was added manually or through Plaid | Done | |
+| User can see card sync status | Done | |
+| User can see when card linking limits have been reached | Done | |
+| User can see upgrade guidance when more links require a higher plan | Done | |
+| User can be redirected to billing when opening a higher-plan feature | Done | |
+| User can open a card detail screen | Done | |
+| User can view reward multipliers for a card | Done | |
+| User can view card terms relevant to recommendations | Done | |
+| User can view monthly reward contribution for a card | Done | |
+| User can edit reward rules for a card | Done | |
+| User can remove a card | Done | |
+| User can see a cards empty state when no cards are connected | Done | |
+| User can add a manual card from the cards empty state | Done | |
+| User can browse the card catalog from the cards empty state | Partial | Empty-state "Add from catalog" CTA opens the manual-add screen, which uses catalog-backed issuer/product pickers. No standalone read-only catalog browser exists yet. |
+| User can request a missing bank/card from manual add | Done | |
+| User can understand Basic linking limits and Pro unlimited linking | Done | |
+| User can start Plaid linking from the cards area | Done | |
+| User can view Plaid connection health | Done | |
+| User can reconnect a Plaid institution from connection management | Done | |
+| User can disconnect a Plaid institution from connection management | Done | |
+
 ## Scope
 
 Phase 1 online Cards tab flows for screens `5.1` through `5.4`: card list, card detail, empty state, manual add entry points, reward overrides, card removal, limits, and Plaid connection management.
@@ -33,7 +61,7 @@ Phase 1 online Cards tab flows for screens `5.1` through `5.4`: card list, card 
 | Full | User can remove a card | `5.2` | `POST /cards/{cardId}/delete` |
 | Full | User can see a cards empty state when no cards are connected | `5.3` | Empty `CardsResponse.cards` |
 | Full | User can add a manual card from the cards empty state | `5.3` | Manual card endpoint |
-| Full | User can browse the card catalog from the cards empty state | `5.3` | Catalog search/products |
+| Partial | User can browse the card catalog from the cards empty state | `5.3` | Catalog search/products; empty-state CTA opens the manual-add flow, which is catalog-driven |
 | Full | User can request a missing bank/card from manual add | `5.3` | Catalog request endpoint and admin review |
 | Full | User can understand Basic linking limits and Pro unlimited linking | `5.1`, `5.3`, `8.3` | Cards limits/entitlements |
 | Full | User can start Plaid linking from the cards area | `5.3`, `5.4` | Plaid link token |

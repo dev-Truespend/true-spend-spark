@@ -1,5 +1,27 @@
 # 09. Billing And Entitlements
 
+## Progress
+
+| User story | Status | Notes |
+|---|---|---|
+| View current plan status | Done | Subscription + entitlements + plan badge in Profile and Billing & Pro |
+| Compare Basic and Pro plans from billing settings | Done | Plan comparison cards with feature matrix |
+| Understand Basic plan limits | Done | Feature matrix rendering on Billing & Pro |
+| Understand Pro plan benefits | Done | Feature matrix rendering on Billing & Pro |
+| Upgrade to Pro from billing settings | Done | Checkout with `returnContextCode='billing'`. `useCheckout` + `useCustomerPortal` now invalidate `BillingSubscription` / `Entitlements` / `BillingPaymentMethods` query caches in `onSuccess` (in addition to the screen's `useFocusEffect`). |
+| Open Stripe-hosted checkout to start or upgrade | Done | `POST /billing/checkout` returns hosted URL. Checkout now resolves country from `app.profiles.country_code` via `IBillingReadService.GetProfileCountryCodeAsync` and falls back to `US` only when the profile has no linked country. Pattern fix: the onboarding branch (`RecordTrialingSubscriptionAsync` + `SaveOnboardingAsync`) is now wrapped in an `IUnitOfWork` transaction so the two writes commit atomically before the Stripe call. |
+| Apple Pay from Stripe-hosted checkout (iOS) | Done | Provider-driven on hosted checkout |
+| Google Pay from Stripe-hosted checkout (Android) | Done | Provider-driven on hosted checkout |
+| Manage an existing subscription via Stripe customer portal | Done | `POST /billing/portal` returns hosted URL |
+| Cancel subscription via Stripe customer portal | Done | Stripe-hosted from portal |
+| Update/remove a payment method via customer portal | Done | Stripe-hosted from portal |
+| Entitlement changes reflected shortly after Stripe webhook | Done | `billing.subscription.updated` → `EntitlementCacheInvalidator`; `billing.payment_method.updated` → `BillingPaymentMethodCacheInvalidator`. Both invalidators back an `IMemoryCache` used by `BillingReadBusiness.GetSubscriptionAsync` / `GetEntitlementsAsync` / `GetPaymentMethodsAsync` (cache keys in `BillingConstants`). **Audit fix (2026-06-04):** API and EventConsumer host separate in-process caches, so the invalidator running in the consumer cannot clear the API's cache; TTL shortened from 2 min → 30 s so backend staleness is bounded until `IDistributedCache` (Redis) lands. Mobile already closes the user-visible gap via `useAppForegroundRefresh` + `ENTITLEMENT_REQUIRED` re-fetch. Pattern fix: `SubscriptionUpdatedHandler` + `PaymentMethodUpdatedHandler` now delegate JSON deserialization to `BillingEventMapper` and own no logging (per event-consumer handler rules); `StripeWebhooksController` now delegates raw-body parsing to `IBillingMapper.ParseStripeWebhook`. **Audit fix #2 (2026-06-04):** `SubscriptionEventContract.PlanCode` was hardcoded to `string.Empty`; `StripeWebhookBusiness` now passes `planPrice.PlanCode` through `PublishSubscriptionUpdatedAsync`. |
+| Return from Stripe checkout to in-app confirmation | Done | Billing screen refreshes subscription / entitlements / payment methods on focus |
+| Understand annual pricing and savings | Done | Period toggle + computed annual savings hint. `GET /api/v1/billing/prices` now resolves `countryCode` from the caller's profile when omitted; mobile `useBillingPrices` / `billingApi.getPrices` drop the hardcoded `US` default so non-US users see their own prices. |
+| View payment method details | Done | `GET /billing/payment-methods` rendered as a list |
+| Upgrade guidance when more links require higher plan | Done | Cards screen reads entitlements, deep-links to Billing & Pro |
+| Redirected to billing when opening a higher-plan feature | Done | Cards screen routes upgrade CTAs to `/(app)/billing` |
+
 ## Scope
 
 Phase 1 online workflow for subscription comparison, Stripe-hosted checkout, Stripe customer portal, payment method display, and entitlement refresh.

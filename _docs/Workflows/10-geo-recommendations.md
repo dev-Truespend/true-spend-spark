@@ -1,5 +1,14 @@
 # Geo Arrival Recommendations Workflow
 
+## Progress
+
+| User story | Status | Notes |
+|---|---|---|
+| User can receive a push notification with the best card when they arrive at a known merchant | Done (push delivery), Blocked (geo trigger) | `POST /api/v1/webhooks/foursquare` → dedup → merchant + recommendation → `best_card_alert` notification → `messaging.notification.created` outbox event. Outbox payload now uses the typed `NotificationCreatedEventContract` (was a camelCase anonymous object, which silently failed deserialization in the consumer). `messaging.notification.created` is consumed by `NotificationCreatedHandler` → `NotificationsDispatchBusiness.DispatchPushAsync` → `IPushDeliveryService` (`ExpoPushDeliveryService` real / `PushDeliveryPlaceholderService` placeholder, picked by `ExpoPush:AccessToken`). End-to-end push delivery still blocked on the Foursquare Movement SDK install — see Design Gap. Pattern fix: `FoursquareWebhookBusiness` catches the unique-constraint violation on `finance.foursquare_webhook_events.foursquare_event_id` and returns `WebhookAckResponse { received:true, deduplicated:true }`, so a webhook race no longer surfaces as a 500 to Foursquare. **Audit fix (2026-06-04):** the duplicated `IsForeignEventIdUniqueViolation` helper here + 5 other business classes (Stripe, Plaid, weekly summary, unusual transaction, plaid reauth, plaid new accounts) consolidated into a single `Services/Persistence/PostgresErrors.IsUniqueViolation`. |
+| User can tap the push to open the recommendation | Done | `BestCardAlertPushPayload` routes to inbox detail (7.2) via `notificationId`; detail body surfaces recommendation context. New `InboxCacheInvalidatorHandler` also consumes `messaging.notification.created` and drops the per-user inbox cache (filters: all/unread/rewards/security). |
+| User can opt out of geo-arrival pushes | Done | `best_card_alert` toggle in [07-notifications.md](07-notifications.md); webhook honors master + push + type prefs and quiet hours |
+| User can grant the OS background location permission required by Foursquare | Done (OS plumbing), Blocked (Foursquare SDK) | Onboarding 2.4 in [02-onboarding.md](02-onboarding.md) now calls real `expo-location` foreground/background prompts via `src/shared/native/location.ts` and reports the fine-grained `authorized_when_in_use` / `authorized_always` / etc. codes through `POST /api/v1/permissions`. `app.config.ts` declares `NSLocation*UsageDescription`, `UIBackgroundModes: ["location"]`, and Android `ACCESS_FINE_LOCATION` + `ACCESS_BACKGROUND_LOCATION`. Foursquare tracking client init still runs on session establishment but is a registration shim — see Design Gap. |
+
 ## Scope
 
 Phase 1 background flow that sends a push notification with the best card recommendation when the user arrives at a known merchant. Geofence detection, background location, and place matching are owned by Foursquare's SDK + webhooks. TrueSpend owns the merchant resolution, recommendation, and notification fan-out — all already-defined infrastructure. No new screens; the notification lands on the lock screen, in the inbox (7.1/7.2), and respects existing notification settings (7.3).
@@ -47,7 +56,7 @@ Server: webhook handler (single transaction)
   Resolve user_id from payload externalId
   Resolve finance.merchants from geofence tag / place metadata
   Generate recommendation -> insert finance.recommendations (context_code = 'geofence_arrival')
-  Insert messaging.notifications (type = 'best_card_alert') with related_recommendation_id
+  Insert messaging.notifications (type = 'best_card_alert', payload.recommendationId, payload.merchantId)
   Insert messaging.event_outbox messaging.notification.created
   Optional: insert finance.location_events (event_type = 'geofence_entered')
   Return WebhookAckResponse
@@ -70,7 +79,7 @@ PushFanOutConsumer (existing, notification-production.md)
 ## Contracts Used
 
 - `WebhookAckResponse` — `received`, `deduplicated`.
-- `RecommendationVm`, `RecommendationCardVm`, `MerchantVm`, `CardSummaryVm` — embedded in the notification body / referenced by `related_recommendation_id`.
+- `RecommendationVm`, `RecommendationCardVm`, `MerchantVm`, `CardSummaryVm` — embedded in the notification body / referenced by `messaging.notifications.payload.recommendationId`.
 - `NotificationDetailResponse` — for the tap-through flow.
 - `BestCardAlertPushPayload` — the APNs/FCM data payload constructed by the webhook handler. Defined in [api-design-extended.md § Push Payloads](../low-level-design/Service/api-design-extended.md#push-payloads).
 
@@ -170,3 +179,4 @@ Onboarding 2.4 ([02-onboarding.md](02-onboarding.md)) requests `authorized_when_
 | Status | Type | Source Doc | Current Design | Proposed Adjustment | Reason |
 |---|---|---|---|---|---|
 | Pending | Privacy Disclosure | Workflow | Foursquare receives anonymized geofence pings; no current mention in [13-privacy-data.md](13-privacy-data.md) or marketing privacy copy | Cover in the new privacy policy doc being added at end of workflow review | Compliance + user trust |
+| Pending | External Provider Wiring | Workflow | Mobile uses `src/shared/native/foursquareTracking.ts` as a registration shim; the Foursquare Movement SDK is not installed (no npm package, no native config) so no real geofence event ever leaves the device | Install the Foursquare Movement SDK behind `registerFoursquareTrackingClient(...)` with native Info.plist / AndroidManifest config and EAS dev-client rebuild; add a placeholder client for local dev (same external-provider pattern as Stripe/Plaid) | Without the SDK the geo-arrival flow is unreachable end-to-end; backend webhook handler is otherwise complete |

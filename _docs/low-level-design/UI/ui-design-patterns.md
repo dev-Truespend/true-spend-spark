@@ -202,12 +202,14 @@ Rules:
 
 - One hook per operation. Name `use<Action><Feature>.ts`.
 - Use React Query: `useQuery` for reads, `useMutation` for writes.
+- Server state lives in TanStack Query, not `useState`. Do not mirror query data into local state.
+- If a local override slot is needed (e.g. optimistic selection), keep it to one `useState` slot and derive everything else from `query.data`.
+- Mutations call `queryClient.invalidateQueries` in `onSuccess` to keep the cache fresh.
 - Validate inputs with the feature Zod schema before calling `api/`.
 - Hooks may call multiple `api/` modules when one screen flow needs multiple API requests.
 - Call `mappers/` to convert DTO ↔ domain model.
 - Unwrap common API responses and use the mapped `data` payload.
 - Handle expected errors and map to typed `AppError` subclasses.
-- Trigger cache invalidation on mutation success.
 - Handle client-side retry/idempotency behavior when needed.
 - Expose `{ data, error, isLoading, mutate }` (or equivalent).
 - Do not render JSX.
@@ -250,6 +252,7 @@ Rules:
 - Export Zod schemas for requests, forms, and shared shapes.
 - Infer TS types from schemas (`z.infer<typeof Schema>`).
 - Reuse across forms (RHF) and hooks (pre-API validation).
+- All mutation inputs must be parsed through a Zod schema in the hook before calling `api/`. A schema that is defined but never used in a hook or mutation is a violation.
 - Do not call API.
 - Do not hold business decisions.
 

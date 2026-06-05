@@ -422,6 +422,7 @@ Response: `PlaidConnectionResponse`
 
 - `connections`
 - `cards`
+- `cardSyncStatus` — `'pending' | 'complete' | 'failed'`
 
 Behavior: writes discovered `finance.user_cards` and durable outbox events for card/cache invalidation in the same transaction.
 
@@ -838,16 +839,6 @@ Response: `TransactionsResponse`
 
 Behavior: deletes or deactivates the transaction and writes `finance.transaction.deleted` to `messaging.event_outbox` in the same transaction.
 
-### `GET /api/v1/transactions/search`
-
-Request: query
-
-- `q`
-- `categoryCode`
-- `cardId`
-
-Response: `TransactionsResponse`
-
 ### `GET /api/v1/transactions/{transactionId}/reward-result`
 
 Response: `TransactionRewardResultResponse`
@@ -1136,9 +1127,16 @@ Response: `HostedBillingResponse`
 Response: `EntitlementsResponse`
 
 - `planCode`
-- `cardLinkLimit`
-- `aiInsightsEnabled`
+- `trialing`
+- `trialEndsAt` (nullable)
+- `cardLinkLimit` (nullable; `null` when `unlimitedCards = true`)
 - `unlimitedCards`
+- `aiInsightsEnabled`
+- `plaidLinkingEnabled`
+- `plaidTransactionsViewEnabled`
+- `geofencingEnabled`
+
+Resolver rules per [13-feature-gating.md](../../Workflows/13-feature-gating.md): `trialing` returns the Pro feature set regardless of picked plan; `past_due`/`unpaid` keep the prior plan's features for 24h from `currentPeriodEnd`, then drop to Basic.
 
 ## Privacy
 

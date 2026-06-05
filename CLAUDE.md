@@ -87,6 +87,17 @@ Pointers only — never duplicate standards into workflow docs, commits, or PR d
 | Database / EF entities | [db-design-patterns.md](_docs/low-level-design/DB/db-design-patterns.md) |
 | Mobile (React Native + Expo) | [ui-design-patterns.md](_docs/low-level-design/UI/ui-design-patterns.md) |
 
+### 4a. Pattern docs are strict
+
+The pattern docs above are non-negotiable standards. There is no valid reason to deviate from them.
+
+Rules:
+
+- Read the relevant pattern doc before writing any code for that layer.
+- If you are mid-session and unsure whether a decision aligns with the patterns, re-read the relevant doc before proceeding. Do not rely on memory.
+- If a pattern doc and a workflow doc appear to conflict, the pattern doc wins. Raise the conflict as a gap rather than silently breaking the pattern.
+- Do not invent new conventions mid-implementation. If a case is not covered by the pattern doc, Raise the conflict as a gap rather than silently breaking the pattern.
+
 ## 5. Build & test discipline
 
 - **Do not** run `npm test`, `npm run build`, `dotnet build`, or `dotnet test` mid-task or per user story.
@@ -134,10 +145,10 @@ Rules:
 ## 7. Don't do
 
 - Don't `git push` (denied at the permission layer).
-- Don't `rm` anything (denied).
+- `rm` is allowed for deleting dead/unused files inside this repo. Never `rm -rf /`, `~`, `..`, or any absolute system path (denied).
 - Don't `git reset --hard`, `git branch -D`, `git clean -f`, or `--no-verify` on commits (denied).
 - Don't edit `.env*` files unless asked.
-- Don't add npm, NuGet, or other third-party dependencies unless they are strictly necessary to complete the requested workflow. Prefer existing project dependencies and standard platform APIs first. If a dependency is truly necessary, list the package, explain why existing tools are insufficient, and ask before adding it.
+- Don't add npm, NuGet, or other third-party dependencies unless they are strictly necessary to complete the requested workflow. 
 - Don't put business rules in pattern docs. Don't put standards in workflow docs.
 - Don't run dev servers or simulators unless asked.
 

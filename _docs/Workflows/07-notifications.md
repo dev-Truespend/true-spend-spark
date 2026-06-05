@@ -1,5 +1,33 @@
 # Notifications Workflow
 
+## Progress
+
+| User story | Status | Notes |
+|---|---|---|
+| User can view all notifications in the mobile app | Done | |
+| User can filter notifications by all, unread, rewards, or security | Done | |
+| User can mark all notifications as read | Done | |
+| User can open a notification detail | Done | |
+| User can see missed-reward detail from a notification | Done | MissedReward returned in detail response |
+| User can compare the card used and the card that should have been used | Done | MissedReward.actualCard and betterCard in detail |
+| User can see how many rewards were captured versus missed | Done | actualReward, potentialReward, missedReward in detail |
+| User can set a future reminder from notification detail | Done | POST /notification-reminders |
+| User can add a related reminder to the home screen | Done | ReminderFiringJob delivers as inbox notification at remind_at |
+| User can view the related transaction from notification detail | Done | relatedTransaction in detail response |
+| User can mark a missed-reward alert as not a miss | Done | Uses existing POST /missed-rewards/{id}/not-a-miss |
+| User can enable or disable all notifications with a master setting | Done | |
+| User can toggle push notifications | Done | |
+| User can toggle email notifications | Done | |
+| User can toggle best-card alerts | Done | UpdateNotificationTypePreference endpoint |
+| User can toggle missed-rewards alerts | Done | UpdateNotificationTypePreference endpoint |
+| User can toggle weekly summary notifications | Done | UpdateNotificationTypePreference endpoint |
+| User can toggle unusual transaction notifications | Done | UpdateNotificationTypePreference endpoint |
+| User can receive custom table-driven notifications | Done | Table-driven via messaging.notification_types |
+| User can configure quiet hours for notifications | Done | |
+| User can receive push notifications on iOS | Done | `expo-notifications` wired; device registers push token via `useRegisterDevice`/`ensurePushToken` |
+| User can receive push notifications on Android | Done | `expo-notifications` wired with default channel; permission requested via `requestPushPermission` |
+| User can recover from missing notification permissions | Done | Re-toggling push in settings re-requests permission via `useUpdateNotificationSettings` |
+
 ## Scope
 
 Phase 1 online workflow for notification inbox, filters, detail, read state, missed-reward actions, reminders, notification settings, quiet hours, and push/email preferences.
@@ -37,9 +65,9 @@ Phase 1 online workflow for notification inbox, filters, detail, read state, mis
 | Full | User can toggle unusual transaction notifications | 7.3 |  |
 | Full | User can receive custom table-driven notifications | 7.1, 7.3 | `messaging.notification_types` |
 | Full | User can configure quiet hours for notifications | 7.3 |  |
-| Partial | User can receive push notifications on iOS | 7.3 | Requires device token registration |
-| Partial | User can receive push notifications on Android | 7.3 | Requires device token registration |
-| Partial | User can recover from missing notification permissions | 7.3 | Platform permission flow outside API |
+| Full | User can receive push notifications on iOS | 7.3 | Expo push token registered via `POST /api/v1/devices` |
+| Full | User can receive push notifications on Android | 7.3 | Expo push token + default Android channel |
+| Full | User can recover from missing notification permissions | 7.3 | Re-toggling push re-requests permission and re-registers the token |
 
 ## Preconditions
 

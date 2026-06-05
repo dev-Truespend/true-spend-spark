@@ -1,5 +1,17 @@
 # Webhook Handlers
 
+## Progress
+
+| User story | Status | Notes |
+|---|---|---|
+| Outbox polling consumer dispatches outbox rows to in-process handlers | Done | `OutboxPollingConsumer` fans out queued events to per-consumer deliveries via `OutboxDispatchBusiness` |
+| Stripe webhook reflects entitlement changes after processing | Done | Route aligned to `/api/v1/webhooks/stripe`; `invoice.paid` re-uses subscription upsert path. **Audit fix (2026-06-04):** `StripeWebhookBusiness` now catches `23505` unique-violation on `billing.stripe_webhook_events.stripe_event_id` and acks `{received:true, deduplicated:true}` instead of throwing a 500 to Stripe when two concurrent webhooks race past the existence pre-check (same fix Foursquare already had). **Audit fix #2 (2026-06-04):** `StripeWebhooksController` was returning the raw `StripeWebhookResult { persisted, alreadyProcessed }` envelope on the wire, mismatching the documented `WebhookAckResponse { received, deduplicated }` contract used by Plaid + Foursquare. Added `IBillingMapper.ToWebhookAck(StripeWebhookResult)` and switched controller to `Respond(response, billingMapper.ToWebhookAck)` for parity. |
+| Plaid webhook flips item status + emits domain events | Done | `PlaidWebhooksController` + `PlaidWebhookBusiness` write `finance.plaid_webhook_events`, update `finance.plaid_items.status_id`, publish `finance.plaid_item.status_changed` / `finance.plaid_item.new_accounts_available`. **Audit fix (2026-06-04):** webhook business now catches the dedup unique-violation race (parity with Stripe + Foursquare); `PlaidSignatureFilter` was only checking the JWS payload's `request_body_sha256` claim — it never verified the JWS signature against any key, so a forged header passed. Now resolves the EC P-256 JWK via `IPlaidWebhookKeyProvider` (real impl hits Plaid `/webhook_verification_key/get` with 24h `IMemoryCache`, placeholder fails closed), verifies ES256 over `header.payload`, then checks `iat` skew + body hash. |
+| Plaid re-auth produces a system notification | Done | `PlaidReauthNotificationBusiness` triggered on `login_required` flips via `PlaidReauthNotificationHandler` |
+| Plaid new-accounts produces a notification | Done | `PlaidNewAccountsNotificationBusiness` triggered by `finance.plaid_item.new_accounts_available` |
+| Plaid status change invalidates cards cache | Done | `CardsCacheInvalidatorBusiness` triggered by `finance.plaid_item.status_changed` |
+| Foursquare webhook branches by event type | Done | `user.entered_geofence`/`user.entered_place` → arrival path; `user.exited_geofence` → location log only |
+
 ## Scope
 
 Inbound webhook endpoints for Stripe and Plaid. Each handler verifies provider signature, deduplicates against its provider-specific event log, updates local DB, then publishes a domain event to `messaging.event_outbox` for in-app fan-out. All downstream side effects (cache invalidation, notification production, mobile push) run as async consumers off the outbox.
@@ -11,6 +23,7 @@ Inbound webhook endpoints for Stripe and Plaid. Each handler verifies provider s
 | Stripe | `POST /api/v1/webhooks/stripe` | `billing.stripe_webhook_events` |
 | Plaid | `POST /api/v1/webhooks/plaid` | `finance.plaid_webhook_events` |
 | Foursquare | `POST /api/v1/webhooks/foursquare` | `finance.foursquare_webhook_events` |
+| Foursquare exits | `POST /api/v1/webhooks/foursquare` (`user.exited_geofence`) | `finance.foursquare_webhook_events` — logs `finance.location_events` (`geofence_exited`), no notification |
 
 ## User Stories Covered
 
@@ -124,6 +137,4 @@ Driven entirely by the consumers table above; the handler itself invalidates not
 
 ## Design Gaps
 
-| Status | Type | Source Doc | Current Design | Proposed Adjustment | Reason |
-|---|---|---|---|---|---|
-| Open | Contract Shape Issue | API | Stripe `event.type` -> internal `event_type` mapping lives in this doc only | Move the mapping to a service-level config doc once implementation starts | Single source of truth for consumers |
+None currently open.

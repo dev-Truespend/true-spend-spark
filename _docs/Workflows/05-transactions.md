@@ -1,5 +1,32 @@
 # Transactions Workflow
 
+## Progress
+
+| User Story | Status | Notes |
+|---|---|---|
+| User can open the Insights tab from bottom navigation | Done | |
+| User can switch between Transactions and Insights sub-tabs | Done | |
+| User can manually log a transaction via the floating `+` action | Done | |
+| User can enter merchant, amount, card, date, time, location, and category | Done | |
+| User can pick the card used for a manually logged transaction | Done | |
+| User can see a reward check while logging a manual transaction | Done | |
+| User can view recent manually logged and Plaid-imported transactions | Done | |
+| User can see transactions imported from linked Plaid cards | Done | |
+| User can refresh linked-card transactions | Done | |
+| User can see merchant, amount, card, date, and category for each transaction | Done | |
+| User can search transactions by merchant or description | Done | |
+| User can filter transactions by category | Done | |
+| User can filter transactions by card | Done | |
+| User can see earned points or cash back for each transaction | Done | |
+| User can see missed rewards on a manually logged transaction | Done | |
+| User can see when a better card could have been used | Done | |
+| User can open transaction details | Done | |
+| User can edit a transaction category | Done | |
+| User can change the card associated with a transaction | Done | |
+| User can delete a transaction | Done | |
+| User can navigate from a notification to the related transaction | Done | Partial — notification workflow owns source |
+| User can mark missed reward as not a miss | Done | |
+
 ## Scope
 
 Phase 1 online workflow for the Insights Transactions sub-tab: list/search/filter transactions, create or edit manual transactions, import Plaid transactions, open detail, delete, view reward result, and mark missed rewards as not a miss.
@@ -62,7 +89,7 @@ Phase 1 online workflow for the Insights Transactions sub-tab: list/search/filte
 | Step | API | Contract | Execution | Events/Consumers | Tables | Cache |
 |---|---|---|---|---|---|---|
 | Load transaction list | `GET /api/v1/transactions?q=&categoryCode=&cardId=` | `TransactionsResponse`: `transactions`, `emptyState` | Sync API | None | Read: `finance.transactions`, `finance.transaction_reward_results`, `finance.missed_reward_events`, `finance.user_cards`, `finance.merchants`, `catalog.categories` | Mobile memory/persistent recent list; invalidate after transaction writes |
-| Search/filter list | `GET /api/v1/transactions/search` | `TransactionsResponse` | Sync API | None | Same as list | Short mobile memory cache by query; no server cache by default |
+| Search/filter list | `GET /api/v1/transactions?q=&categoryCode=&cardId=` | `TransactionsResponse` | Sync API | None | Same as list | Short mobile memory cache by query; no server cache by default |
 | Load create form dropdowns | `GET /api/v1/cards`; `GET /api/v1/card-catalog/categories` | `CardsResponse`; `CategoriesResponse` | Sync API | None | Read: `finance.user_cards`, `catalog.card_products`, `catalog.card_issuers`, `catalog.categories` | Cards mobile cache; categories cached by default on mobile + server |
 | Save manual transaction | `POST /api/v1/transactions` | `CreateTransactionRequest` -> `TransactionDetailResponse` | Sync API + Outbox Event | Produce `finance.transaction.created` -> `AnalyticsRecomputeConsumer`, `MissedRewardNotificationProducer`, AI eligibility consumers | Write: `finance.transactions`, `finance.transaction_reward_results`, optional `finance.missed_reward_events`, `messaging.event_outbox`; Read: `finance.user_cards`, `finance.merchants`, `catalog.categories`, `catalog.reward_rules`, `finance.card_reward_overrides`, `lookup.reward_currencies` | Update/replace transaction detail in mobile cache; invalidate list, analytics, missed rewards |
 | Sync Plaid transactions | `POST /api/v1/plaid/transactions/sync` or `PlaidTransactionSyncJob` | `SyncPlaidTransactionsRequest` -> `PlaidTransactionSyncResponse` | Sync API or Scheduled Job + Outbox Event | Produce `finance.transaction.imported` / `finance.transaction.updated` for changed rows -> `AnalyticsRecomputeConsumer`, `MissedRewardNotificationProducer` | Read Plaid provider; upsert `finance.transactions` by `plaid_transaction_id`; update `finance.plaid_items.transaction_sync_cursor`, `last_transaction_sync_at`; write reward/missed rows and `messaging.event_outbox` | Invalidate transaction list/detail, analytics, missed rewards |

@@ -4,6 +4,35 @@
 
 Phase 1 online Home and in-store recommendation flows for screens `3.1` through `3.4`. The mobile app may use device location/place detection, then sends the detected merchant to the API for resolution and recommendation.
 
+## Progress
+
+| User story | Status | Notes |
+|---|---|---|
+| User can see a personalized home empty state when no cards are connected | Done |  |
+| User can add a card from the home empty state | Done |  |
+| User can connect a bank from the home empty state | Done |  |
+| User can see plan or upgrade guidance from the home empty state | Done |  |
+| User can get a clear single-card recommendation at a single-category merchant | Done |  |
+| User can see the current detected merchant when shopping in person | Done | Foursquare search wired into `useDetectMerchantMutation`; `foursquareClient` returns placeholder Bay-Area places when `EXPO_PUBLIC_FOURSQUARE_API_KEY` is empty |
+| User can see the best card recommendation for the detected merchant | Done | `GetHomeAsync` no longer fabricates a merchant; recommendation flows from `/merchants/resolve` → `/recommendations/in-store` |
+| User can see expected rewards value for the recommended card | Done |  |
+| User can see why the recommended card is better than other cards | Done |  |
+| User can see runner-up card options for the current purchase | Done |  |
+| User can see the last four digits of the recommended card | Done |  |
+| User can refresh the current merchant recommendation | Done |  |
+| User can access quick actions from the home screen | Done |  |
+| User can get a smart default category at a multi-category merchant based on transaction history | Done |  |
+| User can change the suggested category at a multi-category merchant | Done |  |
+| User can see the recommendation update after selecting a category | Done |  |
+| User can compare electronics recommendations at a store | Done |  |
+| User can compare grocery recommendations at a store | Done |  |
+| User can compare clothing recommendations at a store | Done |  |
+| User can compare home goods recommendations at a store | Done |  |
+| User can compare beauty recommendations at a store | Done |  |
+| User can compare dining or cafe recommendations at a store | Done |  |
+| User can see a coverage warning when merchant category coding may be uncertain | Done |  |
+| User can open card details from an in-store recommendation | Done |  |
+
 ## Screens Covered
 
 | Screen | Name | Notes |
@@ -148,4 +177,6 @@ Refresh
 
 ## Design Gaps
 
-None currently open.
+| Gap | Owner | Notes |
+|---|---|---|
+| None currently open. |  |  |

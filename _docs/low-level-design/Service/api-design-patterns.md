@@ -70,6 +70,7 @@ Controller rules:
 - Return a common client response mapped from the business response.
 - Put the response ViewModel inside the common response `data` property.
 - Let controllers return the HTTP status code provided by the business response.
+- Accept `CancellationToken cancellationToken` in every action method and propagate it to every business call.
 
 Business classes return one common response model for every method:
 
@@ -162,6 +163,13 @@ Extension rules:
 - Put API setup helpers in extension methods.
 - Do not put business logic, mapper logic, middleware logic, or filter logic in extensions.
 
+External provider pattern:
+
+- For each external provider (Plaid, Stripe, Foursquare, etc.) define one interface in `ServiceInterfaces/`, one real implementation in `Services/`, and one placeholder implementation in `Services/` that returns realistic stub data.
+- The placeholder must implement the same interface and return shaped, non-empty data so flows work without credentials in development.
+- The extension method registers the real implementation when provider credentials are present in config and the placeholder otherwise.
+- Do not conditionally branch on provider type inside business classes. The interface hides which implementation is active.
+
 ### Config Pattern
 
 Use separate app settings files per environment.
@@ -214,6 +222,9 @@ truespend.domain/
 ├── Enums/
 ├── Exceptions/
 ├── DbContext/
+├── Models/
+│   └── <Feature>/
+│       └── <Name>.cs
 ├── Services/
 │   └── <Feature>/
 │       ├── <Feature>ReadService.cs
@@ -240,9 +251,30 @@ truespend.domain/
 - `Enums/`: shared enum types
 - `Exceptions/`: domain-specific exceptions
 - `DbContext/`: database context classes
+- `Models/`: domain model types and API contracts, one subfolder per feature
 - `Services/`: database calls only, separated by feature and operation
 - `ServiceInterfaces/`: service interfaces, separated by feature and operation
 - `Validators/`: business and request validation
+
+### Models Pattern
+
+Domain model types live in `Models/`, one subfolder per feature.
+
+Model rules:
+
+- Place each type in `Models/<Feature>/<Name>.cs`.
+- Use plain class names (`CardSummary`, `Merchant`, `RecommendationCard`). Do not use a `Vm` suffix on domain models.
+- `Vm` suffix is reserved for `truespend.api/ViewModels/` only.
+- Do not put business logic in model classes.
+- Do not put EF entity classes in `Models/`; those belong in `Entities/`.
+
+Use file names like:
+
+```text
+Models/Cards/CardSummary.cs
+Models/Recommendations/Recommendation.cs
+Models/Billing/EntitlementsResponse.cs
+```
 
 ### Business Pattern
 
@@ -258,18 +290,26 @@ Business responsibilities:
 - Call `Services/` to read from the database.
 - Call multiple services when one operation needs multiple database reads or writes.
 - Apply business decisions and rules.
-- Coordinate database transactions when one operation has multiple writes.
+- Coordinate database transactions when one operation has multiple writes using `IUnitOfWork` / `IUnitOfWorkTransaction`.
+- Commit or roll back transactions explicitly; never leave them open.
+- Insert outbox/event rows inside the same transaction using `IMessagingInsertService`.
 - Handle concurrency, conflicts, idempotency, and retries.
 - Call `Services/` to write database changes.
 - Write audit records when needed.
 - Create domain events when needed.
-- Insert outbox/event rows when async processing is needed.
 - Trigger cache invalidation when needed.
 - Handle webhook business processing after signature verification.
 - Handle expected domain exceptions.
 - Decide success or failure.
 - Set the HTTP status code in `BusinessResponse<T>`.
 - Return `BusinessResponse<T>` with data or errors.
+- Never return synthesized records that do not exist in the database. Return real data or an explicit empty state.
+
+Async rules:
+
+- All business methods are `async Task` / `async Task<T>`.
+- All business methods accept `CancellationToken cancellationToken` as the last parameter.
+- Pass `cancellationToken` to every EF Core call and every service call.
 
 Common business logic:
 
@@ -420,6 +460,14 @@ Service rules:
 - Do not call controllers from services.
 - Do not call mappers from services.
 - Do not build client responses in services.
+- Do not open, commit, or roll back transactions in services. Transaction boundaries belong in business classes.
+- Do not write outbox or event rows in services. Outbox rows are inserted by business classes using `IMessagingInsertService`.
+
+Async rules:
+
+- All service methods are `async Task` / `async Task<T>`.
+- All service methods accept `CancellationToken cancellationToken` as the last parameter.
+- Pass `cancellationToken` to every EF Core call.
 
 Use these file patterns:
 
@@ -448,6 +496,8 @@ Validator rules:
 - Create one validator class per feature.
 - Name validator files `<Feature>Validator.cs`.
 - Put all validations for that feature in the same validator class.
+- Do not create validators that span multiple features.
+- Do not create separate validators per workflow or use case within the same feature.
 - Include request, ViewModel, entity, and domain validations when needed.
 - Validators may call other validators when validation is shared.
 - Validators may call service classes when validation needs database reads.

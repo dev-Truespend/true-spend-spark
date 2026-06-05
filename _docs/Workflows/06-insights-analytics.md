@@ -58,12 +58,14 @@ Phase 1 online workflow for the Insights sub-tab: rewards summary, missed-reward
 
 ## Contracts Used
 
-- `RewardsSummaryResponse`: `earned`, `missed`, `earnedDelta`, `missedDelta`, `dailyBreakdown`, `categoryBreakdown`, `topMissedRewards`.
-- `MissedRewardsSummaryResponse`: `missed`, `missedDelta`, `topMissedRewards`.
+- `RewardsSummaryResponse`: `earned`, `missed`, `earnedDelta`, `missedDelta`, `earnedCurrencyCode`, `dailyBreakdown`, `categoryBreakdown`, `topMissedRewards`.
+- `MissedRewardsSummaryResponse`: `missed`, `missedDelta`, `earnedCurrencyCode`, `topMissedRewards`.
 - `RewardBreakdownItemVm`: `key`, `label`, `earned`, `missed` — shared by `dailyBreakdown` and `categoryBreakdown`.
 - `MissedRewardVm`: used in `topMissedRewards`.
 - `AIInsightVm`: `id`, `typeCode`, `priority`, `title`, `body`, `generatedAt`.
 - `AIInsightGenerationResponse`: `runId`, `status`.
+
+`earnedCurrencyCode` is the `lookup.reward_currencies.code` carried on `insights.analytics_snapshots.earned_currency_code`. Mobile uses it to render `earned`/`missed` totals in the right currency unit (cash back vs points).
 
 ## Tables Involved
 
@@ -104,9 +106,23 @@ Phase 1 online workflow for the Insights sub-tab: rewards summary, missed-reward
 - AI disabled: hide AI insight card or show privacy-controlled disabled state.
 - AI generation failure: show non-blocking retry; analytics remain usable.
 
+## Progress
+
+| User story | Status | Notes |
+|---|---|---|
+| User can open the Insights tab from bottom navigation | Done | Tab wired in `(tabs)/_layout.tsx` |
+| User can switch between Transactions and Insights sub-tabs | Done | `InsightsScreen` top-level tab switcher |
+| User can view rewards earned over week, month, quarter, and year | Done | `PeriodSelector` + `useRewardsSummary` + `RewardSummaryCard` |
+| User can view missed-rewards totals over week, month, quarter, and year | Done | `missed` field in `RewardSummaryCard` |
+| User can compare earned and missed rewards to a prior period | Done | Delta fields rendered in `RewardSummaryCard` |
+| User can see a daily earnings chart | Done | `dailyBreakdown` rendered via `DailyBreakdownChart` |
+| User can see category contribution breakdowns | Done | `CategoryBreakdownList` component |
+| User can see top missed-reward events | Done | `MissedRewardCard` list in Analytics sub-tab |
+| User can open a top missed-reward event from analytics | Done | Navigates to `/(app)/transactions/{id}` from `InsightsScreen` |
+| User can see AI-generated reward optimization insights | Done | `AIInsightCard` list + generate button in AI sub-tab |
+| User can opt out of personalized AI insights via the Privacy toggle | Done (Partial) | Privacy gate enforced server-side; toggle UI owned by workflow 08 |
+
 ## Design Gaps
 
-| Status | Type | Source Doc | Current Design | Proposed Adjustment | Reason |
-|---|---|---|---|---|---|
-| Open | TBD | Workflow | When `POST /api/v1/ai-insights/generate` should be called from screen 6.3 is not decided (manual refresh button, auto on empty list, scheduled, etc.) | Decide trigger condition during mobile UX finalization | Needed before the AI insight card behavior is implementable |
+None currently open.
 

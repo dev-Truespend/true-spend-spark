@@ -68,7 +68,8 @@ After this trigger, continue through every user story in the workflow in the sam
 | **3. Mark workflow active** | Write the single word `active` to [.codex/.workflow-state](.codex/.workflow-state). Create `.codex/` if missing. This records intent; Codex does not rely on Claude hooks. |
 | **4. Phased loop - for each user story, in order** | a. Set Status to `In progress`. <br>b. Implement the story end-to-end (code + tests). <br>c. Set Status to `Done` in the workflow doc Progress table. <br>d. Also update Status in [mobile-user-stories.md](_docs/UserStory/mobile-user-stories.md) if the story is listed there. <br>e. Continue immediately to the next story without ending the session. Stop only for a true blocker or unavoidable approval. |
 | **5. Close the workflow** | When the last user story is `Done`: write `idle` to [.codex/.workflow-state](.codex/.workflow-state). |
-| **6. Run final verification** | Run the relevant build/test/lint checks for every area changed by the workflow. Fix forward until checks pass, or report the exact blocker if a required permission, missing tool, or external service prevents completion. |
+| **6. Update ignore rules** | Review generated files from the workflow and add/update `.gitignore` so dependency folders, build outputs, local state, logs, coverage, and test artifacts are not checked in. |
+| **7. Run final verification** | Run the relevant build/test/lint checks for every area changed by the workflow. Fix forward until checks pass, or report the exact blocker if a required permission, missing tool, or external service prevents completion. |
 
 Notes:
 
@@ -114,7 +115,7 @@ Progress is recorded per user story, in place, in the doc that owns the work.
 | Starting a user story | Workflow doc Progress table -> Status `In progress` |
 | Finishing a user story | Workflow doc Progress table -> Status `Done`. Also update [mobile-user-stories.md](_docs/UserStory/mobile-user-stories.md) if the story is listed there. |
 | Blocked on a story | Status `Blocked` + one-line reason in Notes |
-| Workflow fully closed | Flip [.codex/.workflow-state](.codex/.workflow-state) to `idle`, then run final verification. |
+| Workflow fully closed | Flip [.codex/.workflow-state](.codex/.workflow-state) to `idle`, update `.gitignore` for generated artifacts, then run final verification. |
 
 Rules:
 

@@ -4,6 +4,46 @@
 
 Phase 1 online onboarding for card connection, manual card entry, location permission, plan selection with Stripe checkout, notification setup, and final routing to Home. Plaid connection creates card metadata immediately; transaction import is handled later by the Transactions workflow through daily/user-triggered sync.
 
+## Progress
+
+| User story | Status | Notes |
+|---|---|---|
+| User can understand why TrueSpend needs card information during onboarding | Done |  |
+| User can connect a bank with Plaid during onboarding | Done |  |
+| User can search for a bank during Plaid onboarding | Done |  |
+| User can pick a supported bank from common bank options | Done |  |
+| User can cancel bank selection during onboarding | Done |  |
+| User can understand that Plaid access is read-only | Done |  |
+| User can complete Plaid bank authorization | Done | Going.Plaid SDK wired; `PlaidPlaceholderProvider` returns stub link token + Chase placeholder accounts when `Plaid:ClientId`/`Plaid:Secret` are empty |
+| User can see connected cards after Plaid linking succeeds | Done | Placeholder returns two stub credit cards; real cards flow through once Plaid credentials are configured |
+| User can see an error when Plaid linking fails | Done | Errors bubble through `ExternalProviderAppException` from `PlaidProvider`; mapper surfaces them to the UI |
+| User can retry Plaid linking after a failure | Done | UI retry loops through the same mutation; provider failures propagate without state leaks |
+| User can choose to add cards manually instead of using Plaid | Done |  |
+| User can enter a card issuer manually from a catalog-backed dropdown | Done |  |
+| User can select a card product manually from a catalog-backed dropdown | Done |  |
+| User can request a missing bank/card during manual entry | Done |  |
+| User can add a custom nickname for a manually added card | Done |  |
+| User can add the last four digits for a manually added card | Done |  |
+| User can add a card without entering a full card number | Done |  |
+| User can set a manually added card as primary | Done |  |
+| User can skip card connection and continue onboarding | Done |  |
+| User can understand why TrueSpend needs location permission | Done |  |
+| User can allow location access while using the app | Done |  |
+| User can allow location access once | Done |  |
+| User can deny location access and still continue with limited features | Done |  |
+| User can recover from missing permissions | Done |  |
+| User can pick a Basic or Pro plan during onboarding | Done |  |
+| User can switch between monthly and annual billing during plan selection | Done |  |
+| User can start a 7-day trial from the selected plan via Stripe-hosted checkout | Done |  |
+| User can pay with Apple Pay on iOS when Stripe-hosted checkout supports it | Done |  |
+| User can pay with Google Pay on Android when Stripe-hosted checkout supports it | Done |  |
+| User can understand when billing starts and that cancellation is available | Done |  |
+| User can enable notifications during onboarding | Done |  |
+| User can finish onboarding and continue to the home screen | Done |  |
+| User can see a loading state while cards sync | Done |  |
+| User can see a clear fallback when location permission is denied | Done |  |
+| User can see a clear fallback when Plaid linking fails | Done |  |
+
 ## Screens Covered
 
 | Screen | Name | Notes |
@@ -190,6 +230,6 @@ Notifications and finish
 
 ## Design Gaps
 
-| Status | Type | Source Doc | Current Design | Proposed Adjustment | Reason |
-|---|---|---|---|---|---|
-| Open | Missing Response Field | API | `PlaidConnectionResponse` returns `cards` but card sync progress is not explicit | Add optional sync/status fields or state that exchange returns final Phase 1 metadata | Screen 2.2/5.1 needs clear card sync loading and failure behavior |
+| Gap | Owner | Notes |
+|---|---|---|
+| None currently open. |  |  |

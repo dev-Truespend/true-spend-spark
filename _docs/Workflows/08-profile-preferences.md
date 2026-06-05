@@ -1,5 +1,27 @@
 # 08. Profile And Preferences
 
+## Progress
+
+| User story | Status | Notes |
+|---|---|---|
+| User can view their profile details (8.1) | Done | `GET /api/v1/profile` wired to Profile tab |
+| User can see account initials, display name, and email (8.1) | Done | Initials computed client-side in profile mapper |
+| User can view current plan status (8.1) | Done | Plan badge from `GET /billing/subscription`, falls back to profile `currentPlanCode` |
+| User can navigate to Plaid connection management from profile (8.1) | Done | Row links to `/(app)/cards/plaid-connections` |
+| User can navigate to cards management from profile (8.1) | Done | Row links to `/(app)/(tabs)/cards` |
+| User can view and manage location permission status from profile (8.1) | Done | Status from `GET /api/v1/permissions`; row deep-links to system settings. Bug fix: `POST /api/v1/permissions` no longer rewrites onboarding step when called from profile (gated to onboarding step `location_permission`). Vocabulary widened to the full `lookup.permission_states` set (`authorized_always`, `authorized_when_in_use`, `not_determined`, etc.) across DB seed, backend validator, and mobile schema. `GET /api/v1/lookups/permission-states` now exposed for clients. Pattern fix: `PermissionsUpdateBusiness` now wraps the permission-save + onboarding-step-advance writes in a single `IUnitOfWork` transaction so partial failures cannot leave permissions saved with onboarding un-advanced. `PermissionState` literal-union moved to `src/shared/types/permissionState.types.ts` so `shared/native/location.ts` no longer imports from `features/`. |
+| User can view camera permission status from profile (8.1) | Done | Status from `GET /api/v1/permissions`; row deep-links to system settings |
+| User can navigate to notification preferences from profile (8.1) | Done | Row links to `/(app)/notifications/settings` |
+| User can update display name (8.2) | Done | `POST /api/v1/profile`. **Audit fix (2026-06-04):** `ProfileUpdateBusiness` outbox `idempotency_key` swapped from `yyyyMMddHHmmss` (collided on same-second saves and surfaced as 500 once `ExceptionMiddleware` was wired) to a Guid suffix. |
+| User can update phone number (8.2) | Done | `POST /api/v1/profile` |
+| User can update primary spending currency (8.2) | Done | `CurrencyPicker` backed by `GET /api/v1/lookups/currencies` |
+| User can view connected sign-in methods (8.2) | Done | `useSignInMethods` reads identities from `supabase.auth.getUser()` and projects to `SignInMethod[]` |
+| User can add phone OTP as a sign-in method (8.2) | Done | `useAddPhoneSignIn` validates via `addPhoneSignInSchema` then calls `requestPhoneOtp` |
+| User can enable or disable biometric unlock (8.2) | Done | `biometricUnlockEnabled` preference toggled via `POST /api/v1/preferences`, gated on `expo-local-authentication` enrollment exposed through `src/shared/native/biometrics.ts` + `useBiometricStatus`. `useToggleBiometricUnlock` moved into `features/preferences/hooks/` so the profile feature no longer imports a sibling-feature hook. |
+| User can use biometric unlock when enabled (8.2) | Done | `useToggleBiometricUnlock` requires `authenticateWithBiometric` success before enabling |
+| User can change profile photo (8.2) | Done | `expo-image-picker` wrapped in `src/shared/native/imagePicker.ts`, picked via `usePickAvatar`; multipart `POST /api/v1/profile/avatar` validated against `avatarUploadSchema`; `IStorageProvider` placeholder used until Supabase Storage creds are set |
+| User can sign out from profile settings (8.1) | Done | Auth provider deactivates current device via `POST /api/v1/devices/delete` then clears the Supabase session |
+
 ## Scope
 
 Phase 1 online workflow for Profile main and Edit profile. Covers profile details, app preferences, permission status, basic navigation entry points, biometric preference, and sign out handoff.
@@ -92,7 +114,7 @@ User is authenticated. Device has reported current permission states when possib
 
 - Profile, preference, and permission updates are synchronous because the UI needs immediate saved state.
 - Sign out is local/Auth SDK driven; push token deletion can happen synchronously when network is available.
-- Profile update may publish a lightweight audit/analytics event, but user-visible state must not depend on it.
+- Profile update commits the DB row and an `app.profile.updated` outbox event inside the same `IUnitOfWork` transaction. Avatar upload follows the same pattern (uploads to storage first, then the DB write + event are committed together). User-visible state never depends on the consumer running.
 
 ## Invalidation Triggers
 
@@ -115,3 +137,5 @@ User is authenticated. Device has reported current permission states when possib
 ## Design Gaps
 
 None currently open.
+
+Resolved: `ProfileScreen` + `EditProfileScreen` plus their screen-only components (`ProfileHeader`, `SectionHeader`, `SettingsRow`, `permission-label`, `AvatarPicker`, `BiometricToggle`, `CurrencyPicker`, `SignInMethodsList`) moved from `features/profile/` to a new `features/settings/` composer feature. `features/profile/` now owns only its single-domain code (api, hooks, mappers, schemas, types, tests). The composer is the only feature allowed to import from `features/permissions`, `features/preferences`, `features/billing`, `features/auth` — by design, since composing other features is its role. Domain features stay single-purpose; route files `app/(app)/(tabs)/profile.tsx` and `app/(app)/profile/edit.tsx` now mount from `@/features/settings/screens/`. `permission-label.ts` was retargeted to import `PermissionState` from `@/shared/types/permissionState.types` directly (no longer via `features/permissions`).

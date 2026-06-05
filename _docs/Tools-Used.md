@@ -58,9 +58,9 @@
 
 ## External APIs
 - Stripe: used for billing, subscriptions, free trials, checkout, and billing portal.
-- Google Maps / Google Places API: used for foreground nearby merchant lookup on Home (3.x screens).
+- Google Maps / Google Places API(maybe): used for foreground nearby merchant lookup on Home (3.x screens).
 - Foursquare: used for background geofence/place detection that drives the arrival push notification flow ([10-geo-recommendations.md](Workflows/10-geo-recommendations.md)). SDK on mobile + webhook to backend.
-- Plaid: optional tool for card/account metadata and linked transaction import.
+- Plaid: tool for card/account metadata and linked transaction import.
 - RewardsCC: used for credit card rewards information.
 
 ## Security

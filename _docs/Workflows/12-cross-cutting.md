@@ -1,5 +1,15 @@
 # 12. Cross-Cutting Cold-Start And Infrastructure
 
+## Progress
+
+| User story | Status | Notes |
+|---|---|---|
+| User can receive push notifications on iOS | Done | Pre-existing device upsert + push channel from workflow 07 |
+| User can receive push notifications on Android | Done | Pre-existing device upsert + push channel from workflow 07 |
+| User can recover from missing permissions | Done | Pre-existing permission report from workflows 02 and 08 |
+| User can navigate from a notification to the related transaction | Done | `ExpoPushDeliveryService.FlattenPayload` now expands the producer's JSON payload onto Expo's `data` map so the mobile router reads top-level keys; `PushPayloadBuilder` (`Models/Notifications/PushPayloadBuilder.cs`) emits typed payloads per the discriminated-union spec; `FoursquareWebhookBusiness` (best_card_alert), `MissedRewardNotificationBusiness` (missed_rewards), and `NotificationsProductionBusiness` (reminders → system) all backfill `notificationId` via `UpdateNotificationPayloadAsync` after insert. **Audit fix (2026-06-04):** `OutboxPollingConsumer` was a stub — now polls `messaging.event_outbox` + `event_deliveries` via `OutboxDispatchBusiness`/`OutboxDispatchService`; `EventDispatcher` routes by `(event_type, consumer_name)`; `messaging_event_subscriptions.sql` seeded with all consumer subscriptions including `EntitlementCacheInvalidator`, `PushFanOutConsumer`, etc. **Audit fix #2 (2026-06-04):** `OutboxDispatchService.MarkEventNoSubscribersAsync` was marking outbox rows with no consumers (e.g. `app.profile.updated`, `finance.plaid_connection.synced`, `finance.user_card.updated`) as `EventStatusFailed`, polluting the failure metric; now marks them `EventStatusSucceeded`. `Program.cs` registers `CorrelationIdMiddleware` + `ExceptionMiddleware`. Plaid event handlers (`PlaidReauthNotificationHandler`, `PlaidNewAccountsNotificationHandler`, `PlaidCardsCacheInvalidatorHandler`, `PlaidConnectionDisconnectedHandler`) now route through `PlaidEventMapper` per the handler-mapper rule. Duplicated `IsUniqueViolation` helpers across 6 business classes consolidated into `Services/Persistence/PostgresErrors`. Dead `AuthMiddleware` removed. |
+| User can stay signed in across app restarts | Done | Pre-existing bootstrap from workflow 01. **Audit fix (2026-06-04):** `AuthBootstrapService` now upserts `messaging.devices` instead of inserting a new row every cold start. |
+
 ## Scope
 
 Phase 1 behaviors that aren't owned by a single screen: bootstrap hydration after a valid session, device upsert, OS-permission state reporting, entitlement refresh, lookup warm-up, push deep-link routing, and network-reconnect-triggered sync.

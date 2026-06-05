@@ -2,11 +2,27 @@
 node_modules/
 dist/
 build/
+coverage/
+TestResults/
+
+# .NET build outputs
+bin/
+obj/
+
+# Expo / React Native local state
+.expo/
+.expo-shared/
+
+# Supabase local state
+supabase/.temp/
 
 # Local environment files
 .env
 .env.*
 !.env.example
+
+# Codex workflow session state
+.codex/.workflow-state
 
 # Claude Code — personal overrides (team-shared settings.json is committed)
 .claude/settings.local.json
