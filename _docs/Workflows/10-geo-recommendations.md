@@ -1,5 +1,7 @@
 # Geo Arrival Recommendations Workflow
 
+> **MVP execution note** — When the Foursquare webhook persists a best-card alert notification, `INotificationsDispatchBusiness.DispatchPushAsync` + `INotificationInboxCacheInvalidatorBusiness.InvalidateAsync` run **inline post-commit** in place of the archived `NotificationCreated` outbox event. See [api-design-patterns.md § Post-commit side-effects](../low-level-design/Service/api-design-patterns.md#post-commit-side-effects) and [_docs/Refactors/sync-execution-conversion.md](../Refactors/sync-execution-conversion.md).
+
 ## Progress
 
 | User story | Status | Notes |
@@ -101,7 +103,7 @@ No new view models. The notification is a standard `best_card_alert` row; the re
 
 - Webhook handler does not read from cache; it writes to DB and lets the outbox drive cache invalidation.
 - Inbox cache for the user is invalidated by `InboxCacheInvalidator` via `messaging.notification.created` ([notification-production.md](notification-production.md#step-matrix)).
-- The reward profile and merchant resolution caches from [03-home-recommendations.md](03-home-recommendations.md#cache-strategy) are reused; no new cache layer.
+- The reward profile and merchant resolution caches from [03-recommendations.md](03-recommendations.md#cache-strategy) are reused; no new cache layer.
 - Foursquare's own place / geofence state is owned by Foursquare and not mirrored locally in Phase 1.
 
 ## Sync vs Async Decisions
@@ -155,6 +157,8 @@ Out of scope for the initial Phase 1 cut but specced here so it can be turned on
 - Dedup hit on `foursquare_event_id`: return `WebhookAckResponse { received:true, deduplicated:true }`.
 - User has no active cards: skip recommendation + notification, still ack `200`.
 - Gate fails (master off, type off, quiet hours): skip notification insert, ack `200`.
+- `geofencing_enabled = false`: skip with reason `geofencing_disabled`, ack `200`.
+- Daily geo cap reached (`geo_recommendations_per_day`: Free 1, Basic 3, Pro unlimited; counted from `finance.recommendations` `geofence_arrival` since 00:00 UTC): skip with reason `geo_daily_limit_reached`, ack `200`.
 - Merchant cannot be resolved from Foursquare payload: log `finance.location_events` only, skip notification, ack `200`.
 - Push delivery failure: handled by existing `PushFanOutConsumer` retry path.
 
@@ -172,11 +176,11 @@ The location permission reported to `POST /api/v1/permissions` uses `lookup.perm
 | `authorized_once` | iOS one-shot session grant | Treated as `authorized_when_in_use` until next prompt |
 | `provisional` / `limited` / `authorized` | Notification-only / Android coarse / generic granted | Treated case-by-case; geo-arrival requires effective background access |
 
-Onboarding 2.4 ([02-onboarding.md](02-onboarding.md)) requests `authorized_when_in_use` for Phase 1 foreground; the upgrade to `authorized_always` is prompted later from 7.3 with a value-prop explainer the first time the user enables the `best_card_alert` type, since "Always" acceptance is materially higher when paired with the feature it unlocks.
+Onboarding 2.4 ([02-onboarding.md](02-onboarding.md)) requests `authorized_always` directly (foreground prompt first, then background) so the geo-arrival flow is unblocked on first sign-up; users who deny background still get foreground access and can upgrade later from 7.3 with a value-prop explainer the first time the user enables the `best_card_alert` type.
 
 ## Design Gaps
 
 | Status | Type | Source Doc | Current Design | Proposed Adjustment | Reason |
 |---|---|---|---|---|---|
 | Pending | Privacy Disclosure | Workflow | Foursquare receives anonymized geofence pings; no current mention in [13-privacy-data.md](13-privacy-data.md) or marketing privacy copy | Cover in the new privacy policy doc being added at end of workflow review | Compliance + user trust |
-| Pending | External Provider Wiring | Workflow | Mobile uses `src/shared/native/foursquareTracking.ts` as a registration shim; the Foursquare Movement SDK is not installed (no npm package, no native config) so no real geofence event ever leaves the device | Install the Foursquare Movement SDK behind `registerFoursquareTrackingClient(...)` with native Info.plist / AndroidManifest config and EAS dev-client rebuild; add a placeholder client for local dev (same external-provider pattern as Stripe/Plaid) | Without the SDK the geo-arrival flow is unreachable end-to-end; backend webhook handler is otherwise complete |
+| Pending | External Provider Wiring | Workflow | Mobile uses `src/shared/native/foursquareTracking.ts` as a registration shim with `registerFoursquareTrackingClient(...)` plug-point; the `geofencing_enabled` gate is now enforced before tracking starts, and onboarding 2.4 requests background location. Still missing: the Movement SDK npm package install + native config (paid Foursquare product, not Expo Go compatible — requires EAS dev client). | Obtain Foursquare Movement SDK credentials, install the SDK package, register an adapter via `registerFoursquareTrackingClient`, run `expo prebuild` and EAS dev-client build | Backend webhook handler + mobile gating + background location are all wired; only the SDK install + Foursquare account remain to make geofence events fire |

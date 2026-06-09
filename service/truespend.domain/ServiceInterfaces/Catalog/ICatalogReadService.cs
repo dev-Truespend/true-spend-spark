@@ -18,4 +18,8 @@ public interface ICatalogReadService
     Task<CardProductDetailResponse?> GetProductAsync(int cardProductId, CancellationToken cancellationToken);
     Task<IReadOnlyList<Category>> GetCategoriesAsync(CancellationToken cancellationToken);
     Task<string?> GetIssuerNameAsync(int issuerId, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<CatalogCardMatchCandidate>> GetCardMatchCandidatesAsync(string institutionName, CancellationToken cancellationToken);
 }
+
+public sealed record CatalogCardMatchCandidate(int CardProductId, string IssuerDisplayName, string CardDisplayName);

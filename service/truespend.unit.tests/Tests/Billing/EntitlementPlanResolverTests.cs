@@ -9,7 +9,7 @@ public sealed class EntitlementPlanResolverTests
     private static readonly DateTimeOffset Now = new(2026, 6, 1, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void Trialing_overrides_picked_plan_with_pro()
+    public void Trialing_grants_the_picked_plan()
     {
         var subscription = new SubscriptionResponse(
             PlanCode: BillingConstants.BasicPlanCode,
@@ -18,7 +18,7 @@ public sealed class EntitlementPlanResolverTests
             CurrentPeriodEnd: Now.AddDays(5),
             CancelAtPeriodEnd: false);
 
-        Assert.Equal(BillingConstants.ProPlanCode, EntitlementPlanResolver.Resolve(subscription, Now));
+        Assert.Equal(BillingConstants.BasicPlanCode, EntitlementPlanResolver.Resolve(subscription, Now));
     }
 
     [Fact]
@@ -36,9 +36,9 @@ public sealed class EntitlementPlanResolverTests
 
     [Theory]
     [InlineData("past_due", -1, "pro")]
-    [InlineData("past_due", -25, "basic")]
+    [InlineData("past_due", -25, "free")]
     [InlineData("unpaid", -1, "pro")]
-    [InlineData("unpaid", -48, "basic")]
+    [InlineData("unpaid", -48, "free")]
     public void Past_due_and_unpaid_respect_24h_grace_window(string status, int hoursOffset, string expected)
     {
         var subscription = new SubscriptionResponse(
@@ -55,7 +55,7 @@ public sealed class EntitlementPlanResolverTests
     [InlineData("canceled")]
     [InlineData("none")]
     [InlineData("incomplete_expired")]
-    public void Terminal_or_missing_subscription_drops_to_basic(string status)
+    public void Terminal_or_missing_subscription_drops_to_free(string status)
     {
         var subscription = new SubscriptionResponse(
             PlanCode: BillingConstants.ProPlanCode,
@@ -64,6 +64,6 @@ public sealed class EntitlementPlanResolverTests
             CurrentPeriodEnd: null,
             CancelAtPeriodEnd: false);
 
-        Assert.Equal(BillingConstants.BasicPlanCode, EntitlementPlanResolver.Resolve(subscription, Now));
+        Assert.Equal(BillingConstants.FreePlanCode, EntitlementPlanResolver.Resolve(subscription, Now));
     }
 }

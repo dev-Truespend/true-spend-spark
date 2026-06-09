@@ -18,7 +18,8 @@ export const cardsApi = {
   updateCard: (cardId: number, body: UpdateCardInput) => apiPost<CardDetail>(`/api/v1/cards/${cardId}`, body),
   setPrimary: (cardId: number) => apiPost<CardsListResponse>(`/api/v1/cards/${cardId}/primary`),
   deleteCard: (cardId: number) => apiPost<CardsListResponse>(`/api/v1/cards/${cardId}/delete`),
-  getRewardOverrides: (cardId: number) => apiGet<RewardOverridesResponse>(`/api/v1/cards/${cardId}/reward-overrides`),
+  getRewardOverrides: (cardId: number) =>
+    apiGet<RewardOverridesResponse>(`/api/v1/cards/${cardId}/reward-overrides`),
   upsertRewardOverride: (cardId: number, body: UpsertRewardOverrideInput) =>
     apiPost<RewardOverridesResponse>(`/api/v1/cards/${cardId}/reward-overrides`, body),
   deleteRewardOverride: (cardId: number, body: DeleteRewardOverrideInput) =>

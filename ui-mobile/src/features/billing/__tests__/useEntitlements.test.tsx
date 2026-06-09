@@ -34,10 +34,17 @@ describe("useEntitlements", () => {
       success: true,
       data: {
         planCode: "pro",
-        cardLinkLimit: null,
+        manualCardLimit: null,
+        plaidCardLimit: null,
+        geoRecommendationsPerDay: null,
         aiInsightsEnabled: true,
         unlimitedCards: true,
-        features: { card_link_limit: "unlimited", ai_insights_enabled: "true", unlimited_cards: "true" }
+        trialing: false,
+        trialEndsAt: null,
+        plaidLinkingEnabled: true,
+        plaidTransactionsViewEnabled: true,
+        geofencingEnabled: false,
+        features: { manual_card_limit: "unlimited", plaid_card_limit: "unlimited", geo_recommendations_per_day: "unlimited", ai_insights_enabled: "true", unlimited_cards: "true" }
       }
     });
 
@@ -46,10 +53,17 @@ describe("useEntitlements", () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.entitlements).toEqual({
       planCode: "pro",
-      cardLinkLimit: null,
+      manualCardLimit: null,
+      plaidCardLimit: null,
+      geoRecommendationsPerDay: null,
       aiInsightsEnabled: true,
       unlimitedCards: true,
-      features: { card_link_limit: "unlimited", ai_insights_enabled: "true", unlimited_cards: "true" }
+      trialing: false,
+      trialEndsAt: null,
+      plaidLinkingEnabled: true,
+      plaidTransactionsViewEnabled: true,
+      geofencingEnabled: false,
+      features: { manual_card_limit: "unlimited", plaid_card_limit: "unlimited", geo_recommendations_per_day: "unlimited", ai_insights_enabled: "true", unlimited_cards: "true" }
     });
   });
 

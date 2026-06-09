@@ -44,7 +44,9 @@ export type Entitlements = {
   planCode: string;
   trialing: boolean;
   trialEndsAt: string | null;
-  cardLinkLimit: number | null;
+  manualCardLimit: number | null;
+  plaidCardLimit: number | null;
+  geoRecommendationsPerDay: number | null;
   unlimitedCards: boolean;
   aiInsightsEnabled: boolean;
   plaidLinkingEnabled: boolean;

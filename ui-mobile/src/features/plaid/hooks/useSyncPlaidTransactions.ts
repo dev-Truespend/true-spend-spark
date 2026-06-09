@@ -15,6 +15,7 @@ export function useSyncPlaidTransactions() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QueryKeys.Transactions() });
       void queryClient.invalidateQueries({ queryKey: QueryKeys.PlaidConnections });
+      void queryClient.invalidateQueries({ queryKey: QueryKeys.PlaidResyncQuota });
     }
   });
 }

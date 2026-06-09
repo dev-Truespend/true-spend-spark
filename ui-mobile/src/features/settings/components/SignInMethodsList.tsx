@@ -1,3 +1,4 @@
+import { scaleFont } from "@/shared/theme/typography";
 import { StyleSheet, Text, View } from "react-native";
 import { Button } from "@/shared/components/Button";
 import { TextInput } from "@/shared/components/TextInput";
@@ -52,7 +53,7 @@ export function SignInMethodsList({
             disabled={isSending}
             label={isSending ? "Sending…" : "Send code"}
             onPress={onSendOtp}
-            variant="secondary"
+            variant="outline"
           />
           {message ? <Text style={styles.success}>{message}</Text> : null}
           {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
@@ -93,13 +94,13 @@ const styles = StyleSheet.create({
   },
   method: {
     color: colors.text,
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontWeight: "600"
   },
   detail: {
     color: colors.muted,
     flex: 1,
-    fontSize: 13,
+    fontSize: scaleFont(13),
     marginLeft: spacing.md,
     textAlign: "right"
   },
@@ -112,15 +113,15 @@ const styles = StyleSheet.create({
   },
   label: {
     color: colors.text,
-    fontSize: 13,
+    fontSize: scaleFont(13),
     fontWeight: "600"
   },
   success: {
     color: colors.primary,
-    fontSize: 13
+    fontSize: scaleFont(13)
   },
   error: {
     color: colors.danger,
-    fontSize: 13
+    fontSize: scaleFont(13)
   }
 });

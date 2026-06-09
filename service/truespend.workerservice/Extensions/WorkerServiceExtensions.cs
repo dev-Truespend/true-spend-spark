@@ -1,11 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using TrueSpend.Domain.Business.AIInsights;
+using TrueSpend.Domain.Business.Analytics;
+using TrueSpend.Domain.Business.Billing;
 using TrueSpend.Domain.Business.Catalog;
 using TrueSpend.Domain.Business.Devices;
 using TrueSpend.Domain.Business.Notifications;
 using TrueSpend.Domain.Business.Plaid;
 using TrueSpend.Domain.Business.Privacy;
 using TrueSpend.Domain.BusinessInterfaces.AIInsights;
+using TrueSpend.Domain.BusinessInterfaces.Analytics;
+using TrueSpend.Domain.BusinessInterfaces.Billing;
 using TrueSpend.Domain.BusinessInterfaces.Catalog;
 using TrueSpend.Domain.BusinessInterfaces.Devices;
 using TrueSpend.Domain.BusinessInterfaces.Notifications;
@@ -13,6 +17,11 @@ using TrueSpend.Domain.BusinessInterfaces.Plaid;
 using TrueSpend.Domain.BusinessInterfaces.Privacy;
 using TrueSpend.Domain.DbContext;
 using TrueSpend.Domain.ServiceInterfaces.AIInsights;
+using TrueSpend.Domain.ServiceInterfaces.Analytics;
+using TrueSpend.Domain.ServiceInterfaces.App;
+using TrueSpend.Domain.Services.App;
+using TrueSpend.Domain.ServiceInterfaces.Billing;
+using TrueSpend.Domain.Models.Catalog;
 using TrueSpend.Domain.ServiceInterfaces.Catalog;
 using TrueSpend.Domain.ServiceInterfaces.Devices;
 using TrueSpend.Domain.ServiceInterfaces.Messaging;
@@ -23,6 +32,8 @@ using TrueSpend.Domain.ServiceInterfaces.Privacy;
 using TrueSpend.Domain.ServiceInterfaces.Recommendations;
 using TrueSpend.Domain.ServiceInterfaces.Transactions;
 using TrueSpend.Domain.Services.AIInsights;
+using TrueSpend.Domain.Services.Analytics;
+using TrueSpend.Domain.Services.Billing;
 using TrueSpend.Domain.Services.Catalog;
 using TrueSpend.Domain.Services.Devices;
 using TrueSpend.Domain.Services.Messaging;
@@ -52,6 +63,12 @@ public static class WorkerServiceExtensions
                 options.UseNpgsql(connectionString);
         });
 
+        // Required by AIInsightsGenerationBusiness and PlaidUpdateBusiness for entitlement gating.
+        builder.Services.AddMemoryCache();
+        builder.Services.AddScoped<IBillingReadService, BillingReadService>();
+        builder.Services.AddScoped<IBillingReadBusiness, BillingReadBusiness>();
+        builder.Services.AddScoped<IEntitlementGuard, EntitlementGuard>();
+
         var openAiEndpoint = builder.Configuration["AzureOpenAI:Endpoint"] ?? string.Empty;
         var openAiKey = builder.Configuration["AzureOpenAI:ApiKey"] ?? string.Empty;
         var openAiDeployment = builder.Configuration["AzureOpenAI:DeploymentName"] ?? string.Empty;
@@ -73,6 +90,11 @@ public static class WorkerServiceExtensions
         builder.Services.AddScoped<IAIInsightsInsertService, AIInsightsInsertService>();
         builder.Services.AddScoped<IAIInsightsUpdateService, AIInsightsUpdateService>();
         builder.Services.AddScoped<IAIInsightsGenerationBusiness, AIInsightsGenerationBusiness>();
+        builder.Services.AddScoped<IAIInsightsCacheInvalidatorBusiness, AIInsightsCacheInvalidatorBusiness>();
+
+        builder.Services.AddScoped<IAnalyticsReadService, AnalyticsReadService>();
+        builder.Services.AddScoped<IAnalyticsUpdateService, AnalyticsUpdateService>();
+        builder.Services.AddScoped<IAnalyticsComputeBusiness, AnalyticsComputeBusiness>();
 
         builder.Services.AddScoped<INotificationProductionService, NotificationProductionService>();
         builder.Services.AddScoped<INotificationDispatchService, NotificationDispatchService>();
@@ -81,8 +103,15 @@ public static class WorkerServiceExtensions
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
         builder.Services.AddScoped<IDistributedLockService, DistributedLockService>();
         builder.Services.AddScoped<INotificationsProductionBusiness, NotificationsProductionBusiness>();
+        builder.Services.AddScoped<INotificationsDispatchBusiness, NotificationsDispatchBusiness>();
+        builder.Services.AddScoped<INotificationInboxCacheInvalidatorBusiness, NotificationInboxCacheInvalidatorBusiness>();
         builder.Services.AddScoped<IWeeklySummaryNotificationBusiness, WeeklySummaryNotificationBusiness>();
+        builder.Services.AddScoped<ISubscriptionExpiryNotificationBusiness, SubscriptionExpiryNotificationBusiness>();
         builder.Services.AddScoped<IUnusualTransactionNotificationBusiness, UnusualTransactionNotificationBusiness>();
+        builder.Services.AddScoped<IMissedRewardNotificationBusiness, MissedRewardNotificationBusiness>();
+
+        AddPushDelivery(builder);
+        AddEmailDelivery(builder);
 
         builder.Services.AddScoped<IPlaidProvider, PlaidPlaceholderProvider>();
         builder.Services.AddScoped<IPlaidReadService, PlaidReadService>();
@@ -92,7 +121,12 @@ public static class WorkerServiceExtensions
         builder.Services.AddScoped<ITransactionsUpdateService, TransactionsUpdateService>();
         builder.Services.AddScoped<IRewardRulesReadService, RewardRulesReadService>();
         builder.Services.AddScoped<PlaidValidator>();
+        builder.Services.AddScoped<IUserDailyUsageService, UserDailyUsageService>();
+        builder.Services.Configure<TrueSpend.Domain.Models.Billing.ManualResyncOptions>(builder.Configuration.GetSection("ManualResync"));
+        builder.Services.AddScoped<IManualResyncQuotaBusiness, ManualResyncQuotaBusiness>();
         builder.Services.AddScoped<IPlaidUpdateBusiness, PlaidUpdateBusiness>();
+        builder.Services.AddScoped<IPlaidCardCatalogMatchBusiness, PlaidCardCatalogMatchBusiness>();
+        builder.Services.AddScoped<ICatalogReadService, CatalogReadService>();
         builder.Services.AddScoped<IPlaidInstitutionsCatalogBusiness, PlaidInstitutionsCatalogBusiness>();
 
         builder.Services.AddScoped<IDevicesUpdateService, DevicesUpdateService>();
@@ -100,13 +134,15 @@ public static class WorkerServiceExtensions
 
         var rewardsCcBaseUrl = builder.Configuration["RewardsCc:BaseUrl"] ?? string.Empty;
         var rewardsCcApiKey = builder.Configuration["RewardsCc:ApiKey"] ?? string.Empty;
-        if (!string.IsNullOrWhiteSpace(rewardsCcBaseUrl) && !string.IsNullOrWhiteSpace(rewardsCcApiKey))
+        var rewardsCcHost = builder.Configuration["RewardsCc:Host"] ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(rewardsCcBaseUrl) && !string.IsNullOrWhiteSpace(rewardsCcApiKey) && !string.IsNullOrWhiteSpace(rewardsCcHost))
         {
             builder.Services.Configure<RewardsCcProviderOptions>(builder.Configuration.GetSection("RewardsCc"));
             builder.Services.AddHttpClient<IRewardsCcProvider, RewardsCcProvider>(client =>
             {
                 client.BaseAddress = new Uri(rewardsCcBaseUrl);
-                client.DefaultRequestHeaders.Add("X-Api-Key", rewardsCcApiKey);
+                client.DefaultRequestHeaders.Add("X-RapidAPI-Key", rewardsCcApiKey);
+                client.DefaultRequestHeaders.Add("X-RapidAPI-Host", rewardsCcHost);
                 client.Timeout = TimeSpan.FromSeconds(30);
             });
         }
@@ -114,6 +150,7 @@ public static class WorkerServiceExtensions
         {
             builder.Services.AddScoped<IRewardsCcProvider, RewardsCcPlaceholderProvider>();
         }
+        builder.Services.Configure<RewardsCcSeedOptions>(builder.Configuration.GetSection("RewardsCc"));
         builder.Services.AddScoped<ICatalogSyncService, CatalogSyncService>();
         builder.Services.AddScoped<IRewardsCcCatalogSyncBusiness, RewardsCcCatalogSyncBusiness>();
         builder.Services.AddScoped<IRewardsCcCatalogReconcileBusiness, RewardsCcCatalogReconcileBusiness>();
@@ -145,12 +182,10 @@ public static class WorkerServiceExtensions
         builder.Services.AddScoped<AIInsightGenerationJob>();
         builder.Services.AddScoped<PlaidTransactionSyncJob>();
         builder.Services.AddScoped<WeeklySummaryJob>();
+        builder.Services.AddScoped<SubscriptionExpiryNotificationJob>();
         builder.Services.AddScoped<UnusualTransactionJob>();
         builder.Services.AddScoped<InvalidDeviceTokenCleanupJob>();
         builder.Services.AddScoped<PlaidInstitutionCatalogJob>();
-        builder.Services.AddScoped<RewardsCcIssuerSyncJob>();
-        builder.Services.AddScoped<RewardsCcCardProductSyncJob>();
-        builder.Services.AddScoped<RewardsCcRewardRuleSyncJob>();
         builder.Services.AddScoped<RewardsCcCatalogReconcileJob>();
         builder.Services.AddScoped<RewardsCcCatalogSyncOrchestrationJob>();
         builder.Services.AddScoped<AdminNotificationDispatchJob>();
@@ -161,14 +196,59 @@ public static class WorkerServiceExtensions
         builder.Services.AddHostedService<AIInsightGenerationScheduler>();
         builder.Services.AddHostedService<PlaidTransactionSyncScheduler>();
         builder.Services.AddHostedService<WeeklySummaryScheduler>();
+        builder.Services.AddHostedService<SubscriptionExpiryNotificationScheduler>();
         builder.Services.AddHostedService<UnusualTransactionScheduler>();
         builder.Services.AddHostedService<InvalidDeviceTokenCleanupScheduler>();
         builder.Services.AddHostedService<PlaidInstitutionCatalogScheduler>();
         builder.Services.AddHostedService<RewardsCcCatalogSyncScheduler>();
         builder.Services.AddHostedService<RewardsCcCatalogReconcileScheduler>();
+        builder.Services.AddHostedService<RewardsCcCatalogSyncStartupRunner>();
         builder.Services.AddHostedService<AdminNotificationDispatchScheduler>();
         builder.Services.AddHostedService<AccountDeletionPurgeScheduler>();
 
         return builder;
+    }
+
+    private static void AddPushDelivery(IHostApplicationBuilder builder)
+    {
+        var accessToken = builder.Configuration["ExpoPush:AccessToken"];
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            builder.Services.AddScoped<IPushDeliveryService, PushDeliveryPlaceholderService>();
+            return;
+        }
+
+        builder.Services.AddHttpClient<IPushDeliveryService, ExpoPushDeliveryService>(client =>
+        {
+            client.DefaultRequestHeaders.Accept.Add(new("application/json"));
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
+    }
+
+    private static void AddEmailDelivery(IHostApplicationBuilder builder)
+    {
+        var apiKey = builder.Configuration["Resend:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            builder.Services.AddScoped<IEmailDeliveryService, EmailDeliveryPlaceholderService>();
+            return;
+        }
+
+        var options = new ResendOptions
+        {
+            ApiKey = apiKey,
+            FromAddress = builder.Configuration["Resend:FromAddress"] ?? string.Empty,
+            BaseUrl = builder.Configuration["Resend:BaseUrl"] ?? "https://api.resend.com/"
+        };
+        builder.Services.AddSingleton(options);
+
+        builder.Services.AddHttpClient<IEmailDeliveryService, ResendEmailDeliveryService>(client =>
+        {
+            client.BaseAddress = new Uri(options.BaseUrl);
+            client.DefaultRequestHeaders.Accept.Add(new("application/json"));
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
     }
 }

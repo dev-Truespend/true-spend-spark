@@ -23,13 +23,14 @@ export function useOnboardingBootstrapQuery(periodCode: string) {
   return useQuery({
     queryKey: onboardingQueryKeys.bootstrap(periodCode),
     queryFn: async () => {
-      const [onboarding, cards, issuers, products, plans, prices, notifications] = await Promise.all([
+      const [onboarding, cards, issuers, products, plans, prices, features, notifications] = await Promise.all([
         onboardingApi.getOnboarding(),
         cardsApi.getCards(),
         catalogApi.getIssuers(),
         catalogApi.getProducts(),
         billingApi.getPlans(),
         billingApi.getPrices(periodCode),
+        billingApi.getFeatures(),
         notificationSettingsApi.get()
       ]);
 
@@ -40,6 +41,7 @@ export function useOnboardingBootstrapQuery(periodCode: string) {
         products: products.data,
         plans: plans.data,
         prices: prices.data,
+        features: features.data,
         notifications: notifications.data
       };
     }

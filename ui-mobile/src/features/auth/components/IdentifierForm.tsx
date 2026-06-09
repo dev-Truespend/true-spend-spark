@@ -1,34 +1,47 @@
 import { View, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Button } from "@/shared/components/Button";
 import { TextInput } from "@/shared/components/TextInput";
-import { spacing } from "@/shared/theme/spacing";
+import { colors } from "@/shared/theme/colors";
+
+type Channel = "email" | "phone";
 
 type Props = {
+  channel: Channel;
   disabled?: boolean;
   identifier: string;
   onChange: (next: string) => void;
   onSubmit: () => void;
 };
 
-export function IdentifierForm({ disabled, identifier, onChange, onSubmit }: Props) {
-  const channel = identifier.includes("@") ? "email" : "phone";
-
+export function IdentifierForm({ channel, disabled, identifier, onChange, onSubmit }: Props) {
+  const isPhone = channel === "phone";
   return (
     <View style={styles.stack}>
       <TextInput
         autoCapitalize="none"
-        keyboardType={channel === "email" ? "email-address" : "phone-pad"}
+        autoComplete={isPhone ? "tel" : "email"}
+        keyboardType={isPhone ? "phone-pad" : "email-address"}
         onChangeText={onChange}
-        placeholder="Email or phone"
+        placeholder={isPhone ? "+1 (415) 555 0100" : "you@example.com"}
         value={identifier}
+        leftIcon={
+          <Ionicons
+            name={isPhone ? "call-outline" : "mail-outline"}
+            size={18}
+            color={colors.mutedFg}
+          />
+        }
       />
-      <Button disabled={disabled || identifier.trim().length < 3} label="Send code" onPress={onSubmit} />
+      <Button
+        disabled={disabled || identifier.trim().length < 3}
+        label="Send code"
+        onPress={onSubmit}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  stack: {
-    gap: spacing.sm
-  }
+  stack: { gap: 10 }
 });

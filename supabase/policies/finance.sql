@@ -18,7 +18,7 @@ create policy finance_plaid_accounts_owner_select on finance.plaid_accounts
   for select using (
     exists (
       select 1 from finance.plaid_items pi
-      where pi.id = plaid_item_id and pi.user_id = auth.uid()
+      where pi.id = plaid_accounts.plaid_item_id and pi.user_id = auth.uid()
     )
   );
 

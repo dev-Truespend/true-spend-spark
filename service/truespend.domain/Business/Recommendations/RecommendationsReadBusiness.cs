@@ -1,4 +1,5 @@
 using TrueSpend.Domain.BusinessInterfaces.Recommendations;
+using TrueSpend.Domain.Constants;
 using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.Models.Onboarding;
 using TrueSpend.Domain.Models.Cards;
@@ -10,11 +11,21 @@ using TrueSpend.Domain.Models.NotificationSettings;
 using TrueSpend.Domain.Models.Permissions;
 using TrueSpend.Domain.Models.Recommendations;
 using TrueSpend.Domain.ServiceInterfaces.Cards;
+using TrueSpend.Domain.ServiceInterfaces.Merchants;
 
 namespace TrueSpend.Domain.Business.Recommendations;
 
-public sealed class RecommendationsReadBusiness(ICardsReadService cardsReadService) : IRecommendationsReadBusiness
+public sealed class RecommendationsReadBusiness(
+    ICardsReadService cardsReadService,
+    IMerchantsReadService merchantsReadService,
+    IRecommendationBuilderBusiness recommendationBuilder) : IRecommendationsReadBusiness
 {
+    // Mirrors the spend assumption Foursquare uses for arrival pushes — keeps
+    // expected-reward math comparable across surfaces.
+    private const decimal AssumedSpendAmount = 25m;
+    private const int PortfolioTopCategoriesPerCard = 3;
+    private static readonly TimeSpan RecentVisitWindow = TimeSpan.FromDays(30);
+
     public async Task<BusinessResponse<RecommendationResponse>> GetHomeAsync(OnboardingWorkflowUser user, CancellationToken cancellationToken)
     {
         var cards = await cardsReadService.GetCardsAsync(user, cancellationToken);
@@ -27,9 +38,36 @@ public sealed class RecommendationsReadBusiness(ICardsReadService cardsReadServi
                     "Connect a bank or add a card manually to see which card wins at checkout.",
                     "add_manual_card",
                     "connect_bank",
-                    "Pro unlocks unlimited card links.")));
+                    "Pro unlocks unlimited card links."),
+                Portfolio: null));
         }
 
-        return BusinessResponse<RecommendationResponse>.Ok(new RecommendationResponse(null, null));
+        // Portfolio is the home's anchor — always returned alongside any recommendation
+        // so the mobile renders the same per-card summary regardless of recommendation state.
+        var portfolio = await cardsReadService.GetPortfolioAsync(user, PortfolioTopCategoriesPerCard, cancellationToken);
+
+        // Replay the user's most recent (≤30 day) merchant visit as the home
+        // recommendation. Honors the category the user explicitly picked on
+        // that visit, not the merchant's default — see `GetMostRecentVisitAsync`.
+        var recentVisit = await merchantsReadService.GetMostRecentVisitAsync(user, RecentVisitWindow, cancellationToken);
+        if (recentVisit is not null)
+        {
+            var replay = await recommendationBuilder.BuildAsync(
+                user,
+                recentVisit.Merchant,
+                recentVisit.CategoryCode,
+                AssumedSpendAmount,
+                RecommendationsConstants.HomeContextCode,
+                cancellationToken);
+
+            if (replay is not null)
+            {
+                return BusinessResponse<RecommendationResponse>.Ok(new RecommendationResponse(replay, null, portfolio));
+            }
+        }
+
+        // Has cards but no replay candidate (no recent visit, or builder declined).
+        // No recommendation; the portfolio block carries the screen.
+        return BusinessResponse<RecommendationResponse>.Ok(new RecommendationResponse(null, null, portfolio));
     }
 }

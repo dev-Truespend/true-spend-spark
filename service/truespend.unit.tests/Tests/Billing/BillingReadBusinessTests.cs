@@ -27,7 +27,9 @@ public sealed class BillingReadBusinessTests
                 PlanCode: "pro",
                 Trialing: false,
                 TrialEndsAt: null,
-                CardLinkLimit: null,
+                ManualCardLimit: null,
+                PlaidCardLimit: null,
+                GeoRecommendationsPerDay: null,
                 UnlimitedCards: true,
                 AiInsightsEnabled: true,
                 PlaidLinkingEnabled: true,
@@ -35,7 +37,9 @@ public sealed class BillingReadBusinessTests
                 GeofencingEnabled: true,
                 Features: new Dictionary<string, string>
                 {
-                    ["card_link_limit"] = "unlimited",
+                    ["manual_card_limit"] = "unlimited",
+                    ["plaid_card_limit"] = "unlimited",
+                    ["geo_recommendations_per_day"] = "unlimited",
                     ["ai_insights_enabled"] = "true",
                     ["unlimited_cards"] = "true",
                     ["plaid_linking_enabled"] = "true",
@@ -50,8 +54,9 @@ public sealed class BillingReadBusinessTests
         Assert.Equal("pro", response.Data!.PlanCode);
         Assert.True(response.Data.UnlimitedCards);
         Assert.True(response.Data.AiInsightsEnabled);
-        Assert.Null(response.Data.CardLinkLimit);
-        Assert.Equal("unlimited", response.Data.Features["card_link_limit"]);
+        Assert.Null(response.Data.ManualCardLimit);
+        Assert.Null(response.Data.PlaidCardLimit);
+        Assert.Equal("unlimited", response.Data.Features["manual_card_limit"]);
     }
 
     [Fact]

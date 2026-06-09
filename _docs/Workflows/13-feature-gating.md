@@ -1,14 +1,19 @@
 # Feature Gating And Trial Behavior
 
+> **MVP execution note** — The `truespend.eventconsumer` is not deployed in the MVP. The `billing.subscription.updated` → `EntitlementCacheInvalidator` dispatch referenced below runs **inline post-commit** in the API, in place of the archived outbox/consumer path. See [api-design-patterns.md § Post-commit side-effects](../low-level-design/Service/api-design-patterns.md#post-commit-side-effects) and [_docs/Refactors/sync-execution-conversion.md](../Refactors/sync-execution-conversion.md).
+
 ## Progress
 
 | User story | Status | Notes |
 |---|---|---|
-| User can use all Pro features during their 7-day trial regardless of plan they picked | Done | `BillingReadService.ResolveEntitlementPlanCode` returns `pro` when `subscription.status = 'trialing'` |
-| User can see upgrade guidance when a paid feature is gated | Done | `EntitlementsResponse` extended with `Trialing`, `TrialEndsAt`, `PlaidLinkingEnabled`, `PlaidTransactionsViewEnabled`, `GeofencingEnabled`; new feature seeds in `billing_features.sql` + `billing_plan_features.sql` (Plaid+view = Pro, geofencing = Basic). **Audit fix (2026-06-04):** mobile CardsScreen/CardEmptyState/PlaidConnectionsScreen/InsightsScreen now read `useEntitlementGate` and surface upgrade CTAs / hide Plaid section / hide AI Insights generation when the corresponding feature is disabled. |
+| User can choose Free, Basic, or Pro with per-tier feature limits | Done | 3-tier model seeded in `billing_plans.sql` + `billing_plan_features.sql`; per-source `manual_card_limit` / `plaid_card_limit` + `geo_recommendations_per_day` features; `EntitlementGuard.RequireCardLinkCapacityAsync(user, source, count)` and `FoursquareWebhookBusiness` geo daily cap enforce them |
+| User gets the picked plan's features during their trial (Basic 7-day, Pro 14-day) | Done | `EntitlementPlanResolver` now returns `subscription.planCode` while `trialing`; fallback baseline is Free, not Basic. `EntitlementPlanResolverTests` updated |
+| User can see upgrade guidance when a paid feature is gated | Done | `EntitlementsResponse` extended with `Trialing`, `TrialEndsAt`, `PlaidLinkingEnabled`, `PlaidTransactionsViewEnabled`, `GeofencingEnabled`; new feature seeds in `billing_features.sql` + `billing_plan_features.sql` (plaid linking + transactions view = Basic+, geofencing = all tiers). **Audit fix (2026-06-04):** mobile CardsScreen/CardEmptyState/PlaidConnectionsScreen/InsightsScreen now read `useEntitlementGate` and surface upgrade CTAs / hide Plaid section / hide AI Insights generation when the corresponding feature is disabled. |
 | User can be redirected to billing when opening a higher-plan feature | Done | `EntitlementRequiredAppException` + `ExceptionMiddleware` writes `{ errorCode:"ENTITLEMENT_REQUIRED", featureCode, requiredPlanCode, message }`; mobile `errorMapper` maps to `EntitlementRequiredAppError`, `queryClient` `QueryCache`/`MutationCache` `onError` route via `useEntitlementRequiredRouter` → `/(app)/billing?requiredPlanCode=...`. **Audit fix (2026-06-04):** `PlaidUpdateBusiness.SyncConnection/Reconnect/Disconnect/SyncPlaidTransactions` now call `entitlementGuard.RequireFeatureAsync(plaid_linking_enabled)` so `POST /plaid/connections/*` is gated end-to-end. **Audit fix #2 (2026-06-04):** `ExceptionMiddleware` was defined but never wired into the request pipeline, so every domain exception (including `EntitlementRequiredAppException`) was leaking as a raw 500; `Program.cs` now registers `CorrelationIdMiddleware` + `ExceptionMiddleware` ahead of `UseAuthentication`. |
 | User can see entitlement changes reflected in the app shortly after Stripe webhook processing | Done | Pre-existing `EntitlementCacheInvalidator` from workflow 09. **Audit fix (2026-06-04):** outbox polling was a stub — now `OutboxPollingConsumer` actually dispatches `billing.subscription.updated` to `EntitlementCacheInvalidator`; mobile invalidates `QueryKeys.Entitlements` on app foreground via `useAppForegroundRefresh`. |
-| User can lose Pro features when their trial ends without upgrading | Done | Resolver state machine: `active` → picked plan, `past_due`/`unpaid` → keep picked plan for `BillingConstants.PastDueGraceWindow` (24h) from `CurrentPeriodEnd`, else drop to Basic. **Audit fix (2026-06-04):** resolver extracted to `Models/Billing/EntitlementPlanResolver.Resolve(subscription, now)` with parameterized clock; `EntitlementPlanResolverTests` covers trialing override, active, past_due/unpaid in/out of grace, canceled/none. |
+| User can lose Pro features when their trial ends without upgrading | Done | Resolver state machine: `active` → picked plan, `past_due`/`unpaid` → keep picked plan for `BillingConstants.PastDueGraceWindow` (24h) from `CurrentPeriodEnd`, else drop to Free. **Audit fix (2026-06-04):** resolver extracted to `Models/Billing/EntitlementPlanResolver.Resolve(subscription, now)` with parameterized clock; `EntitlementPlanResolverTests` covers trialing override, active, past_due/unpaid in/out of grace, canceled/none. |
+| User can see a reusable lock + upsell on any gated surface | Done | Shared `<FeatureGate feature="...">` (`shared/components/FeatureGate.tsx`) renders children when entitled, else a catalog-driven `ProUpsell` → paywall. Catalog `shared/navigation/featureCatalog.ts` maps feature code → min plan, lock label, upsell copy, paywall plan; entitlement = server flag OR `planMeets(plan, minPlan)`. Validated on Insights; remaining tabs roll out incrementally. |
+| Pro-only manual Plaid re-sync gated with a daily quota | Done | `manual_resync_enabled` is code-backed (`EntitlementGuard.IsFeatureEnabled` → `plan==Pro`). `ManualResyncQuotaBusiness` enforces `ProResyncDailyLimit` (default 5) via `app.user_daily_usage`; user-initiated `POST /plaid/connections/sync` + `/plaid/transactions/sync` consume quota (nightly sweep bypasses via `SyncSingleConnectionAsync`). Over-limit → 429; `GET /plaid/resync-quota` + mobile `useResyncQuota` show remaining. |
 
 ## Scope
 
@@ -20,8 +25,8 @@ No new screens — gating affects existing surfaces by hiding/showing UI based o
 
 | Screen | Effect |
 |---|---|
-| 3.1 / 3.2 / 3.3 / 3.4 | In-store recommendation surfaces respect `geofencing_enabled` for arrival push side; foreground rec stays available per Phase 1 baseline |
-| 5.1 / 5.3 | Cards list / empty state shows upgrade CTAs when `card_link_limit` reached or `plaid_linking_enabled = false` |
+| 3.1 / 3.2 / 3.3 / 3.4 | In-store recommendation surfaces respect `geofencing_enabled`; geo-arrival pushes are additionally capped per day by `geo_recommendations_per_day` (Free 1, Basic 3, Pro unlimited) |
+| 5.1 / 5.3 | Cards list / empty state shows upgrade CTAs when `manual_card_limit` / `plaid_card_limit` reached or `plaid_linking_enabled = false` |
 | 5.4 | Plaid connections hidden entirely when `plaid_linking_enabled = false` |
 | 6.1 | Transactions list filters out `source = plaid` rows when `plaid_transactions_view_enabled = false` |
 | 6.3 | AI insights card hidden / disabled when `ai_insights_enabled = false` |
@@ -33,7 +38,7 @@ No new screens — gating affects existing surfaces by hiding/showing UI based o
 
 | Coverage | User Story | Screen Ref | Notes |
 |---|---|---|---|
-| Full | User can use all Pro features during their 7-day trial regardless of plan they picked | (any) | Option 1 trial override below |
+| Full | User gets the picked plan's features during their trial (Basic 7-day, Pro 14-day) | (any) | Trial rule below — trial grants the chosen plan |
 | Full | User can see upgrade guidance when a paid feature is gated | 5.1, 5.3, 6.3, 8.3 | Existing entitlement-driven CTAs |
 | Full | User can be redirected to billing when opening a higher-plan feature | 5.1, 5.3, 8.3 | Existing |
 | Full | User can see entitlement changes reflected in the app shortly after Stripe webhook processing | 8.3, 5.1 | `EntitlementCacheInvalidator` ([webhook-handlers.md](webhook-handlers.md#consumers-triggered)) |
@@ -74,19 +79,26 @@ On gated API call (e.g. POST /plaid/link-token)
 | Server-side gate | every gated endpoint | Re-checks `EntitlementsResponse` before processing | Inline | None | Read entitlement cache | Server entitlement cache |
 | Stripe webhook reshape | `POST /api/v1/webhooks/stripe` | `WebhookAckResponse` | Webhook Driven | Publishes `billing.subscription.updated` → `EntitlementCacheInvalidator` ([webhook-handlers.md](webhook-handlers.md)) | Write `billing.subscriptions`, `billing.stripe_webhook_events`, `messaging.event_outbox` | Invalidate per-user entitlement cache |
 
-## Trial Override Rule (Option 1: Full Access)
+## Plan Tiers And Trial Rule
 
-Phase 1 uses the industry-standard rule: **during `status = 'trialing'`, the entitlement resolver returns the full Pro feature set regardless of which plan the user selected at checkout.**
+Three tiers, fully data-driven from `billing.plans` + `billing.plan_features`:
 
-| Subscription state | Effective feature set |
+| Tier | Trial | Manual cards | Plaid cards | Geo recs/day | Plaid linking | AI insights |
+|---|---|---|---|---|---|---|
+| Free | — | 1 | 0 | 1 | ❌ | ❌ |
+| Basic | 7 days | 3 | 3 | 3 | ✅ | ❌ |
+| Pro | 14 days | unlimited | unlimited | unlimited | ✅ | ✅ |
+
+**Trial = the picked plan.** During `status = 'trialing'`, the resolver returns the feature set of the plan the user selected at checkout (a Basic trial grants Basic features, a Pro trial grants Pro). When entitlement falls away the baseline is **Free**, not Basic.
+
+| Subscription state | Effective plan |
 |---|---|
-| `trialing` | All features enabled (Pro equivalent) — `EntitlementsResponse.trialing = true` |
-| `active` | Resolved from `billing.plan_features` for the user's plan |
-| `past_due`, `unpaid` | Grace window: keep last-known entitlements for 24h, then downgrade to Basic |
-| `canceled`, `incomplete_expired` | Downgrade to Basic feature set |
-| no subscription row | Basic feature set (read-only access maintained for offboarding) |
+| `trialing` | `subscription.planCode` (the picked plan) |
+| `active` | `subscription.planCode` |
+| `past_due`, `unpaid` | Grace window: keep picked plan for 24h from `CurrentPeriodEnd`, then drop to Free |
+| `canceled`, `incomplete_expired`, no subscription row | Free feature set |
 
-**Why Option 1:** simpler resolver, generous trial UX, well-established pattern (Spotify, Notion, Linear). Option 2 (surgical per-feature trial unlock via an `is_trial_only_grant` flag on `billing.plan_features`) is recorded in Design Gaps below — switch only when product-strategy needs differ per feature.
+Resolver: `Models/Billing/EntitlementPlanResolver.Resolve(subscription, now)`.
 
 ## Gateable Features
 
@@ -94,12 +106,16 @@ Source of truth: `billing.features.code`. Add a row here to introduce a new gate
 
 | Feature code | What it gates | Server enforcement points |
 |---|---|---|
-| `card_link_limit` (integer) | Max linked + manual cards | `POST /cards/manual`, `POST /plaid/exchange-token` reject when limit reached |
-| `unlimited_cards` (boolean) | Bypasses the cap | Same endpoints as above |
+| `manual_card_limit` (integer) | Max manually added cards | `POST /cards/manual` rejects when the manual count reaches the limit |
+| `plaid_card_limit` (integer) | Max bank-linked (Plaid) cards | `POST /plaid/exchange-token` rejects when the plaid count reaches the limit |
+| `geo_recommendations_per_day` (integer) | Geo-arrival recommendations per UTC day | `POST /api/v1/webhooks/foursquare` soft-skips once today's `geofence_arrival` count reaches the limit |
+| `unlimited_cards` (boolean) | Bypasses both per-source card limits | `POST /cards/manual`, `POST /plaid/exchange-token` |
 | `ai_insights_enabled` (boolean) | AI insights tab + generation | `GET /ai-insights`, `POST /ai-insights/generate`, `AIInsightGenerationJob` (re-check at run time per [job-architecture.md](../low-level-design/Service/job-architecture.md#aiinsightgenerationjob)) |
 | `plaid_linking_enabled` (boolean) | Plaid Link flow + connection management | `POST /plaid/link-token`, `POST /plaid/exchange-token`, `POST /plaid/connections/*` |
 | `plaid_transactions_view_enabled` (boolean) | Visibility of `source = plaid` rows in transaction list/detail | `GET /transactions`, `GET /transactions/{id}` filter `source` server-side |
-| `geofencing_enabled` (boolean) | Geo-arrival push notification | `POST /api/v1/webhooks/foursquare` skips notification insert when disabled |
+| `geofencing_enabled` (boolean) | Geo-arrival push master switch (on for all tiers; the per-day cap differentiates tiers) | `POST /api/v1/webhooks/foursquare` skips notification insert when disabled |
+
+Card-limit enforcement is per-source: `EntitlementGuard.RequireCardLinkCapacityAsync(user, cardSource, count)` checks `manual_card_limit` or `plaid_card_limit` (bypassed by `unlimited_cards`). Displayed limits come from the same entitlements via `CardLimitsCalculator`.
 
 ## Contracts Used
 
@@ -107,10 +123,12 @@ Source of truth: `billing.features.code`. Add a row here to introduce a new gate
 
 | Field | Type | Notes |
 |---|---|---|
-| `planCode` | string | Currently effective plan |
+| `planCode` | string | Currently effective plan (`free` \| `basic` \| `pro`) |
 | `trialing` | boolean | `true` while `subscriptions.status = 'trialing'` |
 | `trialEndsAt` | timestamp, nullable | When trial flips to active or canceled |
-| `cardLinkLimit` | int, nullable | `null` when `unlimited_cards = true` |
+| `manualCardLimit` | int, nullable | `null` when `unlimited_cards = true` |
+| `plaidCardLimit` | int, nullable | `null` when `unlimited_cards = true` |
+| `geoRecommendationsPerDay` | int, nullable | `null` = unlimited |
 | `unlimitedCards` | boolean | |
 | `aiInsightsEnabled` | boolean | |
 | `plaidLinkingEnabled` | boolean | |
@@ -172,6 +190,4 @@ No new tables introduced by this guide. Tier changes are seeded-data updates to 
 
 ## Design Gaps
 
-| Status | Type | Source Doc | Current Design | Proposed Adjustment | Reason |
-|---|---|---|---|---|---|
-| Open | Trial Policy | Workflow | Phase 1 ships with Option 1 (trial = full Pro access) | Revisit if product wants per-feature trial unlock (Option 2 = add `is_trial_only_grant` to `billing.plan_features`) | Industry default fits Phase 1; surgical control is a later refinement |
+None currently open.

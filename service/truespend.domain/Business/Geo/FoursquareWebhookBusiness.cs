@@ -1,13 +1,13 @@
 using System.Globalization;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TrueSpend.Domain.BusinessInterfaces.Billing;
 using TrueSpend.Domain.BusinessInterfaces.Geo;
+using TrueSpend.Domain.BusinessInterfaces.Notifications;
 using TrueSpend.Domain.BusinessInterfaces.Recommendations;
 using TrueSpend.Domain.Constants;
 using TrueSpend.Domain.Entities.Finance;
 using TrueSpend.Domain.Entities.Messaging;
-using TrueSpend.Domain.Events.Notifications;
 using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.Models.Geo;
 using TrueSpend.Domain.Models.Notifications;
@@ -29,11 +29,14 @@ public sealed class FoursquareWebhookBusiness(
     IMerchantsReadService merchantsReadService,
     IMerchantsInsertService merchantsInsertService,
     IRecommendationBuilderBusiness recommendationBuilder,
-    IMessagingInsertService messagingInsertService,
+    IMessagingInsertService messagingInsertService, // archived: kept for future async migration
     IBillingReadBusiness billingReadBusiness,
     INotificationGateService gateService,
+    INotificationsDispatchBusiness dispatchBusiness,
+    INotificationInboxCacheInvalidatorBusiness inboxCacheInvalidator,
     GeoValidator validator,
-    IUnitOfWork unitOfWork) : IFoursquareWebhookBusiness
+    IUnitOfWork unitOfWork,
+    ILogger<FoursquareWebhookBusiness> logger) : IFoursquareWebhookBusiness
 {
     private const decimal AssumedSpendAmount = 25m;
 
@@ -41,6 +44,8 @@ public sealed class FoursquareWebhookBusiness(
         FoursquareWebhookInput input,
         CancellationToken cancellationToken)
     {
+        _ = messagingInsertService;
+
         var validation = validator.ValidateWebhookInput(input);
         if (validation.Count > 0)
         {
@@ -57,149 +62,184 @@ public sealed class FoursquareWebhookBusiness(
 
         var eventKind = ClassifyEvent(input.EventType);
 
-        await using var tx = await unitOfWork.BeginTransactionAsync(cancellationToken);
-        int webhookEventId;
-        try
+        int? committedNotificationId = null;
+        Guid? committedUserId = null;
+        FoursquareWebhookResult finalResult = new(false, false, null, null, null);
+
+        await using (var tx = await unitOfWork.BeginTransactionAsync(cancellationToken))
         {
-            webhookEventId = await insertService.RecordWebhookEventAsync(input, userId, null, cancellationToken);
+            int webhookEventId;
+            try
+            {
+                webhookEventId = await insertService.RecordWebhookEventAsync(input, userId, null, cancellationToken);
+            }
+            catch (DbUpdateException ex) when (PostgresErrors.IsUniqueViolation(ex))
+            {
+                await tx.RollbackAsync(cancellationToken);
+                return BusinessResponse<FoursquareWebhookResult>.Ok(
+                    new FoursquareWebhookResult(true, true, null, null, null));
+            }
+
+            try
+            {
+                if (userId is null)
+                {
+                    await insertService.MarkWebhookProcessedAsync(webhookEventId, null, null, "unknown_user", cancellationToken);
+                    await tx.CommitAsync(cancellationToken);
+                    return BusinessResponse<FoursquareWebhookResult>.Ok(
+                        new FoursquareWebhookResult(true, false, null, null, null));
+                }
+
+                var resolvedUserId = userId.Value;
+
+                if (eventKind == FoursquareEventKind.Unsupported)
+                {
+                    await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, null, "unsupported_event", cancellationToken);
+                    await tx.CommitAsync(cancellationToken);
+                    return BusinessResponse<FoursquareWebhookResult>.Ok(
+                        new FoursquareWebhookResult(true, false, null, null, null));
+                }
+
+                if (eventKind == FoursquareEventKind.Exit)
+                {
+                    var exitMerchant = await ResolveMerchantAsync(input, cancellationToken);
+                    await TryWriteLocationEventAsync(resolvedUserId, input, exitMerchant?.Id, GeoConstants.GeofenceExitedLocationEventCode, cancellationToken);
+                    await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, exitMerchant?.Id, "exit_only", cancellationToken);
+                    await tx.CommitAsync(cancellationToken);
+                    return BusinessResponse<FoursquareWebhookResult>.Ok(
+                        new FoursquareWebhookResult(true, false, null, null, exitMerchant?.Id));
+                }
+
+                var user = new OnboardingWorkflowUser(resolvedUserId, null);
+
+                var merchant = await ResolveMerchantAsync(input, cancellationToken);
+                if (merchant is null)
+                {
+                    await TryWriteLocationEventAsync(resolvedUserId, input, merchantId: null, GeoConstants.GeofenceEnteredLocationEventCode, cancellationToken);
+                    await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, null, "merchant_not_resolved", cancellationToken);
+                    await tx.CommitAsync(cancellationToken);
+                    return BusinessResponse<FoursquareWebhookResult>.Ok(
+                        new FoursquareWebhookResult(true, false, null, null, null));
+                }
+
+                await TryWriteLocationEventAsync(resolvedUserId, input, merchant.Id, GeoConstants.GeofenceEnteredLocationEventCode, cancellationToken);
+
+                if (!await readService.HasActiveCardsAsync(resolvedUserId, cancellationToken))
+                {
+                    await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, merchant.Id, "no_active_cards", cancellationToken);
+                    await tx.CommitAsync(cancellationToken);
+                    return BusinessResponse<FoursquareWebhookResult>.Ok(
+                        new FoursquareWebhookResult(true, false, null, null, merchant.Id));
+                }
+
+                var typeId = await readService.GetNotificationTypeIdAsync(NotificationsConstants.BestCardAlertTypeCode, cancellationToken);
+                if (typeId == 0)
+                {
+                    await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, merchant.Id, "notification_type_missing", cancellationToken);
+                    await tx.CommitAsync(cancellationToken);
+                    return BusinessResponse<FoursquareWebhookResult>.Ok(
+                        new FoursquareWebhookResult(true, false, null, null, merchant.Id));
+                }
+
+                var gate = await gateService.GetGateAsync(resolvedUserId, typeId, DateTimeOffset.UtcNow, cancellationToken);
+                if (!gate.ShouldProduce())
+                {
+                    await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, merchant.Id, "gated", cancellationToken);
+                    await tx.CommitAsync(cancellationToken);
+                    return BusinessResponse<FoursquareWebhookResult>.Ok(
+                        new FoursquareWebhookResult(true, false, null, null, merchant.Id));
+                }
+
+                var entitlements = await billingReadBusiness.GetEntitlementsAsync(user, cancellationToken);
+                if (entitlements.Data?.GeofencingEnabled != true)
+                {
+                    await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, merchant.Id, "geofencing_disabled", cancellationToken);
+                    await tx.CommitAsync(cancellationToken);
+                    return BusinessResponse<FoursquareWebhookResult>.Ok(
+                        new FoursquareWebhookResult(true, false, null, null, merchant.Id));
+                }
+
+                var dailyLimit = entitlements.Data?.GeoRecommendationsPerDay;
+                if (dailyLimit.HasValue)
+                {
+                    var todayUtc = new DateTimeOffset(DateTimeOffset.UtcNow.UtcDateTime.Date, TimeSpan.Zero);
+                    var usedToday = await readService.CountGeoRecommendationsSinceAsync(resolvedUserId, todayUtc, cancellationToken);
+                    if (usedToday >= dailyLimit.Value)
+                    {
+                        await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, merchant.Id, "geo_daily_limit_reached", cancellationToken);
+                        await tx.CommitAsync(cancellationToken);
+                        return BusinessResponse<FoursquareWebhookResult>.Ok(
+                            new FoursquareWebhookResult(true, false, null, null, merchant.Id));
+                    }
+                }
+
+                var recommendation = await recommendationBuilder.BuildAsync(
+                    user,
+                    merchant,
+                    merchant.CategoryCode,
+                    AssumedSpendAmount,
+                    RecommendationsConstants.GeofenceArrivalContextCode,
+                    cancellationToken);
+
+                if (recommendation is null)
+                {
+                    await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, merchant.Id, "no_eligible_cards", cancellationToken);
+                    await tx.CommitAsync(cancellationToken);
+                    return BusinessResponse<FoursquareWebhookResult>.Ok(
+                        new FoursquareWebhookResult(true, false, null, null, merchant.Id));
+                }
+
+                var (title, body) = BuildNotificationContent(recommendation, merchant);
+                var notification = new NotificationEntity
+                {
+                    UserId = resolvedUserId,
+                    NotificationTypeId = typeId,
+                    Title = title,
+                    Body = body,
+                    Payload = null,
+                    IsRead = false,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow
+                };
+                var notificationId = await insertService.InsertNotificationAsync(notification, cancellationToken);
+                await insertService.UpdateNotificationPayloadAsync(notificationId, PushPayloadBuilder.BestCardAlert(notificationId, recommendation.Id, merchant.Id), cancellationToken);
+
+                await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, merchant.Id, null, cancellationToken);
+                await tx.CommitAsync(cancellationToken);
+
+                committedNotificationId = notificationId;
+                committedUserId = resolvedUserId;
+                finalResult = new FoursquareWebhookResult(true, false, notificationId, recommendation.Id, merchant.Id);
+            }
+            catch
+            {
+                await tx.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
-        catch (DbUpdateException ex) when (PostgresErrors.IsUniqueViolation(ex))
+
+        if (committedNotificationId is { } notifId && committedUserId is { } uid)
         {
-            await tx.RollbackAsync(cancellationToken);
-            return BusinessResponse<FoursquareWebhookResult>.Ok(
-                new FoursquareWebhookResult(true, true, null, null, null));
+            try
+            {
+                await dispatchBusiness.DispatchPushAsync(notifId, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Push dispatch failed for foursquare best-card notification {NotificationId}", notifId);
+            }
+
+            try
+            {
+                await inboxCacheInvalidator.InvalidateAsync(uid, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Inbox cache invalidation failed for user {UserId} after foursquare best-card notification {NotificationId}", uid, notifId);
+            }
         }
 
-        try
-        {
-
-            if (userId is null)
-            {
-                await insertService.MarkWebhookProcessedAsync(webhookEventId, null, null, "unknown_user", cancellationToken);
-                await tx.CommitAsync(cancellationToken);
-                return BusinessResponse<FoursquareWebhookResult>.Ok(
-                    new FoursquareWebhookResult(true, false, null, null, null));
-            }
-
-            var resolvedUserId = userId.Value;
-
-            if (eventKind == FoursquareEventKind.Unsupported)
-            {
-                await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, null, "unsupported_event", cancellationToken);
-                await tx.CommitAsync(cancellationToken);
-                return BusinessResponse<FoursquareWebhookResult>.Ok(
-                    new FoursquareWebhookResult(true, false, null, null, null));
-            }
-
-            if (eventKind == FoursquareEventKind.Exit)
-            {
-                var exitMerchant = await ResolveMerchantAsync(input, cancellationToken);
-                await TryWriteLocationEventAsync(resolvedUserId, input, exitMerchant?.Id, GeoConstants.GeofenceExitedLocationEventCode, cancellationToken);
-                await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, exitMerchant?.Id, "exit_only", cancellationToken);
-                await tx.CommitAsync(cancellationToken);
-                return BusinessResponse<FoursquareWebhookResult>.Ok(
-                    new FoursquareWebhookResult(true, false, null, null, exitMerchant?.Id));
-            }
-
-            var user = new OnboardingWorkflowUser(resolvedUserId, null);
-
-            var merchant = await ResolveMerchantAsync(input, cancellationToken);
-            if (merchant is null)
-            {
-                await TryWriteLocationEventAsync(resolvedUserId, input, merchantId: null, GeoConstants.GeofenceEnteredLocationEventCode, cancellationToken);
-                await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, null, "merchant_not_resolved", cancellationToken);
-                await tx.CommitAsync(cancellationToken);
-                return BusinessResponse<FoursquareWebhookResult>.Ok(
-                    new FoursquareWebhookResult(true, false, null, null, null));
-            }
-
-            await TryWriteLocationEventAsync(resolvedUserId, input, merchant.Id, GeoConstants.GeofenceEnteredLocationEventCode, cancellationToken);
-
-            if (!await readService.HasActiveCardsAsync(resolvedUserId, cancellationToken))
-            {
-                await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, merchant.Id, "no_active_cards", cancellationToken);
-                await tx.CommitAsync(cancellationToken);
-                return BusinessResponse<FoursquareWebhookResult>.Ok(
-                    new FoursquareWebhookResult(true, false, null, null, merchant.Id));
-            }
-
-            var typeId = await readService.GetNotificationTypeIdAsync(NotificationsConstants.BestCardAlertTypeCode, cancellationToken);
-            if (typeId == 0)
-            {
-                await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, merchant.Id, "notification_type_missing", cancellationToken);
-                await tx.CommitAsync(cancellationToken);
-                return BusinessResponse<FoursquareWebhookResult>.Ok(
-                    new FoursquareWebhookResult(true, false, null, null, merchant.Id));
-            }
-
-            var gate = await gateService.GetGateAsync(resolvedUserId, typeId, DateTimeOffset.UtcNow, cancellationToken);
-            if (!gate.ShouldProduce())
-            {
-                await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, merchant.Id, "gated", cancellationToken);
-                await tx.CommitAsync(cancellationToken);
-                return BusinessResponse<FoursquareWebhookResult>.Ok(
-                    new FoursquareWebhookResult(true, false, null, null, merchant.Id));
-            }
-
-            var entitlements = await billingReadBusiness.GetEntitlementsAsync(user, cancellationToken);
-            if (entitlements.Data?.GeofencingEnabled != true)
-            {
-                await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, merchant.Id, "geofencing_disabled", cancellationToken);
-                await tx.CommitAsync(cancellationToken);
-                return BusinessResponse<FoursquareWebhookResult>.Ok(
-                    new FoursquareWebhookResult(true, false, null, null, merchant.Id));
-            }
-
-            var recommendation = await recommendationBuilder.BuildAsync(
-                user,
-                merchant,
-                merchant.CategoryCode,
-                AssumedSpendAmount,
-                RecommendationsConstants.GeofenceArrivalContextCode,
-                cancellationToken);
-
-            if (recommendation is null)
-            {
-                await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, merchant.Id, "no_eligible_cards", cancellationToken);
-                await tx.CommitAsync(cancellationToken);
-                return BusinessResponse<FoursquareWebhookResult>.Ok(
-                    new FoursquareWebhookResult(true, false, null, null, merchant.Id));
-            }
-
-            var (title, body) = BuildNotificationContent(recommendation, merchant);
-            var notification = new NotificationEntity
-            {
-                UserId = resolvedUserId,
-                NotificationTypeId = typeId,
-                Title = title,
-                Body = body,
-                Payload = null,
-                IsRead = false,
-                CreatedAt = DateTimeOffset.UtcNow,
-                UpdatedAt = DateTimeOffset.UtcNow
-            };
-            var notificationId = await insertService.InsertNotificationAsync(notification, cancellationToken);
-            await insertService.UpdateNotificationPayloadAsync(notificationId, PushPayloadBuilder.BestCardAlert(notificationId, recommendation.Id, merchant.Id), cancellationToken);
-
-            await messagingInsertService.EnqueueOutboxEventAsync(
-                EventTypes.NotificationCreated,
-                "notification",
-                notificationId,
-                JsonSerializer.Serialize(new NotificationCreatedEventContract(1, notificationId, resolvedUserId)),
-                $"foursquare.{input.FoursquareEventId}",
-                cancellationToken);
-
-            await insertService.MarkWebhookProcessedAsync(webhookEventId, resolvedUserId, merchant.Id, null, cancellationToken);
-            await tx.CommitAsync(cancellationToken);
-
-            return BusinessResponse<FoursquareWebhookResult>.Ok(
-                new FoursquareWebhookResult(true, false, notificationId, recommendation.Id, merchant.Id));
-        }
-        catch
-        {
-            await tx.RollbackAsync(cancellationToken);
-            throw;
-        }
+        return BusinessResponse<FoursquareWebhookResult>.Ok(finalResult);
     }
 
     private async Task<Merchant?> ResolveMerchantAsync(FoursquareWebhookInput input, CancellationToken cancellationToken)
@@ -281,4 +321,21 @@ public sealed class FoursquareWebhookBusiness(
         return (title, body);
     }
 
+    #region archive — async event-publish (disabled in MVP)
+    // HandleEventAsync previously published NotificationCreated to the messaging outbox when a
+    // best-card alert notification was inserted. Consumers (2): NotificationCreatedHandler →
+    // DispatchPushAsync; InboxCacheInvalidatorHandler → InvalidateAsync. Both now inline post-commit.
+    //
+    // using System.Text.Json;
+    // using TrueSpend.Domain.Events.Notifications;
+    //
+    // // Inside the committing tx, after UpdateNotificationPayloadAsync:
+    // await messagingInsertService.EnqueueOutboxEventAsync(
+    //     EventTypes.NotificationCreated,
+    //     "notification",
+    //     notificationId,
+    //     JsonSerializer.Serialize(new NotificationCreatedEventContract(1, notificationId, resolvedUserId)),
+    //     $"foursquare.{input.FoursquareEventId}",
+    //     cancellationToken);
+    #endregion
 }

@@ -3,8 +3,9 @@ export const QueryKeys = {
   Cards: ["cards"] as const,
   CardLimits: ["cards", "limits"] as const,
   CardDetail: (id: number) => ["cards", id] as const,
-  CardRewardOverrides: (id: number) => ["cards", id, "reward-overrides"] as const,
+  CardRewardOverrides: (cardId: number) => ["cards", cardId, "reward-overrides"] as const,
   PlaidConnections: ["plaid", "connections"] as const,
+  PlaidResyncQuota: ["plaid", "resync-quota"] as const,
   CatalogIssuers: ["catalog", "issuers"] as const,
   CatalogProducts: ["catalog", "products"] as const,
   CatalogCategories: ["catalog", "categories"] as const,
@@ -24,6 +25,7 @@ export const QueryKeys = {
   Transactions: (filters?: { q?: string; categoryCode?: string; cardId?: number }) =>
     filters ? ["transactions", filters] as const : ["transactions"] as const,
   TransactionDetail: (id: number) => ["transactions", id] as const,
+  TransactionCategories: ["transactions", "categories"] as const,
   MissedRewards: ["transactions", "missed-rewards"] as const,
   Notifications: (filter?: string) => filter ? ["notifications", filter] as const : ["notifications"] as const,
   NotificationDetail: (id: number) => ["notifications", id] as const,
@@ -31,9 +33,11 @@ export const QueryKeys = {
   RewardsSummary: (period: string) => ["analytics", "rewards-summary", period] as const,
   MissedRewardsSummary: (period: string) => ["analytics", "missed-rewards-summary", period] as const,
   AIInsights: ["ai-insights"] as const,
-  AIInsightGenerationRun: (runId: number) => ["ai-insights", "run", runId] as const,
   Profile: ["profile"] as const,
   Preferences: ["preferences"] as const,
   LookupsCurrencies: ["lookups", "currencies"] as const,
-  LookupsPermissionStates: ["lookups", "permission-states"] as const
+  LookupsPermissionStates: ["lookups", "permission-states"] as const,
+  PrivacySettings: ["privacy", "settings"] as const,
+  AccountDeletionStatus: ["privacy", "account-deletion"] as const,
+  SyncStatus: ["sync", "status"] as const
 };

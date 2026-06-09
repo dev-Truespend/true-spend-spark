@@ -6,7 +6,12 @@ public static class NotificationsConstants
     public const string MissedRewardsTypeCode = "missed_rewards";
     public const string WeeklySummaryTypeCode = "weekly_summary";
     public const string UnusualTransactionTypeCode = "unusual_transaction";
+    public const string SubscriptionExpiryTypeCode = "subscription_expiry";
     public const string SystemTypeCode = "system";
+
+    // Subscription-expiry reminders fire at these whole-day marks before a trial or plan ends.
+    public const string SubscriptionExpiryTrialKind = "trial";
+    public const string SubscriptionExpiryPlanKind = "plan";
 
     public const decimal UnusualTransactionThresholdAmount = 500m;
     public static readonly TimeSpan UnusualTransactionLookback = TimeSpan.FromMinutes(15);

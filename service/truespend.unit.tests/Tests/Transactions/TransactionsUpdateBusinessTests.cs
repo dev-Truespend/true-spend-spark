@@ -1,5 +1,8 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TrueSpend.Domain.Business.Transactions;
+using TrueSpend.Domain.BusinessInterfaces.Analytics;
+using TrueSpend.Domain.BusinessInterfaces.Notifications;
 using TrueSpend.Domain.Models.Cards;
 using TrueSpend.Domain.Models.Catalog;
 using TrueSpend.Domain.Models.Onboarding;
@@ -22,20 +25,21 @@ public sealed class TransactionsUpdateBusinessTests
             new DateOnly(2026, 1, 10), null, null, null, null, "manual", false);
 
     [Fact]
-    public async Task UpdateTransaction_persists_changes_and_enqueues_event()
+    public async Task UpdateTransaction_persists_changes_and_triggers_inline_recompute()
     {
         var update = new Mock<ITransactionsUpdateService>();
         var read = NewRead(SampleDetail());
         var rewards = NewRewards(cardId: 1, baseRate: 0.01m);
-        var messaging = new Mock<IMessagingInsertService>();
+        var messaging = new Mock<IMessagingInsertService>(); // archived: kept for future async migration
+        var analytics = new Mock<IAnalyticsComputeBusiness>();
+        var missedRewardNotif = new Mock<IMissedRewardNotificationBusiness>();
 
-        var business = new TransactionsUpdateBusiness(update.Object, read.Object, rewards.Object, NewCatalog().Object, messaging.Object, new FakeUnitOfWork(), new TransactionsValidator());
+        var business = NewBusiness(update, read, rewards, NewCatalog(), messaging, analytics, missedRewardNotif);
         var response = await business.UpdateTransactionAsync(TestUserFactory.AnyUser(), 42, new UpdateTransactionRequest("New Name", null, null, null, null, null, null, null, null), CancellationToken.None);
 
         Assert.True(response.Success);
         update.Verify(s => s.UpdateTransactionAsync(It.IsAny<OnboardingWorkflowUser>(), 42, It.IsAny<UpdateTransactionRequest>(), It.IsAny<short?>(), It.IsAny<CancellationToken>()), Times.Once);
-        messaging.Verify(m => m.EnqueueOutboxEventAsync(
-            "finance.transaction.updated", "finance.transaction", It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        analytics.Verify(a => a.RecomputeSnapshotsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -47,17 +51,20 @@ public sealed class TransactionsUpdateBusinessTests
             .ReturnsAsync((TransactionDetail?)null);
         var rewards = NewRewards(cardId: 1, baseRate: 0.01m);
         var messaging = new Mock<IMessagingInsertService>();
+        var analytics = new Mock<IAnalyticsComputeBusiness>();
+        var missedRewardNotif = new Mock<IMissedRewardNotificationBusiness>();
 
-        var business = new TransactionsUpdateBusiness(update.Object, read.Object, rewards.Object, NewCatalog().Object, messaging.Object, new FakeUnitOfWork(), new TransactionsValidator());
+        var business = NewBusiness(update, read, rewards, NewCatalog(), messaging, analytics, missedRewardNotif);
         var response = await business.UpdateTransactionAsync(TestUserFactory.AnyUser(), 99, new UpdateTransactionRequest(null, null, null, null, null, null, null, null, null), CancellationToken.None);
 
         Assert.False(response.Success);
         Assert.Equal(404, response.StatusCode);
         update.Verify(s => s.UpdateTransactionAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<int>(), It.IsAny<UpdateTransactionRequest>(), It.IsAny<short?>(), It.IsAny<CancellationToken>()), Times.Never);
+        analytics.Verify(a => a.RecomputeSnapshotsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task MarkNotAMiss_dismisses_and_enqueues_event()
+    public async Task MarkNotAMiss_dismisses_and_triggers_inline_recompute()
     {
         var update = new Mock<ITransactionsUpdateService>();
         update.Setup(s => s.GetMissedRewardTransactionIdAsync(7, It.IsAny<CancellationToken>()))
@@ -73,15 +80,28 @@ public sealed class TransactionsUpdateBusinessTests
             .ReturnsAsync(new TransactionRewardResult(0.01m, 1m, null, null));
         var rewards = NewRewards(cardId: 1, baseRate: 0.01m);
         var messaging = new Mock<IMessagingInsertService>();
+        var analytics = new Mock<IAnalyticsComputeBusiness>();
+        var missedRewardNotif = new Mock<IMissedRewardNotificationBusiness>();
 
-        var business = new TransactionsUpdateBusiness(update.Object, read.Object, rewards.Object, NewCatalog().Object, messaging.Object, new FakeUnitOfWork(), new TransactionsValidator());
+        var business = NewBusiness(update, read, rewards, NewCatalog(), messaging, analytics, missedRewardNotif);
         var response = await business.MarkNotAMissAsync(TestUserFactory.AnyUser(), 7, CancellationToken.None);
 
         Assert.True(response.Success);
         update.Verify(s => s.DismissMissedRewardAsync(7, It.IsAny<CancellationToken>()), Times.Once);
-        messaging.Verify(m => m.EnqueueOutboxEventAsync(
-            "finance.missed_reward.not_a_miss", It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        analytics.Verify(a => a.RecomputeSnapshotsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    private static TransactionsUpdateBusiness NewBusiness(
+        Mock<ITransactionsUpdateService> update,
+        Mock<ITransactionsReadService> read,
+        Mock<IRewardRulesReadService> rewards,
+        Mock<ICatalogReadService> catalog,
+        Mock<IMessagingInsertService> messaging,
+        Mock<IAnalyticsComputeBusiness> analytics,
+        Mock<IMissedRewardNotificationBusiness> missedRewardNotif) =>
+        new(update.Object, read.Object, rewards.Object, catalog.Object, messaging.Object,
+            new FakeUnitOfWork(), analytics.Object, missedRewardNotif.Object,
+            NullLogger<TransactionsUpdateBusiness>.Instance, new TransactionsValidator());
 
     private static Mock<ICatalogReadService> NewCatalog()
     {
@@ -108,11 +128,23 @@ public sealed class TransactionsUpdateBusinessTests
         var card = new CardSummary(cardId, "My Card", "Bank", null, "manual", true, "active", null);
         var profile = new List<UserCardReward>
         {
-            new(card, 1, baseRate, new Dictionary<string, decimal>(), "cash_back")
+            new(card, 1, baseRate, new Dictionary<string, decimal>(), "cash_back", [])
         };
         var mock = new Mock<IRewardRulesReadService>();
         mock.Setup(r => r.GetUserRewardProfileAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(profile);
         return mock;
     }
+
+    #region archive — async event-publish (disabled in MVP)
+    // UpdateTransaction_persists_changes_and_enqueues_event previously asserted:
+    //     messaging.Verify(m => m.EnqueueOutboxEventAsync(
+    //         "finance.transaction.updated", "finance.transaction", ...), Times.Once);
+    // Replaced with the inline analytics.RecomputeSnapshotsAsync assertion.
+    //
+    // MarkNotAMiss_dismisses_and_enqueues_event previously asserted:
+    //     messaging.Verify(m => m.EnqueueOutboxEventAsync(
+    //         "finance.missed_reward.not_a_miss", It.IsAny<string>(), ...), Times.Once);
+    // Replaced with the inline analytics.RecomputeSnapshotsAsync assertion.
+    #endregion
 }

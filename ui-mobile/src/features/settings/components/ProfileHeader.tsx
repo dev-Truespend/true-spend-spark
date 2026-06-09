@@ -1,25 +1,53 @@
 import { Image, StyleSheet, Text, View } from "react-native";
-import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
+import { LinearGradient } from "expo-linear-gradient";
+import { colors, gradients, palette } from "@/shared/theme/colors";
+import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { Profile } from "@/features/profile/types/profile.types";
 
 type Props = {
   profile: Profile;
+  centered?: boolean;
 };
 
-export function ProfileHeader({ profile }: Props) {
+export function ProfileHeader({ profile, centered = false }: Props) {
   const hasAvatar = !!profile.avatarUrl;
+  const avatar = (
+    <LinearGradient
+      colors={[...gradients.brand]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[styles.avatar, centered && styles.avatarCentered]}
+    >
+      {hasAvatar ? (
+        <Image
+          accessibilityLabel="Profile photo"
+          source={{ uri: profile.avatarUrl ?? undefined }}
+          style={styles.image}
+        />
+      ) : (
+        <Text
+          style={[styles.initials, centered && styles.initialsCentered]}
+          accessibilityLabel={`Initials ${profile.initials}`}
+        >
+          {profile.initials}
+        </Text>
+      )}
+    </LinearGradient>
+  );
+
+  if (centered) {
+    return (
+      <View style={styles.centered}>
+        {avatar}
+        <Text style={styles.nameCentered} numberOfLines={1}>{profile.displayName}</Text>
+        <Text style={styles.emailCentered} numberOfLines={1}>{profile.email}</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.row}>
-      <View style={styles.avatar}>
-        {hasAvatar ? (
-          <Image accessibilityLabel="Profile photo" source={{ uri: profile.avatarUrl ?? undefined }} style={styles.image} />
-        ) : (
-          <Text style={styles.initials} accessibilityLabel={`Initials ${profile.initials}`}>
-            {profile.initials}
-          </Text>
-        )}
-      </View>
+      {avatar}
       <View style={styles.text}>
         <Text style={styles.name} numberOfLines={1}>{profile.displayName}</Text>
         <Text style={styles.email} numberOfLines={1}>{profile.email}</Text>
@@ -29,43 +57,41 @@ export function ProfileHeader({ profile }: Props) {
 }
 
 const styles = StyleSheet.create({
-  row: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.md,
-    paddingVertical: spacing.md
-  },
+  row: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12 },
+  centered: { alignItems: "center", gap: 6, paddingVertical: 12 },
   avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: "center",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 36,
-    borderWidth: 1,
-    height: 72,
     justifyContent: "center",
-    overflow: "hidden",
-    width: 72
+    overflow: "hidden"
   },
-  image: {
-    height: "100%",
-    width: "100%"
-  },
+  avatarCentered: { width: 72, height: 72, borderRadius: 36 },
+  image: { width: "100%", height: "100%" },
   initials: {
-    color: colors.primary,
-    fontSize: 24,
-    fontWeight: "700"
+    color: palette.white,
+    fontFamily: fontFamily.heavy,
+    fontSize: scaleFont(22),
+    fontWeight: "800",
+    letterSpacing: 0.4
   },
-  text: {
-    flex: 1
-  },
-  name: {
+  initialsCentered: { fontSize: scaleFont(24) },
+  text: { flex: 1 },
+  name: { color: colors.text, fontFamily: fontFamily.bold, fontSize: scaleFont(18), fontWeight: "700" },
+  email: { color: colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(13), marginTop: 2 },
+  nameCentered: {
     color: colors.text,
-    fontSize: 20,
-    fontWeight: "700"
+    fontFamily: fontFamily.bold,
+    fontSize: scaleFont(18),
+    fontWeight: "700",
+    marginTop: 10,
+    textAlign: "center"
   },
-  email: {
-    color: colors.muted,
-    fontSize: 14,
-    marginTop: 2
+  emailCentered: {
+    color: colors.mutedFg,
+    fontFamily: fontFamily.regular,
+    fontSize: scaleFont(13),
+    textAlign: "center"
   }
 });

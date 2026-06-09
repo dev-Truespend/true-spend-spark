@@ -17,6 +17,13 @@ public sealed class CatalogValidator
         var errors = new List<string>();
         if (string.IsNullOrWhiteSpace(request.IssuerName)) errors.Add("Issuer name is required.");
         if (string.IsNullOrWhiteSpace(request.CardName)) errors.Add("Card name is required.");
+        // When this request also creates a manual user card, last four is required so a later
+        // Plaid link can confidently match and adopt it.
+        if (request.CreateUserCard)
+        {
+            if (string.IsNullOrWhiteSpace(request.LastFour)) errors.Add("Last four is required.");
+            else if (request.LastFour.Length != 4 || !request.LastFour.All(char.IsDigit)) errors.Add("Last four must be four digits.");
+        }
         return errors;
     }
 }

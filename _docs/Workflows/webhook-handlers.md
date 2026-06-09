@@ -1,5 +1,7 @@
 # Webhook Handlers
 
+> **MVP execution note** — Stripe and Plaid webhook handlers run their downstream side-effects (entitlement cache invalidation, payment-method cache invalidation, Plaid reauth notification + cards cache invalidation, Plaid new-accounts notification, geofence best-card notification dispatch) **inline post-commit** in place of the archived outbox events. See [api-design-patterns.md § Post-commit side-effects](../low-level-design/Service/api-design-patterns.md#post-commit-side-effects) and [_docs/Refactors/sync-execution-conversion.md](../Refactors/sync-execution-conversion.md).
+
 ## Progress
 
 | User story | Status | Notes |

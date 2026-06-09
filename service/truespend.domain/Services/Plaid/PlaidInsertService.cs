@@ -25,12 +25,6 @@ public sealed class PlaidInsertService(TrueSpendDbContext db) : IPlaidInsertServ
             .FirstOrDefaultAsync(cancellationToken);
         if (itemStatusId == 0) itemStatusId = (short)PlaidItemStatusEnum.Connected;
 
-        var cardSourceId = await db.CardSources.AsNoTracking()
-            .Where(s => s.Code == "plaid")
-            .Select(s => s.Id)
-            .FirstOrDefaultAsync(cancellationToken);
-        if (cardSourceId == 0) cardSourceId = (short)CardSourceEnum.Plaid;
-
         var item = new PlaidItemEntity
         {
             UserId = user.UserId,
@@ -47,10 +41,11 @@ public sealed class PlaidInsertService(TrueSpendDbContext db) : IPlaidInsertServ
         db.PlaidItems.Add(item);
         await db.SaveChangesAsync(cancellationToken);
 
-        var createdCards = new List<CardSummary>();
-        foreach (var accountInfo in exchange.Accounts)
-        {
-            var account = new PlaidAccountEntity
+        // Insert all accounts in one round-trip instead of a SaveChanges per account.
+        // EF backfills each entity's generated Id on the single save, so the result list is
+        // built afterwards from the same tracked entities.
+        var accountEntities = exchange.Accounts
+            .Select(accountInfo => new PlaidAccountEntity
             {
                 PlaidItemId = item.Id,
                 PlaidAccountId = accountInfo.AccountId,
@@ -59,37 +54,52 @@ public sealed class PlaidInsertService(TrueSpendDbContext db) : IPlaidInsertServ
                 Mask = accountInfo.Mask,
                 CreatedAt = now,
                 UpdatedAt = now
-            };
-            db.PlaidAccounts.Add(account);
-            await db.SaveChangesAsync(cancellationToken);
+            })
+            .ToList();
 
-            var card = new UserCardEntity
-            {
-                UserId = user.UserId,
-                PlaidAccountId = account.Id,
-                SourceId = cardSourceId,
-                SyncStatus = CardsConstants.DefaultSyncStatus,
-                Nickname = accountInfo.Name,
-                LastFour = accountInfo.Mask,
-                IsActive = true,
-                CreatedAt = now,
-                UpdatedAt = now
-            };
-            db.UserCards.Add(card);
+        if (accountEntities.Count > 0)
+        {
+            db.PlaidAccounts.AddRange(accountEntities);
             await db.SaveChangesAsync(cancellationToken);
-
-            createdCards.Add(new CardSummary(
-                card.Id,
-                card.Nickname ?? accountInfo.Name,
-                exchange.InstitutionName,
-                card.LastFour ?? accountInfo.Mask,
-                "plaid",
-                card.IsPrimary,
-                card.SyncStatus,
-                null));
         }
 
-        return new PlaidPersistResult(item.Id, createdCards);
+        var accounts = accountEntities
+            .Select(a => new PlaidPersistedAccount(a.Id, a.AccountName, a.Mask))
+            .ToList();
+
+        return new PlaidPersistResult(item.Id, exchange.InstitutionName, accounts);
+    }
+
+    public async Task InsertPlaidUserCardAsync(
+        OnboardingWorkflowUser user,
+        int plaidAccountRowId,
+        string accountName,
+        string? mask,
+        int? cardProductId,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        var cardSourceId = await db.CardSources.AsNoTracking()
+            .Where(s => s.Code == "plaid")
+            .Select(s => s.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (cardSourceId == 0) cardSourceId = (short)CardSourceEnum.Plaid;
+
+        db.UserCards.Add(new UserCardEntity
+        {
+            UserId = user.UserId,
+            PlaidAccountId = plaidAccountRowId,
+            CardProductId = cardProductId,
+            SourceId = cardSourceId,
+            SyncStatus = CardsConstants.DefaultSyncStatus,
+            Nickname = accountName,
+            LastFour = mask,
+            IsActive = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<PlaidConnectionResponse> GetCurrentStateAsync(OnboardingWorkflowUser user, CancellationToken cancellationToken)

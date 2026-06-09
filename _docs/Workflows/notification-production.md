@@ -1,5 +1,7 @@
 # Notification Production
 
+> **MVP execution note** — Every producer (`MissedRewardNotificationBusiness`, `UnusualTransactionNotificationBusiness`, `WeeklySummaryNotificationBusiness`, `NotificationsProductionBusiness`, `PlaidReauthNotificationBusiness`, `PlaidNewAccountsNotificationBusiness`, `AdminNotificationDispatchBusiness`) calls `INotificationsDispatchBusiness.DispatchPushAsync` and `INotificationInboxCacheInvalidatorBusiness.InvalidateAsync` **inline post-commit**, in place of the archived `NotificationCreated` outbox event. See [api-design-patterns.md § Post-commit side-effects](../low-level-design/Service/api-design-patterns.md#post-commit-side-effects) and [_docs/Refactors/sync-execution-conversion.md](../Refactors/sync-execution-conversion.md).
+
 ## Progress
 
 | User story | Status | Notes |
@@ -9,6 +11,7 @@
 | `honors_quiet_hours` flag on notification_types so system/plaid_reauth can bypass | Done | Column added; seed flips `system` to `false` |
 | WeeklySummaryProducer (cron Sun 09:00 user TZ) | Done | `WeeklySummaryJob` + `WeeklySummaryScheduler` run hourly; converts to user TZ; idempotent via ISO week key |
 | UnusualTransactionProducer with static Phase 1 thresholds | Done | `UnusualTransactionJob` scans last `UnusualTransactionLookback` for transactions ≥ `UnusualTransactionThresholdAmount` |
+| SubscriptionExpiryProducer (cron daily 09:00 UTC, 2-day + 1-day reminders for trial/plan expiry) | Done | `SubscriptionExpiryNotificationJob` + `SubscriptionExpiryNotificationScheduler`; `SubscriptionExpiryNotificationBusiness` reads `GetExpiringSubscriptionsAsync`, dedups one-per-UTC-day; covers trial_end + cancel_at_period_end |
 | ReminderFiringJob honours per-type preference | Done | Now uses `NotificationGateService.GetGateAsync` per reminder before insert. **Audit fix (2026-06-04):** reminder push payload now inherits the source notification's payload type (missed_rewards / best_card_alert / unusual_transaction / weekly_summary / system) instead of always emitting a `system` payload — `NotificationsProductionBusiness.BuildReminderPayload` clones the source `Payload` JSON, swaps `notificationId` to the new reminder id, and tags `reminder:true` + `sourceNotificationId`. New `INotificationProductionService.GetSourceNotificationsAsync` returns `SourceNotificationInfo(SourceNotificationId, NotificationTypeId, NotificationTypeCode, Payload)`. |
 | Email channel dispatch via Resend | Done | `NotificationsDispatchBusiness` invokes `IEmailDeliveryService` when `email_enabled = true`; `ResendEmailDeliveryService` is the real impl, `EmailDeliveryPlaceholderService` is the fallback |
 
@@ -33,6 +36,7 @@ Producers that create `messaging.notifications` rows and the fan-out path that d
 | `BestCardAlertProducer` | (a) Phase 1 in-app: handled inline by recommendation endpoints — no push. (b) Phase 1 geo-arrival push: produced inline by `POST /api/v1/webhooks/foursquare` when Foursquare fires `user.entered_geofence` / `user.entered_place`. See [10-geo-recommendations.md](10-geo-recommendations.md). | `best_card_alert` | `BestCardAlertPushPayload` | Owner of the user record matched from Foursquare `externalId` |
 | `WeeklySummaryProducer` | Cron — Sunday 09:00 in `app.user_preferences.timezone` | `weekly_summary` | `WeeklySummaryPushPayload` | Active users with the type enabled |
 | `UnusualTransactionProducer` | Cron sweep — scans `finance.transactions` created within `NotificationsConstants.UnusualTransactionLookback` whose `amount >= UnusualTransactionThresholdAmount` | `unusual_transaction` | `UnusualTransactionPushPayload` | Owner |
+| `SubscriptionExpiryNotificationProducer` | Cron daily 09:00 UTC — `GetExpiringSubscriptionsAsync` finds trials (`trialing`, `trial_end`) and cancel-at-period-end plans (`active`, `cancel_at_period_end`) expiring within 2 days; fires at the 2-day and 1-day marks | `subscription_expiry` | `SubscriptionExpiryPushPayload` (`kind` ∈ {`trial`,`plan`}, `daysBefore` ∈ {2,1}, `expiresAt`) | Subscription owner. Idempotent: one expiry notification per user per UTC day via `HasNotificationOfTypeSinceAsync` |
 | `PlaidReauthNotificationProducer` | Event `finance.plaid_item.status_changed` to `login_required` | `system` (subtype `plaid_reauth`) | `SystemPushPayload` with `subtype = 'plaid_reauth'` | Owner of the item |
 | `ReminderFiringJob` | Cron sweep — `messaging.notification_reminders.remind_at <= now() and is_fired = false` | inherited from `source_notification_id` or `system` | Inherits the source notification's payload type | Owner |
 

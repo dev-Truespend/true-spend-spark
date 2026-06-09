@@ -1,0 +1,118 @@
+# Local app stack — hot reload via `dotnet watch`, source mounted from ../service.
+#
+# MVP note — the Service Bus emulator infra in docker-compose.infra.yml is no
+# longer required at runtime; the eventconsumer container that consumed it is
+# archived below. Skip the infra `up` unless you're re-enabling the async path
+# (see _docs/Refactors/sync-execution-conversion.md).
+#
+# Optional (only if re-enabling async):
+#   docker compose -f docker/docker-compose.infra.yml up -d
+#
+# Run the app stack (rebuild + run, can be torn down freely):
+#   docker compose -f docker/docker-compose.local.yml up --build
+#   docker compose -f docker/docker-compose.local.yml down
+#
+# Supabase CLI stack (Postgres on 54322, Auth on 54321) runs on the host;
+# containers reach it via host.docker.internal.
+
+name: truespend-local
+
+x-dotnet-dev: &dotnet-dev
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  volumes:
+    - ../service:/src
+    - dotnet-nuget:/root/.nuget/packages
+    # Anonymous volumes for every project's obj/ and bin/ — each container gets
+    # its own private build dirs that mask the host folders, so the three
+    # services don't race on truespend.domain's project.assets.json or on each
+    # other's build artifacts.
+    - /src/truespend.api/obj
+    - /src/truespend.api/bin
+    - /src/truespend.domain/obj
+    - /src/truespend.domain/bin
+    - /src/truespend.eventconsumer/obj
+    - /src/truespend.eventconsumer/bin
+    - /src/truespend.workerservice/obj
+    - /src/truespend.workerservice/bin
+    - /src/truespend.unit.tests/obj
+    - /src/truespend.unit.tests/bin
+  restart: unless-stopped
+  networks: [truespend-local]
+
+x-dotnet-env: &dotnet-env
+  ConnectionStrings__TrueSpendDb: "Host=host.docker.internal;Port=54322;Database=postgres;Username=postgres;Password=postgres;Include Error Detail=true"
+  ServiceBus__ConnectionString: "Endpoint=sb://servicebus;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
+
+services:
+  api:
+    <<: *dotnet-dev
+    build:
+      context: ../service
+      dockerfile: ../docker/truespend.api.Dockerfile
+      target: development
+    image: truespend-api:dev
+    container_name: truespend-api
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *dotnet-env
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      DOTNET_USE_POLLING_FILE_WATCHER: "1"
+      # Issuer must match what GoTrue actually stamps in the JWT's `iss` claim.
+      # From inside the supabase_auth container, GoTrue sees itself as 127.0.0.1,
+      # not host.docker.internal — that's what ends up in the token.
+      Supabase__JwtIssuer: "http://127.0.0.1:54321/auth/v1"
+      Supabase__JwtAudience: "authenticated"
+      # Supabase CLI may sign access tokens with asymmetric signing keys. Confirm with:
+      #   docker exec supabase_auth_supabase env | grep -E 'GOTRUE_JWT_(KEYS|SECRET)'
+      Supabase__JwtKeys: '[{"kty":"EC","kid":"b81269f1-21d8-4f2e-b719-c2240a840d90","use":"sig","key_ops":["verify"],"alg":"ES256","ext":true,"crv":"P-256","x":"M5Sjqn5zwC9Kl1zVfUUGvv9boQjCGd45G8sdopBExB4","y":"P6IXMvA2WYXSHSOMTBH2jsw_9rrzGy89FjPf6oOsIxQ"}]'
+      # Keep the HS256 secret configured for Supabase stacks that still use it.
+      Supabase__JwtSecret: "super-secret-jwt-token-with-at-least-32-characters-long"
+
+  # region: archive — eventconsumer container (disabled in MVP)
+  #
+  # The OutboxPollingConsumer hosted-service registration was archived in
+  # truespend.eventconsumer/Extensions/EventConsumerExtensions.cs as part of the
+  # async -> inline post-commit conversion. With the polling consumer gone, the
+  # eventconsumer process boots and idles — no useful work runs locally — so the
+  # container is archived here too. The project still builds via the .sln; the
+  # Dockerfile is preserved. Re-enable is the inverse: un-archive
+  # AddHostedService<OutboxPollingConsumer>() and uncomment this block.
+  # See _docs/Refactors/sync-execution-conversion.md.
+  #
+  # eventconsumer:
+  #   <<: *dotnet-dev
+  #   build:
+  #     context: ../service
+  #     dockerfile: ../docker/truespend.eventconsumer.Dockerfile
+  #     target: development
+  #   image: truespend-eventconsumer:dev
+  #   container_name: truespend-eventconsumer
+  #   environment:
+  #     <<: *dotnet-env
+  #     DOTNET_ENVIRONMENT: Development
+  #     DOTNET_USE_POLLING_FILE_WATCHER: "1"
+  # endregion
+
+  workerservice:
+    <<: *dotnet-dev
+    build:
+      context: ../service
+      dockerfile: ../docker/truespend.workerservice.Dockerfile
+      target: development
+    image: truespend-workerservice:dev
+    container_name: truespend-workerservice
+    environment:
+      <<: *dotnet-env
+      DOTNET_ENVIRONMENT: Development
+      DOTNET_USE_POLLING_FILE_WATCHER: "1"
+
+networks:
+  truespend-local:
+    name: truespend-local
+    external: true
+
+volumes:
+  dotnet-nuget:

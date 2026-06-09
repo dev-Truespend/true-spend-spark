@@ -53,16 +53,28 @@ export async function requestPushPermission(): Promise<PushPermissionStatus> {
   return mapStatus(next.status);
 }
 
+let warnedMissingProjectId = false;
+
 export async function getExpoPushToken(): Promise<string | null> {
   if (!Device.isDevice) return null;
   const projectId =
     Constants.expoConfig?.extra?.eas?.projectId ??
     (Constants.easConfig as { projectId?: string } | undefined)?.projectId;
-  if (!projectId) return null;
+  if (!projectId) {
+    if (!warnedMissingProjectId) {
+      warnedMissingProjectId = true;
+      console.warn(
+        "[push] EAS projectId is missing — getExpoPushTokenAsync skipped. " +
+          "Set expo.extra.eas.projectId in app.config.ts to enable push notifications."
+      );
+    }
+    return null;
+  }
   try {
     const result = await Notifications.getExpoPushTokenAsync({ projectId });
     return result.data ?? null;
-  } catch {
+  } catch (err) {
+    console.warn("[push] getExpoPushTokenAsync failed", err);
     return null;
   }
 }

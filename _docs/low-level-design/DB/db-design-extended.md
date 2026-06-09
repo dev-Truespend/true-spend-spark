@@ -350,10 +350,10 @@ Inbound webhook log for Foursquare geofence/place enter events. Mirrors `plaid_w
 ### `plans` — slim plan identity
 
 - `id` (smallint, PK)
-- `code` (text, unique) — `'basic' | 'pro'`
+- `code` (text, unique) — `'free' | 'basic' | 'pro'`
 - `display_name` (text)
 - `description` (text, nullable)
-- `trial_days` (smallint, default 0)
+- `trial_days` (smallint, default 0) — Free 0, Basic 7, Pro 14
 - `stripe_product_id` (text, nullable) — one Stripe Product per plan
 - `is_active` (boolean, default true)
 - `created_at` (timestamptz)
@@ -377,7 +377,7 @@ Inbound webhook log for Foursquare geofence/place enter events. Mirrors `plaid_w
 ### `features` — feature catalog
 
 - `id` (smallint, PK)
-- `code` (text, unique) — `'card_link_limit'`, `'ai_insights_enabled'`
+- `code` (text, unique) — `'manual_card_limit'`, `'plaid_card_limit'`, `'geo_recommendations_per_day'`, `'ai_insights_enabled'`
 - `display_name` (text)
 - `description` (text, nullable)
 - `value_type` (text) — `'integer' | 'boolean' | 'string'`
@@ -479,7 +479,7 @@ Inbound webhook log for Foursquare geofence/place enter events. Mirrors `plaid_w
 ### `notification_types` — catalog of notification categories
 
 - `id` (smallint, PK)
-- `code` (text, unique) — `'best_card_alert'`, `'missed_rewards'`, `'weekly_summary'`, `'unusual_transaction'`, `'system'`
+- `code` (text, unique) — `'best_card_alert'`, `'missed_rewards'`, `'weekly_summary'`, `'unusual_transaction'`, `'subscription_expiry'`, `'system'`
 - `display_name` (text)
 - `description` (text, nullable)
 - `default_enabled` (boolean, default true)

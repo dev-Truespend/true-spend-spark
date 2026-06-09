@@ -1,5 +1,7 @@
 # Notifications Workflow
 
+> **MVP execution note** — `NotificationCreated` is no longer published to the outbox. Producers call `INotificationsDispatchBusiness.DispatchPushAsync(notificationId)` (push + email) and `INotificationInboxCacheInvalidatorBusiness.InvalidateAsync(userId)` **inline post-commit**. See [api-design-patterns.md § Post-commit side-effects](../low-level-design/Service/api-design-patterns.md#post-commit-side-effects) and [_docs/Refactors/sync-execution-conversion.md](../Refactors/sync-execution-conversion.md).
+
 ## Progress
 
 | User story | Status | Notes |

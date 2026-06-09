@@ -1,19 +1,10 @@
-import { StyleSheet, Text } from "react-native";
-import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
+import { View } from "react-native";
+import { SectionLabel } from "@/shared/components/SectionLabel";
 
 export function SectionHeader({ title }: { title: string }) {
-  return <Text style={styles.text}>{title}</Text>;
+  return (
+    <View style={{ marginTop: 14, marginBottom: 6 }}>
+      <SectionLabel>{title}</SectionLabel>
+    </View>
+  );
 }
-
-const styles = StyleSheet.create({
-  text: {
-    color: colors.muted,
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.6,
-    marginBottom: spacing.xs,
-    marginTop: spacing.lg,
-    textTransform: "uppercase"
-  }
-});

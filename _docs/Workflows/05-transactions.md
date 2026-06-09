@@ -1,5 +1,7 @@
 # Transactions Workflow
 
+> **MVP execution note** — Any step below that mentions an outbox event runs **inline post-commit** in the MVP. Manual add/edit/delete is archived (Plaid-driven sync only). See [api-design-patterns.md § Post-commit side-effects](../low-level-design/Service/api-design-patterns.md#post-commit-side-effects) and [_docs/Refactors/sync-execution-conversion.md](../Refactors/sync-execution-conversion.md).
+
 ## Progress
 
 | User Story | Status | Notes |
@@ -24,7 +26,7 @@
 | User can edit a transaction category | Done | |
 | User can change the card associated with a transaction | Done | |
 | User can delete a transaction | Done | |
-| User can navigate from a notification to the related transaction | Done | Partial — notification workflow owns source |
+| User can navigate from a notification to the related transaction | Done | Push handler routes `notification.openedFromPush` to `/(app)/transactions/[id]`; in-app notification detail also deep-links to the same route. |
 | User can mark missed reward as not a miss | Done | |
 
 ## Scope
@@ -64,7 +66,7 @@ Phase 1 online workflow for the Insights Transactions sub-tab: list/search/filte
 | Full | User can edit a transaction category | 6.2 |  |
 | Full | User can change the card associated with a transaction | 6.2 |  |
 | Full | User can delete a transaction | 6.2 |  |
-| Partial | User can navigate from a notification to the related transaction | 7.2, 6.2 | Notification workflow owns source navigation |
+| Full | User can navigate from a notification to the related transaction | 7.2, 6.2 | Push handler + in-app notification detail deep-link to `/(app)/transactions/[id]` |
 | Out of scope | User can see transactions while offline from local cache | 6.1, 8.5 | Offline minimized for Phase 1 workflow docs |
 
 ## Preconditions

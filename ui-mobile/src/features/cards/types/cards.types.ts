@@ -22,6 +22,27 @@ export type RewardRule = {
   notes?: string | null;
 };
 
+export type RewardOverride = {
+  categoryCode: string;
+  categoryName: string;
+  multiplier: number;
+  notes?: string | null;
+};
+
+export type RewardOverridesResponse = {
+  rewardRules: RewardOverride[];
+};
+
+export type UpsertRewardOverrideInput = {
+  categoryCode: string;
+  multiplier: number;
+  notes?: string;
+};
+
+export type DeleteRewardOverrideInput = {
+  categoryCode: string;
+};
+
 export type MonthlyRewardContribution = {
   points: number;
   estimatedValue: number;
@@ -43,17 +64,6 @@ export type CardDetail = {
   terms?: CardTerms | null;
 };
 
-export type RewardOverride = {
-  categoryCode: string;
-  categoryName: string;
-  multiplier: number;
-  notes?: string | null;
-};
-
-export type RewardOverridesResponse = {
-  rewardRules: RewardOverride[];
-};
-
 export type CreateManualCardInput = {
   cardProductId: number;
   issuerId: number;
@@ -68,12 +78,3 @@ export type UpdateCardInput = {
   isPrimary: boolean;
 };
 
-export type UpsertRewardOverrideInput = {
-  categoryCode: string;
-  multiplier: number;
-  notes?: string;
-};
-
-export type DeleteRewardOverrideInput = {
-  categoryCode: string;
-};

@@ -35,7 +35,7 @@ public sealed class ProfileReadService(TrueSpendDbContext db) : IProfileReadServ
                               join plan in db.Plans.AsNoTracking() on s.PlanId equals plan.Id
                               orderby s.UpdatedAt descending
                               select plan.Code)
-            .FirstOrDefaultAsync(cancellationToken) ?? BillingConstants.BasicPlanCode;
+            .FirstOrDefaultAsync(cancellationToken) ?? BillingConstants.FreePlanCode;
 
         return new ProfileResponse(
             row?.DisplayName ?? user.Email ?? "TrueSpend user",

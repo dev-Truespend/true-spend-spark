@@ -1,14 +1,6 @@
 using Moq;
 using TrueSpend.Domain.Business.Merchants;
 using TrueSpend.Domain.Models.Onboarding;
-using TrueSpend.Domain.Models.Cards;
-using TrueSpend.Domain.Models.Catalog;
-using TrueSpend.Domain.Models.Billing;
-using TrueSpend.Domain.Models.Plaid;
-using TrueSpend.Domain.Models.Devices;
-using TrueSpend.Domain.Models.NotificationSettings;
-using TrueSpend.Domain.Models.Permissions;
-using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.Models.Recommendations;
 using TrueSpend.Domain.ServiceInterfaces.Merchants;
 using TrueSpend.Domain.ServiceInterfaces.Messaging;
@@ -28,7 +20,7 @@ public sealed class MerchantsInsertBusinessTests
             .ReturnsAsync(new Merchant(1, "Whole Foods Market", "groceries", false, null));
         var read = new Mock<IMerchantsReadService>();
         read.Setup(r => r.ResolveCategoryAsync("Whole Foods Market", It.IsAny<CancellationToken>())).ReturnsAsync(new MerchantCategoryMatch("groceries", false));
-        var messaging = new Mock<IMessagingInsertService>();
+        var messaging = new Mock<IMessagingInsertService>(); // archived: kept for future async migration
         var business = new MerchantsInsertBusiness(insert.Object, read.Object, messaging.Object, new FakeUnitOfWork(), new MerchantsValidator());
 
         var response = await business.ResolveMerchantAsync(TestUserFactory.AnyUser(),
@@ -72,7 +64,7 @@ public sealed class MerchantsInsertBusinessTests
     }
 
     [Fact]
-    public async Task CreateVisit_records_visit_and_emits_outbox_event()
+    public async Task CreateVisit_records_visit_and_does_not_emit_outbox_event()
     {
         var insert = new Mock<IMerchantsInsertService>();
         insert.Setup(s => s.RecordVisitAsync(It.IsAny<OnboardingWorkflowUser>(), 42, "groceries", It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
@@ -80,20 +72,17 @@ public sealed class MerchantsInsertBusinessTests
         insert.Setup(s => s.GetVisitsAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { new MerchantVisit(42, "groceries", TestUserFactory.FixedNow) });
         var read = new Mock<IMerchantsReadService>();
-        var messaging = new Mock<IMessagingInsertService>();
+        var messaging = new Mock<IMessagingInsertService>(); // archived: kept for future async migration
         var business = new MerchantsInsertBusiness(insert.Object, read.Object, messaging.Object, new FakeUnitOfWork(), new MerchantsValidator());
 
         var response = await business.CreateVisitAsync(TestUserFactory.AnyUser(),
             new CreateMerchantVisitRequest(42, "groceries", TestUserFactory.FixedNow), CancellationToken.None);
 
         Assert.True(response.Success);
+        // Post-conversion: MerchantVisitCreated handler was log-only, so no enqueue is expected.
         messaging.Verify(m => m.EnqueueOutboxEventAsync(
-            "finance.merchant_visit.created",
-            "finance.merchant_visit",
-            42,
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(),
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -110,4 +99,13 @@ public sealed class MerchantsInsertBusinessTests
         Assert.False(response.Success);
         insert.Verify(s => s.RecordVisitAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    #region archive — async event-publish (disabled in MVP)
+    // CreateVisit_records_visit_and_emits_outbox_event previously asserted:
+    //     messaging.Verify(m => m.EnqueueOutboxEventAsync(
+    //         "finance.merchant_visit.created", "finance.merchant_visit", 42,
+    //         It.IsAny<string>(), It.IsAny<string>(),
+    //         It.IsAny<CancellationToken>()), Times.Once);
+    // The handler was log-only, so the live test now asserts the enqueue does NOT fire.
+    #endregion
 }

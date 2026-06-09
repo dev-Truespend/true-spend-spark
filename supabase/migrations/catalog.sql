@@ -24,6 +24,18 @@ create table if not exists catalog.card_products (
   reward_currency_name text,
   base_reward_rate numeric(6,4) not null default 1.0,
   rewardscc_id text unique,
+  card_type text,
+  card_url text,
+  fx_fee numeric(5,2),
+  credit_range text,
+  base_reward_valuation numeric(8,4),
+  has_lounge_access boolean not null default false,
+  has_free_checked_bag boolean not null default false,
+  has_trusted_traveler_credit boolean not null default false,
+  has_free_hotel_night boolean not null default false,
+  signup_bonus jsonb,
+  perks jsonb,
+  annual_spend_rewards jsonb,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -49,10 +61,21 @@ create table if not exists catalog.categories (
   code text not null unique,
   display_name text not null,
   icon text,
+  provider_category_id text,
+  category_group text,
+  subcategory_group text,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+create unique index if not exists catalog_categories_provider_id_idx
+  on catalog.categories(provider_category_id)
+  where provider_category_id is not null;
+
+create unique index if not exists catalog_categories_group_subgroup_idx
+  on catalog.categories(category_group, subcategory_group)
+  where category_group is not null;
 
 create table if not exists catalog.category_aliases (
   id int generated always as identity primary key,
@@ -73,6 +96,11 @@ create table if not exists catalog.reward_rules (
   start_date date,
   end_date date,
   requires_activation boolean not null default false,
+  -- Brand-locked rule: bonus applies only at a specific merchant brand (e.g. Hilton 12x),
+  -- not generically across the subcategory_group. merchant_brand holds the RewardsCC leaf
+  -- name to merchant-match against. Set by the catalog sync. See category-bridge.md.
+  is_merchant_locked boolean not null default false,
+  merchant_brand text,
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

@@ -20,6 +20,7 @@ public sealed class PlaidProviderOptions
     public string ClientName { get; set; } = "TrueSpend";
     public string[] CountryCodes { get; set; } = new[] { "US" };
     public string Language { get; set; } = "en";
+    public int TransactionsDaysRequested { get; set; } = 90;
 }
 
 public sealed class PlaidProvider(PlaidClient client, IOptions<PlaidProviderOptions> optionsAccessor) : IPlaidProvider
@@ -36,9 +37,10 @@ public sealed class PlaidProvider(PlaidClient client, IOptions<PlaidProviderOpti
             {
                 User = new LinkTokenCreateRequestUser { ClientUserId = user.UserId.ToString("N") },
                 ClientName = _options.ClientName,
-                Products = new[] { Products.Auth, Products.Transactions },
+                Products = new[] { Products.Transactions },
                 CountryCodes = ParseCountryCodes(_options.CountryCodes),
-                Language = Language.English
+                Language = Language.English,
+                Transactions = new LinkTokenTransactions { DaysRequested = _options.TransactionsDaysRequested }
             });
 
             if (response.Error is { } error)
@@ -177,7 +179,10 @@ public sealed class PlaidProvider(PlaidClient client, IOptions<PlaidProviderOpti
             (decimal)tx.Amount,
             tx.Date ?? DateOnly.FromDateTime(DateTime.UtcNow),
             tx.Pending ?? false,
-            tx.OriginalDescription);
+            tx.OriginalDescription,
+            tx.PersonalFinanceCategory?.Primary,
+            tx.PersonalFinanceCategory?.Detailed,
+            tx.PersonalFinanceCategory?.ConfidenceLevel);
 
     private async Task<(string Name, string? LogoUrl)> ResolveInstitutionAsync(string institutionId, CancellationToken cancellationToken)
     {

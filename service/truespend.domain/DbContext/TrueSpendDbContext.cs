@@ -18,6 +18,7 @@ public sealed class TrueSpendDbContext(DbContextOptions<TrueSpendDbContext> opti
     public DbSet<UserPreferenceEntity> UserPreferences => Set<UserPreferenceEntity>();
     public DbSet<UserPermissionEntity> UserPermissions => Set<UserPermissionEntity>();
     public DbSet<UserDevicePermissionEntity> UserDevicePermissions => Set<UserDevicePermissionEntity>();
+    public DbSet<UserDailyUsageEntity> UserDailyUsages => Set<UserDailyUsageEntity>();
 
     public DbSet<CountryEntity> Countries => Set<CountryEntity>();
     public DbSet<PlanEntity> Plans => Set<PlanEntity>();
@@ -46,6 +47,8 @@ public sealed class TrueSpendDbContext(DbContextOptions<TrueSpendDbContext> opti
     public DbSet<MerchantVisitEntity> MerchantVisits => Set<MerchantVisitEntity>();
     public DbSet<RecommendationEntity> Recommendations => Set<RecommendationEntity>();
     public DbSet<TransactionEntity> Transactions => Set<TransactionEntity>();
+    public DbSet<TransactionCategoryEntity> TransactionCategories => Set<TransactionCategoryEntity>();
+    public DbSet<TransactionCategoryBridgeEntity> TransactionCategoryBridges => Set<TransactionCategoryBridgeEntity>();
     public DbSet<TransactionRewardResultEntity> TransactionRewardResults => Set<TransactionRewardResultEntity>();
     public DbSet<MissedRewardEventEntity> MissedRewardEvents => Set<MissedRewardEventEntity>();
     public DbSet<FoursquareWebhookEventEntity> FoursquareWebhookEvents => Set<FoursquareWebhookEventEntity>();

@@ -42,6 +42,18 @@ public sealed class CardProductEntityConfiguration : IEntityTypeConfiguration<Ca
         builder.Property(x => x.RewardCurrencyName).HasColumnName("reward_currency_name");
         builder.Property(x => x.BaseRewardRate).HasColumnName("base_reward_rate").HasPrecision(6, 4);
         builder.Property(x => x.RewardsCcId).HasColumnName("rewardscc_id");
+        builder.Property(x => x.CardType).HasColumnName("card_type");
+        builder.Property(x => x.CardUrl).HasColumnName("card_url");
+        builder.Property(x => x.FxFee).HasColumnName("fx_fee").HasPrecision(5, 2);
+        builder.Property(x => x.CreditRange).HasColumnName("credit_range");
+        builder.Property(x => x.BaseRewardValuation).HasColumnName("base_reward_valuation").HasPrecision(8, 4);
+        builder.Property(x => x.HasLoungeAccess).HasColumnName("has_lounge_access");
+        builder.Property(x => x.HasFreeCheckedBag).HasColumnName("has_free_checked_bag");
+        builder.Property(x => x.HasTrustedTravelerCredit).HasColumnName("has_trusted_traveler_credit");
+        builder.Property(x => x.HasFreeHotelNight).HasColumnName("has_free_hotel_night");
+        builder.Property(x => x.SignupBonus).HasColumnName("signup_bonus").HasColumnType("jsonb");
+        builder.Property(x => x.Perks).HasColumnName("perks").HasColumnType("jsonb");
+        builder.Property(x => x.AnnualSpendRewards).HasColumnName("annual_spend_rewards").HasColumnType("jsonb");
         builder.Property(x => x.IsActive).HasColumnName("is_active");
         builder.Property(x => x.CreatedAt).HasColumnName("created_at");
         builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");
@@ -82,10 +94,15 @@ public sealed class CategoryEntityConfiguration : IEntityTypeConfiguration<Categ
         builder.Property(x => x.Code).HasColumnName("code");
         builder.Property(x => x.DisplayName).HasColumnName("display_name");
         builder.Property(x => x.Icon).HasColumnName("icon");
+        builder.Property(x => x.ProviderCategoryId).HasColumnName("provider_category_id");
+        builder.Property(x => x.CategoryGroup).HasColumnName("category_group");
+        builder.Property(x => x.SubcategoryGroup).HasColumnName("subcategory_group");
         builder.Property(x => x.IsActive).HasColumnName("is_active");
         builder.Property(x => x.CreatedAt).HasColumnName("created_at");
         builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");
         builder.HasIndex(x => x.Code).IsUnique();
+        builder.HasIndex(x => x.ProviderCategoryId).IsUnique();
+        builder.HasIndex(x => new { x.CategoryGroup, x.SubcategoryGroup }).IsUnique();
     }
 }
 
@@ -119,6 +136,8 @@ public sealed class RewardRuleEntityConfiguration : IEntityTypeConfiguration<Rew
         builder.Property(x => x.StartDate).HasColumnName("start_date");
         builder.Property(x => x.EndDate).HasColumnName("end_date");
         builder.Property(x => x.RequiresActivation).HasColumnName("requires_activation");
+        builder.Property(x => x.IsMerchantLocked).HasColumnName("is_merchant_locked");
+        builder.Property(x => x.MerchantBrand).HasColumnName("merchant_brand");
         builder.Property(x => x.Notes).HasColumnName("notes");
         builder.Property(x => x.CreatedAt).HasColumnName("created_at");
         builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");

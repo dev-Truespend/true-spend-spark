@@ -61,8 +61,21 @@ create table if not exists app.user_device_permissions (
   unique (user_id, device_id)
 );
 
+-- Per-user, per-day usage counters. One row per user per UTC day; extensible with more counter
+-- columns as new daily-limited features are added. Currently tracks user-initiated Plaid re-syncs.
+create table if not exists app.user_daily_usage (
+  id int generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  usage_date date not null,
+  plaid_resync_count int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, usage_date)
+);
+
 create index if not exists app_profiles_user_id_idx on app.profiles(user_id);
 create index if not exists app_onboarding_states_user_id_idx on app.onboarding_states(user_id);
 create index if not exists app_user_preferences_user_id_idx on app.user_preferences(user_id);
 create index if not exists app_user_permissions_user_id_idx on app.user_permissions(user_id);
 create index if not exists app_user_device_permissions_user_id_idx on app.user_device_permissions(user_id);
+create index if not exists app_user_daily_usage_user_id_idx on app.user_daily_usage(user_id);

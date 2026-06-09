@@ -4,16 +4,16 @@ namespace TrueSpend.Domain.Models.Billing;
 
 // Workflow 13 § Trial Override Rule.
 // Maps the current Stripe subscription state to the plan code the user should be entitled to.
-//   trialing                                    -> pro (full trial access)
+//   trialing                                    -> subscription's picked plan (trial grants the chosen plan)
 //   active                                      -> subscription's picked plan
 //   past_due/unpaid within 24h of CurrentPeriodEnd -> subscription's picked plan (grace)
-//   past_due/unpaid beyond grace, canceled, none   -> basic
+//   past_due/unpaid beyond grace, canceled, none   -> free (no active entitlement)
 public static class EntitlementPlanResolver
 {
     public static string Resolve(SubscriptionResponse subscription, DateTimeOffset now)
     {
         if (string.Equals(subscription.Status, BillingConstants.TrialingStatusCode, StringComparison.OrdinalIgnoreCase))
-            return BillingConstants.ProPlanCode;
+            return subscription.PlanCode;
 
         if (string.Equals(subscription.Status, BillingConstants.ActiveStatusCode, StringComparison.OrdinalIgnoreCase))
             return subscription.PlanCode;
@@ -26,6 +26,6 @@ public static class EntitlementPlanResolver
                 return subscription.PlanCode;
         }
 
-        return BillingConstants.BasicPlanCode;
+        return BillingConstants.FreePlanCode;
     }
 }

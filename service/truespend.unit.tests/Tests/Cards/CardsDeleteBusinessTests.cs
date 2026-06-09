@@ -1,6 +1,9 @@
 using Moq;
 using TrueSpend.Domain.Business.Cards;
+using TrueSpend.Domain.BusinessInterfaces.Billing;
+using TrueSpend.Domain.Models.Billing;
 using TrueSpend.Domain.Models.Cards;
+using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.Models.Onboarding;
 using TrueSpend.Domain.ServiceInterfaces.Cards;
 using TrueSpend.Domain.ServiceInterfaces.Messaging;
@@ -15,6 +18,11 @@ public sealed class CardsDeleteBusinessTests
     private static readonly CardSummary AnyCard =
         new(1, "Sample", "Bank", "1234", "manual", false, "active", null);
 
+    private static EntitlementsResponse BasicEntitlements => new(
+        "basic", false, null, ManualCardLimit: 3, PlaidCardLimit: 3, GeoRecommendationsPerDay: 3,
+        UnlimitedCards: false, AiInsightsEnabled: false, PlaidLinkingEnabled: true,
+        PlaidTransactionsViewEnabled: true, GeofencingEnabled: true, Features: new Dictionary<string, string>());
+
     private static CardsDeleteBusiness Build(Mock<ICardsReadService> readService, Mock<ICardsDeleteService> deleteService)
     {
         var tx = new Mock<IUnitOfWorkTransaction>();
@@ -25,13 +33,13 @@ public sealed class CardsDeleteBusinessTests
         uow.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx.Object);
 
-        var messaging = new Mock<IMessagingInsertService>();
-        messaging.Setup(m => m.EnqueueOutboxEventAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+        var messaging = new Mock<IMessagingInsertService>(); // archived: kept for future async migration
 
-        return new CardsDeleteBusiness(readService.Object, deleteService.Object, messaging.Object, uow.Object);
+        var billing = new Mock<IBillingReadBusiness>();
+        billing.Setup(b => b.GetEntitlementsAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResponse<EntitlementsResponse>.Ok(BasicEntitlements));
+
+        return new CardsDeleteBusiness(readService.Object, deleteService.Object, billing.Object, messaging.Object, uow.Object);
     }
 
     [Fact]
@@ -43,8 +51,6 @@ public sealed class CardsDeleteBusinessTests
 
         readSvc.Setup(s => s.GetCardsAsync(user, It.IsAny<CancellationToken>()))
             .ReturnsAsync([AnyCard]);
-        readSvc.Setup(s => s.CurrentPlanCodeAsync(user, It.IsAny<CancellationToken>()))
-            .ReturnsAsync("basic");
         deleteSvc.Setup(s => s.SoftDeleteCardAsync(user, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -67,4 +73,11 @@ public sealed class CardsDeleteBusinessTests
         Assert.False(response.Success);
         Assert.Equal(404, response.StatusCode);
     }
+
+    #region archive — async event-publish (disabled in MVP)
+    // UserCardDeleted had no live subscriber even pre-conversion, so the original tests did not
+    // assert an EnqueueOutboxEventAsync call. The Mock<IMessagingInsertService> field is kept
+    // in Build() because the CardsDeleteBusiness constructor still expects it for future
+    // async-migration re-enable.
+    #endregion
 }

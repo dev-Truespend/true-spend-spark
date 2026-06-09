@@ -1,7 +1,8 @@
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Button } from "@/shared/components/Button";
-import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
+import { colors, gradients, palette } from "@/shared/theme/colors";
+import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { Profile } from "@/features/profile/types/profile.types";
 
 type Props = {
@@ -18,65 +19,57 @@ export function AvatarPicker({ profile, isUploading, errorMessage, onPick }: Pro
         accessibilityRole="button"
         disabled={isUploading}
         onPress={onPick}
-        style={styles.avatar}
+        style={styles.avatarWrap}
         testID="avatar-picker.trigger"
       >
-        {profile.avatarUrl ? (
-          <Image accessibilityLabel="Profile photo" source={{ uri: profile.avatarUrl }} style={styles.image} />
-        ) : (
-          <Text style={styles.initials}>{profile.initials}</Text>
-        )}
+        <LinearGradient
+          colors={[...gradients.brand]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.avatar}
+        >
+          {profile.avatarUrl ? (
+            <Image
+              accessibilityLabel="Profile photo"
+              source={{ uri: profile.avatarUrl }}
+              style={styles.image}
+            />
+          ) : (
+            <Text style={styles.initials}>{profile.initials}</Text>
+          )}
+        </LinearGradient>
         {isUploading ? (
           <View style={styles.overlay}>
-            <ActivityIndicator color={colors.primaryText} />
+            <ActivityIndicator color={palette.white} />
           </View>
         ) : null}
       </Pressable>
-      <Button
-        disabled={isUploading}
-        label={isUploading ? "Uploading…" : "Change photo"}
-        onPress={onPick}
-        variant="secondary"
-      />
+      <View style={{ alignSelf: "center" }}>
+        <Button
+          disabled={isUploading}
+          label={isUploading ? "Uploading…" : "Change photo"}
+          onPress={onPick}
+          variant="outline"
+          size="sm"
+          block={false}
+        />
+      </View>
       {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    gap: spacing.md
-  },
-  avatar: {
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 60,
-    borderWidth: 1,
-    height: 120,
-    justifyContent: "center",
-    overflow: "hidden",
-    width: 120
-  },
-  image: {
-    height: "100%",
-    width: "100%"
-  },
-  initials: {
-    color: colors.primary,
-    fontSize: 36,
-    fontWeight: "700"
-  },
+  container: { alignItems: "center", gap: 12, paddingVertical: 10 },
+  avatarWrap: { width: 108, height: 108, borderRadius: 54, overflow: "hidden" },
+  avatar: { flex: 1, alignItems: "center", justifyContent: "center" },
+  image: { width: "100%", height: "100%" },
+  initials: { color: palette.white, fontFamily: fontFamily.heavy, fontSize: scaleFont(32), fontWeight: "800" },
   overlay: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.overlay,
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center"
   },
-  error: {
-    color: colors.danger,
-    fontSize: 13,
-    textAlign: "center"
-  }
+  error: { color: colors.destructive, fontFamily: fontFamily.medium, fontSize: scaleFont(12), textAlign: "center" }
 });

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TrueSpend.Domain.DbContext;
+using TrueSpend.Domain.Models.Onboarding;
 using TrueSpend.Domain.Models.Recommendations;
 using TrueSpend.Domain.ServiceInterfaces.Merchants;
 
@@ -61,5 +62,32 @@ public sealed class MerchantsReadService(TrueSpendDbContext db) : IMerchantsRead
             .Key;
 
         return new MerchantCategoryMatch(primary, distinctCategories.Count > 1);
+    }
+
+    // Powers the home "last-visited replay" surface. We honor the category the
+    // user explicitly chose during the visit (`SelectedCategoryId`) over the
+    // merchant's default so a Walmart visit that the user marked "grocery"
+    // replays as grocery, not the merchant's nominal category.
+    public Task<RecentMerchantVisit?> GetMostRecentVisitAsync(OnboardingWorkflowUser user, TimeSpan lookback, CancellationToken cancellationToken)
+    {
+        var since = DateTimeOffset.UtcNow - lookback;
+        return (from visit in db.MerchantVisits.AsNoTracking()
+                where visit.UserId == user.UserId && visit.VisitedAt >= since
+                orderby visit.VisitedAt descending
+                join merchant in db.Merchants.AsNoTracking() on visit.MerchantId equals merchant.Id
+                join merchantCategory in db.Categories.AsNoTracking() on merchant.CategoryId equals merchantCategory.Id into merchantCategoryJoin
+                from merchantCategory in merchantCategoryJoin.DefaultIfEmpty()
+                join selectedCategory in db.Categories.AsNoTracking() on visit.SelectedCategoryId equals selectedCategory.Id into selectedCategoryJoin
+                from selectedCategory in selectedCategoryJoin.DefaultIfEmpty()
+                select new RecentMerchantVisit(
+                    new Merchant(
+                        merchant.Id,
+                        merchant.CanonicalName,
+                        merchantCategory.Code ?? "general",
+                        merchant.IsMultiCategory,
+                        merchant.Address),
+                    selectedCategory.Code ?? merchantCategory.Code ?? "general",
+                    visit.VisitedAt))
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }

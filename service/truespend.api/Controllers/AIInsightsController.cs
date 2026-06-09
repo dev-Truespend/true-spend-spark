@@ -10,7 +10,6 @@ namespace TrueSpend.Api.Controllers;
 [Route("api/v1/ai-insights")]
 public sealed class AIInsightsController(
     IAIInsightsReadBusiness readBusiness,
-    IAIInsightsInsertBusiness insertBusiness,
     IAIInsightsUpdateBusiness updateBusiness,
     IAIInsightsMapper mapper,
     IClientResponseMapper clientResponseMapper,
@@ -20,10 +19,6 @@ public sealed class AIInsightsController(
     public async Task<IActionResult> GetInsights(CancellationToken cancellationToken) =>
         Respond(await readBusiness.GetInsightsAsync(CurrentUser(), cancellationToken), mapper.ToInsightsResponse);
 
-    [HttpPost("generate")]
-    public async Task<IActionResult> Generate(CancellationToken cancellationToken) =>
-        Respond(await insertBusiness.GenerateInsightsAsync(CurrentUser(), cancellationToken), mapper.ToGenerationResponse);
-
     [HttpGet("generation/{runId:int}")]
     public async Task<IActionResult> GetGenerationRun(int runId, CancellationToken cancellationToken) =>
         Respond(await readBusiness.GetGenerationRunAsync(CurrentUser(), runId, cancellationToken), mapper.ToGenerationResponse);
@@ -31,4 +26,15 @@ public sealed class AIInsightsController(
     [HttpPost("{insightId:int}/dismiss")]
     public async Task<IActionResult> Dismiss(int insightId, CancellationToken cancellationToken) =>
         Respond(await updateBusiness.DismissInsightAsync(CurrentUser(), insightId, cancellationToken), mapper.ToInsightsResponse);
+
+    #region archive — user-facing AI generate (worker-only in MVP)
+    // AI insight generation is worker-only in the MVP: the nightly AIInsightGenerationJob calls
+    // IAIInsightsGenerationBusiness.GenerateForAllEligibleUsersAsync. The user-triggered endpoint
+    // below is retained for future re-enable. To re-enable, re-add `IAIInsightsInsertBusiness insertBusiness`
+    // to the constructor and restore this action.
+    //
+    // [HttpPost("generate")]
+    // public async Task<IActionResult> Generate(CancellationToken cancellationToken) =>
+    //     Respond(await insertBusiness.GenerateInsightsAsync(CurrentUser(), cancellationToken), mapper.ToGenerationResponse);
+    #endregion
 }

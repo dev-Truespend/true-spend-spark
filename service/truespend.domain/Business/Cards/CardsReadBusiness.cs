@@ -1,3 +1,4 @@
+using TrueSpend.Domain.BusinessInterfaces.Billing;
 using TrueSpend.Domain.BusinessInterfaces.Cards;
 using TrueSpend.Domain.Models.Cards;
 using TrueSpend.Domain.ServiceInterfaces.Cards;
@@ -6,20 +7,20 @@ using TrueSpend.Domain.Models.Onboarding;
 
 namespace TrueSpend.Domain.Business.Cards;
 
-public sealed class CardsReadBusiness(ICardsReadService service) : ICardsReadBusiness
+public sealed class CardsReadBusiness(ICardsReadService service, IBillingReadBusiness billingRead) : ICardsReadBusiness
 {
     public async Task<BusinessResponse<CardsResponse>> GetCardsAsync(OnboardingWorkflowUser user, CancellationToken cancellationToken)
     {
         var cards = await service.GetCardsAsync(user, cancellationToken);
-        var planCode = await service.CurrentPlanCodeAsync(user, cancellationToken);
-        return BusinessResponse<CardsResponse>.Ok(new CardsResponse(cards, CardLimitsCalculator.Calculate(cards, planCode)));
+        var entitlements = await billingRead.GetEntitlementsAsync(user, cancellationToken);
+        return BusinessResponse<CardsResponse>.Ok(new CardsResponse(cards, CardLimitsCalculator.Calculate(cards, entitlements.Data!)));
     }
 
     public async Task<BusinessResponse<CardLimitsResponse>> GetCardLimitsAsync(OnboardingWorkflowUser user, CancellationToken cancellationToken)
     {
         var cards = await service.GetCardsAsync(user, cancellationToken);
-        var planCode = await service.CurrentPlanCodeAsync(user, cancellationToken);
-        return BusinessResponse<CardLimitsResponse>.Ok(CardLimitsCalculator.Calculate(cards, planCode));
+        var entitlements = await billingRead.GetEntitlementsAsync(user, cancellationToken);
+        return BusinessResponse<CardLimitsResponse>.Ok(CardLimitsCalculator.Calculate(cards, entitlements.Data!));
     }
 
     public async Task<BusinessResponse<CardDetailResponse>> GetCardDetailAsync(OnboardingWorkflowUser user, int cardId, CancellationToken cancellationToken)

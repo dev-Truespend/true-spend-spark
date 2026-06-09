@@ -3,6 +3,7 @@ using TrueSpend.Domain.ServiceInterfaces.Plaid;
 using TrueSpend.Domain.DbContext;
 using TrueSpend.Domain.Models.Onboarding;
 using TrueSpend.Domain.Constants;
+using TrueSpend.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using TrueSpend.Domain.Models.Cards;
 
@@ -108,5 +109,53 @@ public sealed class PlaidUpdateService(TrueSpendDbContext db) : IPlaidUpdateServ
             .ToList();
 
         return new PlaidConnectionResponse(connections, cardSummaries, "complete");
+    }
+
+    public async Task<IReadOnlyList<PlaidUserCardMatchContext>> GetUnmatchedPlaidUserCardsAsync(CancellationToken cancellationToken)
+    {
+        // Plaid-sourced active cards with no catalog product yet. Joined to the
+        // owning plaid_item for the institution name + plaid_account for the
+        // raw Plaid card name. Sync orchestration uses this for back-fill.
+        return await (from card in db.UserCards.AsNoTracking()
+                      where card.IsActive && card.CardProductId == null && card.PlaidAccountId != null
+                      join account in db.PlaidAccounts.AsNoTracking() on card.PlaidAccountId equals account.Id
+                      join item in db.PlaidItems.AsNoTracking() on account.PlaidItemId equals item.Id
+                      select new PlaidUserCardMatchContext(card.Id, item.InstitutionName, account.AccountName))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task SetUserCardProductIdAsync(int userCardId, int cardProductId, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var card = await db.UserCards.FirstOrDefaultAsync(c => c.Id == userCardId, cancellationToken);
+        if (card is null) return;
+        card.CardProductId = cardProductId;
+        card.UpdatedAt = now;
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task AdoptManualCardToPlaidAsync(int userCardId, int plaidAccountRowId, int? cardProductId, CancellationToken cancellationToken)
+    {
+        var card = await db.UserCards.FirstOrDefaultAsync(c => c.Id == userCardId, cancellationToken);
+        if (card is null) return;
+
+        var plaidSourceId = await db.CardSources.AsNoTracking()
+            .Where(s => s.Code == "plaid")
+            .Select(s => s.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (plaidSourceId == 0) plaidSourceId = (short)CardSourceEnum.Plaid;
+
+        card.SourceId = plaidSourceId;
+        card.PlaidAccountId = plaidAccountRowId;
+        card.SyncStatus = CardsConstants.DefaultSyncStatus;
+        // Keep the user's chosen product if set; otherwise adopt the catalog match.
+        card.CardProductId ??= cardProductId;
+        // Once a catalog product is resolved, the free-text custom names are redundant.
+        if (card.CardProductId is not null)
+        {
+            card.CustomIssuerName = null;
+            card.CustomCardName = null;
+        }
+        card.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

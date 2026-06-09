@@ -1,3 +1,3 @@
-import { HomeScreen } from "@/features/home/screens/HomeScreen";
+import { WalletScreen } from "@/features/cards/screens/WalletScreen";
 
-export default HomeScreen;
+export default WalletScreen;

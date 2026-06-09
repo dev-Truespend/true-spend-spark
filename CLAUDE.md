@@ -36,12 +36,17 @@ Use this simple root layout as the implementation target:
 | Mobile code | [ui-design-patterns.md](_docs/low-level-design/UI/ui-design-patterns.md) | React Native + Expo code standards |
 | Mockups | [MobileApp-Mockup/](_docs/MobileApp-Mockup/), [Current-Web-Mockup/](_docs/Current-Web-Mockup/), [Current-Web-Mockup README](_docs/Current-Web-Mockup/README.md) | Design references |
 | User stories | [mobile-user-stories.md](_docs/UserStory/mobile-user-stories.md) | All user stories |
-| Core workflows | [01-auth-session.md](_docs/Workflows/01-auth-session.md), [02-onboarding.md](_docs/Workflows/02-onboarding.md), [03-home-recommendations.md](_docs/Workflows/03-home-recommendations.md), [04-cards.md](_docs/Workflows/04-cards.md), [05-transactions.md](_docs/Workflows/05-transactions.md) | Auth, onboarding, home, cards, transactions |
+| Core workflows | [01-auth-session.md](_docs/Workflows/01-auth-session.md), [02-onboarding.md](_docs/Workflows/02-onboarding.md), [03-recommendations.md](_docs/Workflows/03-recommendations.md), [04-cards.md](_docs/Workflows/04-cards.md), [05-transactions.md](_docs/Workflows/05-transactions.md) | Auth, onboarding, recommendations, wallet (cards), transactions |
 | Analytics workflows | [06-insights-analytics.md](_docs/Workflows/06-insights-analytics.md), [10-geo-recommendations.md](_docs/Workflows/10-geo-recommendations.md) | Insights and location-aware recommendations |
 | Platform workflows | [07-notifications.md](_docs/Workflows/07-notifications.md), [09-billing-entitlements.md](_docs/Workflows/09-billing-entitlements.md), [11-sync-status.md](_docs/Workflows/11-sync-status.md), [13-feature-gating.md](_docs/Workflows/13-feature-gating.md) | Notifications, billing, sync, feature gates |
 | Account workflows | [08-profile-preferences.md](_docs/Workflows/08-profile-preferences.md), [14-privacy-data.md](_docs/Workflows/14-privacy-data.md) | Profile, preferences, privacy, account data |
 | Cross-cutting workflows | [12-cross-cutting.md](_docs/Workflows/12-cross-cutting.md), [notification-production.md](_docs/Workflows/notification-production.md), [webhook-handlers.md](_docs/Workflows/webhook-handlers.md) | Shared workflow concerns, production notifications, webhooks |
 | Workflow conventions | [common-guide.md](_docs/Workflows/common-guide.md) | How workflow docs are structured |
+| Deployment | [deployment-guide.md](_docs/Deployment/deployment-guide.md) | TestFlight (EAS), Azure Container Apps (api + worker) behind Application Gateway (WAF), Supabase migrate pipeline, Terraform IaC, Key Vault, secrets inventory, phased E2E test plan |
+| Deployment | [external-setup-guide.md](_docs/Deployment/external-setup-guide.md) | Step-by-step provisioning of every external account (Azure, Supabase, Apple, Google, Stripe, Plaid, Resend, RapidAPI, Expo) and where each key/secret/cert lands |
+| Refactors | [sync-execution-conversion.md](_docs/Refactors/sync-execution-conversion.md) | One-time conversion of async event-publish/consume to inline post-commit calls in MVP |
+| Refactors | [job-schedule-review.md](_docs/Refactors/job-schedule-review.md) | Worker job schedules, MVP on/off state, and the worker manual-trigger HTTP surface |
+| Refactors | [mvp-feature-additions.md](_docs/Refactors/mvp-feature-additions.md) | Planned MVP features: rewards-cc seed/full, account deletion + reactivation, worker-only AI insights, Pro re-sync quota, feature-gating UI |
 
 ## 3. Task routing
 
@@ -148,7 +153,6 @@ Rules:
 - `rm` is allowed for deleting dead/unused files inside this repo. Never `rm -rf /`, `~`, `..`, or any absolute system path (denied).
 - Don't `git reset --hard`, `git branch -D`, `git clean -f`, or `--no-verify` on commits (denied).
 - Don't edit `.env*` files unless asked.
-- Don't add npm, NuGet, or other third-party dependencies unless they are strictly necessary to complete the requested workflow. 
 - Don't put business rules in pattern docs. Don't put standards in workflow docs.
 - Don't run dev servers or simulators unless asked.
 

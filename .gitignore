@@ -9,6 +9,12 @@ TestResults/
 bin/
 obj/
 
+# .NET local dev secrets — tracked appsettings.*.json must hold NO real secrets.
+# Put local keys in user-secrets (`dotnet user-secrets`) or a gitignored local override.
+appsettings.*.local.json
+appsettings.Local.json
+appsettings.local.json
+
 # Expo / React Native local state
 .expo/
 .expo-shared/
@@ -16,10 +22,30 @@ obj/
 # Supabase local state
 supabase/.temp/
 
-# Local environment files
+# Local environment files — every real .env (any dir, any suffix) is ignored;
+# only *.example templates stay tracked.
 .env
 .env.*
+*.env.local
 !.env.example
+!.env.*.example
+
+# Terraform — state, plans, vars, provider cache (state holds secrets in plaintext)
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+*.tfvars
+!*.tfvars.example
+
+# Expo / EAS credentials and Apple/Android signing material (certs & keys)
+ui-mobile/credentials.json
+*.p8
+*.p12
+*.mobileprovision
+*.keystore
+AuthKey_*.p8
 
 # Codex workflow session state
 .codex/.workflow-state

@@ -7,28 +7,20 @@ namespace TrueSpend.Api.Mappers;
 
 public interface ITransactionsMapper
 {
-    CreateTransactionRequest ToDomain(CreateTransactionRequestVm vm);
-    UpdateTransactionRequest ToDomain(UpdateTransactionRequestVm vm);
     TransactionsResponseVm ToResponse(TransactionsResponse domain);
     TransactionDetailResponseVm ToDetail(TransactionDetailResponse domain);
     TransactionRewardResultResponseVm ToRewardResult(TransactionRewardResultResponse domain);
     MissedRewardEventsResponseVm ToMissedRewards(MissedRewardEventsResponse domain);
+    TransactionCategoriesResponseVm ToCategories(TransactionCategoriesResponse domain);
+
+    #region archive — manual transaction add/edit ToDomain mappings (removed from MVP)
+    // CreateTransactionRequest ToDomain(CreateTransactionRequestVm vm);
+    // UpdateTransactionRequest ToDomain(UpdateTransactionRequestVm vm);
+    #endregion
 }
 
 public sealed class TransactionsMapper : ITransactionsMapper
 {
-    public CreateTransactionRequest ToDomain(CreateTransactionRequestVm vm) =>
-        new(vm.MerchantName, vm.Amount, vm.CardId, vm.CategoryCode,
-            DateOnly.Parse(vm.TransactionDate),
-            vm.TransactionTime is not null ? TimeOnly.Parse(vm.TransactionTime) : null,
-            vm.LocationLabel, vm.LocationLat, vm.LocationLng);
-
-    public UpdateTransactionRequest ToDomain(UpdateTransactionRequestVm vm) =>
-        new(vm.MerchantName, vm.Amount, vm.CardId, vm.CategoryCode,
-            vm.TransactionDate is not null ? DateOnly.Parse(vm.TransactionDate) : null,
-            vm.TransactionTime is not null ? TimeOnly.Parse(vm.TransactionTime) : null,
-            vm.LocationLabel, vm.LocationLat, vm.LocationLng);
-
     public TransactionsResponseVm ToResponse(TransactionsResponse domain) =>
         new() { Transactions = domain.Transactions.Select(ToVm).ToArray(), EmptyState = domain.EmptyState };
 
@@ -49,6 +41,9 @@ public sealed class TransactionsMapper : ITransactionsMapper
 
     public MissedRewardEventsResponseVm ToMissedRewards(MissedRewardEventsResponse domain) =>
         new() { MissedRewards = domain.MissedRewards.Select(ToMissedRewardVm).ToArray() };
+
+    public TransactionCategoriesResponseVm ToCategories(TransactionCategoriesResponse domain) =>
+        new(domain.Categories.Select(c => new TransactionCategoryVm(c.Id, c.Code, c.DisplayName, c.Icon)).ToArray());
 
     private static TransactionVm ToVm(Transaction t) =>
         new()
@@ -116,4 +111,18 @@ public sealed class TransactionsMapper : ITransactionsMapper
 
     private static string FormatMoney(decimal amount, string currencyCode) => MoneyFormatter.FormatMoney(amount, currencyCode);
     private static string FormatReward(decimal amount, string? currencyCode) => MoneyFormatter.FormatReward(amount, currencyCode);
+
+    #region archive — manual transaction add/edit ToDomain mappings (removed from MVP)
+    // public CreateTransactionRequest ToDomain(CreateTransactionRequestVm vm) =>
+    //     new(vm.MerchantName, vm.Amount, vm.CardId, vm.CategoryCode,
+    //         DateOnly.Parse(vm.TransactionDate),
+    //         vm.TransactionTime is not null ? TimeOnly.Parse(vm.TransactionTime) : null,
+    //         vm.LocationLabel, vm.LocationLat, vm.LocationLng);
+    //
+    // public UpdateTransactionRequest ToDomain(UpdateTransactionRequestVm vm) =>
+    //     new(vm.MerchantName, vm.Amount, vm.CardId, vm.CategoryCode,
+    //         vm.TransactionDate is not null ? DateOnly.Parse(vm.TransactionDate) : null,
+    //         vm.TransactionTime is not null ? TimeOnly.Parse(vm.TransactionTime) : null,
+    //         vm.LocationLabel, vm.LocationLat, vm.LocationLng);
+    #endregion
 }

@@ -43,6 +43,7 @@ public sealed class AnalyticsReadService(TrueSpendDbContext db) : IAnalyticsRead
                           on m.TransactionId equals t.Id
                       join ac in db.UserCards.AsNoTracking() on t.UserCardId equals ac.Id into acJoin
                       from actualCard in acJoin.DefaultIfEmpty()
+                      where actualCard != null && actualCard.IsActive
                       join bc in db.UserCards.AsNoTracking() on m.BetterUserCardId equals bc.Id into bcJoin
                       from betterCard in bcJoin.DefaultIfEmpty()
                       join actualProduct in db.CardProducts.AsNoTracking() on actualCard.CardProductId equals actualProduct.Id into apJoin
@@ -91,10 +92,14 @@ public sealed class AnalyticsReadService(TrueSpendDbContext db) : IAnalyticsRead
     public async Task<(decimal Earned, decimal Missed)> GetPeriodTotalsAsync(
         Guid userId, DateOnly periodStart, DateOnly periodEnd, CancellationToken cancellationToken)
     {
+        // Exclude transactions whose user_card was soft-deleted; keeps period totals in sync with the
+        // (filtered) transactions list and missed-rewards list.
         var earned = await (from t in db.Transactions.AsNoTracking()
                                 .Where(x => x.UserId == userId &&
                                             x.TransactionDate >= periodStart &&
                                             x.TransactionDate <= periodEnd)
+                            join c in db.UserCards.AsNoTracking() on t.UserCardId equals c.Id
+                            where c.IsActive
                             join r in db.TransactionRewardResults.AsNoTracking() on t.Id equals r.TransactionId
                             select r.EarnedAmount).SumAsync(cancellationToken);
 
@@ -104,7 +109,8 @@ public sealed class AnalyticsReadService(TrueSpendDbContext db) : IAnalyticsRead
                                             x.TransactionDate >= periodStart &&
                                             x.TransactionDate <= periodEnd)
                                 on m.TransactionId equals t.Id
-                            where !m.IsDismissed
+                            join c in db.UserCards.AsNoTracking() on t.UserCardId equals c.Id
+                            where c.IsActive && !m.IsDismissed
                             select m.MissedAmount).SumAsync(cancellationToken);
 
         return (earned, missed);
@@ -113,19 +119,22 @@ public sealed class AnalyticsReadService(TrueSpendDbContext db) : IAnalyticsRead
     public async Task<AnalyticsSnapshotData> ComputeSnapshotDataAsync(
         Guid userId, DateOnly periodStart, DateOnly periodEnd, CancellationToken cancellationToken)
     {
+        // Exclude transactions whose user_card was soft-deleted from snapshot computation.
+        // Bucket the category breakdown on the Plaid PRIMARY category (transaction_category_id),
+        // not the bridged catalog category_id: the Plaid taxonomy is populated on every synced
+        // transaction, so the donut stays complete even where the reward bridge has no mapping.
         var earnedRows = await (from t in db.Transactions.AsNoTracking()
                                 .Where(x => x.UserId == userId &&
                                             x.TransactionDate >= periodStart &&
                                             x.TransactionDate <= periodEnd)
+                                join uc in db.UserCards.AsNoTracking() on t.UserCardId equals uc.Id
+                                where uc.IsActive
                                 join r in db.TransactionRewardResults.AsNoTracking() on t.Id equals r.TransactionId
-                                join c in db.Categories.AsNoTracking() on t.CategoryId equals c.Id into cj
-                                from c in cj.DefaultIfEmpty()
                                 select new
                                 {
                                     t.TransactionDate,
                                     r.EarnedAmount,
-                                    CategoryCode = c != null ? c.Code : null,
-                                    CategoryName = c != null ? c.DisplayName : null
+                                    t.TransactionCategoryId
                                 }).ToListAsync(cancellationToken);
 
         var missedRows = await (from m in db.MissedRewardEvents.AsNoTracking()
@@ -134,16 +143,28 @@ public sealed class AnalyticsReadService(TrueSpendDbContext db) : IAnalyticsRead
                                                 x.TransactionDate >= periodStart &&
                                                 x.TransactionDate <= periodEnd)
                                     on m.TransactionId equals t.Id
-                                join c in db.Categories.AsNoTracking() on t.CategoryId equals c.Id into cj
-                                from c in cj.DefaultIfEmpty()
-                                where !m.IsDismissed
+                                join uc in db.UserCards.AsNoTracking() on t.UserCardId equals uc.Id
+                                where uc.IsActive && !m.IsDismissed
                                 select new
                                 {
                                     t.TransactionDate,
                                     m.MissedAmount,
-                                    CategoryCode = c != null ? c.Code : null,
-                                    CategoryName = c != null ? c.DisplayName : null
+                                    t.TransactionCategoryId
                                 }).ToListAsync(cancellationToken);
+
+        // Plaid taxonomy is tiny (~120 rows) — load once and resolve each leaf to its primary in memory.
+        var txCategories = await db.TransactionCategories.AsNoTracking()
+            .Select(c => new { c.Id, c.Code, c.DisplayName, c.ParentId, c.IsPrimary })
+            .ToListAsync(cancellationToken);
+        var txCatById = txCategories.ToDictionary(c => c.Id);
+
+        (string? Code, string? Name) ResolvePrimary(short? txCatId)
+        {
+            if (txCatId is null || !txCatById.TryGetValue(txCatId.Value, out var c)) return (null, null);
+            if (!c.IsPrimary && c.ParentId is not null && txCatById.TryGetValue(c.ParentId.Value, out var p))
+                return (p.Code, p.DisplayName);
+            return (c.Code, c.DisplayName);
+        }
 
         var earnedTotal = earnedRows.Sum(x => x.EarnedAmount);
         var missedTotal = missedRows.Sum(x => x.MissedAmount);
@@ -168,14 +189,16 @@ public sealed class AnalyticsReadService(TrueSpendDbContext db) : IAnalyticsRead
             .ToList();
 
         var earnedByCategory = earnedRows
-            .Where(x => x.CategoryCode is not null)
-            .GroupBy(x => new { x.CategoryCode, x.CategoryName })
-            .ToDictionary(g => g.Key.CategoryCode!, g => (Earned: g.Sum(x => x.EarnedAmount), Name: g.Key.CategoryName ?? g.Key.CategoryCode!));
+            .Select(x => new { Primary = ResolvePrimary(x.TransactionCategoryId), x.EarnedAmount })
+            .Where(x => x.Primary.Code is not null)
+            .GroupBy(x => new { x.Primary.Code, x.Primary.Name })
+            .ToDictionary(g => g.Key.Code!, g => (Earned: g.Sum(x => x.EarnedAmount), Name: g.Key.Name ?? g.Key.Code!));
 
         var missedByCategory = missedRows
-            .Where(x => x.CategoryCode is not null)
-            .GroupBy(x => new { x.CategoryCode, x.CategoryName })
-            .ToDictionary(g => g.Key.CategoryCode!, g => (Missed: g.Sum(x => x.MissedAmount), Name: g.Key.CategoryName ?? g.Key.CategoryCode!));
+            .Select(x => new { Primary = ResolvePrimary(x.TransactionCategoryId), x.MissedAmount })
+            .Where(x => x.Primary.Code is not null)
+            .GroupBy(x => new { x.Primary.Code, x.Primary.Name })
+            .ToDictionary(g => g.Key.Code!, g => (Missed: g.Sum(x => x.MissedAmount), Name: g.Key.Name ?? g.Key.Code!));
 
         var categoryKeys = earnedByCategory.Keys.Concat(missedByCategory.Keys).Distinct();
         var categoryBreakdown = categoryKeys

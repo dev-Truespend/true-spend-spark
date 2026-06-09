@@ -10,4 +10,5 @@ public interface ITransactionsReadBusiness
     Task<BusinessResponse<TransactionDetailResponse>> GetTransactionDetailAsync(OnboardingWorkflowUser user, int transactionId, CancellationToken cancellationToken);
     Task<BusinessResponse<TransactionRewardResultResponse>> GetRewardResultAsync(OnboardingWorkflowUser user, int transactionId, CancellationToken cancellationToken);
     Task<BusinessResponse<MissedRewardEventsResponse>> GetMissedRewardsAsync(OnboardingWorkflowUser user, CancellationToken cancellationToken);
+    Task<BusinessResponse<TransactionCategoriesResponse>> GetCategoriesAsync(CancellationToken cancellationToken);
 }

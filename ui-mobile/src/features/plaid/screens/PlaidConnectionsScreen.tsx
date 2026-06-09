@@ -1,49 +1,68 @@
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { Button } from "@/shared/components/Button";
+import { Card } from "@/shared/components/Card";
+import { EmptyState } from "@/shared/components/EmptyState";
 import { Screen } from "@/shared/components/Screen";
+import { SectionLabel } from "@/shared/components/SectionLabel";
+import { Toast } from "@/shared/components/Toast";
 import { PlaidConnectionCard } from "@/features/plaid/components/PlaidConnectionCard";
 import {
   PlaidLinkCancelledError,
+  useAddPlaidConnection,
   useDisconnectConnection,
   usePlaidConnections,
   useReconnectConnection,
   useSyncConnection
 } from "@/features/plaid/hooks/usePlaidConnections";
+import { useResyncQuota } from "@/features/plaid/hooks/useResyncQuota";
 import { useEntitlementGate } from "@/shared/navigation/useEntitlementGate";
 import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
+import { radii } from "@/shared/theme/spacing";
+import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 export function PlaidConnectionsScreen() {
   const router = useRouter();
   const gate = useEntitlementGate();
   const { connections, isLoading, error } = usePlaidConnections();
+  const addMutation = useAddPlaidConnection();
   const syncMutation = useSyncConnection();
   const reconnectMutation = useReconnectConnection();
   const disconnectMutation = useDisconnectConnection();
+  const { quota } = useResyncQuota({ enabled: gate.has("plaid_linking_enabled") });
 
   if (!gate.has("plaid_linking_enabled")) {
     return (
-      <Screen>
-        <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.title}>Connected accounts</Text>
-          <View style={styles.gateBanner}>
-            <Text style={styles.gateHeading}>Bank linking is a Pro feature</Text>
-            <Text style={styles.gateBody}>
-              Connect Plaid bank accounts to import transactions automatically. Upgrade to Pro to unlock bank linking.
-            </Text>
+      <Screen scroll>
+        <Header onBack={() => router.back()} />
+        <EmptyState
+          iconLabel="🔒"
+          title="Bank linking is a Pro feature"
+          description="Connect Plaid accounts to import transactions automatically. Upgrade to Pro to unlock bank linking."
+          action={
             <Button
               label="Upgrade to Pro"
               onPress={() => router.push({ pathname: "/(app)/billing", params: { requiredPlanCode: "pro" } })}
             />
-          </View>
-        </ScrollView>
+          }
+        />
       </Screen>
     );
   }
 
   async function handleSync(connectionId: number) {
-    await syncMutation.mutateAsync({ connectionId });
+    // Manual sync is a Pro feature; route non-Pro users to the paywall instead of a failed request.
+    if (!gate.isPro) {
+      router.push({ pathname: "/(app)/billing", params: { requiredPlanCode: "pro" } });
+      return;
+    }
+    try {
+      await syncMutation.mutateAsync({ connectionId });
+    } catch (err) {
+      // Covers the daily-limit (429) and transient sync failures with the server's message.
+      Alert.alert("Sync unavailable", err instanceof Error ? err.message : "Could not sync right now.");
+    }
   }
 
   async function handleReconnect(connectionId: number) {
@@ -55,6 +74,15 @@ export function PlaidConnectionsScreen() {
     }
   }
 
+  async function handleAddConnection() {
+    try {
+      await addMutation.mutateAsync();
+    } catch (err) {
+      if (err instanceof PlaidLinkCancelledError) return;
+      Alert.alert("Couldn't link bank", err instanceof Error ? err.message : "Something went wrong.");
+    }
+  }
+
   function handleDisconnect(connectionId: number) {
     Alert.alert("Disconnect account", "This will stop syncing transactions from this account.", [
       { text: "Cancel", style: "cancel" },
@@ -63,76 +91,97 @@ export function PlaidConnectionsScreen() {
         style: "destructive",
         onPress: async () => {
           await disconnectMutation.mutateAsync({ connectionId });
-          if (connections.length <= 1) {
-            router.back();
-          }
+          if (connections.length <= 1) router.back();
         }
       }
     ]);
   }
 
+  const healthyCount = connections.filter((c) => c.status !== "disconnected" && c.status !== "error").length;
+
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Connected accounts</Text>
+    <Screen scroll>
+      <Header onBack={() => router.back()} />
 
-        {isLoading ? <ActivityIndicator color={colors.primary} /> : null}
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+      {isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+      {error ? <Toast tone="error" message={error} /> : null}
 
-        {!isLoading && !error && connections.length === 0 ? (
-          <Text style={styles.empty}>No connected bank accounts.</Text>
-        ) : null}
+      {!isLoading && connections.length > 0 ? (
+        <Toast
+          tone="success"
+          message={`${healthyCount} institution${healthyCount === 1 ? "" : "s"} linked${connections.length > healthyCount ? ` · ${connections.length - healthyCount} need re-auth` : ""}`}
+        />
+      ) : null}
 
-        {connections.map((connection) => (
-          <PlaidConnectionCard
-            key={connection.id}
-            connection={connection}
-            onSync={handleSync}
-            onReconnect={handleReconnect}
-            onDisconnect={handleDisconnect}
-            isSyncing={syncMutation.isPending}
-            isDisconnecting={disconnectMutation.isPending}
-          />
-        ))}
-      </ScrollView>
+      {!isLoading && connections.length > 0 && gate.isPro && quota ? (
+        <Toast
+          tone={quota.remaining > 0 ? "info" : "warn"}
+          message={
+            quota.remaining > 0
+              ? `${quota.remaining} of ${quota.limit} manual syncs left today`
+              : `You've used all ${quota.limit} manual syncs today · resets tomorrow`
+          }
+        />
+      ) : null}
+
+      {!isLoading && connections.length > 0 && !gate.isPro ? (
+        <Toast tone="info" message="Manual sync is a Pro feature. Your accounts still sync automatically every day." />
+      ) : null}
+
+      {!isLoading && !error && connections.length === 0 ? (
+        <EmptyState
+          iconLabel="🏦"
+          title="No connected banks yet"
+          description="Link a bank to import cards and transactions automatically."
+        />
+      ) : null}
+
+      {connections.length > 0 ? (
+        <>
+          <SectionLabel>Connected banks</SectionLabel>
+          <View style={{ gap: 8 }}>
+            {connections.map((connection) => (
+              <PlaidConnectionCard
+                key={connection.id}
+                connection={connection}
+                onSync={handleSync}
+                onReconnect={handleReconnect}
+                onDisconnect={handleDisconnect}
+                isSyncing={syncMutation.isPending}
+                isDisconnecting={disconnectMutation.isPending}
+              />
+            ))}
+          </View>
+        </>
+      ) : null}
+
+      <Button
+        label={connections.length === 0 ? "＋ Connect your bank" : "＋ Connect another bank"}
+        variant="outline"
+        disabled={addMutation.isPending}
+        onPress={handleAddConnection}
+      />
+
+      <Text style={styles.fineprint}>Plaid access is read-only.</Text>
     </Screen>
   );
 }
 
+function Header({ onBack }: { onBack: () => void }) {
+  return (
+    <View style={styles.topBar}>
+      <Pressable onPress={onBack} style={styles.iconBtn} accessibilityRole="button">
+        <Ionicons name="chevron-back" size={20} color={colors.text} />
+      </Pressable>
+      <Text style={styles.topTitle}>Plaid connections</Text>
+      <View style={styles.iconBtn} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  content: {
-    gap: spacing.md,
-    paddingBottom: spacing.xl
-  },
-  title: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: "800"
-  },
-  empty: {
-    color: colors.muted,
-    fontSize: 14,
-    textAlign: "center"
-  },
-  error: {
-    color: colors.danger,
-    fontSize: 14
-  },
-  gateBanner: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: spacing.sm,
-    padding: spacing.md
-  },
-  gateHeading: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "700"
-  },
-  gateBody: {
-    color: colors.muted,
-    fontSize: 14
-  }
+  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
+  fineprint: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.mutedFg, textAlign: "center" }
 });

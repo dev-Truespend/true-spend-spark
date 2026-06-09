@@ -1,25 +1,23 @@
+using TrueSpend.Domain.BusinessInterfaces.Analytics;
 using TrueSpend.Domain.BusinessInterfaces.Billing;
+using TrueSpend.Domain.BusinessInterfaces.Notifications;
 using TrueSpend.Domain.BusinessInterfaces.Plaid;
-using TrueSpend.Domain.Events.Plaid;
+using TrueSpend.Domain.Models.Billing;
 using TrueSpend.Domain.Models.Plaid;
+using TrueSpend.Domain.Models.Recommendations;
 using TrueSpend.Domain.Models.Transactions;
 using TrueSpend.Domain.ServiceInterfaces.Plaid;
 using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.Models.Onboarding;
-using TrueSpend.Domain.Models.Recommendations;
 using Microsoft.Extensions.Logging;
 using TrueSpend.Domain.ServiceInterfaces.Messaging;
 using TrueSpend.Domain.ServiceInterfaces.Persistence;
 using TrueSpend.Domain.ServiceInterfaces.Recommendations;
 using TrueSpend.Domain.ServiceInterfaces.Transactions;
 using TrueSpend.Domain.Validators;
-using System.Text.Json;
 using TrueSpend.Domain.Constants;
 using TrueSpend.Domain.Exceptions;
 using TrueSpend.Domain.Business.Transactions;
-using TrueSpend.Domain.Events.Finance;
-using TrueSpend.Domain.Events.Transactions;
-using TrueSpend.Domain.Events.Cards;
 
 namespace TrueSpend.Domain.Business.Plaid;
 
@@ -30,27 +28,38 @@ public sealed class PlaidUpdateBusiness(
     ITransactionsInsertService transactionsInsertService,
     ITransactionsUpdateService transactionsUpdateService,
     IRewardRulesReadService rewardRulesReadService,
-    IMessagingInsertService messagingInsertService,
+    IMessagingInsertService messagingInsertService, // archived: kept for future async migration
     IUnitOfWork unitOfWork,
     IEntitlementGuard entitlementGuard,
+    IManualResyncQuotaBusiness resyncQuota,
+    IAnalyticsComputeBusiness analyticsCompute,
+    IMissedRewardNotificationBusiness missedRewardNotification,
     PlaidValidator validator,
     ILogger<PlaidUpdateBusiness> logger) : IPlaidUpdateBusiness
 {
+    // Shown when a Pro user has used all of today's manual re-syncs.
+    private static string ResyncLimitMessage(ManualResyncQuotaStatus status) =>
+        $"You've used all {status.Limit} manual syncs for today. Your limit resets tomorrow.";
+
     public async Task<BusinessResponse<PlaidConnectionResponse>> SyncConnectionAsync(
         OnboardingWorkflowUser user,
         SyncPlaidConnectionRequest request,
         CancellationToken cancellationToken)
     {
+        _ = messagingInsertService;
+
         await entitlementGuard.RequireFeatureAsync(user, BillingConstants.PlaidLinkingEnabledFeatureCode, cancellationToken);
+
+        // Pro-only daily quota for user-initiated sync (throws for non-Pro; returns 429 when over limit).
+        var quota = await resyncQuota.TryConsumeAsync(user, cancellationToken);
+        if (!quota.Allowed) return BusinessResponse<PlaidConnectionResponse>.Fail([ResyncLimitMessage(quota.Status)], 429);
+
         var connection = await readService.FindConnectionAsync(user, request.ConnectionId, cancellationToken);
         if (connection is null) return BusinessResponse<PlaidConnectionResponse>.Fail(["Connection not found."], 404);
 
         await using (var tx = await unitOfWork.BeginTransactionAsync(cancellationToken))
         {
             await updateService.SyncConnectionAsync(request.ConnectionId, cancellationToken);
-            var payload = JsonSerializer.Serialize(new PlaidConnectionEventContract(request.ConnectionId, user.UserId, DateTimeOffset.UtcNow));
-            await messagingInsertService.EnqueueOutboxEventAsync(
-                EventTypes.PlaidConnectionSynced, "finance.plaid_item", request.ConnectionId, payload, null, cancellationToken);
             await tx.CommitAsync(cancellationToken);
         }
 
@@ -88,6 +97,11 @@ public sealed class PlaidUpdateBusiness(
             return BusinessResponse<PlaidTransactionSyncResponse>.Fail(errors, 400);
 
         await entitlementGuard.RequireFeatureAsync(user, BillingConstants.PlaidLinkingEnabledFeatureCode, cancellationToken);
+
+        // Pro-only daily quota for user-initiated sync. The automatic nightly sweep bypasses this by
+        // calling SyncSingleConnectionAsync directly (see SyncAllActiveConnectionsAsync).
+        var quota = await resyncQuota.TryConsumeAsync(user, cancellationToken);
+        if (!quota.Allowed) return BusinessResponse<PlaidTransactionSyncResponse>.Fail([ResyncLimitMessage(quota.Status)], 429);
 
         if (request.ConnectionId is int connectionId)
         {
@@ -148,6 +162,8 @@ public sealed class PlaidUpdateBusiness(
         var imported = 0;
         var updated = 0;
         var removed = 0;
+        var newMissedRewardEventIds = new List<int>();
+        var changed = false;
 
         await using (var tx = await unitOfWork.BeginTransactionAsync(cancellationToken))
         {
@@ -157,9 +173,9 @@ public sealed class PlaidUpdateBusiness(
                 if (result is null || !result.IsNew) continue;
 
                 var newMissed = await ComputeAndPersistRewardAsync(rewardProfile, result, isNew: true, cancellationToken);
-                await EnqueueTransactionEventAsync(EventTypes.TransactionImported, result, user.UserId, cancellationToken);
-                if (newMissed is { } imp) await EnqueueMissedRewardEventCreatedAsync(imp, result.TransactionId, user.UserId, cancellationToken);
+                if (newMissed is { } imp) newMissedRewardEventIds.Add(imp);
                 imported++;
+                changed = true;
             }
 
             foreach (var transaction in syncResult.Modified)
@@ -168,27 +184,46 @@ public sealed class PlaidUpdateBusiness(
                 if (result is null) continue;
 
                 var newMissed = await ComputeAndPersistRewardAsync(rewardProfile, result, isNew: false, cancellationToken);
-                await EnqueueTransactionEventAsync(EventTypes.TransactionUpdated, result, user.UserId, cancellationToken);
-                if (newMissed is { } upd) await EnqueueMissedRewardEventCreatedAsync(upd, result.TransactionId, user.UserId, cancellationToken);
+                if (newMissed is { } upd) newMissedRewardEventIds.Add(upd);
                 updated++;
+                changed = true;
             }
 
             foreach (var plaidTransactionId in syncResult.RemovedPlaidTransactionIds)
             {
                 var deleted = await transactionsInsertService.RemovePlaidTransactionAsync(user, plaidTransactionId, cancellationToken);
                 if (deleted is null) continue;
-
-                var payload = JsonSerializer.Serialize(new TransactionEventContract(
-                    deleted.TransactionId, user.UserId, deleted.UserCardId, TransactionsConstants.SourcePlaid,
-                    deleted.Amount, null, deleted.TransactionDate));
-                await messagingInsertService.EnqueueOutboxEventAsync(
-                    EventTypes.TransactionDeleted, "finance.transaction", deleted.TransactionId, payload,
-                    $"transaction.deleted:{deleted.TransactionId}", cancellationToken);
                 removed++;
+                changed = true;
             }
 
             await updateService.UpdateTransactionSyncCursorAsync(connectionId, syncResult.NewCursor, syncResult.SyncAt, cancellationToken);
             await tx.CommitAsync(cancellationToken);
+        }
+
+        if (changed)
+        {
+            try
+            {
+                // Per refactor guide: per-user dedupe — call analytics recompute once per batch, not per row.
+                await analyticsCompute.RecomputeSnapshotsAsync(user.UserId, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Analytics recompute failed after plaid sync for user {UserId} connection {ConnectionId}", user.UserId, connectionId);
+            }
+        }
+
+        foreach (var missedRewardEventId in newMissedRewardEventIds)
+        {
+            try
+            {
+                await missedRewardNotification.ProduceForMissedRewardEventAsync(missedRewardEventId, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Missed reward notification failed for user {UserId} event {EventId}", user.UserId, missedRewardEventId);
+            }
         }
 
         return BusinessResponse<PlaidTransactionSyncResponse>.Ok(
@@ -204,7 +239,18 @@ public sealed class PlaidUpdateBusiness(
             try
             {
                 var user = new OnboardingWorkflowUser(connection.UserId, connection.UserEmail);
-                var response = await SyncPlaidTransactionsAsync(user, new SyncPlaidTransactionsRequest(connection.ConnectionId, Force: false), cancellationToken);
+
+                // Plaid linking is a Basic+ entitlement. Skip free/downgraded users quietly so the sync
+                // doesn't throw EntitlementRequiredAppException per connection and log it as an error.
+                if (!await entitlementGuard.HasFeatureAsync(user, BillingConstants.PlaidLinkingEnabledFeatureCode, cancellationToken))
+                {
+                    logger.LogInformation("Plaid sync skipped for connection {ConnectionId}: user not entitled to Plaid linking.", connection.ConnectionId);
+                    continue;
+                }
+
+                // Bypass the user-initiated Pro quota gate: automatic nightly sync runs for all entitled
+                // (Basic+) users and must not consume the manual re-sync allowance.
+                var response = await SyncSingleConnectionAsync(user, connection.ConnectionId, force: false, cancellationToken);
                 if (!response.Success)
                     logger.LogWarning("Plaid sync failed for connection {ConnectionId}: {Errors}", connection.ConnectionId, string.Join("; ", response.Errors));
             }
@@ -226,21 +272,7 @@ public sealed class PlaidUpdateBusiness(
 
         await using (var tx = await unitOfWork.BeginTransactionAsync(cancellationToken))
         {
-            var affectedCardIds = await updateService.DisconnectConnectionAsync(request.ConnectionId, cancellationToken);
-            var now = DateTimeOffset.UtcNow;
-            var payload = JsonSerializer.Serialize(new PlaidConnectionEventContract(request.ConnectionId, user.UserId, now));
-            await messagingInsertService.EnqueueOutboxEventAsync(
-                EventTypes.PlaidConnectionDisconnected, "finance.plaid_item", request.ConnectionId, payload, null, cancellationToken);
-
-            foreach (var cardId in affectedCardIds)
-            {
-                var cardPayload = JsonSerializer.Serialize(new UserCardEventContract(
-                    cardId, user.UserId, null, null,
-                    TransactionsConstants.SourcePlaid, CardsConstants.DisconnectedSyncStatus, false, now));
-                await messagingInsertService.EnqueueOutboxEventAsync(
-                    EventTypes.UserCardUpdated, "finance.user_card", cardId, cardPayload,
-                    $"user_card.updated:disconnect:{request.ConnectionId}:{cardId}", cancellationToken);
-            }
+            await updateService.DisconnectConnectionAsync(request.ConnectionId, cancellationToken);
             await tx.CommitAsync(cancellationToken);
         }
 
@@ -254,7 +286,7 @@ public sealed class PlaidUpdateBusiness(
         bool isNew,
         CancellationToken cancellationToken)
     {
-        var computed = TransactionRewardCalculator.Compute(rewardProfile, upsert.UserCardId, upsert.Amount, categoryCode: null);
+        var computed = TransactionRewardCalculator.Compute(rewardProfile, upsert.UserCardId, upsert.Amount, upsert.CategoryCode, upsert.MerchantName);
         if (computed is null) return null;
 
         if (isNew)
@@ -280,38 +312,87 @@ public sealed class PlaidUpdateBusiness(
         return null;
     }
 
-    private async Task EnqueueTransactionEventAsync(
-        string eventType,
-        PlaidTransactionUpsertResult upsert,
-        Guid userId,
-        CancellationToken cancellationToken)
-    {
-        var payload = JsonSerializer.Serialize(new TransactionEventContract(
-            upsert.TransactionId, userId, upsert.UserCardId, TransactionsConstants.SourcePlaid,
-            upsert.Amount, null, upsert.TransactionDate));
-
-        var idempotencyKey = eventType == EventTypes.TransactionImported
-            ? $"transaction.imported:{upsert.TransactionId}"
-            : $"transaction.updated:{upsert.TransactionId}:{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-
-        await messagingInsertService.EnqueueOutboxEventAsync(
-            eventType, "finance.transaction", upsert.TransactionId, payload, idempotencyKey, cancellationToken);
-    }
-
-    private async Task EnqueueMissedRewardEventCreatedAsync(
-        int missedRewardEventId,
-        int transactionId,
-        Guid userId,
-        CancellationToken cancellationToken)
-    {
-        var payload = JsonSerializer.Serialize(new MissedRewardEventCreatedContract(
-            1, missedRewardEventId, transactionId, userId, DateTimeOffset.UtcNow));
-        await messagingInsertService.EnqueueOutboxEventAsync(
-            EventTypes.MissedRewardEventCreated,
-            "finance.missed_reward_event",
-            missedRewardEventId,
-            payload,
-            $"missed_reward_event.created:{missedRewardEventId}",
-            cancellationToken);
-    }
+    #region archive — async event-publish (disabled in MVP)
+    // PlaidUpdateBusiness previously published many events to the messaging outbox:
+    //   • SyncConnectionAsync → PlaidConnectionSynced (no subscriber). Archived; no inline replacement.
+    //   • SyncSingleConnectionAsync per added/modified transaction → TransactionImported / TransactionUpdated.
+    //     Both consumed by AnalyticsRecomputeHandler → IAnalyticsComputeBusiness.RecomputeSnapshotsAsync.
+    //     Per refactor guide: replaced with a single RecomputeSnapshotsAsync(user) call after the sync loop
+    //     (per-user dedupe; the handler is full-snapshot so per-row would multiply work N×).
+    //   • SyncSingleConnectionAsync per removed transaction → TransactionDeleted (same handler as above,
+    //     covered by the single per-user recompute).
+    //   • SyncSingleConnectionAsync per new missed-reward → MissedRewardEventCreated. Consumer:
+    //     MissedRewardEventCreatedHandler → IMissedRewardNotificationBusiness.ProduceForMissedRewardEventAsync.
+    //     Replaced with an inline ProduceForMissedRewardEventAsync call per new missed-reward (post-commit).
+    //   • DisconnectConnectionAsync → PlaidConnectionDisconnected (no-op handler — effects were already
+    //     handled by per-card UserCardUpdated events, which had no subscriber). Archived; no inline.
+    //   • DisconnectConnectionAsync per affected card → UserCardUpdated (no subscriber). Archived; no inline.
+    //
+    // using System.Text.Json;
+    // using TrueSpend.Domain.Events.Cards;
+    // using TrueSpend.Domain.Events.Finance;
+    // using TrueSpend.Domain.Events.Plaid;
+    // using TrueSpend.Domain.Events.Transactions;
+    //
+    // // SyncConnectionAsync — inside the committing tx, after SyncConnectionAsync:
+    // var payload = JsonSerializer.Serialize(new PlaidConnectionEventContract(request.ConnectionId, user.UserId, DateTimeOffset.UtcNow));
+    // await messagingInsertService.EnqueueOutboxEventAsync(
+    //     EventTypes.PlaidConnectionSynced, "finance.plaid_item", request.ConnectionId, payload, null, cancellationToken);
+    //
+    // // SyncSingleConnectionAsync — per added transaction (TransactionImported), inside the committing tx:
+    // await EnqueueTransactionEventAsync(EventTypes.TransactionImported, result, user.UserId, cancellationToken);
+    // if (newMissed is { } imp) await EnqueueMissedRewardEventCreatedAsync(imp, result.TransactionId, user.UserId, cancellationToken);
+    //
+    // // SyncSingleConnectionAsync — per modified transaction (TransactionUpdated), inside the committing tx:
+    // await EnqueueTransactionEventAsync(EventTypes.TransactionUpdated, result, user.UserId, cancellationToken);
+    // if (newMissed is { } upd) await EnqueueMissedRewardEventCreatedAsync(upd, result.TransactionId, user.UserId, cancellationToken);
+    //
+    // // SyncSingleConnectionAsync — per removed transaction (TransactionDeleted), inside the committing tx:
+    // var payload = JsonSerializer.Serialize(new TransactionEventContract(
+    //     deleted.TransactionId, user.UserId, deleted.UserCardId, TransactionsConstants.SourcePlaid,
+    //     deleted.Amount, null, deleted.TransactionDate));
+    // await messagingInsertService.EnqueueOutboxEventAsync(
+    //     EventTypes.TransactionDeleted, "finance.transaction", deleted.TransactionId, payload,
+    //     $"transaction.deleted:{deleted.TransactionId}", cancellationToken);
+    //
+    // // DisconnectConnectionAsync — inside the committing tx, after DisconnectConnectionAsync (returns affected card ids):
+    // var affectedCardIds = await updateService.DisconnectConnectionAsync(request.ConnectionId, cancellationToken);
+    // var now = DateTimeOffset.UtcNow;
+    // var payload = JsonSerializer.Serialize(new PlaidConnectionEventContract(request.ConnectionId, user.UserId, now));
+    // await messagingInsertService.EnqueueOutboxEventAsync(
+    //     EventTypes.PlaidConnectionDisconnected, "finance.plaid_item", request.ConnectionId, payload, null, cancellationToken);
+    // foreach (var cardId in affectedCardIds)
+    // {
+    //     var cardPayload = JsonSerializer.Serialize(new UserCardEventContract(
+    //         cardId, user.UserId, null, null,
+    //         TransactionsConstants.SourcePlaid, CardsConstants.DisconnectedSyncStatus, false, now));
+    //     await messagingInsertService.EnqueueOutboxEventAsync(
+    //         EventTypes.UserCardUpdated, "finance.user_card", cardId, cardPayload,
+    //         $"user_card.updated:disconnect:{request.ConnectionId}:{cardId}", cancellationToken);
+    // }
+    //
+    // // Helper methods previously hosted here:
+    // private async Task EnqueueTransactionEventAsync(
+    //     string eventType, PlaidTransactionUpsertResult upsert, Guid userId, CancellationToken ct)
+    // {
+    //     var payload = JsonSerializer.Serialize(new TransactionEventContract(
+    //         upsert.TransactionId, userId, upsert.UserCardId, TransactionsConstants.SourcePlaid,
+    //         upsert.Amount, null, upsert.TransactionDate));
+    //     var idempotencyKey = eventType == EventTypes.TransactionImported
+    //         ? $"transaction.imported:{upsert.TransactionId}"
+    //         : $"transaction.updated:{upsert.TransactionId}:{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+    //     await messagingInsertService.EnqueueOutboxEventAsync(
+    //         eventType, "finance.transaction", upsert.TransactionId, payload, idempotencyKey, ct);
+    // }
+    //
+    // private async Task EnqueueMissedRewardEventCreatedAsync(
+    //     int missedRewardEventId, int transactionId, Guid userId, CancellationToken ct)
+    // {
+    //     var payload = JsonSerializer.Serialize(new MissedRewardEventCreatedContract(
+    //         1, missedRewardEventId, transactionId, userId, DateTimeOffset.UtcNow));
+    //     await messagingInsertService.EnqueueOutboxEventAsync(
+    //         EventTypes.MissedRewardEventCreated, "finance.missed_reward_event", missedRewardEventId,
+    //         payload, $"missed_reward_event.created:{missedRewardEventId}", ct);
+    // }
+    #endregion
 }

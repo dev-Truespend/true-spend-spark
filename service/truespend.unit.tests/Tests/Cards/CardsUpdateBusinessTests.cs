@@ -1,5 +1,8 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TrueSpend.Domain.Business.Cards;
+using TrueSpend.Domain.BusinessInterfaces.Analytics;
+using TrueSpend.Domain.BusinessInterfaces.Billing;
 using TrueSpend.Domain.Models.Cards;
 using TrueSpend.Domain.Models.Onboarding;
 using TrueSpend.Domain.ServiceInterfaces.Cards;
@@ -22,7 +25,7 @@ public sealed class CardsUpdateBusinessTests
     private static readonly RewardOverridesResponse AnyOverrides =
         new([new RewardOverride("dining", "Dining", 3m, null)]);
 
-    private static CardsUpdateBusiness Build(
+    private static (CardsUpdateBusiness business, Mock<IAnalyticsComputeBusiness> analytics) Build(
         Mock<ICardsReadService> readService,
         Mock<ICardsUpdateService> updateService)
     {
@@ -34,14 +37,19 @@ public sealed class CardsUpdateBusinessTests
         uow.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx.Object);
 
-        var messaging = new Mock<IMessagingInsertService>();
-        messaging.Setup(m => m.EnqueueOutboxEventAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        var messaging = new Mock<IMessagingInsertService>(); // archived: kept for future async migration
+        var analytics = new Mock<IAnalyticsComputeBusiness>();
+        analytics.Setup(a => a.RecomputeSnapshotsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        return new CardsUpdateBusiness(
-            readService.Object, updateService.Object, messaging.Object, uow.Object, new CardsValidator());
+        // SetPrimaryAsync is the only path that reads entitlements; the methods under test here
+        // (UpdateCard / UpsertRewardOverride) never invoke it, so an unconfigured mock is fine.
+        var billingRead = new Mock<IBillingReadBusiness>();
+
+        var business = new CardsUpdateBusiness(
+            readService.Object, updateService.Object, billingRead.Object, messaging.Object, uow.Object,
+            analytics.Object, NullLogger<CardsUpdateBusiness>.Instance, new CardsValidator());
+        return (business, analytics);
     }
 
     [Fact]
@@ -58,17 +66,19 @@ public sealed class CardsUpdateBusinessTests
         readSvc.Setup(s => s.GetCardDetailAsync(user, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AnyDetail);
 
-        var business = Build(readSvc, updateSvc);
+        var (business, analytics) = Build(readSvc, updateSvc);
         var response = await business.UpdateCardAsync(user, 1, new UpdateCardRequest(null, "1234", false), CancellationToken.None);
 
         Assert.True(response.Success);
         Assert.Equal(AnyCard, response.Data!.Card);
+        // UserCardUpdated has no live subscriber today; nothing to verify on the analytics path.
+        analytics.Verify(a => a.RecomputeSnapshotsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task UpdateCard_fails_with_400_when_lastFour_invalid()
     {
-        var business = Build(new Mock<ICardsReadService>(), new Mock<ICardsUpdateService>());
+        var (business, _) = Build(new Mock<ICardsReadService>(), new Mock<ICardsUpdateService>());
         var response = await business.UpdateCardAsync(
             TestUserFactory.AnyUser(), 1, new UpdateCardRequest(null, "12", false), CancellationToken.None);
 
@@ -83,7 +93,7 @@ public sealed class CardsUpdateBusinessTests
         updateSvc.Setup(s => s.FindCardAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((CardSummary?)null);
 
-        var business = Build(new Mock<ICardsReadService>(), updateSvc);
+        var (business, _) = Build(new Mock<ICardsReadService>(), updateSvc);
         var response = await business.UpdateCardAsync(
             TestUserFactory.AnyUser(), 99, new UpdateCardRequest(null, null, false), CancellationToken.None);
 
@@ -105,22 +115,41 @@ public sealed class CardsUpdateBusinessTests
         readSvc.Setup(s => s.GetRewardOverridesAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AnyOverrides);
 
-        var business = Build(readSvc, updateSvc);
+        var (business, analytics) = Build(readSvc, updateSvc);
         var response = await business.UpsertRewardOverrideAsync(
             user, 1, new UpsertRewardOverrideRequest("dining", 3m, null), CancellationToken.None);
 
         Assert.True(response.Success);
         Assert.Single(response.Data!.RewardRules);
+        analytics.Verify(a => a.RecomputeSnapshotsAsync(user.UserId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task UpsertRewardOverride_fails_with_400_when_multiplier_zero()
     {
-        var business = Build(new Mock<ICardsReadService>(), new Mock<ICardsUpdateService>());
+        var (business, analytics) = Build(new Mock<ICardsReadService>(), new Mock<ICardsUpdateService>());
         var response = await business.UpsertRewardOverrideAsync(
             TestUserFactory.AnyUser(), 1, new UpsertRewardOverrideRequest("dining", 0m, null), CancellationToken.None);
 
         Assert.False(response.Success);
         Assert.Equal(400, response.StatusCode);
+        analytics.Verify(a => a.RecomputeSnapshotsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    #region archive — async event-publish (disabled in MVP)
+    // UpdateCard_returns_detail_on_success previously asserted UserCardUpdated outbox enqueue:
+    //     messaging.Verify(m => m.EnqueueOutboxEventAsync(
+    //         "finance.user_card.updated", "finance.user_card",
+    //         It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<string>(),
+    //         It.IsAny<CancellationToken>()), Times.Once);
+    //
+    // UpsertRewardOverride_returns_updated_overrides previously asserted RewardOverrideUpserted:
+    //     messaging.Verify(m => m.EnqueueOutboxEventAsync(
+    //         "finance.reward_override.upserted", "finance.card_reward_override",
+    //         It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<string>(),
+    //         It.IsAny<CancellationToken>()), Times.Once);
+    //
+    // Both are now replaced with the inline IAnalyticsComputeBusiness.RecomputeSnapshotsAsync
+    // assertion on the reward-override paths only (UserCardUpdated has no live subscriber).
+    #endregion
 }

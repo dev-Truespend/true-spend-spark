@@ -2,6 +2,17 @@
 
 This MVP keeps infrastructure cost controlled while using managed auth, storage, messaging, secrets, and observability from the start.
 
+## MVP execution mode
+
+| Topic | MVP behaviour |
+|---|---|
+| Side-effects on writes | Run **inline post-commit** inside the producing business class — push dispatch, cache invalidation, notification production, analytics recompute. No outbox row written. |
+| `truespend.eventconsumer` container | Built but **not deployed**. `OutboxPollingConsumer` hosted-service registration archived in [EventConsumerExtensions.cs](../../service/truespend.eventconsumer/Extensions/EventConsumerExtensions.cs). |
+| `messaging.event_outbox` table + dispatchers/handlers/mappers | Preserved in the codebase; no live producer or consumer. |
+| Failure policy | Each inline side-effect call is wrapped in `try/catch (Exception ex) { logger.LogWarning(...); }` — never re-thrown to the caller. The committed write is the source of truth. |
+| Diagrams below | The `Topic` / `DLQ` / `Event Consumer` nodes and the dotted *Async path* arrows are kept in the diagrams as the **target shape**, archived inline in code. They are not part of the MVP runtime. |
+| Re-enable | See [_docs/Refactors/sync-execution-conversion.md § Re-enable async path later](../Refactors/sync-execution-conversion.md#re-enable-async-path-later). No schema migration required. |
+
 ## iOS MVP Diagram
 
 ```mermaid

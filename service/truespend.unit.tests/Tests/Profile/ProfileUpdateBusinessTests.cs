@@ -42,11 +42,7 @@ public sealed class ProfileUpdateBusinessTests
         storage.Setup(s => s.UploadAsync(It.IsAny<UploadObjectRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("https://cdn/avatar.jpg");
 
-        var messaging = new Mock<IMessagingInsertService>();
-        messaging.Setup(m => m.EnqueueOutboxEventAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+        var messaging = new Mock<IMessagingInsertService>(); // archived: kept for future async migration
 
         var business = new ProfileUpdateBusiness(
             update.Object, storage.Object, messaging.Object, new FakeUnitOfWork(), new ProfileValidator(lookup.Object));
@@ -55,7 +51,7 @@ public sealed class ProfileUpdateBusinessTests
     }
 
     [Fact]
-    public async Task UpdateProfile_returns_profile_and_enqueues_outbox_event()
+    public async Task UpdateProfile_returns_profile_and_does_not_enqueue_outbox_event()
     {
         var (business, _, _, _, messaging) = Build();
         var response = await business.UpdateProfileAsync(
@@ -65,13 +61,14 @@ public sealed class ProfileUpdateBusinessTests
 
         Assert.True(response.Success);
         Assert.Equal(AnyProfile, response.Data);
+        // Post-conversion: AppProfileUpdated has no live subscriber, so no enqueue is expected.
         messaging.Verify(m => m.EnqueueOutboxEventAsync(
-            EventTypes.AppProfileUpdated, "app.profile", null,
-            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(),
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task UploadAvatar_uploads_then_persists_url_and_enqueues_event()
+    public async Task UploadAvatar_uploads_then_persists_url_without_outbox_event()
     {
         var (business, update, _, storage, messaging) = Build();
         await using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
@@ -86,8 +83,8 @@ public sealed class ProfileUpdateBusinessTests
         storage.Verify(s => s.UploadAsync(It.Is<UploadObjectRequest>(r => r.Bucket == StorageConstants.AvatarsBucket), It.IsAny<CancellationToken>()), Times.Once);
         update.Verify(s => s.UpdateAvatarUrlAsync(It.IsAny<OnboardingWorkflowUser>(), "https://cdn/avatar.jpg", It.IsAny<CancellationToken>()), Times.Once);
         messaging.Verify(m => m.EnqueueOutboxEventAsync(
-            EventTypes.AppProfileUpdated, "app.profile", null,
-            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(),
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -122,4 +119,21 @@ public sealed class ProfileUpdateBusinessTests
         Assert.Equal(400, response.StatusCode);
         storage.Verify(s => s.UploadAsync(It.IsAny<UploadObjectRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    #region archive — async event-publish (disabled in MVP)
+    // UpdateProfile_returns_profile_and_enqueues_outbox_event previously asserted:
+    //     messaging.Verify(m => m.EnqueueOutboxEventAsync(
+    //         EventTypes.AppProfileUpdated, "app.profile", null,
+    //         It.IsAny<string>(), It.IsAny<string>(),
+    //         It.IsAny<CancellationToken>()), Times.Once);
+    //
+    // UploadAvatar_uploads_then_persists_url_and_enqueues_event previously asserted:
+    //     messaging.Verify(m => m.EnqueueOutboxEventAsync(
+    //         EventTypes.AppProfileUpdated, "app.profile", null,
+    //         It.IsAny<string>(), It.IsAny<string>(),
+    //         It.IsAny<CancellationToken>()), Times.Once);
+    //
+    // AppProfileUpdated has no live subscriber in the EventDispatcher routes, so the live tests
+    // now assert the enqueue does NOT fire.
+    #endregion
 }

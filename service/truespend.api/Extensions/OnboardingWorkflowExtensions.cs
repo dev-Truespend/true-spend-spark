@@ -1,4 +1,6 @@
 using TrueSpend.Api.Mappers;
+using TrueSpend.Domain.ServiceInterfaces.App;
+using TrueSpend.Domain.Services.App;
 using TrueSpend.Domain.Business.Billing;
 using TrueSpend.Domain.Business.Cards;
 using TrueSpend.Domain.Business.Catalog;
@@ -72,6 +74,7 @@ public static class OnboardingWorkflowExtensions
         services.AddScoped<IOnboardingReadBusiness, OnboardingReadBusiness>();
         services.AddScoped<IOnboardingUpdateBusiness, OnboardingUpdateBusiness>();
         services.AddScoped<IPlaidInsertBusiness, PlaidInsertBusiness>();
+        services.AddScoped<IPlaidCardCatalogMatchBusiness, PlaidCardCatalogMatchBusiness>();
         services.AddScoped<IPermissionsUpdateBusiness, PermissionsUpdateBusiness>();
         services.AddScoped<INotificationSettingsReadBusiness, NotificationSettingsReadBusiness>();
         services.AddScoped<INotificationSettingsUpdateBusiness, NotificationSettingsUpdateBusiness>();
@@ -82,6 +85,8 @@ public static class OnboardingWorkflowExtensions
         services.AddScoped<ICardsUpdateBusiness, CardsUpdateBusiness>();
         services.AddScoped<ICardsDeleteBusiness, CardsDeleteBusiness>();
         services.AddScoped<IPlaidReadBusiness, PlaidReadBusiness>();
+        services.AddScoped<IUserDailyUsageService, UserDailyUsageService>();
+        services.AddScoped<IManualResyncQuotaBusiness, ManualResyncQuotaBusiness>();
         services.AddScoped<IPlaidUpdateBusiness, PlaidUpdateBusiness>();
         services.AddScoped<ICatalogReadBusiness, CatalogReadBusiness>();
         services.AddScoped<ICatalogInsertBusiness, CatalogInsertBusiness>();

@@ -1,0 +1,69 @@
+# Production stack — runs the `production` target of each Dockerfile.
+#
+# Supports two image sources via env vars:
+#   - Local build: leave ACR_REGISTRY/IMAGE_TAG unset; compose builds from source.
+#   - Pull from ACR: set ACR_REGISTRY=<name>.azurecr.io and IMAGE_TAG=<sha>; skip --build.
+#
+# Required env vars at runtime (provide via shell env, --env-file, or compose .env):
+#   ConnectionStrings__TrueSpendDb      Postgres connection string
+#   Supabase__JwtIssuer                 e.g. https://<project>.supabase.co/auth/v1
+#   Supabase__JwtSecret                 Supabase project JWT secret
+#   Stripe__SecretKey                   Stripe live/test secret
+#   Stripe__WebhookSecret               Stripe webhook signing secret
+#   Plaid__ClientId, Plaid__Secret      Plaid creds
+#   SupabaseStorage__ServiceRoleKey     Supabase service-role key
+#   Resend__ApiKey                      Resend API key
+#   (See service/truespend.api/appsettings.json for the full list.)
+#
+# Usage (from repo root):
+#   # Build + run prod images locally
+#   docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod up --build -d
+#
+#   # Pull pre-built images from ACR and run
+#   ACR_REGISTRY=truespend.azurecr.io IMAGE_TAG=main-abc123 \
+#     docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod up -d
+
+name: truespend-prod
+
+x-dotnet-prod: &dotnet-prod
+  restart: unless-stopped
+  env_file:
+    - ./.env.prod
+  read_only: true
+  tmpfs:
+    - /tmp
+
+services:
+  api:
+    <<: *dotnet-prod
+    build:
+      context: ../service
+      dockerfile: ../docker/truespend.api.Dockerfile
+      target: production
+    image: "${ACR_REGISTRY:-local}/truespend-api:${IMAGE_TAG:-latest}"
+    container_name: truespend-api
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+
+  # MVP: workerservice only. The OutboxPollingConsumer hosted-service registration
+  # was archived as part of the async -> inline post-commit conversion (see
+  # _docs/Refactors/sync-execution-conversion.md), so the bundled
+  # truespend.worker.Dockerfile that ran eventconsumer + workerservice as twin
+  # processes is no longer used in prod. The bundled Dockerfile is preserved for
+  # the future async re-enable; swap the build.dockerfile line below to switch back.
+  worker:
+    <<: *dotnet-prod
+    build:
+      context: ../service
+      dockerfile: ../docker/truespend.workerservice.Dockerfile
+      # region: archive — bundled eventconsumer + workerservice (re-enable for async)
+      # dockerfile: ../docker/truespend.worker.Dockerfile
+      # endregion
+      target: production
+    image: "${ACR_REGISTRY:-local}/truespend-worker:${IMAGE_TAG:-latest}"
+    container_name: truespend-worker
+    environment:
+      DOTNET_ENVIRONMENT: Production

@@ -118,6 +118,15 @@ public sealed class TransactionsInsertService(TrueSpendDbContext db) : ITransact
             .Select(t => new { t.Id })
             .FirstOrDefaultAsync(cancellationToken);
 
+        var transactionCategoryId = await ResolveTransactionCategoryIdAsync(
+            transaction.PlaidDetailedCategory,
+            transaction.PlaidPrimaryCategory,
+            cancellationToken);
+
+        // Bridge the Plaid leaf to a RewardsCC catalog category so reward calc can apply category
+        // bonuses. Unbridged leaf -> null category -> base reward rate (safe fallback).
+        var (categoryId, categoryCode) = await ResolveBridgedCategoryAsync(transactionCategoryId, cancellationToken);
+
         if (existing is null)
         {
             var entity = new TransactionEntity
@@ -127,6 +136,9 @@ public sealed class TransactionsInsertService(TrueSpendDbContext db) : ITransact
                 PlaidTransactionId = transaction.PlaidTransactionId,
                 PlaidAccountId = account.Id,
                 UserCardId = userCardId,
+                CategoryId = categoryId,
+                TransactionCategoryId = transactionCategoryId,
+                PlaidConfidenceLevel = transaction.PlaidConfidenceLevel,
                 Amount = transaction.Amount,
                 TransactionDate = transaction.Date,
                 IsPending = transaction.IsPending,
@@ -136,7 +148,7 @@ public sealed class TransactionsInsertService(TrueSpendDbContext db) : ITransact
             };
             db.Transactions.Add(entity);
             await db.SaveChangesAsync(cancellationToken);
-            return new PlaidTransactionUpsertResult(entity.Id, true, userCardId, transaction.Amount, transaction.Date);
+            return new PlaidTransactionUpsertResult(entity.Id, true, userCardId, transaction.Amount, transaction.Date, categoryCode, transaction.MerchantName);
         }
 
         await db.Transactions
@@ -146,10 +158,58 @@ public sealed class TransactionsInsertService(TrueSpendDbContext db) : ITransact
                 .SetProperty(t => t.TransactionDate, transaction.Date)
                 .SetProperty(t => t.IsPending, transaction.IsPending)
                 .SetProperty(t => t.Description, transaction.MerchantName ?? transaction.Description)
+                // CategoryId intentionally NOT updated on modify: preserve any user category override.
+                .SetProperty(t => t.TransactionCategoryId, transactionCategoryId)
+                .SetProperty(t => t.PlaidConfidenceLevel, transaction.PlaidConfidenceLevel)
                 .SetProperty(t => t.UpdatedAt, now),
             cancellationToken);
 
-        return new PlaidTransactionUpsertResult(existing.Id, false, userCardId, transaction.Amount, transaction.Date);
+        return new PlaidTransactionUpsertResult(existing.Id, false, userCardId, transaction.Amount, transaction.Date, categoryCode, transaction.MerchantName);
+    }
+
+    private async Task<short?> ResolveTransactionCategoryIdAsync(
+        string? detailedCode,
+        string? primaryCode,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(detailedCode))
+        {
+            var detailedId = await db.TransactionCategories.AsNoTracking()
+                .Where(c => c.Code == detailedCode && c.IsActive)
+                .Select(c => (short?)c.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (detailedId is not null) return detailedId;
+        }
+        if (!string.IsNullOrWhiteSpace(primaryCode))
+        {
+            return await db.TransactionCategories.AsNoTracking()
+                .Where(c => c.Code == primaryCode && c.IsActive)
+                .Select(c => (short?)c.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+        return null;
+    }
+
+    // Plaid leaf -> bridge -> subcategory_group -> RewardsCC catalog category.
+    // Returns (null, null) when the leaf is unbridged or no catalog category carries that
+    // subcategory_group — caller falls back to base reward rate.
+    private async Task<(short? CategoryId, string? CategoryCode)> ResolveBridgedCategoryAsync(
+        short? transactionCategoryId,
+        CancellationToken cancellationToken)
+    {
+        if (transactionCategoryId is null) return (null, null);
+
+        var subcategoryGroup = await db.TransactionCategoryBridges.AsNoTracking()
+            .Where(b => b.TransactionCategoryId == transactionCategoryId.Value)
+            .Select(b => b.SubcategoryGroup)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(subcategoryGroup)) return (null, null);
+
+        var category = await db.Categories.AsNoTracking()
+            .Where(c => c.SubcategoryGroup == subcategoryGroup && c.IsActive)
+            .Select(c => new { c.Id, c.Code })
+            .FirstOrDefaultAsync(cancellationToken);
+        return category is null ? (null, null) : ((short?)category.Id, category.Code);
     }
 
     public async Task<PlaidTransactionRemoveResult?> RemovePlaidTransactionAsync(OnboardingWorkflowUser user, string plaidTransactionId, CancellationToken cancellationToken)

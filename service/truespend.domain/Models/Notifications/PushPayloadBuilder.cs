@@ -42,6 +42,16 @@ public static class PushPayloadBuilder
             transactionId
         });
 
+    public static string SubscriptionExpiry(int notificationId, string kind, int daysBefore, DateTimeOffset expiresAt) =>
+        JsonSerializer.Serialize(new
+        {
+            type = NotificationsConstants.SubscriptionExpiryTypeCode,
+            notificationId,
+            kind,
+            daysBefore,
+            expiresAt
+        });
+
     public static string System(int notificationId, string? subtype = null, int? plaidItemId = null) =>
         JsonSerializer.Serialize(new
         {

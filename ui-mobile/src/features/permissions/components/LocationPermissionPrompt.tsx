@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Linking, StyleSheet, Text, View } from "react-native";
 import { Button } from "@/shared/components/Button";
+import { Toast } from "@/shared/components/Toast";
 import { spacing } from "@/shared/theme/spacing";
-import { colors } from "@/shared/theme/colors";
 import { PermissionState } from "@/features/permissions/types/permissions.types";
 import { requestLocationPermission, LocationScope } from "@/shared/native/location";
 
@@ -38,14 +38,21 @@ export function LocationPermissionPrompt({ disabled, scope = "foreground", onRep
 
   return (
     <View style={styles.root}>
-      <View style={styles.row}>
-        <Button disabled={disabled || isRequesting} label={allowLabel} onPress={() => void handleAllow()} />
-        <Button disabled={disabled || isRequesting} label="Not now" onPress={() => onReport("denied")} variant="secondary" />
-      </View>
+      <Button
+        disabled={disabled || isRequesting}
+        label={allowLabel}
+        onPress={() => void handleAllow()}
+      />
+      <Button
+        disabled={disabled || isRequesting}
+        label="Not now"
+        onPress={() => onReport("denied")}
+        variant="outline"
+      />
       {needsSettings ? (
-        <View style={styles.settingsRow}>
-          <Text style={styles.settingsText}>Location is blocked. Open system settings to enable it.</Text>
-          <Button label="Open settings" onPress={() => void Linking.openSettings()} variant="secondary" />
+        <View style={{ marginTop: 8, gap: 8 }}>
+          <Toast tone="warn" message="Location is blocked. Open system settings to enable it." />
+          <Button label="Open settings" onPress={() => void Linking.openSettings()} variant="light" />
         </View>
       ) : null}
     </View>
@@ -55,17 +62,5 @@ export function LocationPermissionPrompt({ disabled, scope = "foreground", onRep
 const styles = StyleSheet.create({
   root: {
     gap: spacing.sm
-  },
-  row: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm
-  },
-  settingsRow: {
-    gap: spacing.xs
-  },
-  settingsText: {
-    color: colors.muted,
-    fontSize: 13
   }
 });

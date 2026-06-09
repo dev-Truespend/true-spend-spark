@@ -50,7 +50,7 @@ Scope notes for Phase 1:
 - User can enter a card issuer manually from a catalog-backed dropdown (`2.3`)
 - User can select a card product manually from a catalog-backed dropdown (`2.3`)
 - User can add a custom nickname for a manually added card (`2.3`)
-- User can add the last four digits for a manually added card (`2.3`)
+- User must enter the last four digits when adding a card manually (`2.3`) — used to match a later Plaid link
 - User can add a card without entering a full card number (`2.3`)
 - User can set a manually added card as primary (`2.3`)
 - User can skip card connection and continue onboarding (`2.3`)
@@ -66,14 +66,14 @@ Scope notes for Phase 1:
 - User can pay with Google Pay on Android when Stripe-hosted checkout supports it (`2.5`, `8.3`)
 - User can understand when billing starts and that cancellation is available (`2.5`)
 - User can enable notifications during onboarding (`2.6`)
-- User can finish onboarding and continue to the home screen (`2.6`)
+- User can finish onboarding and continue to the Wallet tab (`2.6`)
 
-### 3. Home And In-Store Recommendations
+### 3. In-Store Recommendations (rendered inside Wallet tab)
 
-- User can see a personalized home empty state when no cards are connected (`3.1`)
-- User can add a card from the home empty state (`3.1`)
-- User can connect a bank from the home empty state (`3.1`)
-- User can see plan or upgrade guidance from the home empty state (`3.1`)
+- User can see a personalized empty state in Wallet when no cards are connected (`3.1`)
+- User can add a card from the Wallet empty state (`3.1`)
+- User can connect a bank from the Wallet empty state (`3.1`)
+- User can see plan or upgrade guidance from the Wallet empty state (`3.1`)
 - User can get a clear single-card recommendation at a single-category merchant (`3.2`)
 - User can see the current detected merchant when shopping in person (`3.2`, `3.3`, `3.4`)
 - User can see the best card recommendation for the detected merchant (`3.2`, `3.3`, `3.4`)
@@ -82,7 +82,7 @@ Scope notes for Phase 1:
 - User can see runner-up card options for the current purchase (`3.4`)
 - User can see the last four digits of the recommended card (`3.2`, `3.3`, `3.4`)
 - User can refresh the current merchant recommendation (`3.2`)
-- User can access quick actions from the home screen (`3.1`, `3.3`)
+- User can access quick actions from the Wallet tab (`3.1`, `3.3`)
 - User can get a smart default category at a multi-category merchant based on transaction history (`3.3`)
 - User can change the suggested category at a multi-category merchant (`3.3`, `3.4`)
 - User can see the recommendation update after selecting a category (`3.3`, `3.4`)
@@ -101,6 +101,7 @@ Scope notes for Phase 1:
 - User can see card visuals with issuer and product names (`5.1`)
 - User can see the last four digits of each card (`5.1`)
 - User can see whether a card was added manually or through Plaid (`5.1`, `5.2`)
+- User's manually-added card is auto-merged into its Plaid link when later connected, with no duplicate (`5.2`, `5.4`)
 - User can see card sync status (`5.1`, `5.4`)
 - User can see when card linking limits have been reached (`5.1`)
 - User can see upgrade guidance when more links require a higher plan (`5.1`, `5.3`, `8.3`)
@@ -122,29 +123,22 @@ Scope notes for Phase 1:
 
 ### 6. Insights Tab: Transactions And Analytics
 
-Phase 1 scope note: Plaid is used for card metadata and linked transaction import. Transaction sources in Phase 1 are manual entry and Plaid sync. Receipt-derived transactions arrive in Phase 2.
+Phase 1 scope note: Plaid is used for card metadata and linked transaction import. In the MVP, Plaid sync is the sole producer of transaction rows; manual entry and edit/delete are archived (see the Archived section at the end of this file). Receipt-derived transactions arrive in Phase 2.
 
 - **[Done - Workflow 05]** User can open the Insights tab from bottom navigation (`6.1`, `6.3`)
 - **[Done - Workflow 05]** User can switch between Transactions and Insights sub-tabs (`6.1`, `6.3`)
-- **[Done - Workflow 05]** User can manually log a transaction from the Transactions sub-tab via the floating `+` action (`6.1`, `6.1b`)
-- **[Done - Workflow 05]** User can enter merchant, amount, card, date, time, location, and category when manually logging a transaction (`6.1b`)
-- **[Done - Workflow 05]** User can pick the card used for a manually logged transaction from their linked + manual cards (`6.1b`, `6.2`)
-- **[Done - Workflow 05]** User can see a reward check while logging a manual transaction if a better card appears available (`6.1b`)
-- **[Done - Workflow 05]** User can view recent manually logged transactions on mobile (`6.1`)
+- **[Done - Workflow 05]** User can view recent transactions on mobile (`6.1`)
 - **[Done - Workflow 05]** User can see merchant, amount, card, date, and category for each transaction (`6.1`, `6.2`)
 - **[Done - Workflow 05]** User can search transactions by merchant or description (`6.1`)
 - **[Done - Workflow 05]** User can filter transactions by category (`6.1`)
 - **[Done - Workflow 05]** User can filter transactions by card (`6.1`)
 - **[Done - Workflow 05]** User can filter transactions by merchant through search (`6.1`)
-- **[Done - Workflow 05]** User can see earned points or cash back computed from card rules for each manually logged transaction (`6.1`)
-- **[Done - Workflow 05]** User can see missed rewards on a manually logged transaction (`6.1`, `6.2`)
+- **[Done - Workflow 05]** User can see earned points or cash back computed from card rules for each transaction (`6.1`)
+- **[Done - Workflow 05]** User can see missed rewards on a transaction (`6.1`, `6.2`)
 - **[Done - Workflow 05]** User can see a missed-rewards callout in transaction history (`6.1`)
 - **[Done - Workflow 05]** User can see when a better card could have been used (`6.1`, `6.2`)
 - **[Done - Workflow 05]** User can open transaction details (`6.1`, `6.2`)
 - **[Done - Workflow 05]** User can navigate from a notification to the related transaction (`7.2`, `6.2`)
-- **[Done - Workflow 05]** User can edit a transaction category (`6.2`)
-- **[Done - Workflow 05]** User can change the card associated with a transaction (`6.2`)
-- **[Done - Workflow 05]** User can delete a transaction (`6.2`)
 - User can see transactions while offline from local cache (`6.1`, `8.5`)
 - User can see pending sync status for offline-created or offline-edited items (`6.1`, `8.5`)
 - User can recover from failed transaction sync (`8.5`)
@@ -358,3 +352,19 @@ Phase 2 covers the final highlighted mockup block: online purchase helper (Searc
 - User can receive credit-limit utilization notifications when thresholds are reached
 - User can configure credit-account alert thresholds from notification settings
 - User can use manually entered card due dates and limits when Plaid Liabilities is not enabled
+
+<!-- region: archive — manual transaction add/edit/delete (removed from MVP)
+
+Manual transaction entry was removed from the MVP in favour of Plaid-only sync.
+The stories below were Done at one point and are preserved here for re-enable.
+
+- **[Archived — manual entry not in MVP]** User can manually log a transaction from the Transactions sub-tab via the floating `+` action (`6.1`, `6.1b`)
+- **[Archived — manual entry not in MVP]** User can enter merchant, amount, card, date, time, location, and category when manually logging a transaction (`6.1b`)
+- **[Archived — manual entry not in MVP]** User can pick the card used for a manually logged transaction from their linked + manual cards (`6.1b`, `6.2`)
+- **[Archived — manual entry not in MVP]** User can see a reward check while logging a manual transaction if a better card appears available (`6.1b`)
+- **[Archived — manual entry not in MVP]** User can edit a transaction category (`6.2`)
+- **[Archived — manual entry not in MVP]** User can change the card associated with a transaction (`6.2`)
+- **[Archived — manual entry not in MVP]** User can delete a transaction (`6.2`)
+
+endregion -->
+

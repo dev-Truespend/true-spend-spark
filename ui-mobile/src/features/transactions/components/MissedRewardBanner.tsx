@@ -1,7 +1,8 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { MissedReward } from "@/features/transactions/types/transactions.types";
+import { colors, tints } from "@/shared/theme/colors";
+import { radii } from "@/shared/theme/spacing";
+import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type Props = {
   missedReward: MissedReward;
@@ -10,51 +11,38 @@ type Props = {
 
 export function MissedRewardBanner({ missedReward, onDismiss }: Props) {
   return (
-    <View style={styles.container}>
-      <View style={styles.body}>
-        <Text style={styles.title}>Better card available</Text>
-        <Text style={styles.detail}>
-          You missed {missedReward.missedReward.formatted} using {missedReward.actualCard.displayName}.{" "}
-          {missedReward.betterCard.displayName} would have earned {missedReward.potentialReward.formatted}.
-        </Text>
-      </View>
-      <TouchableOpacity onPress={() => onDismiss(missedReward.id)} style={styles.dismiss}>
-        <Text style={styles.dismissText}>Not a miss</Text>
-      </TouchableOpacity>
+    <View style={styles.card}>
+      <Text style={styles.title}>💸 You could have earned more</Text>
+      <Text style={styles.body}>
+        {missedReward.betterCard.displayName} would have earned {missedReward.potentialReward.formatted} on this purchase.{" "}
+        {missedReward.actualCard.displayName} earned less — a{" "}
+        <Text style={styles.bold}>{missedReward.missedReward.formatted}</Text> miss.
+      </Text>
+      <Pressable accessibilityRole="button" onPress={() => onDismiss(missedReward.id)} hitSlop={6}>
+        <Text style={styles.dismiss}>Mark as not-a-miss</Text>
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#FFF3F2",
-    borderColor: colors.danger,
-    borderRadius: 8,
+  card: {
+    backgroundColor: tints.amber.bg,
+    borderColor: tints.amber.border,
     borderWidth: 1,
-    flexDirection: "row",
-    gap: spacing.sm,
-    padding: spacing.md
+    borderRadius: radii.lg,
+    padding: 14,
+    gap: 8
   },
-  body: {
-    flex: 1,
-    gap: spacing.xs
-  },
-  title: {
-    color: colors.danger,
-    fontSize: 13,
-    fontWeight: "700"
-  },
-  detail: {
-    color: colors.text,
-    fontSize: 13,
-    lineHeight: 18
-  },
+  title: { fontFamily: fontFamily.bold, fontSize: scaleFont(13), fontWeight: "700", color: colors.amberText },
+  body: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: colors.text, lineHeight: 18 },
+  bold: { fontFamily: fontFamily.bold, fontWeight: "700" },
   dismiss: {
-    justifyContent: "center"
-  },
-  dismissText: {
-    color: colors.muted,
-    fontSize: 13,
-    fontWeight: "600"
+    fontFamily: fontFamily.semibold,
+    fontWeight: "600",
+    fontSize: scaleFont(12),
+    color: colors.mutedFg,
+    alignSelf: "flex-start",
+    marginTop: 4
   }
 });

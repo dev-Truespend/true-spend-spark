@@ -1,10 +1,15 @@
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { Badge } from "@/shared/components/Badge";
+import { Card } from "@/shared/components/Card";
 import { Screen } from "@/shared/components/Screen";
-import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
+import { RewardRow } from "@/shared/components/RewardRow";
+import { Toast } from "@/shared/components/Toast";
+import { colors, tints } from "@/shared/theme/colors";
+import { radii } from "@/shared/theme/spacing";
+import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { useTransactionDetail } from "@/features/transactions/hooks/useTransactionDetail";
-import { useDeleteTransaction } from "@/features/transactions/hooks/useDeleteTransaction";
 import { useMarkNotAMiss } from "@/features/transactions/hooks/useMarkNotAMiss";
 import { MissedRewardBanner } from "@/features/transactions/components/MissedRewardBanner";
 
@@ -13,81 +18,168 @@ export function TransactionDetailScreen() {
   const transactionId = Number(id);
   const router = useRouter();
   const { transaction, rewardResult, missedReward, isLoading, error } = useTransactionDetail(transactionId);
-  const deleteMutation = useDeleteTransaction();
   const markNotAMiss = useMarkNotAMiss();
 
-  function handleDelete() {
-    Alert.alert("Delete transaction", "This cannot be undone.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          await deleteMutation.mutateAsync(transactionId);
-          router.back();
-        }
-      }
-    ]);
+  if (isLoading) {
+    return <Screen><ActivityIndicator color={colors.primary} style={{ marginTop: 32 }} /></Screen>;
+  }
+  if (error || !transaction) {
+    return <Screen><Toast tone="error" message={error ?? "Transaction not found."} /></Screen>;
   }
 
-  if (isLoading) return <Screen><ActivityIndicator color={colors.primary} style={styles.loader} /></Screen>;
-  if (error || !transaction) return <Screen><Text style={styles.error}>{error ?? "Transaction not found."}</Text></Screen>;
-
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.merchant}>{transaction.merchantName}</Text>
-        <Text style={styles.amount}>{transaction.amount.formatted}</Text>
-        <Text style={styles.meta}>{transaction.transactionDate} · {transaction.card.displayName}</Text>
-        {transaction.categoryName ? <Text style={styles.meta}>{transaction.categoryName}</Text> : null}
-        {transaction.locationLabel ? <Text style={styles.meta}>{transaction.locationLabel}</Text> : null}
-        {transaction.isPending ? <Text style={styles.pending}>Pending</Text> : null}
+    <Screen scroll>
+      <View style={styles.topBar}>
+        <Pressable onPress={() => router.back()} style={styles.iconBtn} accessibilityRole="button">
+          <Ionicons name="chevron-back" size={20} color={colors.text} />
+        </Pressable>
+        <Text style={styles.topTitle}>Transaction</Text>
+        <View style={styles.iconBtn} />
+      </View>
 
-        {rewardResult ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Reward earned</Text>
-            <Text style={styles.rewardAmount}>{rewardResult.earnedAmount.formatted}</Text>
-            <Text style={styles.meta}>{rewardResult.earnedRate.toFixed(rewardResult.earnedRate % 1 === 0 ? 0 : 1)}x earn rate</Text>
+      <View style={styles.hero}>
+        <View style={styles.iconBox}>
+          <Text style={styles.iconGlyph}>🛍️</Text>
+        </View>
+        <Text style={styles.merchant}>{transaction.merchantName}</Text>
+        <Text style={styles.meta}>
+          {transaction.transactionDate}
+          {transaction.transactionTime ? ` · ${transaction.transactionTime}` : ""}
+          {transaction.locationLabel ? ` · ${transaction.locationLabel}` : ""}
+        </Text>
+        <Text style={styles.amount}>{transaction.amount.formatted}</Text>
+        {missedReward ? (
+          <View style={{ marginTop: 6 }}>
+            <Badge tone="amber" label={`Missed +${missedReward.missedReward.formatted} in rewards`} />
           </View>
         ) : null}
-
-        {missedReward && !missedReward.isDismissed ? (
-          <MissedRewardBanner
-            missedReward={missedReward}
-            onDismiss={(mid) => markNotAMiss.mutate(mid)}
-          />
+        {transaction.isPending ? (
+          <View style={{ marginTop: 6 }}>
+            <Badge tone="muted" label="Pending" />
+          </View>
         ) : null}
+      </View>
 
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.editBtn}
-            onPress={() => router.push(`/(app)/transactions/${transactionId}/edit`)}
-          >
-            <Text style={styles.editBtnText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-            <Text style={styles.deleteBtnText}>Delete</Text>
-          </TouchableOpacity>
+      <Card padded={false}>
+        <View style={{ paddingHorizontal: 14 }}>
+          <RewardRow
+            iconLabel="💳"
+            iconTone="blue"
+            label="Card used"
+            multiplier={
+              transaction.card.lastFour
+                ? `${transaction.card.displayName} ••${transaction.card.lastFour}`
+                : transaction.card.displayName
+            }
+            multiplierTone="muted"
+          />
+          <RewardRow
+            iconLabel="🏷️"
+            iconTone="purple"
+            label="Category"
+            multiplier={transaction.categoryName ?? "Uncategorized"}
+            multiplierTone="muted"
+          />
+          {rewardResult ? (
+            <RewardRow
+              iconLabel="⭐"
+              iconTone="amber"
+              label="Earned"
+              multiplier={`${rewardResult.earnedAmount.formatted} (${rewardResult.earnedRate}×)`}
+              multiplierTone="amber"
+            />
+          ) : null}
+          <RewardRow
+            iconLabel="📥"
+            iconTone="muted"
+            label="Source"
+            multiplier={transaction.source}
+            multiplierTone="muted"
+            divider={false}
+          />
         </View>
-      </ScrollView>
+      </Card>
+
+      {missedReward && !missedReward.isDismissed ? (
+        <MissedRewardBanner
+          missedReward={missedReward}
+          onDismiss={(mid) => markNotAMiss.mutate(mid)}
+        />
+      ) : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  loader: { marginTop: spacing.xl },
-  content: { gap: spacing.md, paddingBottom: spacing.xl },
-  merchant: { color: colors.text, fontSize: 24, fontWeight: "800" },
-  amount: { color: colors.text, fontSize: 32, fontWeight: "800" },
-  meta: { color: colors.muted, fontSize: 14 },
-  pending: { color: colors.muted, fontSize: 13, fontStyle: "italic" },
-  section: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 8, borderWidth: 1, gap: spacing.xs, padding: spacing.md },
-  sectionTitle: { color: colors.muted, fontSize: 12, fontWeight: "600", textTransform: "uppercase" },
-  rewardAmount: { color: colors.primary, fontSize: 20, fontWeight: "800" },
-  actions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
-  editBtn: { backgroundColor: colors.primary, borderRadius: 8, flex: 1, paddingVertical: spacing.md, alignItems: "center" },
-  editBtnText: { color: colors.primaryText, fontWeight: "700" },
-  deleteBtn: { backgroundColor: colors.surface, borderColor: colors.danger, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: spacing.md, alignItems: "center" },
-  deleteBtnText: { color: colors.danger, fontWeight: "700" },
-  error: { color: colors.danger }
+  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
+  hero: { alignItems: "center", paddingVertical: 16, gap: 6 },
+  iconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: radii.xxl,
+    backgroundColor: tints.amber.bg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4
+  },
+  iconGlyph: { fontSize: scaleFont(26) },
+  merchant: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(18), color: colors.text },
+  meta: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: colors.mutedFg, marginTop: 2, textAlign: "center" },
+  amount: {
+    fontFamily: fontFamily.heavy,
+    fontWeight: "800",
+    fontSize: scaleFont(32),
+    color: colors.text,
+    letterSpacing: -0.8,
+    marginTop: 8
+  }
 });
+
+/* region: archive — manual transaction edit/delete actions (removed from MVP)
+ *
+ * The "Edit" and "Delete" buttons under the detail body previously routed to
+ * /transactions/[id]/edit and called useDeleteTransaction. With manual entry
+ * removed, only mark-not-a-miss remains as a user action on this screen.
+ *
+ *   import { Alert } from "react-native";
+ *   import { Button } from "@/shared/components/Button";
+ *   import { SectionLabel } from "@/shared/components/SectionLabel";
+ *   import { useDeleteTransaction } from "@/features/transactions/hooks/useDeleteTransaction";
+ *
+ *   const deleteMutation = useDeleteTransaction();
+ *
+ *   function handleDelete() {
+ *     Alert.alert("Delete transaction", "This cannot be undone.", [
+ *       { text: "Cancel", style: "cancel" },
+ *       {
+ *         text: "Delete",
+ *         style: "destructive",
+ *         onPress: async () => {
+ *           await deleteMutation.mutateAsync(transactionId);
+ *           router.back();
+ *         }
+ *       }
+ *     ]);
+ *   }
+ *
+ *   // Below the missed-reward banner:
+ *   <SectionLabel>Actions</SectionLabel>
+ *   <View style={styles.actionGrid}>
+ *     <View style={{ flex: 1 }}>
+ *       <Button
+ *         label="Edit"
+ *         variant="outline"
+ *         onPress={() => router.push(`/(app)/transactions/${transactionId}/edit`)}
+ *       />
+ *     </View>
+ *     <View style={{ flex: 1 }}>
+ *       <Button label="Delete" variant="danger" onPress={handleDelete} disabled={deleteMutation.isPending} />
+ *     </View>
+ *   </View>
+ *
+ *   // styles:
+ *   actionGrid: { flexDirection: "row", gap: 8 }
+ *
+ * endregion */

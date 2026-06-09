@@ -10,6 +10,16 @@ public sealed record AccountDeletionPurgeResult(
     public static AccountDeletionPurgeResult Empty => new(0, 0, 0);
 }
 
+// User-facing deletion status. State is "none" (no scheduled deletion) or "pending"
+// (deletion scheduled, in the grace window until PurgeAfter).
+public sealed record AccountDeletionStatus(string State, DateTimeOffset? RequestedAt, DateTimeOffset? PurgeAfter)
+{
+    public const string StateNone = "none";
+    public const string StatePending = "pending";
+
+    public static AccountDeletionStatus None => new(StateNone, null, null);
+}
+
 public static class AccountDeletionStatusCodes
 {
     public const string Pending = "pending";

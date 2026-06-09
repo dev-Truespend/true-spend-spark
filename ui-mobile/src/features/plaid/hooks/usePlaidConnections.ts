@@ -28,6 +28,27 @@ export function usePlaidConnections() {
   };
 }
 
+export function useAddPlaidConnection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const tokenResponse = await plaidApi.createLinkToken();
+      const linkToken = tokenResponse.data?.linkToken;
+      if (!linkToken) throw new Error("Could not start Plaid Link. Please try again.");
+      const linkResult = await launchPlaidLink(linkToken);
+      const payload = exchangePlaidTokenSchema.parse({ publicToken: linkResult.publicToken });
+      return plaidApi.exchangeToken(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QueryKeys.PlaidConnections });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.Cards });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.CardLimits });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.HomeRecommendation });
+    }
+  });
+}
+
 export function useSyncConnection() {
   const queryClient = useQueryClient();
 
@@ -39,6 +60,7 @@ export function useSyncConnection() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QueryKeys.PlaidConnections });
       queryClient.invalidateQueries({ queryKey: QueryKeys.Cards });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.PlaidResyncQuota });
     }
   });
 }

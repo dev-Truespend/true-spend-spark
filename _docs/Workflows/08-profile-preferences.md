@@ -8,7 +8,7 @@
 | User can see account initials, display name, and email (8.1) | Done | Initials computed client-side in profile mapper |
 | User can view current plan status (8.1) | Done | Plan badge from `GET /billing/subscription`, falls back to profile `currentPlanCode` |
 | User can navigate to Plaid connection management from profile (8.1) | Done | Row links to `/(app)/cards/plaid-connections` |
-| User can navigate to cards management from profile (8.1) | Done | Row links to `/(app)/(tabs)/cards` |
+| User can navigate to the Wallet (cards) tab from profile (8.1) | Done | Row links to `/(app)/(tabs)` (default Wallet tab; previously a separate Cards tab folded into Wallet) |
 | User can view and manage location permission status from profile (8.1) | Done | Status from `GET /api/v1/permissions`; row deep-links to system settings. Bug fix: `POST /api/v1/permissions` no longer rewrites onboarding step when called from profile (gated to onboarding step `location_permission`). Vocabulary widened to the full `lookup.permission_states` set (`authorized_always`, `authorized_when_in_use`, `not_determined`, etc.) across DB seed, backend validator, and mobile schema. `GET /api/v1/lookups/permission-states` now exposed for clients. Pattern fix: `PermissionsUpdateBusiness` now wraps the permission-save + onboarding-step-advance writes in a single `IUnitOfWork` transaction so partial failures cannot leave permissions saved with onboarding un-advanced. `PermissionState` literal-union moved to `src/shared/types/permissionState.types.ts` so `shared/native/location.ts` no longer imports from `features/`. |
 | User can view camera permission status from profile (8.1) | Done | Status from `GET /api/v1/permissions`; row deep-links to system settings |
 | User can navigate to notification preferences from profile (8.1) | Done | Row links to `/(app)/notifications/settings` |
@@ -91,7 +91,7 @@ User is authenticated. Device has reported current permission states when possib
 | `PreferencesResponse` / `UpdatePreferencesRequest` | `theme`, `locale`, `timezone`, `hideAmounts`, `biometricUnlockEnabled` |
 | `PermissionsResponse` / `UpdatePermissionsRequest` | `deviceId`, `location`, `camera`, `notifications`, `rawPlatformPayload`, `lastReportedAt` |
 | `SubscriptionResponse` | `planCode`, `status`, `trialEnd`, `currentPeriodEnd`, `cancelAtPeriodEnd` |
-| `EntitlementsResponse` | `planCode`, `cardLinkLimit`, `aiInsightsEnabled`, `unlimitedCards` |
+| `EntitlementsResponse` | `planCode`, `manualCardLimit`, `plaidCardLimit`, `geoRecommendationsPerDay`, `aiInsightsEnabled`, `unlimitedCards` |
 
 ## Tables Involved
 

@@ -85,7 +85,17 @@ public static class EventConsumerExtensions
         AddEmailDelivery(builder);
 
         builder.Services.AddSingleton<IEventDispatcher, EventDispatcher>();
-        builder.Services.AddHostedService<OutboxPollingConsumer>();
+
+        #region archive — async outbox polling consumer (disabled in MVP)
+        // The OutboxPollingConsumer hosted service ran inside truespend.eventconsumer and polled
+        // the messaging.event_outbox table, dispatching every row through the handler chain. In
+        // the MVP, side-effects run inline post-commit inside the producing business classes
+        // (see _docs/Refactors/sync-execution-conversion.md), so the polling consumer is not
+        // registered as a hosted service. The dispatcher, handler, mapper, and config wiring
+        // above remain live so re-enabling is a single line change.
+        //
+        // builder.Services.AddHostedService<OutboxPollingConsumer>();
+        #endregion
 
         return builder;
     }

@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Builder;
 using TrueSpend.WorkerService.Extensions;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 builder.AddWorkerService();
 
-var host = builder.Build();
-host.Run();
+var app = builder.Build();
+app.MapJobTriggerEndpoints();
+app.Run();

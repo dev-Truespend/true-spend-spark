@@ -1,8 +1,8 @@
 using TrueSpend.Domain.Models.Cards;
+using TrueSpend.Domain.Models.Recommendations;
 using TrueSpend.Domain.ServiceInterfaces.Cards;
 using TrueSpend.Domain.DbContext;
 using TrueSpend.Domain.Models.Onboarding;
-using TrueSpend.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace TrueSpend.Domain.Services.Cards;
@@ -108,17 +108,98 @@ public sealed class CardsReadService(TrueSpendDbContext db) : ICardsReadService
         return new RewardOverridesResponse(overrides);
     }
 
-    public async Task<string> CurrentPlanCodeAsync(OnboardingWorkflowUser user, CancellationToken cancellationToken) =>
-        await db.Subscriptions.AsNoTracking()
-            .Where(s => s.UserId == user.UserId)
-            .OrderByDescending(s => s.UpdatedAt)
-            .Join(db.Plans.AsNoTracking(), s => s.PlanId, p => p.Id, (s, p) => p.Code)
-            .FirstOrDefaultAsync(cancellationToken) ?? BillingConstants.BasicPlanCode;
+    public Task<int> CountActiveUserCardsBySourceAsync(OnboardingWorkflowUser user, string cardSource, CancellationToken cancellationToken) =>
+        (from card in db.UserCards.AsNoTracking().Where(x => x.UserId == user.UserId && x.IsActive)
+         join source in db.CardSources.AsNoTracking() on card.SourceId equals source.Id
+         where source.Code == cardSource
+         select card.Id)
+        .CountAsync(cancellationToken);
 
-    public Task<int> CountActiveUserCardsAsync(OnboardingWorkflowUser user, CancellationToken cancellationToken) =>
-        db.UserCards.AsNoTracking()
-            .Where(x => x.UserId == user.UserId && x.IsActive)
-            .CountAsync(cancellationToken);
+    public async Task<IReadOnlyList<AdoptableManualCard>> FindAdoptableManualCardsAsync(Guid userId, string? mask, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(mask)) return [];
+
+        return await (
+            from card in db.UserCards.AsNoTracking()
+                .Where(x => x.UserId == userId && x.IsActive && x.PlaidAccountId == null && x.LastFour == mask)
+            join source in db.CardSources.AsNoTracking() on card.SourceId equals source.Id
+            where source.Code == "manual"
+            join product in db.CardProducts.AsNoTracking() on card.CardProductId equals product.Id into productJoin
+            from product in productJoin.DefaultIfEmpty()
+            join issuer in db.CardIssuers.AsNoTracking() on product.IssuerId equals issuer.Id into issuerJoin
+            from issuer in issuerJoin.DefaultIfEmpty()
+            select new AdoptableManualCard(
+                card.Id,
+                card.CardProductId,
+                issuer != null ? issuer.DisplayName : card.CustomIssuerName,
+                card.IsPrimary,
+                card.CreatedAt))
+            .ToListAsync(cancellationToken);
+    }
+
+    // Powers the home portfolio block — one DB round-trip for cards + their reward
+    // rules + category metadata. Ordering: primary card first, then by date added.
+    // Cards with no catalog product (manual cards) or with no rules surface a synthetic
+    // "everywhere 1×" entry so the mobile renders consistently across both paths.
+    public async Task<IReadOnlyList<PortfolioCard>> GetPortfolioAsync(OnboardingWorkflowUser user, int topCategoriesPerCard, CancellationToken cancellationToken)
+    {
+        var cards = await (from card in db.UserCards.AsNoTracking().Where(x => x.UserId == user.UserId && x.IsActive)
+                           join product in db.CardProducts.AsNoTracking() on card.CardProductId equals product.Id into productJoin
+                           from product in productJoin.DefaultIfEmpty()
+                           join issuer in db.CardIssuers.AsNoTracking() on product.IssuerId equals issuer.Id into issuerJoin
+                           from issuer in issuerJoin.DefaultIfEmpty()
+                           join source in db.CardSources.AsNoTracking() on card.SourceId equals source.Id into sourceJoin
+                           from source in sourceJoin.DefaultIfEmpty()
+                           orderby card.IsPrimary descending, card.CreatedAt ascending
+                           select new
+                           {
+                               Summary = new CardSummary(
+                                   card.Id,
+                                   card.Nickname ?? product.DisplayName ?? card.CustomCardName ?? "Card",
+                                   issuer.DisplayName ?? card.CustomIssuerName ?? "Unknown issuer",
+                                   card.LastFour,
+                                   source.Code ?? "manual",
+                                   card.IsPrimary,
+                                   card.SyncStatus,
+                                   product.CardArtUrl),
+                               ProductId = (int?)card.CardProductId
+                           }).ToListAsync(cancellationToken);
+
+        if (cards.Count == 0) return Array.Empty<PortfolioCard>();
+
+        var productIds = cards.Where(c => c.ProductId.HasValue).Select(c => c.ProductId!.Value).Distinct().ToArray();
+        var rulesByProduct = productIds.Length == 0
+            ? new Dictionary<int, List<PortfolioCategory>>()
+            : (await (from rule in db.RewardRules.AsNoTracking().Where(x => productIds.Contains(x.CardProductId))
+                      join cat in db.Categories.AsNoTracking() on rule.CategoryId equals cat.Id into catJoin
+                      from cat in catJoin.DefaultIfEmpty()
+                      select new
+                      {
+                          rule.CardProductId,
+                          CategoryCode = cat.Code ?? "base",
+                          CategoryName = cat.DisplayName ?? "Base",
+                          rule.Multiplier
+                      }).ToListAsync(cancellationToken))
+                .GroupBy(r => r.CardProductId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderByDescending(r => r.Multiplier)
+                          .Take(topCategoriesPerCard)
+                          .Select(r => new PortfolioCategory(r.CategoryCode, r.CategoryName, r.Multiplier))
+                          .ToList());
+
+        var baseCategory = new PortfolioCategory("base", "Everywhere", 1m);
+
+        return cards
+            .Select(c =>
+            {
+                var rules = c.ProductId.HasValue && rulesByProduct.TryGetValue(c.ProductId.Value, out var list) && list.Count > 0
+                    ? list
+                    : new List<PortfolioCategory> { baseCategory };
+                return new PortfolioCard(c.Summary, rules);
+            })
+            .ToList();
+    }
 
     private async Task<IReadOnlyList<RewardRule>> GetRewardRulesForProductAsync(int productId, CancellationToken cancellationToken)
     {
@@ -131,6 +212,7 @@ public sealed class CardsReadService(TrueSpendDbContext db) : ICardsReadService
                           {
                               CategoryCode = cat.Code ?? "base",
                               CategoryName = cat.DisplayName ?? "Base",
+                              CategoryGroup = cat.CategoryGroup,
                               rule.Multiplier,
                               rule.CapAmount,
                               CapPeriodLabel = cp != null ? cp.DisplayName : null,
@@ -140,6 +222,7 @@ public sealed class CardsReadService(TrueSpendDbContext db) : ICardsReadService
         return rows.Select(r => new RewardRule(
             r.CategoryCode,
             r.CategoryName,
+            r.CategoryGroup,
             r.Multiplier,
             FormatCapDisplay(r.CapAmount, r.CapPeriodLabel),
             r.Notes)).ToList();

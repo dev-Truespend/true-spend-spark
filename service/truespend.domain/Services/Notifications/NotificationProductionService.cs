@@ -1,3 +1,4 @@
+using TrueSpend.Domain.Constants;
 using TrueSpend.Domain.Models.Notifications;
 using TrueSpend.Domain.ServiceInterfaces.Notifications;
 using TrueSpend.Domain.DbContext;
@@ -166,4 +167,37 @@ public sealed class NotificationProductionService(TrueSpendDbContext db) : INoti
             .Select(t => new UnusualTransactionCandidate(t.Id, t.UserId, t.Amount, t.TransactionDate))
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<ExpiringSubscription>> GetExpiringSubscriptionsAsync(
+        DateTimeOffset now,
+        DateTimeOffset windowEnd,
+        CancellationToken cancellationToken)
+    {
+        return await (
+            from sub in db.Subscriptions.AsNoTracking()
+            join status in db.SubscriptionStatuses.AsNoTracking() on sub.StatusId equals status.Id
+            // Trial ending: a trialing subscription whose trial_end falls inside the reminder window.
+            where (status.Code == BillingConstants.TrialingStatusCode
+                       && sub.TrialEnd != null && sub.TrialEnd > now && sub.TrialEnd <= windowEnd)
+                  // Paid plan ending: set to cancel at period end and the period end is inside the window.
+                  || (status.Code == BillingConstants.ActiveStatusCode
+                       && sub.CancelAtPeriodEnd
+                       && sub.CurrentPeriodEnd > now && sub.CurrentPeriodEnd <= windowEnd)
+            select new ExpiringSubscription(
+                sub.UserId,
+                status.Code == BillingConstants.TrialingStatusCode
+                    ? NotificationsConstants.SubscriptionExpiryTrialKind
+                    : NotificationsConstants.SubscriptionExpiryPlanKind,
+                status.Code == BillingConstants.TrialingStatusCode
+                    ? sub.TrialEnd!.Value
+                    : sub.CurrentPeriodEnd))
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<bool> HasNotificationOfTypeSinceAsync(
+        Guid userId, short notificationTypeId, DateTimeOffset since, CancellationToken cancellationToken) =>
+        db.Notifications.AsNoTracking()
+            .AnyAsync(n => n.UserId == userId
+                           && n.NotificationTypeId == notificationTypeId
+                           && n.CreatedAt >= since, cancellationToken);
 }

@@ -50,10 +50,15 @@ export function useOnboardingFlow() {
       ) ?? [],
     [data?.cards.cards]
   );
+  // 02-onboarding.md:151 + 04-cards.md:109 — card limits ship inside the cards
+  // response, so onboarding screens can gate plaid/manual adds without a
+  // separate /cards/limits call.
+  const cardLimits = data?.cards.limits ?? null;
   const issuers = data?.issuers.issuers ?? [];
   const products = data?.products.products ?? [];
   const plans = data?.plans.plans ?? [];
   const prices = data?.prices.plans ?? [];
+  const features = data?.features?.features ?? [];
   const notifications = data?.notifications ?? null;
   const serverStep: OnboardingStep | null = data ? stepFromOnboarding(data.onboarding) : null;
   const step: OnboardingStep = stepOverride ?? serverStep ?? "cards";
@@ -103,6 +108,10 @@ export function useOnboardingFlow() {
 
   function beginManualCardEntry() {
     setStepOverride("manual");
+  }
+
+  function cancelManualCardEntry() {
+    setStepOverride("cards");
   }
 
   async function addManualCard(
@@ -164,6 +173,14 @@ export function useOnboardingFlow() {
     });
   }
 
+  async function continueWithFree() {
+    await run(async () => {
+      // Free tier needs no Stripe checkout — entitlements default to Free server-side when
+      // there is no active subscription. Just advance to the notification opt-in step.
+      setStepOverride("notifications");
+    });
+  }
+
   async function continueAfterCheckout() {
     await run(async () => {
       // Refresh subscription/entitlement state so any downstream gates see the
@@ -201,6 +218,33 @@ export function useOnboardingFlow() {
     });
   }
 
+  // Saves notification preference and completes onboarding atomically — if the
+  // notification save fails we do not navigate, so the user keeps the error
+  // toast and can retry from the AllSet screen.
+  async function completeOnboarding(allowNotifications: boolean) {
+    await run(async () => {
+      const nextSettings = notifications ?? {
+        masterEnabled: allowNotifications,
+        pushEnabled: allowNotifications,
+        emailEnabled: allowNotifications,
+        quietHoursEnabled: false,
+        types: []
+      };
+      await saveNotificationsMutation.mutateAsync({
+        pushEnabled: allowNotifications,
+        emailEnabled: allowNotifications,
+        settings: nextSettings
+      });
+      await onboardingApi.complete();
+      router.replace("/(app)/(tabs)");
+    });
+  }
+
+  function switchToPro() {
+    const proCode = plans.find((p) => p.code.toLowerCase() === "pro")?.code;
+    if (proCode) setSelectedPlanCode(proCode);
+  }
+
   const selectedPrice = useMemo(
     () => prices.find((price) => price.planCode === selectedPlanCode && price.periodCode === periodCode),
     [prices, selectedPlanCode, periodCode]
@@ -209,17 +253,23 @@ export function useOnboardingFlow() {
   return {
     addManualCard,
     beginManualCardEntry,
+    cancelManualCardEntry,
     cards,
+    cardLimits,
     checkoutPending,
+    completeOnboarding,
     connectPlaid,
     continueAfterCheckout,
+    continueWithFree,
     error,
+    features,
     finish,
     isLoading,
     issuers,
     notifications,
     periodCode,
     plans,
+    prices,
     products,
     reportLocation,
     requestMissingCard,
@@ -230,6 +280,7 @@ export function useOnboardingFlow() {
     skipCards,
     startCheckout,
     step,
-    switchPeriod
+    switchPeriod,
+    switchToPro
   };
 }

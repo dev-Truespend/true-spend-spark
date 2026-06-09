@@ -161,6 +161,8 @@ public sealed class TransactionEntityConfiguration : IEntityTypeConfiguration<Tr
         builder.Property(x => x.UserCardId).HasColumnName("user_card_id");
         builder.Property(x => x.MerchantId).HasColumnName("merchant_id");
         builder.Property(x => x.CategoryId).HasColumnName("category_id");
+        builder.Property(x => x.TransactionCategoryId).HasColumnName("transaction_category_id");
+        builder.Property(x => x.PlaidConfidenceLevel).HasColumnName("plaid_confidence_level");
         builder.Property(x => x.Amount).HasColumnName("amount").HasPrecision(12, 2);
         builder.Property(x => x.TransactionDate).HasColumnName("transaction_date");
         builder.Property(x => x.TransactionTime).HasColumnName("transaction_time");
@@ -174,6 +176,46 @@ public sealed class TransactionEntityConfiguration : IEntityTypeConfiguration<Tr
         builder.HasIndex(x => x.PlaidTransactionId).IsUnique().HasFilter("plaid_transaction_id IS NOT NULL");
         builder.HasIndex(x => x.UserId);
         builder.HasIndex(x => x.UserCardId);
+        builder.HasIndex(x => x.TransactionCategoryId);
+    }
+}
+
+public sealed class TransactionCategoryEntityConfiguration : IEntityTypeConfiguration<TransactionCategoryEntity>
+{
+    public void Configure(EntityTypeBuilder<TransactionCategoryEntity> builder)
+    {
+        builder.ToTable("transaction_categories", "finance");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.Code).HasColumnName("code");
+        builder.Property(x => x.DisplayName).HasColumnName("display_name");
+        builder.Property(x => x.ParentId).HasColumnName("parent_id");
+        builder.Property(x => x.IsPrimary).HasColumnName("is_primary");
+        builder.Property(x => x.IsOutflow).HasColumnName("is_outflow");
+        builder.Property(x => x.Icon).HasColumnName("icon");
+        builder.Property(x => x.DisplayOrder).HasColumnName("display_order");
+        builder.Property(x => x.Source).HasColumnName("source");
+        builder.Property(x => x.SourceVersion).HasColumnName("source_version");
+        builder.Property(x => x.IsActive).HasColumnName("is_active");
+        builder.Property(x => x.CreatedAt).HasColumnName("created_at");
+        builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+        builder.HasIndex(x => x.Code).IsUnique();
+        builder.HasIndex(x => x.ParentId);
+    }
+}
+
+public sealed class TransactionCategoryBridgeEntityConfiguration : IEntityTypeConfiguration<TransactionCategoryBridgeEntity>
+{
+    public void Configure(EntityTypeBuilder<TransactionCategoryBridgeEntity> builder)
+    {
+        builder.ToTable("transaction_category_bridge", "finance");
+        builder.HasKey(x => x.TransactionCategoryId);
+        builder.Property(x => x.TransactionCategoryId).HasColumnName("transaction_category_id").ValueGeneratedNever();
+        builder.Property(x => x.SubcategoryGroup).HasColumnName("subcategory_group");
+        builder.Property(x => x.Notes).HasColumnName("notes");
+        builder.Property(x => x.CreatedAt).HasColumnName("created_at");
+        builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+        builder.HasIndex(x => x.SubcategoryGroup);
     }
 }
 

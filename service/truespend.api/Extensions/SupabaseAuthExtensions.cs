@@ -12,6 +12,9 @@ public static class SupabaseAuthExtensions
         var issuer = section["JwtIssuer"] ?? string.Empty;
         var audience = section["JwtAudience"] ?? "authenticated";
         var secret = section["JwtSecret"] ?? string.Empty;
+        var jwtKeys = section["JwtKeys"] ?? string.Empty;
+
+        var signingKeys = BuildSigningKeys(secret, jwtKeys);
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -26,7 +29,8 @@ public static class SupabaseAuthExtensions
                     ValidateAudience = !string.IsNullOrWhiteSpace(audience),
                     ValidAudience = audience,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(string.IsNullOrWhiteSpace(secret) ? new string('x', 32) : secret)),
+                    IssuerSigningKeys = signingKeys,
+                    IssuerSigningKeyResolver = (_, _, _, _) => signingKeys,
                     ValidateLifetime = true,
                     NameClaimType = "sub",
                     RoleClaimType = "role"
@@ -34,5 +38,24 @@ public static class SupabaseAuthExtensions
             });
 
         return services;
+    }
+
+    private static IReadOnlyList<SecurityKey> BuildSigningKeys(string secret, string jwtKeys)
+    {
+        var signingKeys = new List<SecurityKey>();
+
+        if (!string.IsNullOrWhiteSpace(jwtKeys))
+        {
+            var json = jwtKeys.TrimStart().StartsWith('[')
+                ? $$"""{"keys":{{jwtKeys}}}"""
+                : jwtKeys;
+
+            signingKeys.AddRange(new JsonWebKeySet(json).GetSigningKeys());
+        }
+
+        var symmetricSecret = string.IsNullOrWhiteSpace(secret) ? new string('x', 32) : secret;
+        signingKeys.Add(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(symmetricSecret)));
+
+        return signingKeys;
     }
 }

@@ -52,3 +52,10 @@ export type PlaidTransactionSyncResponse = {
   removedCount: number;
   lastTransactionSyncAt?: string | null;
 };
+
+export type ResyncQuotaResponse = {
+  isPro: boolean;
+  limit: number;
+  used: number;
+  remaining: number;
+};

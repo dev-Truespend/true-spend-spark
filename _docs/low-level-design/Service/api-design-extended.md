@@ -227,7 +227,7 @@ Shared shape for `RewardsSummaryResponse.dailyBreakdown` (one row per day) and `
 
 ### `PlanVm`
 
-- `code` — `'basic' | 'pro'`
+- `code` — `'free' | 'basic' | 'pro'`
 - `displayName`
 - `description`
 - `trialDays`
@@ -242,7 +242,7 @@ Shared shape for `RewardsSummaryResponse.dailyBreakdown` (one row per day) and `
 
 ### `PlanFeatureVm`
 
-- `code` — `'card_link_limit' | 'ai_insights_enabled' | …`
+- `code` — `'manual_card_limit' | 'plaid_card_limit' | 'geo_recommendations_per_day' | 'ai_insights_enabled' | …`
 - `displayName`
 - `description`
 - `valueType` — `'integer' | 'boolean' | 'string'`
@@ -502,7 +502,7 @@ Request: `CreateManualCardRequest`
 - `cardProductId`
 - `issuerId`
 - `nickname`
-- `lastFour`
+- `lastFour` (required, 4 digits — used as the match key when this card is later linked via Plaid)
 - `isPrimary`
 
 Response: `CardDetailResponse`
@@ -606,7 +606,7 @@ Request: `CreateCardProductRequest`
 - `cardName`
 - `createUserCard`
 - `nickname`
-- `lastFour`
+- `lastFour` (required when `createUserCard = true` — match key for later Plaid adoption)
 - `isPrimary`
 
 Response: `CardProductRequestResponse`
@@ -1126,17 +1126,19 @@ Response: `HostedBillingResponse`
 
 Response: `EntitlementsResponse`
 
-- `planCode`
+- `planCode` (`free` | `basic` | `pro`)
 - `trialing`
 - `trialEndsAt` (nullable)
-- `cardLinkLimit` (nullable; `null` when `unlimitedCards = true`)
+- `manualCardLimit` (nullable; `null` when `unlimitedCards = true`)
+- `plaidCardLimit` (nullable; `null` when `unlimitedCards = true`)
+- `geoRecommendationsPerDay` (nullable; `null` = unlimited)
 - `unlimitedCards`
 - `aiInsightsEnabled`
 - `plaidLinkingEnabled`
 - `plaidTransactionsViewEnabled`
 - `geofencingEnabled`
 
-Resolver rules per [13-feature-gating.md](../../Workflows/13-feature-gating.md): `trialing` returns the Pro feature set regardless of picked plan; `past_due`/`unpaid` keep the prior plan's features for 24h from `currentPeriodEnd`, then drop to Basic.
+Resolver rules per [13-feature-gating.md](../../Workflows/13-feature-gating.md): `trialing` returns the picked plan's feature set; `past_due`/`unpaid` keep the picked plan's features for 24h from `currentPeriodEnd`, then drop to Free; `canceled`/none → Free.
 
 ## Privacy
 

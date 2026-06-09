@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TrueSpend.Domain.Business.Plaid;
+using TrueSpend.Domain.BusinessInterfaces.Analytics;
 using TrueSpend.Domain.BusinessInterfaces.Billing;
+using TrueSpend.Domain.BusinessInterfaces.Notifications;
 using TrueSpend.Domain.Exceptions;
-using TrueSpend.Domain.Models.Cards;
+using TrueSpend.Domain.Models.Billing;
 using TrueSpend.Domain.Models.Onboarding;
 using TrueSpend.Domain.Models.Plaid;
 using TrueSpend.Domain.ServiceInterfaces.Messaging;
@@ -28,7 +30,8 @@ public sealed class PlaidUpdateBusinessTests
     private static PlaidUpdateBusiness Build(
         Mock<IPlaidProvider> plaidProvider,
         Mock<IPlaidReadService> readService,
-        Mock<IPlaidUpdateService> updateService)
+        Mock<IPlaidUpdateService> updateService,
+        Mock<IEntitlementGuard>? guard = null)
     {
         var tx = new Mock<IUnitOfWorkTransaction>();
         tx.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
@@ -38,15 +41,23 @@ public sealed class PlaidUpdateBusinessTests
         uow.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx.Object);
 
-        var messaging = new Mock<IMessagingInsertService>();
-        messaging.Setup(m => m.EnqueueOutboxEventAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+        var messaging = new Mock<IMessagingInsertService>(); // archived: kept for future async migration
 
-        var guard = new Mock<IEntitlementGuard>();
-        guard.Setup(g => g.RequireFeatureAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+        if (guard is null)
+        {
+            guard = new Mock<IEntitlementGuard>();
+            guard.Setup(g => g.RequireFeatureAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            guard.Setup(g => g.HasFeatureAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+        }
+
+        var analytics = new Mock<IAnalyticsComputeBusiness>();
+        var missedRewardNotif = new Mock<IMissedRewardNotificationBusiness>();
+
+        var resyncQuota = new Mock<IManualResyncQuotaBusiness>();
+        resyncQuota.Setup(q => q.TryConsumeAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ManualResyncConsumeResult(true, new ManualResyncQuotaStatus(true, 5, 1, 4)));
 
         return new PlaidUpdateBusiness(
             plaidProvider.Object,
@@ -58,6 +69,9 @@ public sealed class PlaidUpdateBusinessTests
             messaging.Object,
             uow.Object,
             guard.Object,
+            resyncQuota.Object,
+            analytics.Object,
+            missedRewardNotif.Object,
             new PlaidValidator(),
             NullLogger<PlaidUpdateBusiness>.Instance);
     }
@@ -155,4 +169,33 @@ public sealed class PlaidUpdateBusinessTests
 
         Assert.True(response.Success);
     }
+
+    [Fact]
+    public async Task SyncAllActiveConnections_skips_users_without_plaid_entitlement()
+    {
+        var readSvc = new Mock<IPlaidReadService>();
+        readSvc.Setup(s => s.GetActiveConnectionsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyList<PlaidActiveConnection>)new List<PlaidActiveConnection>
+            {
+                new(1, Guid.NewGuid(), "free@example.com")
+            });
+
+        var guard = new Mock<IEntitlementGuard>();
+        guard.Setup(g => g.HasFeatureAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var business = Build(new Mock<IPlaidProvider>(), readSvc, new Mock<IPlaidUpdateService>(), guard);
+        await business.SyncAllActiveConnectionsAsync(CancellationToken.None);
+
+        // Not entitled -> the per-connection sync path is never entered.
+        readSvc.Verify(s => s.FindConnectionAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    #region archive — async event-publish (disabled in MVP)
+    // The original tests did not directly Setup/Verify EnqueueOutboxEventAsync — they passed a
+    // pre-configured Setup on the messaging mock and let the business class emit events into a
+    // black hole. With the conversion, the live tests no longer assert outbox events; the
+    // analytics and missed-reward inline collaborators are exercised by the broader test suite
+    // and by the Build() factory's default mock instances, which silently accept calls.
+    #endregion
 }

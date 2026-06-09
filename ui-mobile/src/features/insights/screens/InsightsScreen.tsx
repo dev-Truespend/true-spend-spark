@@ -1,19 +1,26 @@
 import { useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import { EmptyState } from "@/shared/components/EmptyState";
+import { FeatureGate } from "@/shared/components/FeatureGate";
+import { ProLockBadge } from "@/shared/components/ProLockBadge";
+import { ReasonCard } from "@/shared/components/ReasonCard";
 import { Screen } from "@/shared/components/Screen";
+import { SectionLabel } from "@/shared/components/SectionLabel";
+import { SegmentedControl } from "@/shared/components/SegmentedControl";
+import { Toast } from "@/shared/components/Toast";
 import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
+import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { TransactionsContent } from "@/features/transactions/screens/TransactionsScreen";
 import { AIInsightCard } from "@/features/insights/components/AIInsightCard";
 import { CategoryBreakdownList } from "@/features/insights/components/CategoryBreakdownList";
+import { CategoryDonutChart } from "@/features/insights/components/CategoryDonutChart";
 import { DailyBreakdownChart } from "@/features/insights/components/DailyBreakdownChart";
 import { MissedRewardCard } from "@/features/insights/components/MissedRewardCard";
 import { PeriodSelector } from "@/features/insights/components/PeriodSelector";
 import { RewardSummaryCard } from "@/features/insights/components/RewardSummaryCard";
 import { useAIInsights } from "@/features/insights/hooks/useAIInsights";
 import { useDismissAIInsight } from "@/features/insights/hooks/useDismissAIInsight";
-import { useGenerateAIInsights } from "@/features/insights/hooks/useGenerateAIInsights";
 import { useRewardsSummary } from "@/features/insights/hooks/useRewardsSummary";
 import { AnalyticsPeriod, MissedReward } from "@/features/insights/types/analytics.types";
 import { useEntitlementGate } from "@/shared/navigation/useEntitlementGate";
@@ -22,40 +29,39 @@ type Tab = "transactions" | "insights";
 
 export function InsightsScreen() {
   const [activeTab, setActiveTab] = useState<Tab>("transactions");
+  const gate = useEntitlementGate();
 
   return (
-    <Screen>
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "transactions" && styles.tabActive]}
-          onPress={() => setActiveTab("transactions")}
-        >
-          <Text style={[styles.tabLabel, activeTab === "transactions" && styles.tabLabelActive]}>
-            Transactions
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "insights" && styles.tabActive]}
-          onPress={() => setActiveTab("insights")}
-        >
-          <Text style={[styles.tabLabel, activeTab === "insights" && styles.tabLabelActive]}>
-            Insights
-          </Text>
-        </TouchableOpacity>
-      </View>
+    <Screen padded={false}>
+      <View style={styles.page}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Insights</Text>
+          {!gate.isPro ? <ProLockBadge /> : null}
+        </View>
 
-      {activeTab === "transactions" ? (
-        <TransactionsContent embedded />
-      ) : (
-        <InsightsContent />
-      )}
+        <SegmentedControl<Tab>
+          value={activeTab}
+          onChange={setActiveTab}
+          options={[
+            { value: "transactions", label: "Transactions" },
+            { value: "insights", label: "Insights" }
+          ]}
+        />
+
+        {activeTab === "transactions" ? (
+          <View style={{ flex: 1 }}>
+            <TransactionsContent embedded />
+          </View>
+        ) : (
+          <InsightsContent />
+        )}
+      </View>
     </Screen>
   );
 }
 
 function InsightsContent() {
   const router = useRouter();
-  const [insightsTab, setInsightsTab] = useState<"analytics" | "ai">("analytics");
   const [period, setPeriod] = useState<AnalyticsPeriod>("month");
 
   const gate = useEntitlementGate();
@@ -63,225 +69,70 @@ function InsightsContent() {
 
   const { summary, isLoading: summaryLoading, error: summaryError } = useRewardsSummary(period);
   const { insights, isLoading: insightsLoading } = useAIInsights({ enabled: aiInsightsEnabled });
-  const { generate, isLoading: generating } = useGenerateAIInsights();
   const { dismiss } = useDismissAIInsight();
 
   function handleMissedRewardPress(item: MissedReward) {
-    if (item.transactionId > 0) {
-      router.push(`/(app)/transactions/${item.transactionId}`);
-    }
+    if (item.transactionId > 0) router.push(`/(app)/transactions/${item.transactionId}`);
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <View style={styles.subTabRow}>
-        <TouchableOpacity
-          style={[styles.subTab, insightsTab === "analytics" && styles.subTabActive]}
-          onPress={() => setInsightsTab("analytics")}
-        >
-          <Text style={[styles.subTabLabel, insightsTab === "analytics" && styles.subTabLabelActive]}>
-            Analytics
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.subTab, insightsTab === "ai" && styles.subTabActive]}
-          onPress={() => setInsightsTab("ai")}
-        >
-          <Text style={[styles.subTabLabel, insightsTab === "ai" && styles.subTabLabelActive]}>
-            AI Insights
-          </Text>
-        </TouchableOpacity>
-      </View>
+    <View style={{ flex: 1, gap: 12 }}>
+      <PeriodSelector selected={period} onSelect={setPeriod} />
 
-      {insightsTab === "analytics" ? (
-        <View style={styles.section}>
-          <PeriodSelector selected={period} onSelect={setPeriod} />
-
-          {summaryLoading ? (
-            <ActivityIndicator color={colors.primary} style={styles.loader} />
-          ) : summaryError ? (
-            <Text style={styles.error}>{summaryError}</Text>
-          ) : summary ? (
+      {summaryLoading ? (
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 24 }} />
+      ) : summaryError ? (
+        <Toast tone="error" message={summaryError} />
+      ) : summary ? (
+        <>
+          <RewardSummaryCard summary={summary} />
+          {summary.dailyBreakdown.length > 0 ? <DailyBreakdownChart items={summary.dailyBreakdown} /> : null}
+          {summary.categoryBreakdown.length > 0 ? (
             <>
-              <RewardSummaryCard summary={summary} />
-
-              {summary.dailyBreakdown.length > 0 ? (
-                <DailyBreakdownChart items={summary.dailyBreakdown} />
-              ) : null}
-
-              {summary.categoryBreakdown.length > 0 ? (
-                <CategoryBreakdownList items={summary.categoryBreakdown} />
-              ) : null}
-
-              {summary.topMissedRewards.length > 0 ? (
-                <View style={styles.section}>
-                  <Text style={styles.sectionHeading}>Top missed rewards</Text>
-                  {summary.topMissedRewards.map((item) => (
-                    <MissedRewardCard
-                      key={item.id}
-                      item={item}
-                      onPress={handleMissedRewardPress}
-                    />
-                  ))}
-                </View>
-              ) : null}
+              <CategoryDonutChart items={summary.categoryBreakdown} />
+              <CategoryBreakdownList items={summary.categoryBreakdown} />
             </>
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No data for this period yet.</Text>
-              <Text style={styles.emptySubtext}>
-                Add transactions to start tracking your rewards.
-              </Text>
+          ) : null}
+          {summary.topMissedRewards.length > 0 ? (
+            <View style={{ gap: 8 }}>
+              <SectionLabel>Top missed-reward events</SectionLabel>
+              {summary.topMissedRewards.map((item) => (
+                <MissedRewardCard key={item.id} item={item} onPress={handleMissedRewardPress} />
+              ))}
             </View>
-          )}
-        </View>
-      ) : !aiInsightsEnabled ? (
-        <View style={styles.section}>
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>AI insights are a Pro feature.</Text>
-            <Text style={styles.emptySubtext}>
-              Get personalized reward optimization tips based on your spending patterns. Upgrade to unlock.
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.generateButton}
-            onPress={() => router.push({ pathname: "/(app)/billing", params: { requiredPlanCode: "pro" } })}
-          >
-            <Text style={styles.generateButtonLabel}>Upgrade to Pro</Text>
-          </TouchableOpacity>
-        </View>
+          ) : null}
+        </>
       ) : (
-        <View style={styles.section}>
+        <EmptyState
+          iconLabel="📊"
+          title="No data for this period yet"
+          description="Add transactions to start tracking your rewards."
+        />
+      )}
+
+      <FeatureGate feature="ai_insights_enabled">
+        <View style={{ gap: 8 }}>
+          <SectionLabel>AI insight</SectionLabel>
           {insightsLoading ? (
-            <ActivityIndicator color={colors.primary} style={styles.loader} />
+            <ActivityIndicator color={colors.primary} />
           ) : insights.length > 0 ? (
             insights.map((insight) => (
               <AIInsightCard key={insight.id} insight={insight} onDismiss={dismiss} />
             ))
           ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No AI insights yet.</Text>
-              <Text style={styles.emptySubtext}>
-                Generate personalized reward optimization tips based on your spending.
-              </Text>
-            </View>
+            <ReasonCard
+              title="AI insight"
+              body="Personalized reward-optimization tips appear here automatically, refreshed daily from your latest spending."
+            />
           )}
-
-          <TouchableOpacity
-            style={[styles.generateButton, generating && styles.generateButtonDisabled]}
-            onPress={() => generate()}
-            disabled={generating}
-          >
-            {generating ? (
-              <ActivityIndicator color={colors.primaryText} />
-            ) : (
-              <Text style={styles.generateButtonLabel}>Generate new insights</Text>
-            )}
-          </TouchableOpacity>
         </View>
-      )}
-    </ScrollView>
+      </FeatureGate>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
-    flexDirection: "row",
-    borderBottomColor: colors.border,
-    borderBottomWidth: 1,
-    marginBottom: spacing.md
-  },
-  tab: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent"
-  },
-  tabActive: {
-    borderBottomColor: colors.primary
-  },
-  tabLabel: {
-    color: colors.muted,
-    fontSize: 14,
-    fontWeight: "600"
-  },
-  tabLabelActive: {
-    color: colors.primary
-  },
-  subTabRow: {
-    flexDirection: "row",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    overflow: "hidden",
-    marginBottom: spacing.sm
-  },
-  subTab: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: spacing.sm
-  },
-  subTabActive: {
-    backgroundColor: colors.primary
-  },
-  subTabLabel: {
-    color: colors.muted,
-    fontSize: 14,
-    fontWeight: "600"
-  },
-  subTabLabelActive: {
-    color: colors.primaryText
-  },
-  content: {
-    gap: spacing.md,
-    paddingBottom: spacing.xl
-  },
-  section: {
-    gap: spacing.md
-  },
-  sectionHeading: {
-    color: colors.muted,
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5
-  },
-  loader: {
-    marginVertical: spacing.xl
-  },
-  error: {
-    color: colors.danger
-  },
-  emptyState: {
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingVertical: spacing.xl
-  },
-  emptyText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "700"
-  },
-  emptySubtext: {
-    color: colors.muted,
-    fontSize: 14,
-    textAlign: "center"
-  },
-  generateButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    alignItems: "center",
-    paddingVertical: spacing.md,
-    marginTop: spacing.sm
-  },
-  generateButtonDisabled: {
-    opacity: 0.6
-  },
-  generateButtonLabel: {
-    color: colors.primaryText,
-    fontSize: 15,
-    fontWeight: "700"
-  }
+  page: { flex: 1, padding: 14, gap: 12 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  title: { color: colors.text, fontFamily: fontFamily.heavy, fontSize: scaleFont(24), fontWeight: "800", letterSpacing: -0.4 }
 });

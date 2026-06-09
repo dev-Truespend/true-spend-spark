@@ -91,6 +91,43 @@ create table if not exists finance.recommendations (
   created_at timestamptz not null default now()
 );
 
+create table if not exists finance.transaction_categories (
+  id smallint generated always as identity primary key,
+  code text not null unique,
+  display_name text not null,
+  parent_id smallint references finance.transaction_categories(id),
+  is_primary boolean not null,
+  is_outflow boolean not null default true,
+  icon text,
+  display_order smallint,
+  source text not null default 'plaid',
+  source_version text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists finance_transaction_categories_parent_id_idx
+  on finance.transaction_categories(parent_id);
+
+create index if not exists finance_transaction_categories_outflow_idx
+  on finance.transaction_categories(is_outflow)
+  where is_outflow;
+
+-- Plaid PFC leaf -> RewardsCC subcategory_group. One row per bridgeable Plaid leaf.
+-- subcategory_group is plain text (RewardsCC owns the vocabulary; not a catalog FK).
+-- Pre-built before prod; looked up (never written) during transaction sync. See _docs/Workflows/category-bridge.md.
+create table if not exists finance.transaction_category_bridge (
+  transaction_category_id smallint primary key references finance.transaction_categories(id),
+  subcategory_group text not null,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists finance_transaction_category_bridge_subcategory_group_idx
+  on finance.transaction_category_bridge(subcategory_group);
+
 create table if not exists finance.transactions (
   id int generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -100,6 +137,8 @@ create table if not exists finance.transactions (
   user_card_id int not null references finance.user_cards(id),
   merchant_id int references finance.merchants(id),
   category_id smallint references catalog.categories(id),
+  transaction_category_id smallint references finance.transaction_categories(id),
+  plaid_confidence_level text,
   amount numeric(12,2) not null,
   transaction_date date not null,
   transaction_time time,
@@ -111,6 +150,9 @@ create table if not exists finance.transactions (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+create index if not exists finance_transactions_transaction_category_id_idx
+  on finance.transactions(transaction_category_id);
 
 create table if not exists finance.transaction_reward_results (
   id int generated always as identity primary key,

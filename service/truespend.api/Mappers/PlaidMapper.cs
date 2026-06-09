@@ -13,6 +13,7 @@ using DomainSyncTransactions = TrueSpend.Domain.Models.Transactions.SyncPlaidTra
 using DomainTransactionSyncResponse = TrueSpend.Domain.Models.Transactions.PlaidTransactionSyncResponse;
 using DomainWebhookInput = TrueSpend.Domain.Models.Plaid.PlaidWebhookInput;
 using DomainWebhookResult = TrueSpend.Domain.Models.Plaid.PlaidWebhookResult;
+using DomainResyncQuota = TrueSpend.Domain.Models.Billing.ManualResyncQuotaStatus;
 
 namespace TrueSpend.Api.Mappers;
 
@@ -27,6 +28,7 @@ public interface IPlaidMapper
     PlaidConnectionResponseVm ToConnection(DomainConnection domain, ICardsMapper cardsMapper);
     PlaidConnectionsResponseVm ToConnections(DomainConnections domain);
     PlaidTransactionSyncResponseVm ToTransactionSync(DomainTransactionSyncResponse domain);
+    ManualResyncQuotaResponseVm ToResyncQuota(DomainResyncQuota domain);
     DomainWebhookInput ParsePlaidWebhook(string rawBody);
     WebhookAckResponseVm ToWebhookAck(DomainWebhookResult result);
 }
@@ -52,6 +54,9 @@ public sealed class PlaidMapper : IPlaidMapper
 
     public PlaidTransactionSyncResponseVm ToTransactionSync(DomainTransactionSyncResponse domain) =>
         new(domain.ConnectionId, domain.ImportedCount, domain.UpdatedCount, domain.RemovedCount, domain.LastTransactionSyncAt);
+
+    public ManualResyncQuotaResponseVm ToResyncQuota(DomainResyncQuota domain) =>
+        new(domain.IsPro, domain.Limit, domain.Used, domain.Remaining);
 
     private static PlaidConnectionVm ToConnectionVm(DomainPlaidConnection domain) =>
         new(domain.Id, domain.InstitutionName, domain.InstitutionLogoUrl, domain.Status, domain.LastSyncAt, domain.CardCount);

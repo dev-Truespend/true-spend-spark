@@ -10,7 +10,13 @@ type Props = {
   isCurrentPlan: boolean;
 };
 
-const FEATURE_ORDER = ["card_link_limit", "ai_insights_enabled", "unlimited_cards"];
+const FEATURE_ORDER = [
+  "manual_card_limit",
+  "plaid_card_limit",
+  "geo_recommendations_per_day",
+  "ai_insights_enabled",
+  "unlimited_cards"
+];
 
 function valueLabel(feature: PlanFeature, planCode: string): string {
   const entry = feature.valuesByPlan.find((v) => v.planCode === planCode);

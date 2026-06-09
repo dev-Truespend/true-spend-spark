@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using TrueSpend.Api.ViewModels.Auth;
 using TrueSpend.Api.ViewModels.Common;
+using TrueSpend.Api.ViewModels.Privacy;
 using TrueSpend.Domain.Models.Auth;
 
 namespace TrueSpend.Api.Mappers;
@@ -73,5 +74,11 @@ public sealed class AuthBootstrapMapper : IAuthBootstrapMapper
                 result.Onboarding.Completed),
             new AuthBootstrapEntitlementsVm(result.Entitlements.PlanCode, result.Entitlements.Features),
             result.Roles,
-            result.DeviceId);
+            result.DeviceId,
+            result.PendingDeletion is null
+                ? null
+                : new AccountDeletionStatusResponseVm(
+                    result.PendingDeletion.State,
+                    result.PendingDeletion.RequestedAt,
+                    result.PendingDeletion.PurgeAfter));
 }

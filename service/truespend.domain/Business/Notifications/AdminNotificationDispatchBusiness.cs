@@ -1,10 +1,8 @@
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TrueSpend.Domain.BusinessInterfaces.Notifications;
 using TrueSpend.Domain.Constants;
-using TrueSpend.Domain.Events.Notifications;
 using TrueSpend.Domain.Models.Notifications;
 using TrueSpend.Domain.ServiceInterfaces.Messaging;
 using TrueSpend.Domain.ServiceInterfaces.Notifications;
@@ -17,8 +15,10 @@ public sealed class AdminNotificationDispatchBusiness(
     IAdminNotificationCampaignService campaignService,
     INotificationProductionService productionService,
     INotificationGateService gateService,
-    IMessagingInsertService messagingInsert,
+    IMessagingInsertService messagingInsert, // archived: kept for future async migration
     IUnitOfWork unitOfWork,
+    INotificationsDispatchBusiness dispatchBusiness,
+    INotificationInboxCacheInvalidatorBusiness inboxCacheInvalidator,
     ILogger<AdminNotificationDispatchBusiness> logger) : IAdminNotificationDispatchBusiness
 {
     private const int MaxCampaignsPerRun = 10;
@@ -26,6 +26,8 @@ public sealed class AdminNotificationDispatchBusiness(
 
     public async Task<AdminDispatchResult> DispatchDueCampaignsAsync(DateTimeOffset now, CancellationToken cancellationToken)
     {
+        _ = messagingInsert;
+
         var campaigns = await campaignService.GetDueCampaignsAsync(now, MaxCampaignsPerRun, cancellationToken);
         if (campaigns.Count == 0) return AdminDispatchResult.Empty;
 
@@ -54,38 +56,55 @@ public sealed class AdminNotificationDispatchBusiness(
                 var batchGated = 0;
                 var batchFailed = 0;
 
+                var gates = await gateService.GetGatesAsync(userIds, campaign.NotificationTypeId, now, cancellationToken);
+
                 foreach (var userId in userIds)
                 {
-                    var gate = await gateService.GetGateAsync(userId, campaign.NotificationTypeId, now, cancellationToken);
-                    if (!gate.ShouldProduce()) { batchGated++; continue; }
+                    if (!gates.TryGetValue(userId, out var gate) || !gate.ShouldProduce()) { batchGated++; continue; }
 
-                    await using var tx = await unitOfWork.BeginTransactionAsync(cancellationToken);
+                    int notificationId = 0;
+                    bool committed = false;
+                    await using (var tx = await unitOfWork.BeginTransactionAsync(cancellationToken))
+                    {
+                        try
+                        {
+                            notificationId = await productionService.InsertNotificationAsync(
+                                new NotificationToProduce(userId, campaign.NotificationTypeId, title, body, null, null, null),
+                                cancellationToken);
+
+                            await tx.CommitAsync(cancellationToken);
+                            committed = true;
+                            batchCreated++;
+                        }
+                        catch (DbUpdateException ex) when (PostgresErrors.IsUniqueViolation(ex))
+                        {
+                            await tx.RollbackAsync(cancellationToken);
+                        }
+                        catch
+                        {
+                            await tx.RollbackAsync(cancellationToken);
+                            batchFailed++;
+                        }
+                    }
+
+                    if (!committed) continue;
+
                     try
                     {
-                        var notificationId = await productionService.InsertNotificationAsync(
-                            new NotificationToProduce(userId, campaign.NotificationTypeId, title, body, null, null, null),
-                            cancellationToken);
-
-                        var payload = JsonSerializer.Serialize(new NotificationCreatedEventContract(1, notificationId, userId));
-                        await messagingInsert.EnqueueOutboxEventAsync(
-                            EventTypes.NotificationCreated,
-                            "notification",
-                            notificationId,
-                            payload,
-                            $"admin_campaign.{campaign.CampaignId}.{userId:N}",
-                            cancellationToken);
-
-                        await tx.CommitAsync(cancellationToken);
-                        batchCreated++;
+                        await dispatchBusiness.DispatchPushAsync(notificationId, cancellationToken);
                     }
-                    catch (DbUpdateException ex) when (PostgresErrors.IsUniqueViolation(ex))
+                    catch (Exception ex)
                     {
-                        await tx.RollbackAsync(cancellationToken);
+                        logger.LogWarning(ex, "Push dispatch failed for admin-campaign notification {NotificationId} (campaign {CampaignId})", notificationId, campaign.CampaignId);
                     }
-                    catch
+
+                    try
                     {
-                        await tx.RollbackAsync(cancellationToken);
-                        batchFailed++;
+                        await inboxCacheInvalidator.InvalidateAsync(userId, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Inbox cache invalidation failed for user {UserId} after admin-campaign notification {NotificationId}", userId, notificationId);
                     }
                 }
 
@@ -124,7 +143,7 @@ public sealed class AdminNotificationDispatchBusiness(
                     .ToDictionary(kv => kv.Key, kv => kv.Value!.ToString());
             }
         }
-        catch (JsonException) { }
+        catch (System.Text.Json.JsonException) { }
         return new Dictionary<string, string>();
     }
 
@@ -138,4 +157,19 @@ public sealed class AdminNotificationDispatchBusiness(
         }
         return result;
     }
+
+    #region archive — async event-publish (disabled in MVP)
+    // DispatchDueCampaignsAsync previously published NotificationCreated for every notification it
+    // inserted. Consumers (2): NotificationCreatedHandler → DispatchPushAsync;
+    //                          InboxCacheInvalidatorHandler → InvalidateAsync. Both now inline post-commit.
+    //
+    // using System.Text.Json;
+    // using TrueSpend.Domain.Events.Notifications;
+    //
+    // // Inside the per-user tx, after InsertNotificationAsync:
+    // var payload = JsonSerializer.Serialize(new NotificationCreatedEventContract(1, notificationId, userId));
+    // await messagingInsert.EnqueueOutboxEventAsync(
+    //     EventTypes.NotificationCreated, "notification", notificationId,
+    //     payload, $"admin_campaign.{campaign.CampaignId}.{userId:N}", cancellationToken);
+    #endregion
 }

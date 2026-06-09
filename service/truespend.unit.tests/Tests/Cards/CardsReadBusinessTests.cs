@@ -1,13 +1,9 @@
 using Moq;
 using TrueSpend.Domain.Business.Cards;
+using TrueSpend.Domain.BusinessInterfaces.Billing;
 using TrueSpend.Domain.Models.Onboarding;
 using TrueSpend.Domain.Models.Cards;
-using TrueSpend.Domain.Models.Catalog;
 using TrueSpend.Domain.Models.Billing;
-using TrueSpend.Domain.Models.Plaid;
-using TrueSpend.Domain.Models.Devices;
-using TrueSpend.Domain.Models.NotificationSettings;
-using TrueSpend.Domain.Models.Permissions;
 using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.ServiceInterfaces.Cards;
 using TrueSpend.UnitTests.Helpers;
@@ -21,11 +17,10 @@ public sealed class CardsReadBusinessTests
         new(1, "Sample", "Bank", "1234", source, false, "active", null);
 
     [Fact]
-    public async Task GetCards_uses_basic_limit_for_basic_plan()
+    public async Task GetCards_uses_per_source_limits_for_basic_plan()
     {
         var cards = new[] { Card("plaid"), Card("manual") };
-        var service = NewService(cards, "basic");
-        var business = new CardsReadBusiness(service.Object);
+        var business = NewBusiness(cards, Basic());
 
         var response = await business.GetCardsAsync(TestUserFactory.AnyUser(), CancellationToken.None);
 
@@ -38,8 +33,7 @@ public sealed class CardsReadBusinessTests
     [Fact]
     public async Task GetCards_uses_unlimited_limit_for_pro_plan()
     {
-        var service = NewService(new[] { Card("plaid") }, "pro");
-        var business = new CardsReadBusiness(service.Object);
+        var business = NewBusiness(new[] { Card("plaid") }, Pro());
 
         var response = await business.GetCardsAsync(TestUserFactory.AnyUser(), CancellationToken.None);
 
@@ -52,8 +46,7 @@ public sealed class CardsReadBusinessTests
     public async Task GetCardLimits_counts_only_active_sources()
     {
         var cards = new[] { Card("plaid"), Card("plaid"), Card("manual") };
-        var service = NewService(cards, "basic");
-        var business = new CardsReadBusiness(service.Object);
+        var business = NewBusiness(cards, Basic());
 
         var response = await business.GetCardLimitsAsync(TestUserFactory.AnyUser(), CancellationToken.None);
 
@@ -61,13 +54,26 @@ public sealed class CardsReadBusinessTests
         Assert.Equal(1, response.Data.ManualUsed);
     }
 
-    private static Mock<ICardsReadService> NewService(CardSummary[] cards, string planCode)
+    private static EntitlementsResponse Basic() => new(
+        "basic", false, null, ManualCardLimit: 3, PlaidCardLimit: 3, GeoRecommendationsPerDay: 3,
+        UnlimitedCards: false, AiInsightsEnabled: false, PlaidLinkingEnabled: true,
+        PlaidTransactionsViewEnabled: true, GeofencingEnabled: true, Features: new Dictionary<string, string>());
+
+    private static EntitlementsResponse Pro() => new(
+        "pro", false, null, ManualCardLimit: null, PlaidCardLimit: null, GeoRecommendationsPerDay: null,
+        UnlimitedCards: true, AiInsightsEnabled: true, PlaidLinkingEnabled: true,
+        PlaidTransactionsViewEnabled: true, GeofencingEnabled: true, Features: new Dictionary<string, string>());
+
+    private static CardsReadBusiness NewBusiness(CardSummary[] cards, EntitlementsResponse entitlements)
     {
         var service = new Mock<ICardsReadService>();
         service.Setup(s => s.GetCardsAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(cards);
-        service.Setup(s => s.CurrentPlanCodeAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(planCode);
-        return service;
+
+        var billing = new Mock<IBillingReadBusiness>();
+        billing.Setup(b => b.GetEntitlementsAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResponse<EntitlementsResponse>.Ok(entitlements));
+
+        return new CardsReadBusiness(service.Object, billing.Object);
     }
 }

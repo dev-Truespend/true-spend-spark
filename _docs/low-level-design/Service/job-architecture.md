@@ -8,7 +8,7 @@ All background work runs as **.NET Worker Service** containers in **Azure Contai
 
 | Trigger type | Source | Examples |
 |---|---|---|
-| Scheduled (cron) | In-process scheduler library | `RewardsCcCardProductSyncJob`, `PlaidTransactionSyncJob`, `WeeklySummaryJob`, `ReminderFiringJob`, `AdminNotificationDispatchJob`, `InvalidDeviceTokenCleanupJob`, `AccountDeletionPurgeJob`, outbox dispatcher |
+| Scheduled (cron) | In-process scheduler library | `RewardsCcCardProductSyncJob`, `PlaidTransactionSyncJob`, `SubscriptionExpiryNotificationJob`, `ReminderFiringJob`, `AdminNotificationDispatchJob`, `InvalidDeviceTokenCleanupJob`, `AccountDeletionPurgeJob`, outbox dispatcher |
 | Queue-triggered | Azure Service Bus listener inside the same worker | `AIInsightGenerationJob`, event-driven consumers from `messaging.event_outbox` |
 
 A single long-running worker process handles both — there is no separate Windows Service, VM, or per-job container in Phase 1. Container Apps health probes, auto-restart, and rolling deploys cover availability.
@@ -36,8 +36,8 @@ TrueSpend.Worker (1 container, runs 24/7 in Azure Container Apps)
 │   │                            RewardsCcRewardRuleSyncJob, RewardsCcCatalogReconcileJob,
 │   │                            CardCatalogMappingReviewJob, PlaidInstitutionCatalogJob)
 │   ├── Plaid sync              (PlaidTransactionSyncJob)
-│   ├── Notification producers  (WeeklySummaryJob, ReminderFiringJob, UnusualTransactionJob,
-│   │                            AdminNotificationDispatchJob)
+│   ├── Notification producers  (ReminderFiringJob, AdminNotificationDispatchJob,
+│   │                            SubscriptionExpiryNotificationJob; UnusualTransactionJob disabled in MVP)
 │   ├── Hygiene                 (InvalidDeviceTokenCleanupJob, AccountDeletionPurgeJob)
 │   └── Outbox dispatcher       (publishes messaging.event_outbox → Service Bus topics)
 ├── Service Bus listener
@@ -48,6 +48,22 @@ TrueSpend.Worker (1 container, runs 24/7 in Azure Container Apps)
 ```
 
 If telemetry later shows a noisy job (catalog refresh that bursts CPU, AI insight runs that monopolize the worker), it can be split into its own container — the worker code stays the same, only deployment manifests change.
+
+## Manual Trigger (worker HTTP)
+
+The worker is hosted as a `WebApplication` (not a bare `Host`) so it can expose a small HTTP surface alongside the schedulers. This is how a job is run on demand without waiting for its cron tick.
+
+| Route | Method | Purpose |
+|---|---|---|
+| `/health` | GET | Liveness probe for Container Apps |
+| `/jobs` | GET | List manually-triggerable job names |
+| `/jobs/{name}/run` | POST | Run one job once, in its own DI scope |
+
+- Job names match the `WorkerConfig` section keys (e.g. `PlaidTransactionSync`, `AccountDeletionPurge`); mapping lives in `JobRegistry`.
+- A manual run executes **regardless of the job's `Enabled` flag or cron** — this is the intended way to exercise jobs that ship disabled (all jobs are `Enabled: false` in Development).
+- **No auth.** Intended for local/Postman and internal ops only. Bind to an internal port; never expose on a public ingress.
+- Local port is set via `Urls` in `appsettings.Development.json` (default `http://localhost:5080`). Example: `POST http://localhost:5080/jobs/PlaidTransactionSync/run`.
+- Unlike the scheduler path, the manual trigger does not take the distributed lock — don't fire a manual run while the same job's cron tick may be active.
 
 ## Job Standards
 
@@ -60,7 +76,7 @@ Execution model:
 - Jobs should support dry-run mode for production validation.
 - Jobs should support incremental sync when the provider exposes cursors or timestamps.
 - Jobs should be configured through app settings, environment variables, scheduler metadata, or queue messages.
-- Jobs should not require `/internal/jobs/...` API routes.
+- Jobs should not require `/internal/jobs/...` routes on the **mobile API**. The worker hosts its own manual-trigger surface (see [Manual Trigger](#manual-trigger-worker-http)) for local/ops use — never on a public ingress.
 
 Common worker context:
 
@@ -147,6 +163,7 @@ Responsibilities:
 - Normalize product name, network, annual fee, image URL.
 - Insert new products; update changed metadata.
 - Flag low-confidence issuer matches for `CardCatalogMappingReviewJob`.
+- **Seed vs full mode** (`RewardsCcCatalogSyncBusiness.SyncSeededCardsAsync`): `RewardsCc:Seed` configured → seed mode (`SearchCardByNameAsync` → `GetCardDetailAsync` per configured card). Seed empty → full mode (`IRewardsCcProvider.ListAllCardsAsync` → `GetCardDetailAsync` per card). No separate mode flag; seed presence selects the path.
 
 External calls: RewardsCC card products endpoint.
 
@@ -228,6 +245,8 @@ Worker result:
 ```
 
 ## RewardsCcCatalogReconcileJob
+
+> **Disabled in MVP (Phase 1).** Code, scheduler, and config retained but `Enabled = false`. For MVP the single nightly `RewardsCcCatalogSyncOrchestrationJob` is the only rewards-catalog job; the weekly full reconcile is deferred. Re-enable by flipping the flag. Still manually triggerable via `/jobs/RewardsCcCatalogReconcile/run`.
 
 Purpose: weekly full reconciliation of issuers, card products, and reward rules. Dry-run by default — produces a diff report rather than writing.
 
@@ -337,6 +356,8 @@ The imported catalog powers:
 
 ## PlaidInstitutionCatalogJob
 
+> **Disabled in MVP (Phase 1).** Code, scheduler, and config retained but `Enabled = false`. MVP uses Plaid Link's built-in institution picker, so the custom bank catalog/dropdown isn't needed. Re-enable if a custom bank picker returns. Still manually triggerable via `/jobs/PlaidInstitutionCatalog/run`.
+
 Purpose: refresh the bank/institution catalog used by the Plaid onboarding common-banks grid and search-as-you-type on screen 2.2.
 
 Schedule: nightly by default; twice weekly is acceptable if provider limits require it.
@@ -400,13 +421,14 @@ Downstream consumers:
 
 Purpose: incrementally sync linked-card transactions from Plaid for every active `finance.plaid_items` connection, upsert them into `finance.transactions`, and compute reward / missed-reward results inline.
 
-Schedule: cron daily (default `PlaidTransactionSyncIntervalSeconds = 86400`). Also triggered out-of-band by `POST /api/v1/webhooks/plaid` on `TRANSACTIONS / SYNC_UPDATES_AVAILABLE`.
+Schedule: cron daily 04:00 (`0 4 * * *`). Also triggered out-of-band by `POST /api/v1/webhooks/plaid` on `TRANSACTIONS / SYNC_UPDATES_AVAILABLE`. **Basic/Pro users only** — free users are skipped (Plaid linking is a Basic+ entitlement).
 
 Responsibilities:
 
 - Read active Plaid connections from `finance.plaid_items` (joined to `app.profiles` for user email).
 - For each connection, call Plaid `/transactions/sync` using the stored `transaction_sync_cursor`. Per-connection error isolation — failures are logged and the loop continues to the next connection.
 - Upsert `added` rows by `plaid_transaction_id` into `finance.transactions`; merge `modified` rows preserving user-edited app fields (card override, category override, location label); apply `removed` rows by soft-delete.
+- Resolve `transactions.category_id` from the Plaid leaf via `catalog.transaction_category_bridge` (see [category-bridge.md](../../Workflows/category-bridge.md)). Unbridged leaf → base reward rate, and flag the `(plaid_leaf, subcategory_group)` pair for `CardCatalogMappingReviewJob`. Merchant-locked reward rules contribute only when `merchant_name` matches the rule's brand alias set; otherwise base rate.
 - Compute reward result via `TransactionRewardCalculator`; upsert `finance.transaction_reward_results` and `finance.missed_reward_events` per affected row.
 - Advance `finance.plaid_items.transaction_sync_cursor` and `last_transaction_sync_at` in the same transaction as the upserts.
 - Publish per-row outbox events: `finance.transaction.created` for `added`, `finance.transaction.updated` for `modified`, `finance.transaction.deleted` for `removed`. Downstream `AnalyticsRecomputeConsumer` + `MissedRewardNotificationProducer` fan out from there.
@@ -457,6 +479,20 @@ Downstream consumers:
 - `AnalyticsRecomputeConsumer` — refreshes `insights.analytics_snapshots`.
 - `MissedRewardNotificationProducer` — produces `messaging.notifications` for new missed-reward events.
 
+### Category Bridge Population (gap)
+
+`catalog.transaction_category_bridge` maps the closed 120-row Plaid PFC taxonomy → RewardsCC `subcategory_group`. Both sides are known before prod (Plaid pre-seeded; RewardsCC catalog pre-synced), so bridge rows are **pre-built, never computed at runtime**. `PlaidTransactionSyncJob` only does a deterministic lookup. No AI.
+
+| Aspect | State |
+|---|---|
+| Plaid side | All 120 codes seeded in `finance.transaction_categories`. Complete. |
+| RewardsCC side | Full `subcategory_group` vocabulary not yet available — only 5 strings confirmed from a sample payload (`All Dining`, `Grocery`, `All Gas Stations`, `Hotel`, `All Online Shopping`). |
+| Bridge seed now | 7 rows sealed against the 5 confirmed strings. ~12 rewardable Plaid leaves stubbed (Plaid code pre-filled, `subcategory_group` pending). |
+| Completion (pre-prod, one-time) | After `RewardsCcRewardRuleSyncJob` loads the full catalog, run `SELECT DISTINCT subcategory_group FROM catalog.categories`, then hand-fill the stub rows. Deterministic — no AI, no runtime discovery. |
+| Runtime fallback | Unbridged leaf → base rate + flag `(plaid_leaf, subcategory_group)` for `CardCatalogMappingReviewJob`. Append one bridge row per confirmed gap. |
+
+Ordering dependency: full RewardsCC catalog sync → bridge completion → accurate Plaid reward calc. Until the bridge is completed, transactions on stubbed leaves earn at base rate (under-credit, never a wrong bonus or phantom missed reward).
+
 ## Failure Handling
 
 Retry policy:
@@ -486,7 +522,7 @@ Failure response:
 
 Trigger: automatically after the RewardsCC catalog trio completes, or manually from an admin-only operations screen.
 
-Purpose: rebuild mapping confidence and queue ambiguous cards for manual admin review.
+Purpose: rebuild mapping confidence and queue ambiguous cards for manual admin review. Also queues unbridged Plaid leaves flagged by `PlaidTransactionSyncJob` so an admin can append the missing `catalog.transaction_category_bridge` row.
 
 Worker configuration:
 
@@ -512,6 +548,8 @@ Worker result:
 ```
 
 ## ReminderFiringJob
+
+> **Disabled in MVP (Phase 1).** Code, scheduler, and config retained but `Enabled = false`; depends on a "Remind me later" snooze UI that isn't in the MVP. Re-enable by flipping the flag. Still manually triggerable via `/jobs/ReminderFiring/run`.
 
 Purpose: fire user-set notification reminders at their `remind_at` time, delivering each as a push notification + inbox row. Source notifications for screen 7.2 ("Remind me later" action) end up here.
 
@@ -560,57 +598,13 @@ Downstream consumers:
 
 ## WeeklySummaryJob
 
-Purpose: produce a weekly rewards summary push for users whose local time hits Sunday 09:00 within the current scheduler tick.
+> **Disabled in MVP (Phase 1).** Code, scheduler, and config retained but `Enabled = false`; the weekly engagement summary isn't needed in MVP. Re-enable by flipping the flag. Still manually triggerable via `/jobs/WeeklySummary/run`.
 
-Schedule: cron hourly (default `WeeklySummaryIntervalSeconds = 3600`). The job runs every hour but only inserts for users whose timezone-converted `DayOfWeek == Sunday` and `Hour == 9`.
-
-Responsibilities:
-
-- Resolve the `weekly_summary` notification type id; skip the run if the type isn't seeded.
-- Read active users + their preferred timezone from `app.profiles` / `app.user_preferences`.
-- For each user where `IsFiringHour(now, user.timezone) == true`:
-  - Compute ISO week key in user's timezone (`yyyy-Www`); idempotency key `weekly_summary:{userId}:{weekKey}` guarantees one summary per user per ISO week regardless of cron drift, container restarts, or clock skew.
-  - Check the gate (master + per-type + quiet hours).
-  - In one transaction: insert `messaging.notifications` with type `weekly_summary`, set typed `WeeklySummaryPushPayload` via `PushPayloadBuilder.WeeklySummary(notificationId)`, enqueue `messaging.notification.created` with the idempotency key above.
-- Unique-violation on the outbox idempotency key is swallowed (a parallel pod already produced this week's row).
-
-Timezone handling: invalid or unknown IANA timezone strings fall back to UTC silently so a bad value doesn't take down the whole run.
-
-External calls: none.
-
-Worker configuration:
-
-```json
-{
-  "jobName": "WeeklySummaryJob",
-  "enabled": true,
-  "intervalSeconds": 3600,
-  "fireDay": "Sunday",
-  "fireHour": 9,
-  "maxRetries": 3,
-  "dryRun": false
-}
-```
-
-Worker result:
-
-```json
-{
-  "jobRunId": "uuid",
-  "status": "succeeded",
-  "usersConsidered": 12480,
-  "usersAtFiringHour": 482,
-  "summariesProduced": 461,
-  "gatedOut": 18,
-  "duplicates": 3
-}
-```
-
-Downstream consumers:
-
-- `PushFanOutConsumer`, `InboxCacheInvalidator`.
+Purpose: weekly rewards-summary push. Runs hourly and only fires for users whose local time is Sunday 09:00 in that tick (timezone-aware), with an ISO-week idempotency key so each user gets exactly one per week. Writes the inbox row and dispatches push inline.
 
 ## UnusualTransactionJob
+
+> **Disabled in MVP (Phase 1).** Code, scheduler, and config are retained but `Enabled = false` in all environments. Re-enable by flipping the flag. Still manually triggerable via `/jobs/UnusualTransaction/run`.
 
 Purpose: detect and notify on transactions that landed in the last 15 minutes with `amount >= $500`. Phase 1 uses static thresholds; per-user baselines are a later refinement.
 
@@ -664,7 +658,7 @@ Downstream consumers:
 
 Purpose: generic engine for admin-, system-, and marketing-driven notification campaigns. Replaces what would otherwise be one ad-hoc job per use case (announcements, scheduled alerts, plan-change broadcasts, ops messages).
 
-Schedule: cron every 5 minutes.
+Schedule: cron daily 09:00 (`0 9 * * *`). A campaign's `scheduled_for` fires on the next 09:00 sweep, not within minutes — acceptable for MVP campaign volume.
 
 Responsibilities:
 
@@ -717,7 +711,9 @@ Required schema addition: `messaging.admin_notification_campaigns` (id, notifica
 
 Purpose: generate personalized reward-optimization insights for a user via Azure OpenAI when the user requests them from screen 6.3.
 
-Schedule: queue-triggered. The job runs per `insights.insight_generation_runs` row created by `POST /api/v1/ai-insights/generate`; there is no cron cadence in Phase 1.
+Schedule: cron nightly 01:00 (`0 1 * * *`), staggered after the 00:00 catalog sync. MVP generates a batch for **all eligible Basic/Pro users**, not just user-requested runs — the async queue trigger is archived with the rest of the messaging path. Eligibility (`GetNightlyGenerationCandidatesAsync`) = active/trialing Basic or Pro subscription **and** personalized AI insights enabled in privacy settings; the per-user `ai_insights_enabled` entitlement is re-checked (non-throwing) before each run is created, so non-entitled users are skipped without a failed run.
+
+> The nightly batch no longer drains user-requested `insights.insight_generation_runs` (the on-demand "generate" path). `ProcessPendingRunsAsync` still exists and is manually triggerable, but the scheduled job calls `GenerateForAllEligibleUsersAsync`. Revisit if on-demand generation stays in the MVP UI.
 
 Responsibilities:
 
@@ -818,9 +814,11 @@ Worker result:
 
 ## AccountDeletionPurgeJob
 
-Purpose: hard-delete user data for accounts past the deletion grace window. The Privacy & Data screen (`POST /api/v1/account-deletion`) only *schedules* deletion; the actual purge runs here, 30 days later, with no UI session in the loop. See [14-privacy-data.md](../../Workflows/14-privacy-data.md).
+Purpose: hard-delete user data for accounts past the deletion grace window. The Privacy & Data screen (`POST /api/v1/account-deletion`) only *schedules* deletion; the actual purge runs here, after the grace window (target **14 days**), with no UI session in the loop. The purge cascade must remove all user-owned rows across `finance.*`, `messaging.*`, `insights.*`, `app.*`, `security.*`, `privacy.*` (except the audit trail) **and** the Supabase `auth.users` row so a fresh signup is possible. See [14-privacy-data.md](../../Workflows/14-privacy-data.md).
 
-Schedule: cron daily 03:00.
+Schedule: cron daily 03:00 (`0 3 * * *`).
+
+> **Open gap — grace window source.** The purge job only *reads* `privacy.account_deletion_requests.purge_after`; it does not compute the window. `purge_after` is set when the deletion request is *created*, and that creation path is not currently implemented in the .NET API and has no SQL default in [privacy.sql](../../../supabase/migrations/privacy.sql). Making the window **14 days and configurable** must be done wherever the request gets created (a Privacy controller/business in `truespend.api`, or a Supabase function) — not in the worker, which would have no effect. Resolve before relying on the 14-day target.
 
 Responsibilities:
 
@@ -866,24 +864,25 @@ Downstream consumers:
 
 ## Job List
 
-Phase 1:
+Phase 1 (MVP). Cron is the Production schedule; in Development every job ships `Enabled: false` and is run by hand via the manual trigger. Disabled jobs keep their code and stay manually triggerable.
 
-| Job | Cadence | Purpose | External calls |
-|---|---:|---|---|
-| `RewardsCcIssuerSyncJob` | Nightly 02:00 | Sync issuers into `catalog.card_issuers` | RewardsCC issuers API |
-| `RewardsCcCardProductSyncJob` | Nightly 02:30 | Sync card products into `catalog.card_products` | RewardsCC card products API |
-| `RewardsCcRewardRuleSyncJob` | Nightly 03:00 | Sync reward rules into `catalog.reward_rules` | RewardsCC reward rules API |
-| `RewardsCcCatalogReconcileJob` | Weekly Sun 04:00 | Full reconciliation across all three RewardsCC catalogs | RewardsCC full catalog APIs |
-| `CardCatalogMappingReviewJob` | After catalog sync | Queue low-confidence mappings for admin review | None |
-| `PlaidInstitutionCatalogJob` | Nightly | Refresh bank dropdown / common-banks grid on screen 2.2 | Plaid institutions APIs |
-| `PlaidTransactionSyncJob` | Daily + webhook fallback | Sync linked-card transactions per user | Plaid `/transactions/sync` |
-| `AIInsightGenerationJob` | Queue-triggered | Generate per-user AI reward insights via Azure OpenAI | Azure OpenAI |
-| `WeeklySummaryJob` | Cron Sun 09:00 user TZ | Weekly rewards summary push | None |
-| `UnusualTransactionJob` | Cron sweep | Detect and notify on high-amount transactions | None |
-| `ReminderFiringJob` | Cron sweep | Fire user-set notification reminders at `remind_at` | None |
-| `AdminNotificationDispatchJob` | Cron every 5 min | Generic engine for admin / system / marketing campaigns | FCM / APNs (via existing `PushFanOutConsumer`) |
-| `InvalidDeviceTokenCleanupJob` | Daily 04:00 | Deactivate APNs / FCM tokens flagged invalid by providers | None |
-| `AccountDeletionPurgeJob` | Daily 03:00 | Hard-purge accounts past the deletion grace window | Supabase Admin API |
+| Job | When (cron) | MVP status | Purpose | External calls |
+|---|---|---|---|---|
+| `RewardsCcCatalogSyncOrchestrationJob` | 12:00am `0 0 * * *` | On | One pass: fetch the card list, then per card its details + reward rules, then mapping review | RewardsCC catalog APIs |
+| `AIInsightGenerationJob` | 1:00am `0 1 * * *` | On | Generate AI reward insights for **all eligible Basic/Pro users** via Azure OpenAI | Azure OpenAI |
+| `AccountDeletionPurgeJob` | 3:00am `0 3 * * *` | On | Hard-purge accounts past the grace window (target **14 days**); deletes user data + Supabase auth user | Supabase Admin API |
+| `PlaidTransactionSyncJob` | 4:00am `0 4 * * *` | On | Sync linked-card transactions for **Basic/Pro users only**; compute reward + missed-reward results | Plaid `/transactions/sync` |
+| `InvalidDeviceTokenCleanupJob` | 4:00am `0 4 * * *` | On | Deactivate APNs / FCM tokens flagged invalid by providers | None |
+| `SubscriptionExpiryNotificationJob` | 9:00am `0 9 * * *` | On | Warn 2/1 days before a trial or cancel-at-period-end plan expires; writes the inbox row **and** dispatches push/email inline | None |
+| `AdminNotificationDispatchJob` | 9:00am `0 9 * * *` | On | Generic engine for admin / system / marketing campaigns | Push/email (inline dispatch) |
+| `CardCatalogMappingReviewJob` | runs within rewards sync | chained | Queue low-confidence card mappings for admin review | None |
+| `ReminderFiringJob` | `* * * * *` | **Off** | Fire user "remind me later" snoozes — no snooze UI in MVP | None |
+| `WeeklySummaryJob` | `0 * * * *` | **Off** | Weekly Sunday rewards summary push — not needed in MVP | None |
+| `UnusualTransactionJob` | `*/5 * * * *` | **Off** | Detect/notify on high-amount transactions — not needed in MVP | None |
+| `PlaidInstitutionCatalogJob` | `0 1 * * *` | **Off** | Bank catalog for a custom picker — replaced by Plaid Link's built-in picker | Plaid institutions APIs |
+| `RewardsCcCatalogReconcileJob` | `0 4 * * 0` | **Off** | Weekly full reconciliation — folded into the single nightly sync for MVP | RewardsCC catalog APIs |
+
+> The three RewardsCC catalog sections below (`RewardsCcIssuerSyncJob`, `RewardsCcCardProductSyncJob`, `RewardsCcRewardRuleSyncJob`) document the **sub-steps** the single `RewardsCcCatalogSyncOrchestrationJob` runs in order at 00:00. They are not separately scheduled jobs.
 
 Phase 2:
 

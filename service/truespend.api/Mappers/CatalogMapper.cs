@@ -37,7 +37,7 @@ public sealed class CatalogMapper : ICatalogMapper
     public CardProductDetailResponseVm ToProductDetail(DomainProductDetail domain) =>
         new(
             ToProduct(domain.Product),
-            domain.RewardRules.Select(r => new RewardRuleVm(r.CategoryCode, r.CategoryName, r.Multiplier, r.CapDisplay, r.Notes)).ToArray(),
+            domain.RewardRules.Select(r => new RewardRuleVm(r.CategoryCode, r.CategoryName, CategoryIconMap.Resolve(r.CategoryGroup ?? r.CategoryCode), r.Multiplier, r.CapDisplay, r.Notes)).ToArray(),
             domain.Terms is null
                 ? null
                 : new CardTermsVm(domain.Terms.AnnualFee, domain.Terms.PurchaseApr, domain.Terms.ForeignTransactionFee, domain.Terms.TermsSummary));

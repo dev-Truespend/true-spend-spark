@@ -75,6 +75,17 @@ export type MissedRewardEventsResponse = {
   missedRewards: MissedReward[];
 };
 
+export type TransactionCategory = {
+  id: number;
+  code: string;
+  displayName: string;
+  icon?: string | null;
+};
+
+export type TransactionCategoriesResponse = {
+  categories: TransactionCategory[];
+};
+
 export type CreateTransactionInput = {
   merchantName: string;
   amount: number;

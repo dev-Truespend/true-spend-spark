@@ -1,9 +1,7 @@
-using System.Globalization;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TrueSpend.Domain.BusinessInterfaces.Notifications;
 using TrueSpend.Domain.Constants;
-using TrueSpend.Domain.Events.Notifications;
 using TrueSpend.Domain.Models.Notifications;
 using TrueSpend.Domain.ServiceInterfaces.Messaging;
 using TrueSpend.Domain.ServiceInterfaces.Notifications;
@@ -15,8 +13,11 @@ namespace TrueSpend.Domain.Business.Notifications;
 public sealed class WeeklySummaryNotificationBusiness(
     INotificationProductionService productionService,
     INotificationGateService gateService,
-    IMessagingInsertService messagingInsert,
-    IUnitOfWork unitOfWork) : IWeeklySummaryNotificationBusiness
+    IMessagingInsertService messagingInsert, // archived: kept for future async migration
+    IUnitOfWork unitOfWork,
+    INotificationsDispatchBusiness dispatchBusiness,
+    INotificationInboxCacheInvalidatorBusiness inboxCacheInvalidator,
+    ILogger<WeeklySummaryNotificationBusiness> logger) : IWeeklySummaryNotificationBusiness
 {
     public async Task<int> ProduceForCurrentHourAsync(
         DateTimeOffset now,
@@ -24,62 +25,80 @@ public sealed class WeeklySummaryNotificationBusiness(
         int fireHour,
         CancellationToken cancellationToken)
     {
+        _ = messagingInsert;
+
         var typeId = await productionService.GetNotificationTypeIdAsync(NotificationsConstants.WeeklySummaryTypeCode, cancellationToken);
         if (typeId == 0) return 0;
 
         var users = await productionService.GetActiveUsersWithTimezoneAsync(cancellationToken);
         if (users.Count == 0) return 0;
 
+        var firing = users.Where(u => IsFiringHour(now, u.Timezone, fireDay, fireHour)).ToList();
+        if (firing.Count == 0) return 0;
+
+        var gates = await gateService.GetGatesAsync(
+            firing.Select(u => u.UserId).ToList(), typeId, now, cancellationToken);
+
         int produced = 0;
-        foreach (var user in users)
+        foreach (var user in firing)
         {
-            if (!IsFiringHour(now, user.Timezone, fireDay, fireHour)) continue;
+            if (!gates.TryGetValue(user.UserId, out var gate) || !gate.ShouldProduce()) continue;
 
-            var weekKey = WeekKey(now, user.Timezone);
-            var idempotencyKey = $"weekly_summary:{user.UserId:N}:{weekKey}";
+            int notificationId = 0;
+            bool committed = false;
+            await using (var tx = await unitOfWork.BeginTransactionAsync(cancellationToken))
+            {
+                try
+                {
+                    notificationId = await productionService.InsertNotificationAsync(
+                        new NotificationToProduce(
+                            user.UserId,
+                            typeId,
+                            "Your weekly rewards summary",
+                            "Tap to see how your cards performed this week.",
+                            null,
+                            null,
+                            null),
+                        cancellationToken);
 
-            var gate = await gateService.GetGateAsync(user.UserId, typeId, now, cancellationToken);
-            if (!gate.ShouldProduce()) continue;
+                    await productionService.UpdateNotificationPayloadAsync(
+                        notificationId,
+                        PushPayloadBuilder.WeeklySummary(notificationId),
+                        cancellationToken);
 
-            await using var tx = await unitOfWork.BeginTransactionAsync(cancellationToken);
+                    await tx.CommitAsync(cancellationToken);
+                    committed = true;
+                    produced++;
+                }
+                catch (DbUpdateException ex) when (PostgresErrors.IsUniqueViolation(ex))
+                {
+                    await tx.RollbackAsync(cancellationToken);
+                }
+                catch
+                {
+                    await tx.RollbackAsync(cancellationToken);
+                    throw;
+                }
+            }
+
+            if (!committed) continue;
+
             try
             {
-                var notificationId = await productionService.InsertNotificationAsync(
-                    new NotificationToProduce(
-                        user.UserId,
-                        typeId,
-                        "Your weekly rewards summary",
-                        "Tap to see how your cards performed this week.",
-                        null,
-                        null,
-                        null),
-                    cancellationToken);
-
-                await productionService.UpdateNotificationPayloadAsync(
-                    notificationId,
-                    PushPayloadBuilder.WeeklySummary(notificationId),
-                    cancellationToken);
-
-                var payload = JsonSerializer.Serialize(new NotificationCreatedEventContract(1, notificationId, user.UserId));
-                await messagingInsert.EnqueueOutboxEventAsync(
-                    EventTypes.NotificationCreated,
-                    "notification",
-                    notificationId,
-                    payload,
-                    idempotencyKey,
-                    cancellationToken);
-
-                await tx.CommitAsync(cancellationToken);
-                produced++;
+                await dispatchBusiness.DispatchPushAsync(notificationId, cancellationToken);
             }
-            catch (DbUpdateException ex) when (PostgresErrors.IsUniqueViolation(ex))
+            catch (Exception ex)
             {
-                await tx.RollbackAsync(cancellationToken);
+                logger.LogWarning(ex, "Push dispatch failed for weekly-summary notification {NotificationId}", notificationId);
             }
-            catch
+
+            try
             {
-                await tx.RollbackAsync(cancellationToken);
-                throw;
+                await inboxCacheInvalidator.InvalidateAsync(user.UserId, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Inbox cache invalidation failed for user {UserId} after weekly-summary notification {NotificationId}", user.UserId, notificationId);
             }
         }
 
@@ -90,14 +109,6 @@ public sealed class WeeklySummaryNotificationBusiness(
     {
         var local = ConvertToLocal(now, timezone);
         return local.DayOfWeek == fireDay && local.Hour == fireHour;
-    }
-
-    private static string WeekKey(DateTimeOffset now, string? timezone)
-    {
-        var local = ConvertToLocal(now, timezone);
-        var iso = ISOWeek.GetYear(local);
-        var week = ISOWeek.GetWeekOfYear(local);
-        return $"{iso:D4}-W{week:D2}";
     }
 
     private static DateTime ConvertToLocal(DateTimeOffset now, string? timezone)
@@ -119,4 +130,26 @@ public sealed class WeeklySummaryNotificationBusiness(
         }
     }
 
+    #region archive — async event-publish (disabled in MVP)
+    // ProduceForCurrentHourAsync previously published NotificationCreated to the messaging outbox
+    // with a per-user/week idempotency key. Consumers (2): NotificationCreatedHandler →
+    // DispatchPushAsync; InboxCacheInvalidatorHandler → InvalidateAsync. Both now inline post-commit.
+    //
+    // The DB-level unique constraint on the notification preserves once-per-week semantics in place
+    // of the outbox idempotency_key.
+    //
+    // using System.Text.Json;
+    // using TrueSpend.Domain.Events.Notifications;
+    //
+    // // Inside the per-user tx, after UpdateNotificationPayloadAsync:
+    // // (WeekKey helper, removed from live code, builds an ISO-week string for the user's tz:
+    // //   var local = ConvertToLocal(now, user.Timezone);
+    // //   var iso = ISOWeek.GetYear(local); var week = ISOWeek.GetWeekOfYear(local);
+    // //   return $"{iso:D4}-W{week:D2}";)
+    // var idempotencyKey = $"weekly_summary:{user.UserId:N}:{weekKey}";
+    // var payload = JsonSerializer.Serialize(new NotificationCreatedEventContract(1, notificationId, user.UserId));
+    // await messagingInsert.EnqueueOutboxEventAsync(
+    //     EventTypes.NotificationCreated, "notification", notificationId,
+    //     payload, idempotencyKey, cancellationToken);
+    #endregion
 }

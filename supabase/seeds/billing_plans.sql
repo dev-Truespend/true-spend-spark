@@ -1,7 +1,8 @@
 insert into billing.plans (code, display_name, description, trial_days, is_active)
 values
-  ('basic', 'Basic', 'Core card recommendations and rewards tracking', 0, true),
-  ('pro', 'Pro', 'Unlimited links and advanced insights', 7, true)
+  ('free', 'Free', 'One card and one daily card tip to get started', 0, true),
+  ('basic', 'Basic', 'Core card recommendations and rewards tracking', 7, true),
+  ('pro', 'Pro', 'Unlimited links and advanced insights', 14, true)
 on conflict (code) do update set
   display_name = excluded.display_name,
   description = excluded.description,

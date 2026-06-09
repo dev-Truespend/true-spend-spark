@@ -3,12 +3,6 @@ using TrueSpend.Domain.Business.Catalog;
 using TrueSpend.Domain.Models.Onboarding;
 using TrueSpend.Domain.Models.Cards;
 using TrueSpend.Domain.Models.Catalog;
-using TrueSpend.Domain.Models.Billing;
-using TrueSpend.Domain.Models.Plaid;
-using TrueSpend.Domain.Models.Devices;
-using TrueSpend.Domain.Models.NotificationSettings;
-using TrueSpend.Domain.Models.Permissions;
-using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.ServiceInterfaces.Cards;
 using TrueSpend.Domain.ServiceInterfaces.Catalog;
 using TrueSpend.Domain.ServiceInterfaces.Messaging;
@@ -36,7 +30,11 @@ public sealed class CatalogInsertBusinessTests
         Assert.Null(response.Data!.UserCard);
         deps.Cards.Verify(c => c.InsertCardAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<int?>(), It.IsAny<CardSummary>(), It.IsAny<CancellationToken>()), Times.Never);
         deps.OnboardingUpdate.Verify(u => u.SaveOnboardingAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<OnboardingResponse>(), It.IsAny<CancellationToken>()), Times.Never);
-        deps.Messaging.Verify(m => m.EnqueueOutboxEventAsync("catalog.card_product_request.created", It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        // Post-conversion: CardProductRequestCreated handler was log-only, no enqueue is expected.
+        deps.Messaging.Verify(m => m.EnqueueOutboxEventAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(),
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -92,10 +90,19 @@ public sealed class CatalogInsertBusinessTests
         var onboardingUpdate = new Mock<IOnboardingUpdateService>();
         onboardingUpdate.Setup(u => u.SaveOnboardingAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<OnboardingResponse>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((OnboardingWorkflowUser _, OnboardingResponse value, CancellationToken _) => value);
-        var messaging = new Mock<IMessagingInsertService>();
+        var messaging = new Mock<IMessagingInsertService>(); // archived: kept for future async migration
         return new Deps(catalog, cards, onboardingRead, onboardingUpdate, messaging);
     }
 
     private static CatalogInsertBusiness NewBusiness(Deps deps) =>
         new(deps.Catalog.Object, deps.Cards.Object, deps.OnboardingRead.Object, deps.OnboardingUpdate.Object, deps.Messaging.Object, new FakeUnitOfWork(), new CatalogValidator());
+
+    #region archive — async event-publish (disabled in MVP)
+    // CreateCardProductRequest_only_records_request_when_create_user_card_is_false previously
+    // asserted:
+    //     deps.Messaging.Verify(m => m.EnqueueOutboxEventAsync(
+    //         "catalog.card_product_request.created", It.IsAny<string>(), It.IsAny<int?>(),
+    //         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+    // The handler was log-only, so the live test now asserts the enqueue does NOT fire.
+    #endregion
 }

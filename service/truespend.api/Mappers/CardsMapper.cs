@@ -51,7 +51,7 @@ public sealed class CardsMapper : ICardsMapper
     public CardDetailResponseVm ToDetail(DomainDetail domain) =>
         new(
             ToCardSummary(domain.Card),
-            domain.RewardRules.Select(r => new RewardRuleVm(r.CategoryCode, r.CategoryName, r.Multiplier, r.CapDisplay, r.Notes)).ToArray(),
+            domain.RewardRules.Select(r => new RewardRuleVm(r.CategoryCode, r.CategoryName, CategoryIconMap.Resolve(r.CategoryGroup ?? r.CategoryCode), r.Multiplier, r.CapDisplay, r.Notes)).ToArray(),
             domain.MonthlyRewardContribution is null ? null
                 : new MonthlyRewardContributionVm(domain.MonthlyRewardContribution.Points, domain.MonthlyRewardContribution.EstimatedValue, domain.MonthlyRewardContribution.CurrencyCode, domain.MonthlyRewardContribution.PeriodLabel),
             domain.Terms is null ? null

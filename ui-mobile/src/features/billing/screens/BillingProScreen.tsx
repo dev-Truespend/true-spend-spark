@@ -1,12 +1,20 @@
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { Button } from "@/shared/components/Button";
+import { Card } from "@/shared/components/Card";
+import { ListItem } from "@/shared/components/ListItem";
+import { PlanCard } from "@/shared/components/PlanCard";
 import { Screen } from "@/shared/components/Screen";
+import { SectionLabel } from "@/shared/components/SectionLabel";
+import { Toast } from "@/shared/components/Toast";
 import { QueryKeys } from "@/shared/constants/QueryKeys";
-import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
+import { colors, gradients, palette } from "@/shared/theme/colors";
+import { radii, spacing } from "@/shared/theme/spacing";
+import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { useBillingPlans } from "@/features/billing/hooks/useBillingPlans";
 import { useBillingPrices } from "@/features/billing/hooks/useBillingPrices";
 import { useBillingFeatures } from "@/features/billing/hooks/useBillingFeatures";
@@ -15,17 +23,45 @@ import { useEntitlements } from "@/features/billing/hooks/useEntitlements";
 import { usePaymentMethods } from "@/features/billing/hooks/usePaymentMethods";
 import { useCheckout } from "@/features/billing/hooks/useCheckout";
 import { useCustomerPortal } from "@/features/billing/hooks/useCustomerPortal";
-import { CurrentPlanCard } from "@/features/billing/components/CurrentPlanCard";
-import { PaymentMethodList } from "@/features/billing/components/PaymentMethodList";
 import { PeriodToggle } from "@/features/billing/components/PeriodToggle";
-import { PlanComparisonCard } from "@/features/billing/components/PlanComparisonCard";
+import { PaymentMethodList } from "@/features/billing/components/PaymentMethodList";
+import { Plan, PlanFeature, PlanPrice } from "@/features/billing/types/billing.types";
 
 type Period = "monthly" | "annual";
+
+// Display ordering for the 3-tier model; also drives the single upgrade CTA target.
+const TIER_RANK: Record<string, number> = { free: 0, basic: 1, pro: 2 };
+
+const FEATURE_ORDER = ["manual_card_limit", "plaid_card_limit", "geo_recommendations_per_day", "ai_insights_enabled", "unlimited_cards", "geofencing_enabled", "receipt_ocr_enabled"];
+
+function buildFeatureList(plan: Plan, features: PlanFeature[]): string[] {
+  const ordered = [...features].sort((a, b) => {
+    const ai = FEATURE_ORDER.indexOf(a.code);
+    const bi = FEATURE_ORDER.indexOf(b.code);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+  const lines: string[] = [];
+  for (const feature of ordered) {
+    const entry = feature.valuesByPlan.find((v) => v.planCode === plan.code);
+    if (!entry) continue;
+    if (feature.valueType === "boolean") {
+      if (entry.value.toLowerCase() === "true") lines.push(feature.displayName);
+    } else if (entry.value === "unlimited") {
+      lines.push(`Unlimited ${feature.displayName.toLowerCase()}`);
+    } else {
+      lines.push(`${feature.displayName}: ${entry.value}`);
+    }
+  }
+  return lines;
+}
 
 export function BillingProScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [period, setPeriod] = useState<Period>("monthly");
+  const [period, setPeriod] = useState<Period>("annual");
 
   const plansQuery = useBillingPlans();
   const monthlyPricesQuery = useBillingPrices("monthly");
@@ -37,28 +73,34 @@ export function BillingProScreen() {
   const checkout = useCheckout();
   const portal = useCustomerPortal();
 
-  const plans = plansQuery.plans;
+  const plans = [...plansQuery.plans].sort(
+    (a, b) => (TIER_RANK[a.code.toLowerCase()] ?? 99) - (TIER_RANK[b.code.toLowerCase()] ?? 99)
+  );
   const features = featuresQuery.features;
   const subscription = subscriptionQuery.subscription;
   const entitlements = entitlementsQuery.entitlements;
   const paymentMethods = paymentMethodsQuery.paymentMethods;
 
   const prices = period === "annual" ? annualPricesQuery.prices : monthlyPricesQuery.prices;
-  const monthlyPrice = monthlyPricesQuery.prices.find((p) => p.planCode === "pro")?.amount;
-  const annualPrice = annualPricesQuery.prices.find((p) => p.planCode === "pro")?.amount;
+  const monthlyProPrice = monthlyPricesQuery.prices.find((p) => p.planCode === "pro")?.amount;
+  const annualProPrice = annualPricesQuery.prices.find((p) => p.planCode === "pro")?.amount;
   const pricesQuery = period === "annual" ? annualPricesQuery : monthlyPricesQuery;
 
   const annualSavings = useMemo(() => {
-    if (!monthlyPrice || !annualPrice) return null;
-    const yearlyFromMonthly = monthlyPrice.amount * 12;
-    if (yearlyFromMonthly <= annualPrice.amount) return null;
-    const saved = yearlyFromMonthly - annualPrice.amount;
+    if (!monthlyProPrice || !annualProPrice) return null;
+    const yearlyFromMonthly = monthlyProPrice.amount * 12;
+    if (yearlyFromMonthly <= annualProPrice.amount) return null;
+    const saved = yearlyFromMonthly - annualProPrice.amount;
     const pct = Math.round((saved / yearlyFromMonthly) * 100);
     return { saved, pct };
-  }, [monthlyPrice, annualPrice]);
+  }, [monthlyProPrice, annualProPrice]);
 
-  const currentPlanCode = entitlements?.planCode ?? subscription?.planCode ?? "basic";
-  const upgradeTarget = plans.find((p) => p.code !== currentPlanCode);
+  const currentPlanCode = (entitlements?.planCode ?? subscription?.planCode ?? "free").toLowerCase();
+  // Upgrade target = the cheapest higher tier that has a price (free -> basic -> pro).
+  const currentRank = TIER_RANK[currentPlanCode] ?? 0;
+  const upgradeTarget = [...plans]
+    .filter((p) => (TIER_RANK[p.code.toLowerCase()] ?? 0) > currentRank && prices.some((pr) => pr.planCode === p.code))
+    .sort((a, b) => (TIER_RANK[a.code.toLowerCase()] ?? 0) - (TIER_RANK[b.code.toLowerCase()] ?? 0))[0];
   const upgradePrice = prices.find((p) => p.planCode === upgradeTarget?.code);
   const pricesUnavailable = upgradeTarget != null && !pricesQuery.isLoading && !upgradePrice;
 
@@ -103,87 +145,151 @@ export function BillingProScreen() {
     portal.error ? (portal.error as Error).message :
     null;
 
-  const onProPlan = currentPlanCode.toLowerCase() === "pro";
+  const onProPlan = currentPlanCode === "pro";
+  const currentPillLabel = `CURRENT: ${currentPlanCode.toUpperCase()}`;
+  const cadence = period === "annual" ? "/yr" : "/mo";
 
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Billing & Pro</Text>
+    <Screen scroll>
+      <View style={styles.topBar}>
+        <Pressable onPress={() => router.back()} style={styles.iconBtn} accessibilityRole="button">
+          <Ionicons name="chevron-back" size={20} color={colors.text} />
+        </Pressable>
+        <Text style={styles.topTitle}>Subscription</Text>
+        <View style={styles.iconBtn} />
+      </View>
 
-        <CurrentPlanCard subscription={subscription} />
+      <View style={styles.hero}>
+        <LinearGradient
+          colors={[...gradients.brand]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.currentPill}
+        >
+          <Text style={styles.currentPillText}>{currentPillLabel}</Text>
+        </LinearGradient>
+        <Text style={styles.title}>Choose your plan</Text>
+        <Text style={styles.subtitle}>Start free, or unlock more with Basic or Pro. Switch anytime.</Text>
+      </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Compare plans</Text>
-          <PeriodToggle value={period} onChange={setPeriod} />
-          {annualSavings && period === "annual" ? (
-            <Text style={styles.savings}>
-              Save {annualSavings.pct}% with annual billing.
-            </Text>
-          ) : null}
-          {isLoading ? <ActivityIndicator color={colors.primary} /> : null}
-          <View style={styles.planList}>
-            {plans.map((plan) => (
-              <PlanComparisonCard
-                key={plan.code}
-                plan={plan}
-                price={prices.find((p) => p.planCode === plan.code)}
-                features={features}
-                isCurrentPlan={plan.code.toLowerCase() === currentPlanCode.toLowerCase()}
-              />
-            ))}
-          </View>
-        </View>
+      <PeriodToggle value={period} onChange={setPeriod} />
+      {annualSavings && period === "annual" ? (
+        <Text style={styles.savings}>Save {annualSavings.pct}% with annual billing.</Text>
+      ) : null}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment methods</Text>
-          {paymentMethodsQuery.isLoading ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <PaymentMethodList paymentMethods={paymentMethods} />
-          )}
-        </View>
+      {isLoading ? <ActivityIndicator color={colors.primary} /> : null}
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+      <View style={{ gap: 12 }}>
+        {plans.map((plan) => {
+          const price = prices.find((p) => p.planCode === plan.code);
+          return (
+            <PlanCard
+              key={plan.code}
+              name={plan.displayName}
+              price={price?.amount.display ?? "—"}
+              cadence={cadence}
+              features={buildFeatureList(plan, features)}
+              featured={plan.code.toLowerCase() === "pro" && !onProPlan}
+              ribbon="BEST VALUE"
+              footer={
+                <PlanFooter
+                  plan={plan}
+                  price={price}
+                  isCurrent={plan.code.toLowerCase() === currentPlanCode}
+                />
+              }
+            />
+          );
+        })}
+      </View>
 
-        {pricesUnavailable ? (
-          <View style={styles.retryRow}>
-            <Text style={styles.retryText}>Pricing is unavailable right now.</Text>
-            <Button label="Retry" onPress={() => void pricesQuery.refetch()} variant="secondary" />
-          </View>
-        ) : null}
-
-        {!onProPlan && upgradeTarget ? (
-          <Button
-            disabled={checkout.isPending || pricesQuery.isLoading || !upgradePrice}
-            label={
-              checkout.isPending
-                ? "Opening checkout…"
-                : `Upgrade to ${upgradeTarget.displayName}${upgradePrice ? ` • ${upgradePrice.amount.display}` : ""}`
-            }
-            onPress={handleUpgrade}
-          />
-        ) : null}
-
-        <Button
-          disabled={portal.isPending}
-          label={portal.isPending ? "Opening Stripe portal…" : "Manage subscription"}
-          onPress={handleManage}
-          variant="secondary"
+      <SectionLabel>Payment method</SectionLabel>
+      <Card padded={false} style={styles.group}>
+        <ListItem
+          iconLabel="💳"
+          iconTone="muted"
+          title="Device wallet"
+          subtitle="Stripe shows Apple Pay on iOS and Google Pay on Android when available"
+          divider={paymentMethods.length > 0}
         />
-        <Button label="Back" onPress={() => router.back()} variant="secondary" />
-      </ScrollView>
+        {paymentMethodsQuery.isLoading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginVertical: 8 }} />
+        ) : paymentMethods.length > 0 ? (
+          <View style={{ paddingVertical: 4 }}>
+            <PaymentMethodList paymentMethods={paymentMethods} />
+          </View>
+        ) : null}
+      </Card>
+
+      {error ? <Toast tone="error" message={error} /> : null}
+
+      {pricesUnavailable ? (
+        <View style={{ gap: 8 }}>
+          <Toast tone="warn" message="Pricing is unavailable right now." />
+          <Button label="Retry" onPress={() => void pricesQuery.refetch()} variant="outline" />
+        </View>
+      ) : null}
+
+      {!onProPlan && upgradeTarget ? (
+        <Button
+          disabled={checkout.isPending || pricesQuery.isLoading || !upgradePrice}
+          loading={checkout.isPending}
+          label={
+            checkout.isPending
+              ? "Opening checkout…"
+              : `Upgrade with Stripe${upgradePrice ? ` · ${upgradePrice.amount.display}${cadence}` : ""}`
+          }
+          onPress={handleUpgrade}
+        />
+      ) : null}
+
+      <Button
+        disabled={portal.isPending}
+        loading={portal.isPending}
+        label="Manage in Stripe portal"
+        onPress={handleManage}
+        variant="outline"
+      />
+      <Text style={styles.footnote}>
+        Cancel anytime. Pro keeps working until the end of the billing period.
+      </Text>
     </Screen>
   );
 }
 
+function PlanFooter({ plan, price, isCurrent }: { plan: Plan; price: PlanPrice | undefined; isCurrent: boolean }) {
+  if (isCurrent) {
+    return (
+      <View style={styles.currentChip}>
+        <Text style={styles.currentChipText}>Current plan</Text>
+      </View>
+    );
+  }
+  if (plan.trialDays > 0) {
+    return <Text style={styles.trial}>{plan.trialDays}-day free trial{price ? ` · then ${price.amount.display}` : ""}</Text>;
+  }
+  return null;
+}
+
 const styles = StyleSheet.create({
-  content: { gap: spacing.md, paddingBottom: spacing.xl },
-  title: { color: colors.text, fontSize: 24, fontWeight: "800" },
-  section: { gap: spacing.sm },
-  sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
-  savings: { color: colors.primary, fontSize: 13, fontWeight: "700" },
-  planList: { gap: spacing.sm },
-  error: { color: colors.danger, fontSize: 13 },
-  retryRow: { gap: spacing.xs },
-  retryText: { color: colors.muted, fontSize: 13 }
+  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
+  hero: { alignItems: "center", gap: 6, paddingTop: spacing.sm },
+  currentPill: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: radii.pill },
+  currentPillText: { color: palette.white, fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(11), letterSpacing: 1.2 },
+  title: { color: colors.text, fontFamily: fontFamily.heavy, fontSize: scaleFont(22), fontWeight: "800", letterSpacing: -0.4, textAlign: "center", marginTop: 8 },
+  subtitle: { color: colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(13), textAlign: "center", lineHeight: 19 },
+  savings: { color: colors.successText, fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(12), textAlign: "center" },
+  group: { paddingHorizontal: 12 },
+  currentChip: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radii.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 3
+  },
+  currentChipText: { color: colors.text, fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(11), letterSpacing: 0.3 },
+  trial: { color: colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(12) },
+  footnote: { color: colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(11), textAlign: "center", marginTop: 4 }
 });

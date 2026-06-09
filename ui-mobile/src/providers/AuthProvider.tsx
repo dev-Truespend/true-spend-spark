@@ -6,12 +6,31 @@ import { supabase } from "@/shared/api/supabaseClient";
 import { getRouteForBootstrap } from "@/features/auth/mappers/authRoute.mapper";
 import { AuthBootstrapResponse } from "@/features/auth/types/auth.types";
 import { devicesApi } from "@/shared/api/devices.api";
-import { clearCachedKeys, setCachedJson } from "@/shared/storage/cacheStorage";
+import { clearCachedKeys, getCachedJson, setCachedJson } from "@/shared/storage/cacheStorage";
 import { setUnauthorizedHandler } from "@/shared/api/interceptors";
 import { UnauthorizedAppError } from "@/shared/errors/NetworkAppError";
 import { addUrlListener, getInitialUrl, parseUrl } from "@/shared/native/linking";
 
 const AUTH_BOOTSTRAP_CACHE_KEY = "auth.bootstrap";
+const FRESH_INSTALL_MARKER_KEY = "app.fresh_install_marker.v1";
+
+// iOS Keychain (and Android Keystore) entries persist across app uninstall by
+// platform design, so a reinstalled app would silently inherit the previous
+// install's Supabase session. AsyncStorage *is* wiped on uninstall, so the
+// presence of this marker tells us whether the current install has launched
+// before. On a fresh install we proactively clear any leftover Supabase tokens
+// from secure storage so the user lands on the sign-in screen as expected.
+async function purgeSecureStorageIfFreshInstall(): Promise<void> {
+  const marker = await getCachedJson<boolean>(FRESH_INSTALL_MARKER_KEY);
+  if (marker) return;
+  try {
+    await supabase.auth.signOut();
+  } catch {
+    // No active session is fine — signOut still clears any persisted keys.
+  }
+  await clearCachedKeys([AUTH_BOOTSTRAP_CACHE_KEY]);
+  await setCachedJson(FRESH_INSTALL_MARKER_KEY, true);
+}
 
 type AuthContextValue = {
   session: Session | null;
@@ -46,6 +65,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setIsRestoring(true);
     setBootstrapError(null);
     try {
+      await purgeSecureStorageIfFreshInstall();
       const { data, error } = await supabase.auth.getSession();
       if (error || !data.session) {
         setSession(null);

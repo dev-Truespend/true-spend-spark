@@ -1,6 +1,7 @@
+using Microsoft.Extensions.Logging;
+using TrueSpend.Domain.BusinessInterfaces.Analytics;
+using TrueSpend.Domain.BusinessInterfaces.Notifications;
 using TrueSpend.Domain.BusinessInterfaces.Transactions;
-using TrueSpend.Domain.Events.Finance;
-using TrueSpend.Domain.Events.Transactions;
 using TrueSpend.Domain.Models.Transactions;
 using TrueSpend.Domain.ServiceInterfaces.Transactions;
 using TrueSpend.Domain.Models.Common;
@@ -10,8 +11,6 @@ using TrueSpend.Domain.ServiceInterfaces.Messaging;
 using TrueSpend.Domain.ServiceInterfaces.Persistence;
 using TrueSpend.Domain.ServiceInterfaces.Recommendations;
 using TrueSpend.Domain.Validators;
-using System.Text.Json;
-using TrueSpend.Domain.Constants;
 
 namespace TrueSpend.Domain.Business.Transactions;
 
@@ -20,8 +19,11 @@ public sealed class TransactionsUpdateBusiness(
     ITransactionsReadService readService,
     IRewardRulesReadService rewardRulesReadService,
     ICatalogReadService catalogReadService,
-    IMessagingInsertService messagingInsertService,
+    IMessagingInsertService messagingInsertService, // archived: kept for future async migration
     IUnitOfWork unitOfWork,
+    IAnalyticsComputeBusiness analyticsCompute,
+    IMissedRewardNotificationBusiness missedRewardNotification,
+    ILogger<TransactionsUpdateBusiness> logger,
     TransactionsValidator validator) : ITransactionsUpdateBusiness
 {
     public async Task<BusinessResponse<TransactionDetailResponse>> UpdateTransactionAsync(
@@ -30,6 +32,8 @@ public sealed class TransactionsUpdateBusiness(
         UpdateTransactionRequest request,
         CancellationToken cancellationToken)
     {
+        _ = messagingInsertService;
+
         var errors = validator.ValidateUpdate(request);
         if (errors.Count > 0)
             return BusinessResponse<TransactionDetailResponse>.Fail(errors, 400);
@@ -54,12 +58,12 @@ public sealed class TransactionsUpdateBusiness(
         if (computed is null)
             return BusinessResponse<TransactionDetailResponse>.Fail(["Card not found or not owned by user."], 400);
 
+        MissedRewardUpsertResult? upsert = null;
         await using (var tx = await unitOfWork.BeginTransactionAsync(cancellationToken))
         {
             await updateService.UpdateTransactionAsync(user, transactionId, request, resolvedCategoryId, cancellationToken);
             await updateService.UpsertRewardResultAsync(transactionId, computed.RewardResult, cancellationToken);
 
-            MissedRewardUpsertResult? upsert = null;
             if (computed.HasMissedReward)
             {
                 upsert = await updateService.UpsertMissedRewardAsync(
@@ -70,31 +74,28 @@ public sealed class TransactionsUpdateBusiness(
                 await updateService.DeleteMissedRewardAsync(transactionId, cancellationToken);
             }
 
-            var payload = JsonSerializer.Serialize(new TransactionEventContract(
-                transactionId, user.UserId, effectiveCardId, existing.Source,
-                effectiveAmount, effectiveCategoryCode, request.TransactionDate ?? existing.TransactionDate));
-            await messagingInsertService.EnqueueOutboxEventAsync(
-                EventTypes.TransactionUpdated,
-                "finance.transaction",
-                transactionId,
-                payload,
-                $"transaction.updated:{transactionId}:{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                cancellationToken);
-
-            if (upsert is { IsNew: true } newMissed)
-            {
-                var missedPayload = JsonSerializer.Serialize(new MissedRewardEventCreatedContract(
-                    1, newMissed.MissedRewardEventId, transactionId, user.UserId, DateTimeOffset.UtcNow));
-                await messagingInsertService.EnqueueOutboxEventAsync(
-                    EventTypes.MissedRewardEventCreated,
-                    "finance.missed_reward_event",
-                    newMissed.MissedRewardEventId,
-                    missedPayload,
-                    $"missed_reward_event.created:{newMissed.MissedRewardEventId}",
-                    cancellationToken);
-            }
-
             await tx.CommitAsync(cancellationToken);
+        }
+
+        try
+        {
+            await analyticsCompute.RecomputeSnapshotsAsync(user.UserId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Analytics recompute failed after transaction update for user {UserId} txn {TransactionId}", user.UserId, transactionId);
+        }
+
+        if (upsert is { IsNew: true } newMissed)
+        {
+            try
+            {
+                await missedRewardNotification.ProduceForMissedRewardEventAsync(newMissed.MissedRewardEventId, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Missed reward notification failed for user {UserId} event {EventId}", user.UserId, newMissed.MissedRewardEventId);
+            }
         }
 
         var detail = await readService.GetTransactionDetailAsync(user, transactionId, cancellationToken);
@@ -114,17 +115,16 @@ public sealed class TransactionsUpdateBusiness(
         await using (var tx = await unitOfWork.BeginTransactionAsync(cancellationToken))
         {
             await updateService.DismissMissedRewardAsync(missedRewardId, cancellationToken);
-
-            var payload = JsonSerializer.Serialize(new MissedRewardNotAMissEvent(missedRewardId, transactionId.Value, user.UserId));
-            await messagingInsertService.EnqueueOutboxEventAsync(
-                EventTypes.MissedRewardNotAMiss,
-                "finance.missed_reward_event",
-                missedRewardId,
-                payload,
-                $"missed_reward.not_a_miss:{missedRewardId}",
-                cancellationToken);
-
             await tx.CommitAsync(cancellationToken);
+        }
+
+        try
+        {
+            await analyticsCompute.RecomputeSnapshotsAsync(user.UserId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Analytics recompute failed after mark-not-a-miss for user {UserId} missed {MissedRewardId}", user.UserId, missedRewardId);
         }
 
         var detail = await readService.GetTransactionDetailAsync(user, transactionId.Value, cancellationToken);
@@ -134,4 +134,45 @@ public sealed class TransactionsUpdateBusiness(
         var related = (await readService.GetMissedRewardsAsync(user, cancellationToken)).FirstOrDefault(m => m.Id == missedRewardId);
         return BusinessResponse<TransactionDetailResponse>.Ok(new TransactionDetailResponse(detail, reward, related));
     }
+
+    #region archive — async event-publish (disabled in MVP)
+    // UpdateTransactionAsync previously published:
+    //   1. TransactionUpdated — consumer: AnalyticsRecomputeHandler → IAnalyticsComputeBusiness.RecomputeSnapshotsAsync.
+    //   2. MissedRewardEventCreated (when upsert.IsNew) — consumer: MissedRewardEventCreatedHandler →
+    //      IMissedRewardNotificationBusiness.ProduceForMissedRewardEventAsync.
+    // MarkNotAMissAsync previously published:
+    //   3. MissedRewardNotAMiss — consumer: AnalyticsRecomputeHandler → IAnalyticsComputeBusiness.RecomputeSnapshotsAsync.
+    //
+    // All three are now called inline post-commit.
+    //
+    // using System.Text.Json;
+    // using TrueSpend.Domain.Constants;
+    // using TrueSpend.Domain.Events.Finance;
+    // using TrueSpend.Domain.Events.Transactions;
+    //
+    // // UpdateTransactionAsync — inside the committing tx, after writes:
+    // var payload = JsonSerializer.Serialize(new TransactionEventContract(
+    //     transactionId, user.UserId, effectiveCardId, existing.Source,
+    //     effectiveAmount, effectiveCategoryCode, request.TransactionDate ?? existing.TransactionDate));
+    // await messagingInsertService.EnqueueOutboxEventAsync(
+    //     EventTypes.TransactionUpdated, "finance.transaction", transactionId,
+    //     payload, $"transaction.updated:{transactionId}:{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+    //     cancellationToken);
+    //
+    // if (upsert is { IsNew: true } newMissed)
+    // {
+    //     var missedPayload = JsonSerializer.Serialize(new MissedRewardEventCreatedContract(
+    //         1, newMissed.MissedRewardEventId, transactionId, user.UserId, DateTimeOffset.UtcNow));
+    //     await messagingInsertService.EnqueueOutboxEventAsync(
+    //         EventTypes.MissedRewardEventCreated, "finance.missed_reward_event",
+    //         newMissed.MissedRewardEventId, missedPayload,
+    //         $"missed_reward_event.created:{newMissed.MissedRewardEventId}", cancellationToken);
+    // }
+    //
+    // // MarkNotAMissAsync — inside the committing tx, after DismissMissedRewardAsync:
+    // var payload = JsonSerializer.Serialize(new MissedRewardNotAMissEvent(missedRewardId, transactionId.Value, user.UserId));
+    // await messagingInsertService.EnqueueOutboxEventAsync(
+    //     EventTypes.MissedRewardNotAMiss, "finance.missed_reward_event", missedRewardId,
+    //     payload, $"missed_reward.not_a_miss:{missedRewardId}", cancellationToken);
+    #endregion
 }

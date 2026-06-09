@@ -86,7 +86,7 @@ public sealed class BillingReadService(TrueSpendDbContext db) : IBillingReadServ
                    subscription.TrialEnd,
                    subscription.CurrentPeriodEnd,
                    subscription.CancelAtPeriodEnd))
-            .FirstOrDefaultAsync(cancellationToken) ?? new SubscriptionResponse(BillingConstants.BasicPlanCode, "none", null, null, false);
+            .FirstOrDefaultAsync(cancellationToken) ?? new SubscriptionResponse(BillingConstants.FreePlanCode, "none", null, null, false);
 
     public async Task<EntitlementsResponse> GetEntitlementsAsync(OnboardingWorkflowUser user, CancellationToken cancellationToken)
     {
@@ -108,13 +108,17 @@ public sealed class BillingReadService(TrueSpendDbContext db) : IBillingReadServ
         var plaidLinkingEnabled = ParseBoolean(features, BillingConstants.PlaidLinkingEnabledFeatureCode);
         var plaidTransactionsViewEnabled = ParseBoolean(features, BillingConstants.PlaidTransactionsViewEnabledFeatureCode);
         var geofencingEnabled = ParseBoolean(features, BillingConstants.GeofencingEnabledFeatureCode);
-        var cardLinkLimit = unlimitedCards ? (int?)null : ParseIntegerLimit(features, BillingConstants.CardLinkLimitFeatureCode);
+        var manualCardLimit = unlimitedCards ? (int?)null : ParseIntegerLimit(features, BillingConstants.ManualCardLimitFeatureCode);
+        var plaidCardLimit = unlimitedCards ? (int?)null : ParseIntegerLimit(features, BillingConstants.PlaidCardLimitFeatureCode);
+        var geoRecommendationsPerDay = ParseIntegerLimit(features, BillingConstants.GeoRecommendationsPerDayFeatureCode);
 
         return new EntitlementsResponse(
             planCode,
             trialing,
             trialing ? subscription.TrialEnd : null,
-            cardLinkLimit,
+            manualCardLimit,
+            plaidCardLimit,
+            geoRecommendationsPerDay,
             unlimitedCards,
             aiInsightsEnabled,
             plaidLinkingEnabled,

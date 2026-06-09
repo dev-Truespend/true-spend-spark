@@ -1,70 +1,44 @@
 import { StyleSheet, Text, View } from "react-native";
+import { Card } from "@/shared/components/Card";
+import { ProgressBar } from "@/shared/components/ProgressBar";
+import { SectionLabel } from "@/shared/components/SectionLabel";
 import { RewardBreakdownItem } from "@/features/insights/types/analytics.types";
 import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
+import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
-type Props = {
-  items: RewardBreakdownItem[];
-};
+type Props = { items: RewardBreakdownItem[] };
 
 export function CategoryBreakdownList({ items }: Props) {
   if (items.length === 0) return null;
+  const max = items.reduce((m, item) => Math.max(m, item.earned.amount), 0);
+  const safeMax = max > 0 ? max : 1;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>By category</Text>
-      {items.map((item) => (
-        <View key={item.key} style={styles.row}>
-          <Text style={styles.label}>{item.label}</Text>
-          <View style={styles.amounts}>
-            <Text style={styles.earned}>{item.earned.display}</Text>
-            <Text style={styles.missed}>{item.missed.display} missed</Text>
-          </View>
+    <View style={{ gap: 6 }}>
+      <SectionLabel>By category</SectionLabel>
+      <Card>
+        <View style={{ gap: 12 }}>
+          {items.map((item) => (
+            <View key={item.key} style={{ gap: 6 }}>
+              <View style={styles.row}>
+                <Text style={styles.label}>{item.label}</Text>
+                <Text style={styles.amount}>{item.earned.display}</Text>
+              </View>
+              <ProgressBar value={item.earned.amount / safeMax} />
+              {item.missed && item.missed.amount > 0 ? (
+                <Text style={styles.missed}>Missed {item.missed.display}</Text>
+              ) : null}
+            </View>
+          ))}
         </View>
-      ))}
+      </Card>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: spacing.xs
-  },
-  heading: {
-    color: colors.muted,
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: spacing.xs
-  },
-  row: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm
-  },
-  label: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: "600",
-    flex: 1
-  },
-  amounts: {
-    alignItems: "flex-end"
-  },
-  earned: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: "700"
-  },
-  missed: {
-    color: colors.muted,
-    fontSize: 12
-  }
+  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  label: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), color: colors.text },
+  amount: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(13), color: colors.text },
+  missed: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.amberText }
 });

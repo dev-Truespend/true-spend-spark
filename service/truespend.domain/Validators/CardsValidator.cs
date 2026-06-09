@@ -9,16 +9,20 @@ public sealed class CardsValidator
         var errors = new List<string>();
         if (request.CardProductId <= 0) errors.Add("Card product is required.");
         if (request.IssuerId <= 0) errors.Add("Issuer is required.");
-        if (!string.IsNullOrWhiteSpace(request.LastFour) && request.LastFour.Length != 4) errors.Add("Last four must be four digits.");
+        // Last four is required so a later Plaid link can confidently match and adopt this card.
+        if (string.IsNullOrWhiteSpace(request.LastFour)) errors.Add("Last four is required.");
+        else if (!IsFourDigits(request.LastFour)) errors.Add("Last four must be four digits.");
         return errors;
     }
 
     public IReadOnlyList<string> ValidateUpdateCard(UpdateCardRequest request)
     {
         var errors = new List<string>();
-        if (!string.IsNullOrWhiteSpace(request.LastFour) && request.LastFour.Length != 4) errors.Add("Last four must be four digits.");
+        if (!string.IsNullOrWhiteSpace(request.LastFour) && !IsFourDigits(request.LastFour)) errors.Add("Last four must be four digits.");
         return errors;
     }
+
+    private static bool IsFourDigits(string value) => value.Length == 4 && value.All(char.IsDigit);
 
     public IReadOnlyList<string> ValidateUpsertRewardOverride(UpsertRewardOverrideRequest request)
     {

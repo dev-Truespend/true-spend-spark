@@ -1,4 +1,8 @@
-# Cards Workflow
+# Wallet (Cards) Workflow
+
+> The Wallet tab is the default tab and the merged home/cards surface. It hosts both card management (this workflow) and in-store recommendations (see [03-recommendations.md](03-recommendations.md)).
+>
+> **MVP execution note** — Any step below that mentions an outbox event runs **inline post-commit** in the MVP. See [api-design-patterns.md § Post-commit side-effects](../low-level-design/Service/api-design-patterns.md#post-commit-side-effects) and [_docs/Refactors/sync-execution-conversion.md](../Refactors/sync-execution-conversion.md).
 
 ## Progress
 
@@ -20,8 +24,9 @@
 | User can remove a card | Done | |
 | User can see a cards empty state when no cards are connected | Done | |
 | User can add a manual card from the cards empty state | Done | |
-| User can browse the card catalog from the cards empty state | Partial | Empty-state "Add from catalog" CTA opens the manual-add screen, which uses catalog-backed issuer/product pickers. No standalone read-only catalog browser exists yet. |
+| User can browse the card catalog from the cards empty state | Done | Standalone catalog browser at `/(app)/cards/catalog` with issuer filter and search; selecting a product pre-fills the manual-add screen. |
 | User can request a missing bank/card from manual add | Done | |
+| User's manually-added card is auto-merged into its Plaid link when later connected | Done | `PlaidInsertBusiness` adopts the matching manual card in place (last-four + product/issuer); `last_four` now required on manual create. See Manual↔Plaid Reconciliation. |
 | User can understand Basic linking limits and Pro unlimited linking | Done | |
 | User can start Plaid linking from the cards area | Done | |
 | User can view Plaid connection health | Done | |
@@ -61,8 +66,9 @@ Phase 1 online Cards tab flows for screens `5.1` through `5.4`: card list, card 
 | Full | User can remove a card | `5.2` | `POST /cards/{cardId}/delete` |
 | Full | User can see a cards empty state when no cards are connected | `5.3` | Empty `CardsResponse.cards` |
 | Full | User can add a manual card from the cards empty state | `5.3` | Manual card endpoint |
-| Partial | User can browse the card catalog from the cards empty state | `5.3` | Catalog search/products; empty-state CTA opens the manual-add flow, which is catalog-driven |
+| Full | User can browse the card catalog from the cards empty state | `5.3` | Catalog browser screen with issuer filter and product search; selection pre-fills manual-add |
 | Full | User can request a missing bank/card from manual add | `5.3` | Catalog request endpoint and admin review |
+| Full | User's manually-added card is auto-merged into its Plaid link when later connected | `5.2`, `5.4` | Adoption on `POST /plaid/exchange-token`; see Manual↔Plaid Reconciliation |
 | Full | User can understand Basic linking limits and Pro unlimited linking | `5.1`, `5.3`, `8.3` | Cards limits/entitlements |
 | Full | User can start Plaid linking from the cards area | `5.3`, `5.4` | Plaid link token |
 | Full | User can view Plaid connection health | `5.4` | Plaid connections |
@@ -119,7 +125,7 @@ Manage Plaid
 | Remove card | `POST /api/v1/cards/{cardId}/delete` | Empty -> `CardsResponse` | Sync API + Outbox Event | `finance.user_card.deleted` -> recommendation/analytics refresh | Soft-delete `finance.user_cards`; write `messaging.event_outbox` | Replace card list cache; clear detail cache |
 | Browse catalog | `GET /api/v1/card-catalog/products`, `GET /api/v1/card-catalog/products/{cardProductId}` | `CardProductsResponse`, `CardProductResponse` | Sync API | None | Read `catalog.card_products`, `catalog.reward_rules`, `catalog.card_issuers` | Dropdown/reference cache by default |
 | Start Plaid link | `POST /api/v1/plaid/link-token` | Empty -> `PlaidLinkTokenResponse` | Sync API | Plaid Link completion handled by exchange | None until exchange | Do not cache link token beyond expiration |
-| Exchange Plaid token | `POST /api/v1/plaid/exchange-token` | `ExchangePlaidTokenRequest` -> `PlaidConnectionResponse` | Sync API + Outbox Event | `finance.user_card.created` for discovered cards | Write `finance.plaid_items`, `finance.plaid_accounts`, `finance.user_cards`, `messaging.event_outbox` | Invalidate cards and connections caches |
+| Exchange Plaid token | `POST /api/v1/plaid/exchange-token` | `ExchangePlaidTokenRequest` -> `PlaidConnectionResponse` | Sync API + Outbox Event | `finance.user_card.created` for discovered cards | Write `finance.plaid_items`, `finance.plaid_accounts`, `finance.user_cards`, `messaging.event_outbox`; per account, **adopt a matching manual card** (see Manual↔Plaid Reconciliation) instead of inserting a duplicate | Invalidate cards and connections caches |
 | Load Plaid connections | `GET /api/v1/plaid/connections` | `PlaidConnectionsResponse` | Sync API | None | Read `finance.plaid_items`, `finance.plaid_accounts`, `finance.user_cards`, `lookup.plaid_item_statuses` | Mobile short cache |
 | Sync Plaid connection | `POST /api/v1/plaid/connections/sync` | `SyncPlaidConnectionRequest` -> `PlaidConnectionResponse` | Sync API + Outbox Event | `finance.plaid_connection.synced` -> card cache invalidation | Read/write Plaid tables, `finance.user_cards`, `messaging.event_outbox` | Invalidate cards/connections |
 | Reconnect Plaid | `POST /api/v1/plaid/connections/reconnect` | `ReconnectPlaidConnectionRequest` -> `PlaidLinkTokenResponse` | Sync API | Plaid Link completion updates connection | Read `finance.plaid_items` | Do not cache link token beyond expiration |
@@ -136,8 +142,8 @@ Manage Plaid
 | `CardLimitsResponse` | integer `plaidUsed`, nullable integer `plaidLimit`, integer `manualUsed`, nullable integer `manualLimit`, boolean `unlimited` |
 | `CardTermsVm` | `annualFee`, `purchaseApr`, `foreignTransactionFee`, `termsSummary` |
 | `MonthlyRewardContributionVm` | `points`, `estimatedValue`, `currencyCode`, `periodLabel` |
-| `CreateManualCardRequest` | `cardProductId`, `issuerId`, `nickname`, `lastFour`, `isPrimary` |
-| `CreateCardProductRequest` | `issuerName`, `cardName`, `createUserCard`, `nickname`, `lastFour`, `isPrimary` |
+| `CreateManualCardRequest` | `cardProductId`, `issuerId`, `nickname`, `lastFour` (**required**, 4 digits), `isPrimary` |
+| `CreateCardProductRequest` | `issuerName`, `cardName`, `createUserCard`, `nickname`, `lastFour` (**required when `createUserCard`**), `isPrimary` |
 | `CardProductRequestResponse` | `request`, `userCard` |
 | `UpdateCardRequest` | `nickname`, `lastFour`, `isPrimary` |
 | `RewardOverridesResponse` | `rewardRules` |
@@ -149,7 +155,7 @@ Manage Plaid
 | `PlaidConnectionResponse` | `connections`, `cards` |
 | `PlaidConnectionsResponse` | `connections` |
 | `PlaidLinkTokenResponse` | `linkToken`, `expiration` |
-| `EntitlementsResponse` | `planCode`, `cardLinkLimit`, `unlimitedCards` |
+| `EntitlementsResponse` | `planCode`, `manualCardLimit`, `plaidCardLimit`, `unlimitedCards` |
 | `HostedBillingResponse` | `url` |
 
 ## Tables Involved
@@ -162,6 +168,17 @@ Manage Plaid
 | Billing/limits | `billing.subscriptions`, `billing.plans`, `billing.features`, `billing.plan_features`, `billing.stripe_customers` |
 | Recommendation impact | `finance.recommendations` |
 | Event dispatch | `messaging.event_outbox`, `messaging.event_deliveries`, `messaging.event_subscriptions` |
+
+## Manual↔Plaid Reconciliation
+
+When a Plaid account is linked that the user had already added manually, the manual card is **adopted in place** rather than duplicated. During `POST /plaid/exchange-token`, for each discovered account the business (`PlaidInsertBusiness`):
+
+1. Resolves the account's catalog product (fuzzy match on institution + account name).
+2. Finds active manual cards (no `plaid_account_id`) whose `last_four` equals the Plaid account `mask` — `CardsReadService.FindAdoptableManualCardsAsync`.
+3. Adopts the best match when **last-four matches AND (same `card_product_id` OR issuer name aligns with the Plaid institution)** — preferring an exact product match, then primary, then oldest. Adoption (`PlaidUpdateService.AdoptManualCardToPlaidAsync`) flips that row to `source = plaid`, attaches `plaid_account_id`, fills `card_product_id` when unset, clears the custom issuer/name, and **keeps the row id** — so reward overrides, primary flag, transactions, and recommendation history survive. No duplicate card is created.
+4. Inserts a new Plaid card only when no confident match exists.
+
+`last_four` is **required** on manual card creation (and on request-missing when it also creates a card) so this match is always confident. Within one exchange, an already-adopted manual card is not reused for a second account.
 
 ## Cache Strategy
 

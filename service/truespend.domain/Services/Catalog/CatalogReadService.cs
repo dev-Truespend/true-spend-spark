@@ -26,19 +26,16 @@ public sealed class CatalogReadService(TrueSpendDbContext db) : ICatalogReadServ
             q = q.Where(x => EF.Functions.ILike(x.DisplayName, pattern));
         }
 
-        return await q.Join(
-                db.CardIssuers.AsNoTracking(),
-                product => product.IssuerId,
-                issuer => issuer.Id,
-                (product, issuer) => new CardProduct(
-                    product.Id,
-                    issuer.DisplayName,
-                    product.DisplayName,
-                    product.CardArtUrl,
-                    product.AnnualFee,
-                    product.RewardCurrencyName))
-            .OrderBy(x => x.IssuerName)
-            .ThenBy(x => x.DisplayName)
+        return await (from product in q
+                      join issuer in db.CardIssuers.AsNoTracking() on product.IssuerId equals issuer.Id
+                      orderby issuer.DisplayName, product.DisplayName
+                      select new CardProduct(
+                          product.Id,
+                          issuer.DisplayName,
+                          product.DisplayName,
+                          product.CardArtUrl,
+                          product.AnnualFee,
+                          product.RewardCurrencyName))
             .ToListAsync(cancellationToken);
     }
 
@@ -62,6 +59,7 @@ public sealed class CatalogReadService(TrueSpendDbContext db) : ICatalogReadServ
                                  select new RewardRule(
                                      cat.Code ?? "base",
                                      cat.DisplayName ?? "Base",
+                                     cat.CategoryGroup,
                                      rule.Multiplier,
                                      null,
                                      rule.Notes))
@@ -84,4 +82,37 @@ public sealed class CatalogReadService(TrueSpendDbContext db) : ICatalogReadServ
             .Where(x => x.Id == issuerId)
             .Select(x => x.DisplayName)
             .FirstOrDefaultAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<CatalogCardMatchCandidate>> GetCardMatchCandidatesAsync(
+        string institutionName,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(institutionName)) return Array.Empty<CatalogCardMatchCandidate>();
+
+        // Pull all active products whose issuer's display_name shares any meaningful
+        // token with the Plaid institution string. The ranking + final pick happens
+        // in the matcher business class — this just narrows the candidate set.
+        var tokens = Tokenize(institutionName);
+        if (tokens.Length == 0) return Array.Empty<CatalogCardMatchCandidate>();
+
+        var query = from product in db.CardProducts.AsNoTracking().Where(p => p.IsActive)
+                    join issuer in db.CardIssuers.AsNoTracking() on product.IssuerId equals issuer.Id
+                    where issuer.IsActive
+                    select new CatalogCardMatchCandidate(product.Id, issuer.DisplayName, product.DisplayName);
+
+        var all = await query.ToListAsync(cancellationToken);
+        return all.Where(c => SharesAnyToken(c.IssuerDisplayName, tokens)).ToList();
+    }
+
+    private static string[] Tokenize(string value) =>
+        value.ToLowerInvariant()
+            .Split(new[] { ' ', '-', '.', ',', '\'' }, StringSplitOptions.RemoveEmptyEntries)
+            .Where(t => t.Length >= 3)
+            .ToArray();
+
+    private static bool SharesAnyToken(string candidateIssuer, string[] tokens)
+    {
+        var candidateLower = candidateIssuer.ToLowerInvariant();
+        return tokens.Any(t => candidateLower.Contains(t));
+    }
 }

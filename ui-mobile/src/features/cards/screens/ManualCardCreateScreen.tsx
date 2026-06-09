@@ -1,23 +1,27 @@
-import { useMemo, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
-import { useRouter } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "@/shared/components/Button";
+import { Card } from "@/shared/components/Card";
 import { Screen } from "@/shared/components/Screen";
+import { Switch } from "@/shared/components/Switch";
 import { TextInput } from "@/shared/components/TextInput";
+import { Toast } from "@/shared/components/Toast";
 import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
+import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { CardProductPicker } from "@/features/catalog/components/CardProductPicker";
 import { IssuerPicker } from "@/features/catalog/components/IssuerPicker";
 import { useCatalogIssuers } from "@/features/catalog/hooks/useCatalogIssuers";
 import { useCatalogProducts } from "@/features/catalog/hooks/useCatalogProducts";
-import { useCreateCatalogRequest } from "@/features/catalog/hooks/useCreateCatalogRequest";
 import { useCreateManualCard } from "@/features/cards/hooks/useCreateManualCard";
-
-type Mode = "catalog" | "missing";
+import { useEntitlementGate } from "@/shared/navigation/useEntitlementGate";
 
 export function ManualCardCreateScreen() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("catalog");
+  const params = useLocalSearchParams<{ cardProductId?: string }>();
+  const preselectedProductId = params.cardProductId ? Number(params.cardProductId) : null;
+  const gate = useEntitlementGate();
+  const isUnlimited = gate.unlimitedCards || gate.isPro;
 
   const issuersQuery = useCatalogIssuers();
   const issuers = issuersQuery.data?.data?.issuers ?? [];
@@ -26,70 +30,52 @@ export function ManualCardCreateScreen() {
 
   const productsQuery = useCatalogProducts(effectiveIssuerId ?? undefined);
   const products = productsQuery.data?.data?.products ?? [];
-  const [productId, setProductId] = useState<number | null>(null);
+  const [productId, setProductId] = useState<number | null>(preselectedProductId);
   const effectiveProductId = productId ?? products[0]?.id ?? null;
+
+  useEffect(() => {
+    if (preselectedProductId == null || issuerId != null) return;
+    const match = products.find((p) => p.id === preselectedProductId);
+    if (!match) return;
+    const issuer = issuers.find((i) => i.displayName === match.issuerName);
+    if (issuer) setIssuerId(issuer.id);
+  }, [preselectedProductId, issuerId, products, issuers]);
 
   const [nickname, setNickname] = useState("");
   const [lastFour, setLastFour] = useState("");
   const [isPrimary, setIsPrimary] = useState(false);
 
-  const [missingIssuer, setMissingIssuer] = useState("");
-  const [missingCard, setMissingCard] = useState("");
-
   const createCard = useCreateManualCard();
-  const createRequest = useCreateCatalogRequest();
 
   const formError = useMemo(() => {
-    if (lastFour.length > 0 && !/^\d{4}$/.test(lastFour)) return "Last four must be 4 digits.";
+    if (!/^\d{4}$/.test(lastFour.trim())) return "Last four must be 4 digits.";
     return null;
   }, [lastFour]);
 
-  async function handleSaveCatalog() {
+  async function handleSave() {
     if (!effectiveIssuerId || !effectiveProductId) return;
     if (formError) return;
     await createCard.mutateAsync({
       issuerId: effectiveIssuerId,
       cardProductId: effectiveProductId,
       nickname: nickname.trim() || undefined,
-      lastFour: lastFour.trim() || undefined,
+      lastFour: lastFour.trim(),
       isPrimary
     });
     router.back();
   }
 
-  async function handleSaveMissing() {
-    if (!missingIssuer.trim() || !missingCard.trim()) return;
-    if (formError) return;
-    await createRequest.mutateAsync({
-      issuerName: missingIssuer.trim(),
-      cardName: missingCard.trim(),
-      createUserCard: true,
-      nickname: nickname.trim() || undefined,
-      lastFour: lastFour.trim() || undefined,
-      isPrimary
-    });
-    router.back();
-  }
-
-  const submitting = createCard.isPending || createRequest.isPending;
-  const submitErr =
-    createCard.error ? (createCard.error as Error).message :
-    createRequest.error ? (createRequest.error as Error).message :
-    null;
+  const submitting = createCard.isPending;
+  const submitErr = createCard.error ? (createCard.error as Error).message : null;
 
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Add a card</Text>
+    <Screen scroll>
+      <Text style={styles.title}>Add a card</Text>
 
-        <View style={styles.tabs}>
-          <Tab label="From catalog" active={mode === "catalog"} onPress={() => setMode("catalog")} />
-          <Tab label="Missing card" active={mode === "missing"} onPress={() => setMode("missing")} />
-        </View>
-
-        {mode === "catalog" ? (
-          <View style={styles.section}>
-            <Text style={styles.label}>Issuer</Text>
+      <Card>
+        <View style={styles.formStack}>
+          <View>
+            <Text style={styles.fieldLabel}>Issuer</Text>
             {issuersQuery.isLoading ? (
               <ActivityIndicator color={colors.primary} />
             ) : (
@@ -102,8 +88,9 @@ export function ManualCardCreateScreen() {
                 }}
               />
             )}
-
-            <Text style={styles.label}>Card product</Text>
+          </View>
+          <View>
+            <Text style={styles.fieldLabel}>Card product</Text>
             {productsQuery.isLoading ? (
               <ActivityIndicator color={colors.primary} />
             ) : (
@@ -111,87 +98,66 @@ export function ManualCardCreateScreen() {
                 products={products}
                 selectedId={effectiveProductId ?? 0}
                 onSelect={setProductId}
+                issuer={issuers.find((i) => i.id === effectiveIssuerId) ?? null}
               />
             )}
           </View>
-        ) : (
-          <View style={styles.section}>
-            <Text style={styles.label}>Issuer name</Text>
-            <TextInput onChangeText={setMissingIssuer} placeholder="e.g. Acme Bank" value={missingIssuer} />
-            <Text style={styles.label}>Card name</Text>
-            <TextInput onChangeText={setMissingCard} placeholder="e.g. Travel Plus" value={missingCard} />
-            <Text style={styles.helper}>
-              We will create your card now and review the catalog request.
-            </Text>
-          </View>
-        )}
+        </View>
+      </Card>
 
-        <View style={styles.section}>
-          <Text style={styles.label}>Nickname (optional)</Text>
-          <TextInput maxLength={40} onChangeText={setNickname} placeholder="e.g. Travel card" value={nickname} />
-
-          <Text style={styles.label}>Last four (optional)</Text>
+      <Card>
+        <View style={styles.formStack}>
+          <TextInput label="Nickname (optional)" placeholder="Travel card" value={nickname} onChangeText={setNickname} maxLength={40} />
           <TextInput
-            keyboardType="number-pad"
-            maxLength={4}
-            onChangeText={setLastFour}
+            label="Last 4"
             placeholder="1234"
             value={lastFour}
+            onChangeText={setLastFour}
+            keyboardType="number-pad"
+            maxLength={4}
           />
-
           <View style={styles.switchRow}>
-            <Text style={styles.body}>Primary card</Text>
-            <Switch onValueChange={setIsPrimary} value={isPrimary} />
+            <Text style={styles.switchLabel}>Set as primary card</Text>
+            <Switch value={isPrimary} onChange={setIsPrimary} />
           </View>
         </View>
+      </Card>
 
-        {formError ? <Text style={styles.error}>{formError}</Text> : null}
-        {submitErr ? <Text style={styles.error}>{submitErr}</Text> : null}
+      {formError ? <Toast tone="warn" message={formError} /> : null}
+      {submitErr ? <Toast tone="error" message={submitErr} /> : null}
 
-        <Button
-          disabled={submitting}
-          label={mode === "catalog" ? "Add card" : "Request and add card"}
-          onPress={mode === "catalog" ? handleSaveCatalog : handleSaveMissing}
-        />
-      </ScrollView>
+      <Button
+        disabled={submitting}
+        loading={submitting}
+        label="Add card"
+        onPress={handleSave}
+      />
+      <Button
+        disabled={submitting}
+        label="Skip — add later"
+        onPress={() => router.back()}
+        variant="outline"
+      />
+      <Text style={styles.limitHint}>
+        {isUnlimited
+          ? "Pro: unlimited manual and linked cards."
+          : "Basic: up to 2 manual cards. Pro: unlimited."}
+      </Text>
     </Screen>
   );
 }
 
-function Tab({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  return (
-    <View style={[styles.tab, active && styles.tabActive]} onTouchEnd={onPress}>
-      <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  content: { gap: spacing.md, paddingBottom: spacing.xl },
-  title: { color: colors.text, fontSize: 24, fontWeight: "800" },
-  tabs: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: "row",
-    overflow: "hidden"
-  },
-  tab: { flex: 1, paddingVertical: spacing.sm, alignItems: "center" },
-  tabActive: { backgroundColor: colors.primary },
-  tabLabel: { color: colors.muted, fontSize: 14, fontWeight: "600" },
-  tabLabelActive: { color: colors.primaryText },
-  section: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: spacing.sm,
-    padding: spacing.md
-  },
-  label: { color: colors.muted, fontSize: 13, fontWeight: "600" },
-  body: { color: colors.text, fontSize: 14 },
-  helper: { color: colors.muted, fontSize: 12 },
-  switchRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
-  error: { color: colors.danger, fontSize: 13 }
+  title: { color: colors.text, fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(22), letterSpacing: -0.4 },
+  formStack: { gap: 14 },
+  fieldLabel: { fontFamily: fontFamily.semibold, fontSize: scaleFont(12), color: colors.mutedFg, fontWeight: "600", marginBottom: 6 },
+  switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  switchLabel: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: colors.text },
+  limitHint: {
+    color: colors.mutedFg,
+    fontFamily: fontFamily.regular,
+    fontSize: scaleFont(11),
+    textAlign: "center",
+    marginTop: 4
+  }
 });

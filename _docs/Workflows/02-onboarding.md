@@ -32,9 +32,9 @@ Phase 1 online onboarding for card connection, manual card entry, location permi
 | User can allow location access once | Done |  |
 | User can deny location access and still continue with limited features | Done |  |
 | User can recover from missing permissions | Done |  |
-| User can pick a Basic or Pro plan during onboarding | Done |  |
+| User can pick Free, Basic, or Pro during onboarding | Done | `PlanPickerStep` renders 3 cards; Free advances with no checkout via `useOnboardingFlow.continueWithFree` |
 | User can switch between monthly and annual billing during plan selection | Done |  |
-| User can start a 7-day trial from the selected plan via Stripe-hosted checkout | Done |  |
+| User can start a free trial from the selected paid plan via Stripe-hosted checkout (Basic 7-day, Pro 14-day) | Done | Trial length from `billing.plans.trial_days` |
 | User can pay with Apple Pay on iOS when Stripe-hosted checkout supports it | Done |  |
 | User can pay with Google Pay on Android when Stripe-hosted checkout supports it | Done |  |
 | User can understand when billing starts and that cancellation is available | Done |  |
@@ -84,9 +84,9 @@ Phase 1 online onboarding for card connection, manual card entry, location permi
 | Full | User can allow location access once | 2.4 | Report closest supported state |
 | Full | User can deny location access and still continue with limited features | 2.4 | Denied state report |
 | Full | User can recover from missing permissions | 2.4 | Permission state can be updated later |
-| Full | User can pick a Basic or Pro plan during onboarding | 2.5 | Plan/price APIs |
+| Full | User can pick Free, Basic, or Pro during onboarding | 2.5 | Plan/price APIs; Free skips checkout |
 | Full | User can switch between monthly and annual billing during plan selection | 2.5 | Price query by period |
-| Full | User can start a 7-day trial from the selected plan via Stripe-hosted checkout | 2.5, 8.3 | Checkout endpoint |
+| Full | User can start a free trial from the selected paid plan via Stripe-hosted checkout (Basic 7-day, Pro 14-day) | 2.5, 8.3 | Checkout endpoint |
 | Partial | User can pay with Apple Pay on iOS when Stripe-hosted checkout supports it | 2.5, 8.3 | Stripe hosted checkout owned |
 | Partial | User can pay with Google Pay on Android when Stripe-hosted checkout supports it | 2.5, 8.3 | Stripe hosted checkout owned |
 | Full | User can understand when billing starts and that cancellation is available | 2.5 | Plans/prices plus UX copy |

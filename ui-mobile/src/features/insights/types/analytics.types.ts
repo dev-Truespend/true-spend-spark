@@ -53,13 +53,3 @@ export type AIInsight = {
 export type AIInsightsResponse = {
   insights: AIInsight[];
 };
-
-export type AIInsightGenerationResponse = {
-  runId: number;
-  status: string;
-};
-
-export type InsightGenerationRun = {
-  runId: number;
-  statusCode: string;
-};

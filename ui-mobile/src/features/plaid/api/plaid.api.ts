@@ -6,6 +6,7 @@ import {
   PlaidLinkToken,
   PlaidTransactionSyncResponse,
   ReconnectConnectionInput,
+  ResyncQuotaResponse,
   SyncConnectionInput,
   SyncPlaidTransactionsInput
 } from "@/features/plaid/types/plaid.types";
@@ -20,5 +21,6 @@ export const plaidApi = {
   reconnectConnection: (body: ReconnectConnectionInput) => apiPost<PlaidLinkToken>("/api/v1/plaid/connections/reconnect", body),
   disconnectConnection: (body: DisconnectConnectionInput) => apiPost<PlaidConnectionResponse>("/api/v1/plaid/connections/disconnect", body),
   syncTransactions: (body: SyncPlaidTransactionsInput = {}) =>
-    apiPost<PlaidTransactionSyncResponse>("/api/v1/plaid/transactions/sync", body)
+    apiPost<PlaidTransactionSyncResponse>("/api/v1/plaid/transactions/sync", body),
+  getResyncQuota: () => apiGet<ResyncQuotaResponse>("/api/v1/plaid/resync-quota")
 };

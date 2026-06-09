@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TrueSpend.Domain.Business.Notifications;
+using TrueSpend.Domain.BusinessInterfaces.Notifications;
 using TrueSpend.Domain.Models.Notifications;
 using TrueSpend.Domain.ServiceInterfaces.Messaging;
 using TrueSpend.Domain.ServiceInterfaces.Notifications;
@@ -26,6 +27,8 @@ public sealed class AdminNotificationDispatchBusinessTests
             Mock.Of<INotificationGateService>(),
             Mock.Of<IMessagingInsertService>(),
             new FakeUnitOfWork(),
+            Mock.Of<INotificationsDispatchBusiness>(),
+            Mock.Of<INotificationInboxCacheInvalidatorBusiness>(),
             NullLogger<AdminNotificationDispatchBusiness>.Instance);
 
         var result = await business.DispatchDueCampaignsAsync(DateTimeOffset.UtcNow, CancellationToken.None);
@@ -46,14 +49,19 @@ public sealed class AdminNotificationDispatchBusinessTests
         campaignService.Setup(c => c.ResolveAudienceAsync(campaign.AudienceSelectorJson, null, It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { userId });
         var gateService = new Mock<INotificationGateService>();
-        gateService.Setup(g => g.GetGateAsync(userId, (short)5, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new NotificationGate(MasterEnabled: false, PushEnabled: false, TypeEnabled: false, InQuietHours: false, HonorsQuietHours: true));
+        gateService.Setup(g => g.GetGatesAsync(It.IsAny<IReadOnlyCollection<Guid>>(), (short)5, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<Guid, NotificationGate>
+            {
+                [userId] = new NotificationGate(MasterEnabled: false, PushEnabled: false, TypeEnabled: false, InQuietHours: false, HonorsQuietHours: true),
+            });
         var business = new AdminNotificationDispatchBusiness(
             campaignService.Object,
             Mock.Of<INotificationProductionService>(),
             gateService.Object,
             Mock.Of<IMessagingInsertService>(),
             new FakeUnitOfWork(),
+            Mock.Of<INotificationsDispatchBusiness>(),
+            Mock.Of<INotificationInboxCacheInvalidatorBusiness>(),
             NullLogger<AdminNotificationDispatchBusiness>.Instance);
 
         var result = await business.DispatchDueCampaignsAsync(DateTimeOffset.UtcNow, CancellationToken.None);

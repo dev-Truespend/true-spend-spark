@@ -1,5 +1,7 @@
 # 09. Billing And Entitlements
 
+> **MVP execution note** — The `truespend.eventconsumer` is not deployed in the MVP. `EntitlementCacheInvalidator` and `BillingPaymentMethodCacheInvalidator` run **inline post-commit** in the API process after the Stripe webhook commits, so they clear the API's own cache directly — the "separate in-process caches" caveat in the row below applied to the archived async-deployed consumer and does not apply in the MVP. See [api-design-patterns.md § Post-commit side-effects](../low-level-design/Service/api-design-patterns.md#post-commit-side-effects) and [_docs/Refactors/sync-execution-conversion.md](../Refactors/sync-execution-conversion.md).
+
 ## Progress
 
 | User story | Status | Notes |
@@ -74,7 +76,7 @@ User is authenticated and has a profile country or selected country for pricing.
 | Step | API | Contract | Execution | Events/Consumers | Tables | Cache |
 |---|---|---|---|---|---|---|
 | Load subscription | `GET /api/v1/billing/subscription` | `SubscriptionResponse`: `planCode`, `status`, `trialEnd`, `currentPeriodEnd`, `cancelAtPeriodEnd` | Sync API | None | Read `billing.subscriptions`, `billing.plans`, `lookup.subscription_statuses` | Short mobile cache; server cache by user |
-| Load entitlements | `GET /api/v1/entitlements` | `EntitlementsResponse`: `planCode`, `cardLinkLimit`, `aiInsightsEnabled`, `unlimitedCards` | Sync API | None | Read `billing.subscriptions`, `billing.plan_features`, `billing.features` | Server entitlement cache; short mobile cache |
+| Load entitlements | `GET /api/v1/entitlements` | `EntitlementsResponse`: `planCode`, `manualCardLimit`, `plaidCardLimit`, `geoRecommendationsPerDay`, `aiInsightsEnabled`, `unlimitedCards` | Sync API | None | Read `billing.subscriptions`, `billing.plan_features`, `billing.features` | Server entitlement cache; short mobile cache |
 | Load plan comparison | `GET /api/v1/billing/plans`, `GET /api/v1/billing/features` | `PlansResponse.plans` (`PlanVm[]`), `PlanFeaturesResponse.features` (`PlanFeatureVm[]` with embedded `valuesByPlan: PlanFeatureValueVm[]`) | Sync API | None | Read `billing.plans`, `billing.features`, `billing.plan_features` | Dropdown/reference cache by default |
 | Load pricing | `GET /api/v1/billing/prices?countryCode=&periodCode=` | `PlanPricesResponse.plans` (`PlanPriceVm[]`) | Sync API | None | Read `billing.plan_prices`, `billing.countries`, `lookup.periods` | Server/mobile reference cache; invalidate on price change |
 | Load payment methods | `GET /api/v1/billing/payment-methods` | `PaymentMethodsResponse`: `paymentMethods` | Sync API | None | Read `billing.payment_methods`, `lookup.payment_method_types` | Short mobile cache; Stripe is source through webhook/portal |
@@ -98,7 +100,7 @@ User is authenticated and has a profile country or selected country for pricing.
 | `PaymentMethodsResponse` | `paymentMethods` |
 | `CreateCheckoutSessionRequest` | `planCode`, `periodCode`, `returnContextCode` |
 | `HostedBillingResponse` | `url` |
-| `EntitlementsResponse` | `planCode`, `cardLinkLimit`, `aiInsightsEnabled`, `unlimitedCards` |
+| `EntitlementsResponse` | `planCode`, `manualCardLimit`, `plaidCardLimit`, `geoRecommendationsPerDay`, `aiInsightsEnabled`, `unlimitedCards` |
 
 ## Tables Involved
 

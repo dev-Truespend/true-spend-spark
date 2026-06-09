@@ -1,7 +1,19 @@
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { Button } from "@/shared/components/Button";
+import { CreditCard } from "@/shared/components/CreditCard";
+import { Card } from "@/shared/components/Card";
+import { ReasonCard } from "@/shared/components/ReasonCard";
+import { ListItem } from "@/shared/components/ListItem";
+import { RewardRow } from "@/shared/components/RewardRow";
 import { Screen } from "@/shared/components/Screen";
+import { SectionLabel } from "@/shared/components/SectionLabel";
+import { Badge } from "@/shared/components/Badge";
+import { colors, GradientName, TintName } from "@/shared/theme/colors";
+import { radii } from "@/shared/theme/spacing";
+import { fontFamily, scaleFont } from "@/shared/theme/typography";
+import { RewardOverrideEditor } from "@/features/cards/components/RewardOverrideEditor";
 import { useCardDetail } from "@/features/cards/hooks/useCardDetail";
 import { useDeleteCard } from "@/features/cards/hooks/useDeleteCard";
 import { useSetPrimary } from "@/features/cards/hooks/useSetPrimary";
@@ -10,19 +22,39 @@ import {
   useRewardOverrides,
   useUpsertRewardOverride
 } from "@/features/cards/hooks/useRewardOverrides";
-import { RewardOverrideEditor } from "@/features/cards/components/RewardOverrideEditor";
-import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
 
-// Server stores reward currency as a code on the user card. Cash-style codes
-// carry dollars in both `points` and `estimatedValue`; everything else (UR,
-// MR, etc.) carries point counts in `points` and a cash estimate separately.
 const CASH_REWARD_CURRENCY_CODES = new Set(["cash_back", "USD", "GBP", "EUR"]);
 const isCashRewardCurrency = (code: string) => CASH_REWARD_CURRENCY_CODES.has(code);
 
-type Props = {
-  cardId: number;
+type Props = { cardId: number };
+
+const CATEGORY_TONES: Record<string, { tone: TintName; multiplierTone: TintName; icon: string }> = {
+  dining:      { tone: "amber",  multiplierTone: "amber",  icon: "🍽️" },
+  groceries:   { tone: "purple", multiplierTone: "purple", icon: "🥦" },
+  travel:      { tone: "blue",   multiplierTone: "blue",   icon: "✈️" },
+  gas:         { tone: "red",    multiplierTone: "red",    icon: "⛽" },
+  streaming:   { tone: "purple", multiplierTone: "purple", icon: "🎬" },
+  online:      { tone: "blue",   multiplierTone: "blue",   icon: "🛒" },
+  default:     { tone: "muted",  multiplierTone: "blue",   icon: "💳" }
 };
+
+function toneFor(categoryCode: string) {
+  return CATEGORY_TONES[categoryCode] ?? CATEGORY_TONES.default!;
+}
+
+// Stable per-card variant so the detail view matches the gradient shown for
+// the same card in CardsScreen's peek stack (which also cycles through these).
+const CARD_VARIANTS: Array<Extract<GradientName, "brand" | "purple" | "cool" | "gold" | "dark">> = [
+  "brand",
+  "purple",
+  "cool",
+  "gold",
+  "dark"
+];
+
+function variantForCard(cardId: number) {
+  return CARD_VARIANTS[Math.abs(cardId) % CARD_VARIANTS.length]!;
+}
 
 export function CardDetailScreen({ cardId }: Props) {
   const router = useRouter();
@@ -32,6 +64,14 @@ export function CardDetailScreen({ cardId }: Props) {
   const { overrides, isLoading: overridesLoading, error: overridesError } = useRewardOverrides(cardId);
   const upsertOverride = useUpsertRewardOverride(cardId);
   const deleteOverride = useDeleteRewardOverride(cardId);
+
+  async function handleSaveOverride(input: { categoryCode: string; multiplier: number; notes?: string }) {
+    await upsertOverride.mutateAsync(input);
+  }
+
+  async function handleDeleteOverride(categoryCode: string) {
+    await deleteOverride.mutateAsync({ categoryCode });
+  }
 
   function handleDelete() {
     Alert.alert("Remove card", "Are you sure you want to remove this card?", [
@@ -54,7 +94,7 @@ export function CardDetailScreen({ cardId }: Props) {
   if (isLoading) {
     return (
       <Screen>
-        <ActivityIndicator color={colors.primary} style={styles.center} />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 32 }} />
       </Screen>
     );
   }
@@ -62,7 +102,7 @@ export function CardDetailScreen({ cardId }: Props) {
   if (error || !detail) {
     return (
       <Screen>
-        <Text style={styles.error}>{error ?? "Card not found."}</Text>
+        <Text style={styles.errorBlock}>{error ?? "Card not found."}</Text>
       </Screen>
     );
   }
@@ -70,184 +110,131 @@ export function CardDetailScreen({ cardId }: Props) {
   const { card, rewardRules, monthlyRewardContribution, terms } = detail;
 
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{card.displayName}</Text>
-          <Text style={styles.subtitle}>
-            {card.issuerName}
-            {card.lastFour ? ` • ${card.lastFour}` : ""}
-          </Text>
-          {card.isPrimary ? <Text style={styles.primaryBadge}>Primary card</Text> : null}
+    <Screen scroll>
+      <View style={styles.topBar}>
+        <Pressable onPress={() => router.back()} style={styles.iconBtn} accessibilityRole="button">
+          <Ionicons name="chevron-back" size={20} color={colors.text} />
+        </Pressable>
+        <Text style={styles.topTitle}>Card details</Text>
+        <View style={styles.iconBtn} />
+      </View>
+
+      <CreditCard
+        name={card.displayName}
+        last4={card.lastFour ?? "0000"}
+        issuer={card.issuerName}
+        network={card.source === "plaid" ? `${card.issuerName} · Plaid linked` : "Manual card"}
+        variant={variantForCard(card.id)}
+        size="lg"
+      />
+
+      {card.isPrimary ? (
+        <View style={{ alignSelf: "flex-start" }}>
+          <Badge tone="blue" label="Primary card" />
         </View>
+      ) : null}
 
-        {monthlyRewardContribution ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>This month</Text>
-            {isCashRewardCurrency(monthlyRewardContribution.currencyCode) ? (
-              <Text style={styles.rewardPoints}>
-                ${monthlyRewardContribution.estimatedValue.toFixed(2)}
-              </Text>
-            ) : (
-              <>
-                <Text style={styles.rewardPoints}>
-                  {monthlyRewardContribution.points.toLocaleString()} {monthlyRewardContribution.currencyCode}
-                </Text>
-                <Text style={styles.rewardValue}>
-                  ≈ ${monthlyRewardContribution.estimatedValue.toFixed(2)}
-                </Text>
-              </>
-            )}
-          </View>
-        ) : null}
-
-        {rewardRules.length > 0 ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Reward rates</Text>
-            {rewardRules.map((rule) => (
-              <View key={rule.categoryCode} style={styles.ruleRow}>
-                <Text style={styles.ruleCategory}>{rule.categoryName}</Text>
-                <Text style={styles.ruleMultiplier}>{rule.multiplier}x</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        <RewardOverrideEditor
-          overrides={overrides}
-          isLoading={overridesLoading}
-          error={overridesError}
-          isSaving={upsertOverride.isPending}
-          isDeleting={deleteOverride.isPending}
-          onSave={async (input) => {
-            await upsertOverride.mutateAsync(input);
-          }}
-          onDelete={async (categoryCode) => {
-            await deleteOverride.mutateAsync({ categoryCode });
-          }}
+      {monthlyRewardContribution ? (
+        <ReasonCard
+          icon="📊"
+          title="This month so far"
+          body={
+            isCashRewardCurrency(monthlyRewardContribution.currencyCode)
+              ? `You earned $${monthlyRewardContribution.estimatedValue.toFixed(2)} on this card.`
+              : `You earned ${monthlyRewardContribution.points.toLocaleString()} ${monthlyRewardContribution.currencyCode} (≈$${monthlyRewardContribution.estimatedValue.toFixed(2)}).`
+          }
         />
+      ) : null}
 
-        {terms ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Card terms</Text>
-            {terms.annualFee != null ? (
-              <Text style={styles.termRow}>Annual fee: ${terms.annualFee}</Text>
-            ) : null}
-            {terms.purchaseApr ? (
-              <Text style={styles.termRow}>Purchase APR: {terms.purchaseApr}</Text>
-            ) : null}
-            {terms.foreignTransactionFee ? (
-              <Text style={styles.termRow}>Foreign transaction: {terms.foreignTransactionFee}</Text>
-            ) : null}
-            {terms.termsSummary ? (
-              <Text style={[styles.termRow, styles.muted]}>{terms.termsSummary}</Text>
-            ) : null}
-          </View>
-        ) : null}
+      {rewardRules.length > 0 ? (
+        <>
+          <SectionLabel>Rewards categories</SectionLabel>
+          <Card>
+            {rewardRules.map((rule, i) => {
+              const t = toneFor(rule.categoryCode);
+              return (
+                <RewardRow
+                  key={rule.categoryCode}
+                  iconLabel={t.icon}
+                  iconTone={t.tone}
+                  multiplierTone={t.multiplierTone}
+                  label={rule.categoryName + (rule.capDisplay ? ` (${rule.capDisplay})` : "")}
+                  multiplier={`${rule.multiplier}×`}
+                  divider={i < rewardRules.length - 1}
+                />
+              );
+            })}
+          </Card>
+        </>
+      ) : null}
 
-        <View style={styles.actions}>
-          {!card.isPrimary ? (
-            <Button
-              label="Set as primary"
-              onPress={handleSetPrimary}
-              disabled={setPrimaryMutation.isPending}
-            />
-          ) : null}
+      <RewardOverrideEditor
+        overrides={overrides}
+        isLoading={overridesLoading}
+        error={overridesError}
+        onSave={handleSaveOverride}
+        onDelete={handleDeleteOverride}
+        isSaving={upsertOverride.isPending}
+        isDeleting={deleteOverride.isPending}
+      />
+
+      {terms ? (
+        <>
+          <SectionLabel>Card terms</SectionLabel>
+          <Card padded={false}>
+            <View style={styles.termsWrap}>
+              {terms.annualFee != null ? (
+                <ListItem title="Annual fee" amount={`$${terms.annualFee}`} iconLabel="$" iconTone="amber" />
+              ) : null}
+              {terms.purchaseApr ? (
+                <ListItem title="Purchase APR" amount={terms.purchaseApr} iconLabel="%" iconTone="blue" />
+              ) : null}
+              {terms.foreignTransactionFee ? (
+                <ListItem
+                  title="Foreign transaction fee"
+                  amount={terms.foreignTransactionFee}
+                  amountTone={terms.foreignTransactionFee.toLowerCase() === "none" ? "positive" : "default"}
+                  iconLabel="🌐"
+                  iconTone="teal"
+                />
+              ) : null}
+              {terms.termsSummary ? (
+                <View style={styles.summary}>
+                  <Text style={styles.summaryText}>{terms.termsSummary}</Text>
+                </View>
+              ) : null}
+            </View>
+          </Card>
+        </>
+      ) : null}
+
+      <View style={styles.actionGrid}>
+        {!card.isPrimary ? (
           <Button
-            label="Remove card"
-            onPress={handleDelete}
-            variant="danger"
-            disabled={deleteMutation.isPending}
+            label="Set as primary"
+            onPress={handleSetPrimary}
+            disabled={setPrimaryMutation.isPending}
+            variant="outline"
           />
-        </View>
-      </ScrollView>
+        ) : null}
+        <Button
+          label="Remove card"
+          onPress={handleDelete}
+          variant="danger"
+          disabled={deleteMutation.isPending}
+        />
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  center: {
-    marginTop: spacing.xl
-  },
-  content: {
-    gap: spacing.lg,
-    paddingBottom: spacing.xl
-  },
-  header: {
-    gap: spacing.xs
-  },
-  title: {
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: "800"
-  },
-  subtitle: {
-    color: colors.muted,
-    fontSize: 15
-  },
-  primaryBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: colors.primary,
-    borderRadius: 4,
-    color: colors.primaryText,
-    fontSize: 12,
-    fontWeight: "600",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2
-  },
-  section: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: spacing.xs,
-    padding: spacing.md
-  },
-  sectionTitle: {
-    color: colors.muted,
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-    marginBottom: spacing.xs,
-    textTransform: "uppercase"
-  },
-  rewardPoints: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: "800"
-  },
-  rewardValue: {
-    color: colors.muted,
-    fontSize: 14
-  },
-  ruleRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between"
-  },
-  ruleCategory: {
-    color: colors.text,
-    fontSize: 14
-  },
-  ruleMultiplier: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: "700"
-  },
-  termRow: {
-    color: colors.text,
-    fontSize: 14
-  },
-  muted: {
-    color: colors.muted
-  },
-  actions: {
-    gap: spacing.sm
-  },
-  error: {
-    color: colors.danger,
-    fontSize: 14,
-    marginTop: spacing.md,
-    textAlign: "center"
-  }
+  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
+  termsWrap: { paddingHorizontal: 14 },
+  summary: { paddingVertical: 10 },
+  summaryText: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: colors.mutedFg, lineHeight: 17 },
+  actionGrid: { gap: 8 },
+  errorBlock: { color: colors.destructive, fontFamily: fontFamily.medium, textAlign: "center", marginTop: 16 }
 });

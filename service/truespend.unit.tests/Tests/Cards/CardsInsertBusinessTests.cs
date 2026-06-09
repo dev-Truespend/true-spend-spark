@@ -4,11 +4,6 @@ using TrueSpend.Domain.BusinessInterfaces.Billing;
 using TrueSpend.Domain.Models.Onboarding;
 using TrueSpend.Domain.Models.Cards;
 using TrueSpend.Domain.Models.Catalog;
-using TrueSpend.Domain.Models.Billing;
-using TrueSpend.Domain.Models.Plaid;
-using TrueSpend.Domain.Models.Devices;
-using TrueSpend.Domain.Models.NotificationSettings;
-using TrueSpend.Domain.Models.Permissions;
 using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.ServiceInterfaces.Cards;
 using TrueSpend.Domain.ServiceInterfaces.Messaging;
@@ -33,24 +28,23 @@ public sealed class CardsInsertBusinessTests
         var onboardingUpdate = new Mock<IOnboardingUpdateService>();
         onboardingUpdate.Setup(u => u.SaveOnboardingAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<OnboardingResponse>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((OnboardingWorkflowUser _, OnboardingResponse value, CancellationToken _) => value);
-        var messaging = new Mock<IMessagingInsertService>();
+        var messaging = new Mock<IMessagingInsertService>(); // archived: kept for future async migration
         var business = new CardsInsertBusiness(cards.Object, NewCardsRead().Object, onboardingRead.Object, onboardingUpdate.Object, messaging.Object, new FakeUnitOfWork(), NewPassThroughGuard().Object, new CardsValidator());
 
         var response = await business.CreateManualCardAsync(TestUserFactory.AnyUser(), ValidRequest(), CancellationToken.None);
 
         Assert.True(response.Success);
         cards.Verify(c => c.InsertCardAsync(It.IsAny<OnboardingWorkflowUser>(), 1, It.IsAny<CardSummary>(), It.IsAny<CancellationToken>()), Times.Once);
-        messaging.Verify(m => m.EnqueueOutboxEventAsync(
-            "finance.user_card.created",
-            "finance.user_card",
-            It.IsAny<int?>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<CancellationToken>()), Times.Once);
         onboardingUpdate.Verify(u => u.SaveOnboardingAsync(
             It.IsAny<OnboardingWorkflowUser>(),
             It.Is<OnboardingResponse>(o => o.CurrentStepCode == "location_permission" && o.CardConnectionManual),
             It.IsAny<CancellationToken>()), Times.Once);
+
+        // Post-conversion: UserCardCreated handler was log-only, so no inline collaborator
+        // is expected to be invoked. The outbox enqueue must not happen either.
+        messaging.Verify(m => m.EnqueueOutboxEventAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(),
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -58,7 +52,7 @@ public sealed class CardsInsertBusinessTests
     {
         var cards = NewCardsInsert();
         var onboardingUpdate = new Mock<IOnboardingUpdateService>();
-        var messaging = new Mock<IMessagingInsertService>();
+        var messaging = new Mock<IMessagingInsertService>(); // archived: kept for future async migration
         var business = new CardsInsertBusiness(cards.Object, NewCardsRead().Object, new Mock<IOnboardingReadService>().Object, onboardingUpdate.Object, messaging.Object, new FakeUnitOfWork(), NewPassThroughGuard().Object, new CardsValidator());
 
         var response = await business.CreateManualCardAsync(TestUserFactory.AnyUser(), new CreateManualCardRequest(0, 0, null, null, false), CancellationToken.None);
@@ -75,7 +69,7 @@ public sealed class CardsInsertBusinessTests
         cards.Setup(c => c.FindProductAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((CardProduct?)null);
         cards.Setup(c => c.FindIssuerAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((Issuer?)null);
         var onboardingUpdate = new Mock<IOnboardingUpdateService>();
-        var messaging = new Mock<IMessagingInsertService>();
+        var messaging = new Mock<IMessagingInsertService>(); // archived: kept for future async migration
         var business = new CardsInsertBusiness(cards.Object, NewCardsRead().Object, new Mock<IOnboardingReadService>().Object, onboardingUpdate.Object, messaging.Object, new FakeUnitOfWork(), NewPassThroughGuard().Object, new CardsValidator());
 
         var response = await business.CreateManualCardAsync(TestUserFactory.AnyUser(), ValidRequest(), CancellationToken.None);
@@ -89,7 +83,7 @@ public sealed class CardsInsertBusinessTests
     private static Mock<ICardsReadService> NewCardsRead()
     {
         var cards = new Mock<ICardsReadService>();
-        cards.Setup(c => c.CountActiveUserCardsAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<CancellationToken>()))
+        cards.Setup(c => c.CountActiveUserCardsBySourceAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
         return cards;
     }
@@ -99,7 +93,7 @@ public sealed class CardsInsertBusinessTests
         var guard = new Mock<IEntitlementGuard>();
         guard.Setup(g => g.RequireFeatureAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        guard.Setup(g => g.RequireCardLinkCapacityAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        guard.Setup(g => g.RequireCardLinkCapacityAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         return guard;
     }
@@ -115,4 +109,18 @@ public sealed class CardsInsertBusinessTests
             .ReturnsAsync((OnboardingWorkflowUser _, int? _, CardSummary value, CancellationToken _) => value with { Id = 123 });
         return cards;
     }
+
+    #region archive — async event-publish (disabled in MVP)
+    // CreateManualCard_persists_card_and_advances_onboarding previously asserted that
+    // EnqueueOutboxEventAsync("finance.user_card.created", "finance.user_card", ...) fired once.
+    // The handler was log-only, so the live test now asserts the enqueue does NOT fire (Times.Never).
+    //
+    // messaging.Verify(m => m.EnqueueOutboxEventAsync(
+    //     "finance.user_card.created",
+    //     "finance.user_card",
+    //     It.IsAny<int?>(),
+    //     It.IsAny<string>(),
+    //     It.IsAny<string>(),
+    //     It.IsAny<CancellationToken>()), Times.Once);
+    #endregion
 }

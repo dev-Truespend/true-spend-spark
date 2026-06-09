@@ -61,7 +61,7 @@ public sealed class RewardRulesReadService(TrueSpendDbContext db) : IRewardRules
                                  && (rule.EndDate == null || rule.EndDate >= today)
                            join category in db.Categories.AsNoTracking() on rule.CategoryId equals category.Id into categoryJoin
                            from category in categoryJoin.DefaultIfEmpty()
-                           select new { rule.CardProductId, CategoryCode = category != null ? category.Code : null, rule.Multiplier })
+                           select new { rule.CardProductId, CategoryCode = category != null ? category.Code : null, rule.Multiplier, rule.IsMerchantLocked, rule.MerchantBrand })
                           .ToListAsync(cancellationToken);
 
         var overrides = await (from o in db.CardRewardOverrides.AsNoTracking()
@@ -71,13 +71,24 @@ public sealed class RewardRulesReadService(TrueSpendDbContext db) : IRewardRules
                                select new { o.UserCardId, CategoryCode = category != null ? category.Code : null, o.Multiplier })
                               .ToListAsync(cancellationToken);
 
+        // Generic rules feed RatesByCategory (max per category). Merchant-locked rules are kept
+        // separate so they only credit when the transaction's merchant matches the brand.
         var rulesByProduct = rules
-            .Where(r => r.CategoryCode != null)
+            .Where(r => r.CategoryCode != null && !r.IsMerchantLocked)
             .GroupBy(r => r.CardProductId)
             .ToDictionary(
                 g => g.Key,
                 g => g.GroupBy(x => x.CategoryCode!)
                       .ToDictionary(x => x.Key, x => x.Max(r => r.Multiplier)));
+
+        var lockedRulesByProduct = rules
+            .Where(r => r.CategoryCode != null && r.IsMerchantLocked)
+            .GroupBy(r => r.CardProductId)
+            .ToDictionary(
+                g => g.Key,
+                g => (IReadOnlyList<MerchantLockedRate>)g
+                    .Select(x => new MerchantLockedRate(x.CategoryCode!, x.Multiplier, x.MerchantBrand))
+                    .ToList());
 
         var overridesByCard = overrides
             .Where(o => o.CategoryCode != null)
@@ -99,6 +110,11 @@ public sealed class RewardRulesReadService(TrueSpendDbContext db) : IRewardRules
                 foreach (var pair in cardOverrides) rates[pair.Key] = pair.Value;
             }
 
+            var lockedRates = c.CardProductId is { } lockedProductId
+                              && lockedRulesByProduct.TryGetValue(lockedProductId, out var locked)
+                ? locked
+                : Array.Empty<MerchantLockedRate>();
+
             var summary = new CardSummary(
                 c.CardId,
                 c.Nickname ?? c.ProductDisplay ?? c.CustomCardName ?? "Card",
@@ -109,7 +125,7 @@ public sealed class RewardRulesReadService(TrueSpendDbContext db) : IRewardRules
                 c.SyncStatus,
                 c.CardArtUrl);
 
-            return new UserCardReward(summary, c.CardProductId, c.BaseRate, rates, c.RewardCurrencyCode ?? "cash_back");
+            return new UserCardReward(summary, c.CardProductId, c.BaseRate, rates, c.RewardCurrencyCode ?? "cash_back", lockedRates);
         }).ToList();
     }
 }

@@ -14,7 +14,7 @@ export function useCreateManualCard() {
         cardProductId: parsed.cardProductId,
         issuerId: parsed.issuerId,
         nickname: parsed.nickname,
-        lastFour: parsed.lastFour === "" ? undefined : parsed.lastFour,
+        lastFour: parsed.lastFour,
         isPrimary: parsed.isPrimary
       });
     },

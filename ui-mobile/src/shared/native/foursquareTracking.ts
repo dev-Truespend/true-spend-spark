@@ -1,5 +1,22 @@
 import { env } from "@/shared/config/env";
 
+// Foursquare Movement SDK integration point.
+//
+// The Movement (Pilgrim) SDK is a paid Foursquare product that requires:
+//   1. A Foursquare developer account with Movement SDK access enabled.
+//   2. Installing the SDK npm package (e.g. `@foursquare/movement-sdk-react-native`)
+//      plus the iOS Podfile + Android Gradle config — NOT Expo Go compatible,
+//      requires `npx expo prebuild` and an EAS dev client build.
+//   3. Setting EXPO_PUBLIC_FOURSQUARE_API_KEY (already wired through `env`).
+//   4. Granting background location permission (already requested in onboarding
+//      step 2.4 via LocationPermissionPrompt scope="background").
+//
+// Once the SDK is installed, register it ONCE during app bootstrap by calling
+// `registerFoursquareTrackingClient(...)` with an adapter that maps the SDK's
+// {setUserId, start, stop} surface to this interface. After registration,
+// `useFoursquareTracking` (which is already mounted in AppProviders) will gate
+// on `geofencing_enabled` entitlement and call start/stop appropriately.
+
 type TrackingState = {
   initializedFor: string | null;
 };

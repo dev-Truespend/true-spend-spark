@@ -10,6 +10,8 @@ public sealed class TransactionEntity
     public int UserCardId { get; set; }
     public int? MerchantId { get; set; }
     public short? CategoryId { get; set; }
+    public short? TransactionCategoryId { get; set; }
+    public string? PlaidConfidenceLevel { get; set; }
     public decimal Amount { get; set; }
     public DateOnly TransactionDate { get; set; }
     public TimeOnly? TransactionTime { get; set; }

@@ -33,7 +33,8 @@ public static class PlaidProviderExtensions
                 _ => Going.Plaid.Environment.Sandbox
             };
         });
-        services.AddHttpClient<PlaidClient>();
+        services.AddPlaidClient();
+        services.AddSingleton<PlaidClient>();
         services.AddScoped<IPlaidProvider, PlaidProvider>();
         services.AddHttpClient<IPlaidWebhookKeyProvider, PlaidWebhookKeyProvider>(client =>
         {

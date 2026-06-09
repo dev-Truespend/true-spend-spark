@@ -384,8 +384,8 @@ The following workflow docs should be created for Phase 1.
 |---|---|---|---|
 | `01-auth-session.md` | Auth And Session | 1.1, 1.2, 1.3 | Splash, passwordless sign-in, OAuth/OTP callbacks, session restore, expired auth recovery |
 | `02-onboarding.md` | Onboarding, Linking, Plan Selection | 2.1, 2.2, 2.3, 2.4, 2.5, 2.6 | Plaid linking, manual card entry, permissions, plan selection, Stripe checkout entry, notification opt-in |
-| `03-home-recommendations.md` | Home And In-Store Recommendations | 3.1, 3.2, 3.3, 3.4 | Home empty state, detected merchant, merchant/category resolution, recommendation, runner-up cards, coverage warnings |
-| `04-cards.md` | Cards And Plaid Connections | 5.1, 5.2, 5.3, 5.4 | Cards list, card detail, manual cards, reward overrides, card limits, Plaid connection health/reconnect/disconnect |
+| `03-recommendations.md` | Recommendations (renders inside Wallet tab) | 3.1, 3.2, 3.3, 3.4 | Empty state, detected merchant, merchant/category resolution, recommendation, runner-up cards, coverage warnings |
+| `04-cards.md` | Wallet (Cards) And Plaid Connections | 5.1, 5.2, 5.3, 5.4 | Default tab, greeting, cards list, card detail, manual cards, reward overrides, card limits, Plaid connection health/reconnect/disconnect |
 | `05-transactions.md` | Transactions | 6.1, 6.1b, 6.2 | Transaction list/search/filter, manual transaction creation, Plaid import, reward check, detail, edit, delete, missed reward event |
 | `06-insights-analytics.md` | Insights, Analytics, And AI Insights | 6.3 | Rewards summary, missed rewards summary, daily/category breakdowns, top missed rewards, Azure OpenAI insights |
 | `07-notifications.md` | Notifications And Notification Settings | 7.1, 7.2, 7.3 | Inbox, filters, detail, missed reward notification, reminders, read state, channel/type preferences, quiet hours, devices |
@@ -403,7 +403,7 @@ Create and review workflow docs in this order:
 1. `01-auth-session.md`
 2. `02-onboarding.md`
 3. `04-cards.md`
-4. `03-home-recommendations.md`
+4. `03-recommendations.md`
 5. `05-transactions.md`
 6. `06-insights-analytics.md`
 7. `07-notifications.md`

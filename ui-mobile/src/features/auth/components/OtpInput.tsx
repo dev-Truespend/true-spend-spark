@@ -1,7 +1,6 @@
 import { View, StyleSheet } from "react-native";
 import { Button } from "@/shared/components/Button";
-import { TextInput } from "@/shared/components/TextInput";
-import { spacing } from "@/shared/theme/spacing";
+import { OtpInput as OtpCells } from "@/shared/components/OtpInput";
 
 type Props = {
   disabled?: boolean;
@@ -13,14 +12,12 @@ type Props = {
 export function OtpInput({ disabled, token, onChange, onSubmit }: Props) {
   return (
     <View style={styles.stack}>
-      <TextInput keyboardType="number-pad" onChangeText={onChange} placeholder="One-time code" value={token} />
-      <Button disabled={disabled || token.length < 4} label="Verify" onPress={onSubmit} />
+      <OtpCells value={token} onChange={onChange} />
+      <Button disabled={disabled || token.length < 6} label="Verify" onPress={onSubmit} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  stack: {
-    gap: spacing.sm
-  }
+  stack: { gap: 12 }
 });

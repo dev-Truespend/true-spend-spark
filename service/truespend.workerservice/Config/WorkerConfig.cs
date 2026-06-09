@@ -8,6 +8,7 @@ public sealed class WorkerConfig
     public JobConfig AIInsightGeneration { get; init; } = new();
     public JobConfig PlaidTransactionSync { get; init; } = new();
     public JobConfig WeeklySummary { get; init; } = new();
+    public JobConfig SubscriptionExpiry { get; init; } = new();
     public JobConfig UnusualTransaction { get; init; } = new();
     public JobConfig InvalidDeviceTokenCleanup { get; init; } = new();
     public JobConfig PlaidInstitutionCatalog { get; init; } = new();
@@ -32,6 +33,7 @@ public sealed class JobConfig
     public int LookbackHours { get; init; } = 48;
     public int FireDay { get; init; } = 0;            // 0 = Sunday
     public int FireHour { get; init; } = 9;
+    public int WindowDays { get; init; } = 2;         // subscription-expiry reminder lookahead
     public decimal ThresholdAmount { get; init; } = 500m;
     public int PerItemTimeoutSeconds { get; init; } = 60;
     public int MaxConcurrency { get; init; } = 1;

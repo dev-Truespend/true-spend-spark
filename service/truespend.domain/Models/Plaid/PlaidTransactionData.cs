@@ -7,4 +7,7 @@ public sealed record PlaidTransactionData(
     decimal Amount,
     DateOnly Date,
     bool IsPending,
-    string? Description);
+    string? Description,
+    string? PlaidPrimaryCategory = null,
+    string? PlaidDetailedCategory = null,
+    string? PlaidConfidenceLevel = null);

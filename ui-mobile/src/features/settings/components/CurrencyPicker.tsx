@@ -1,3 +1,4 @@
+import { scaleFont } from "@/shared/theme/typography";
 import { useMemo, useState } from "react";
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "@/shared/theme/colors";
@@ -101,14 +102,14 @@ const styles = StyleSheet.create({
   fieldText: {
     color: colors.text,
     flex: 1,
-    fontSize: 16
+    fontSize: scaleFont(16)
   },
   placeholder: {
     color: colors.muted
   },
   chevron: {
     color: colors.muted,
-    fontSize: 18,
+    fontSize: scaleFont(18),
     marginLeft: spacing.sm
   },
   modal: {
@@ -125,12 +126,12 @@ const styles = StyleSheet.create({
   },
   headerText: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: scaleFont(18),
     fontWeight: "700"
   },
   cancel: {
     color: colors.primary,
-    fontSize: 16,
+    fontSize: scaleFont(16),
     fontWeight: "600"
   },
   muted: {
@@ -151,12 +152,12 @@ const styles = StyleSheet.create({
   },
   optionCode: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: scaleFont(16),
     fontWeight: "700"
   },
   optionName: {
     color: colors.muted,
     flex: 1,
-    fontSize: 14
+    fontSize: scaleFont(14)
   }
 });

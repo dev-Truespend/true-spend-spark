@@ -18,4 +18,10 @@ public interface INotificationProductionService
     Task<bool> HasExistingMissedRewardNotificationAsync(int missedRewardEventId, CancellationToken cancellationToken);
     Task<IReadOnlyList<EligibleSummaryUser>> GetActiveUsersWithTimezoneAsync(CancellationToken cancellationToken);
     Task<IReadOnlyList<UnusualTransactionCandidate>> GetUnusualTransactionCandidatesAsync(DateTimeOffset since, decimal thresholdAmount, CancellationToken cancellationToken);
+
+    // Trials ending (status trialing) or paid plans set to cancel at period end, expiring in (now, windowEnd].
+    Task<IReadOnlyList<ExpiringSubscription>> GetExpiringSubscriptionsAsync(DateTimeOffset now, DateTimeOffset windowEnd, CancellationToken cancellationToken);
+
+    // Dedup helper: has a notification of this type already been produced for the user at/after `since`?
+    Task<bool> HasNotificationOfTypeSinceAsync(Guid userId, short notificationTypeId, DateTimeOffset since, CancellationToken cancellationToken);
 }

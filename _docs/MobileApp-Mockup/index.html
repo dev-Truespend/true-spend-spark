@@ -20,7 +20,7 @@
     online from a URL, or in real life via location. Multi-category stores ask what you're buying, missed
     rewards are flagged, and Pro adds unlimited linking, receipts, geofences, budgets, and missed-savings insights.
   </p>
-  <span class="page-meta"><span class="dot"></span> 42 screens · Basic: 3 Plaid + 2 manual · Pro: unlimited · 7-day free trial</span>
+  <span class="page-meta"><span class="dot"></span> 42 screens · Free: 1 manual · Basic: 3 manual + 3 Plaid (7-day) · Pro: unlimited (14-day)</span>
 </header>
 
 <!-- ════════════════ SECTION 1: AUTH ════════════════ -->
@@ -135,7 +135,7 @@
   <div class="section-head">
     <span class="section-num">2</span>
     <h2>Onboarding <span class="badge badge-green" style="font-size: .58rem;">Phase 1</span></h2>
-    <p>Connect cards, grant permissions, pick a plan. Basic includes 3 Plaid + 2 manual; Pro is unlimited. Both start with a 7-day free trial.</p>
+    <p>Connect cards, grant permissions, pick a plan. Free includes 1 manual card and 1 geo tip/day; Basic adds 3 manual + 3 Plaid (7-day trial); Pro is unlimited (14-day trial).</p>
   </div>
 
   <div class="gallery">
@@ -253,7 +253,7 @@
             <div class="onboard-hero" style="padding: 14px 0 12px;">
               <div class="onboard-illust purple" style="width: 80px; height: 80px; font-size: 2.2rem; border-radius: 22px;">💳</div>
               <h2 class="onboard-title" style="font-size: 1.15rem;">Add card manually</h2>
-              <p class="onboard-text" style="font-size: .78rem;">We only need the issuer and product. <strong>No card number required.</strong></p>
+              <p class="onboard-text" style="font-size: .78rem;">Issuer, product, and the <strong>last 4 digits</strong> — never the full card number.</p>
             </div>
 
             <div class="stack-sm">
@@ -276,7 +276,7 @@
                 <input class="input" placeholder="Travel card" />
               </div>
               <div class="form-row">
-                <label>Last 4 (for display)</label>
+                <label>Last 4 (required)</label>
                 <input class="input" placeholder="•• 4821" maxlength="4" />
               </div>
               <div class="row" style="margin-top: 6px;">
@@ -343,12 +343,23 @@
 
             <div style="text-align: center; padding: 4px 0 10px;">
               <h2 class="phone-h1" style="font-size: 1.3rem;">Pick your plan</h2>
-              <p class="phone-muted" style="margin-top: 4px; font-size: .78rem;">Two paid plans — start either with a <strong>7-day free trial</strong>. Cancel anytime.</p>
+              <p class="phone-muted" style="margin-top: 4px; font-size: .78rem;">Start <strong>Free</strong>, or unlock more with Basic (<strong>7-day trial</strong>) or Pro (<strong>14-day trial</strong>). Cancel anytime.</p>
             </div>
 
             <div class="segmented" style="margin-bottom: 10px;">
               <div class="seg">Monthly</div>
               <div class="seg active">Annual · save 25%</div>
+            </div>
+
+            <div class="plan-card">
+              <div class="row between">
+                <div class="name">Free</div>
+                <span class="badge">$0</span>
+              </div>
+              <div class="price">$0 <small>/month</small></div>
+              <div class="feat"><span class="check">✓</span> 1 manual card</div>
+              <div class="feat"><span class="check">✓</span> 1 geo card tip per day</div>
+              <div class="feat"><span class="check">✓</span> Best-card recommendations</div>
             </div>
 
             <div class="plan-card" style="border-color: hsl(var(--primary) / .45); box-shadow: 0 0 0 1px hsl(var(--primary) / .25);">
@@ -357,9 +368,9 @@
                 <span class="badge badge-blue">Selected</span>
               </div>
               <div class="price">$2.99 <small>/month</small></div>
-              <div class="feat"><span class="check">✓</span> Up to 3 Plaid + 2 manual cards</div>
-              <div class="feat"><span class="check">✓</span> Best-card recommendations</div>
-              <div class="feat"><span class="check">✓</span> Manual transaction tracking</div>
+              <div class="feat"><span class="check">✓</span> 3 manual + 3 Plaid cards</div>
+              <div class="feat"><span class="check">✓</span> 3 geo card tips per day</div>
+              <div class="feat"><span class="check">✓</span> 7-day free trial</div>
             </div>
 
             <div class="plan-card featured">
@@ -368,24 +379,24 @@
                 <span class="badge badge-purple">Most popular</span>
               </div>
               <div class="price">$7.99 <small>/month</small></div>
-              <div class="feat"><span class="check">✓</span> Unlimited Plaid + manual linking</div>
-              <div class="feat"><span class="check">✓</span> Phase 2 geofences, receipts, budgets</div>
+              <div class="feat"><span class="check">✓</span> Unlimited cards + geo tips</div>
               <div class="feat"><span class="check">✓</span> Missed-rewards insights + AI nudges</div>
+              <div class="feat"><span class="check">✓</span> 14-day free trial</div>
             </div>
 
             <div class="reason-card" style="margin-top: 10px; background: hsl(var(--brand-teal) / .08); border-color: hsl(var(--brand-teal) / .3);">
-              <h4 style="color: hsl(var(--brand-teal));">🎁 7-day free trial</h4>
-              <p>Whichever plan you pick, the first 7 days are free. We'll remind you 2 days before billing starts.</p>
+              <h4 style="color: hsl(var(--brand-teal));">🎁 Free trial on paid plans</h4>
+              <p>Basic is free for 7 days, Pro for 14. We'll remind you 2 days and 1 day before billing starts.</p>
             </div>
 
             <button class="btn btn-primary" style="margin-top: 12px;">Continue to Stripe checkout</button>
-            <button class="btn btn-outline" style="margin-top: 8px;">Switch to Pro free trial</button>
-            <p class="phone-muted center" style="font-size: .66rem; margin-top: 8px;">No charge until day 8. Stripe shows Apple Pay on iOS and Google Pay on Android when available.</p>
+            <button class="btn btn-outline" style="margin-top: 8px;">Continue with Free</button>
+            <p class="phone-muted center" style="font-size: .66rem; margin-top: 8px;">No charge during your trial. Stripe shows Apple Pay on iOS and Google Pay on Android when available.</p>
           </div>
           <div class="home-indicator"></div>
         </div>
       </div>
-      <div class="phone-label"><span class="phone-label-num">2.5</span>Pick your plan<span class="phone-caption">Basic or Pro · 7-day free trial</span></div>
+      <div class="phone-label"><span class="phone-label-num">2.5</span>Pick your plan<span class="phone-caption">Free · Basic (7-day) · Pro (14-day)</span></div>
     </div>
 
     <!-- 2.6 Notifications + you're all set -->
@@ -1793,7 +1804,7 @@
             <div style="text-align: center; padding: 8px 0 14px;">
               <div style="display: inline-block; background: var(--gradient-brand); color: white; padding: 5px 12px; border-radius: 999px; font-size: .68rem; font-weight: 800; letter-spacing: .08em;">CURRENT: BASIC</div>
               <h2 class="phone-h1" style="margin-top: 12px; font-size: 1.4rem;">Choose your plan</h2>
-              <p class="phone-muted" style="margin-top: 4px;">Two paid plans — no free tier. Switch anytime.</p>
+              <p class="phone-muted" style="margin-top: 4px;">Start free, or unlock more with Basic or Pro. Switch anytime.</p>
             </div>
 
             <div class="segmented" style="margin-bottom: 10px;">
@@ -1843,7 +1854,7 @@
           <div class="home-indicator"></div>
         </div>
       </div>
-      <div class="phone-label"><span class="phone-label-num">8.3</span>Billing & Pro<span class="phone-caption">Basic or Pro — no free tier</span></div>
+      <div class="phone-label"><span class="phone-label-num">8.3</span>Billing & Pro<span class="phone-caption">Free · Basic · Pro</span></div>
     </div>
 
     <!-- 8.4 Privacy: export & delete -->

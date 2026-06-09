@@ -62,6 +62,19 @@ export type AuthBootstrapResponse = {
   entitlements: EntitlementsResponse;
   roles: string[];
   deviceId?: number | null;
+  // Present only when the user signed in with a deletion still scheduled (grace window).
+  accountDeletion?: AccountDeletionBootstrap | null;
 };
 
-export type AuthRoute = "/(auth)/login" | "/(app)/onboarding" | "/(app)/(tabs)" | "/(app)/(tabs)/profile";
+export type AccountDeletionBootstrap = {
+  status: string;
+  requestedAt?: string | null;
+  purgeAfter?: string | null;
+};
+
+export type AuthRoute =
+  | "/(auth)/login"
+  | "/(app)/onboarding"
+  | "/(app)/(tabs)"
+  | "/(app)/(tabs)/profile"
+  | "/(app)/account-reactivation";

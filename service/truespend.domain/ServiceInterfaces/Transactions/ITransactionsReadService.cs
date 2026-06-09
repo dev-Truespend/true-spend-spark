@@ -10,4 +10,5 @@ public interface ITransactionsReadService
     Task<TransactionRewardResult?> GetRewardResultAsync(int transactionId, CancellationToken cancellationToken);
     Task<MissedReward?> GetMissedRewardAsync(OnboardingWorkflowUser user, int transactionId, CancellationToken cancellationToken);
     Task<IReadOnlyList<MissedReward>> GetMissedRewardsAsync(OnboardingWorkflowUser user, CancellationToken cancellationToken);
+    Task<IReadOnlyList<TransactionCategory>> GetTransactionCategoriesAsync(CancellationToken cancellationToken);
 }

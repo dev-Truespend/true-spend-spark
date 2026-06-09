@@ -80,6 +80,22 @@ public sealed class UserPermissionEntityConfiguration : IEntityTypeConfiguration
     }
 }
 
+public sealed class UserDailyUsageEntityConfiguration : IEntityTypeConfiguration<UserDailyUsageEntity>
+{
+    public void Configure(EntityTypeBuilder<UserDailyUsageEntity> builder)
+    {
+        builder.ToTable("user_daily_usage", "app");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.UserId).HasColumnName("user_id");
+        builder.Property(x => x.UsageDate).HasColumnName("usage_date");
+        builder.Property(x => x.PlaidResyncCount).HasColumnName("plaid_resync_count");
+        builder.Property(x => x.CreatedAt).HasColumnName("created_at");
+        builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+        builder.HasIndex(x => new { x.UserId, x.UsageDate }).IsUnique();
+    }
+}
+
 public sealed class UserDevicePermissionEntityConfiguration : IEntityTypeConfiguration<UserDevicePermissionEntity>
 {
     public void Configure(EntityTypeBuilder<UserDevicePermissionEntity> builder)

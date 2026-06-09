@@ -3,6 +3,7 @@ using TrueSpend.Domain.BusinessInterfaces.Catalog;
 using TrueSpend.Domain.Exceptions;
 using TrueSpend.Domain.Models.Catalog;
 using TrueSpend.Domain.ServiceInterfaces.Catalog;
+using TrueSpend.Domain.Services.Catalog;
 
 namespace TrueSpend.Domain.Business.Catalog;
 
@@ -11,92 +12,173 @@ public sealed class RewardsCcCatalogSyncBusiness(
     ICatalogSyncService catalogService,
     ILogger<RewardsCcCatalogSyncBusiness> logger) : IRewardsCcCatalogSyncBusiness
 {
-    public async Task<CatalogSyncResult> SyncIssuersAsync(DateTimeOffset now, CancellationToken cancellationToken)
+    public async Task<CatalogSyncResult> SyncSeededCardsAsync(
+        IReadOnlyList<RewardsCcSeedEntry> seed,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
     {
-        IReadOnlyList<RewardsCcIssuerData> issuers;
+        // Seed configured -> seed mode (search each configured card by name).
+        // Seed empty       -> full mode (enumerate the entire provider catalog).
+        return seed.Count == 0
+            ? await SyncFullCatalogAsync(now, cancellationToken)
+            : await SyncSeededAsync(seed, now, cancellationToken);
+    }
+
+    private async Task<CatalogSyncResult> SyncSeededAsync(
+        IReadOnlyList<RewardsCcSeedEntry> seed,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var counters = new SyncCounters();
+
+        foreach (var entry in seed)
+        {
+            foreach (var cardName in entry.Cards)
+            {
+                if (cancellationToken.IsCancellationRequested) break;
+
+                var query = $"{entry.Issuer} {cardName}".Trim();
+                counters.Processed++;
+
+                RapidApiCardDetail? detail;
+                try
+                {
+                    var searchResults = await provider.SearchCardByNameAsync(query, cancellationToken);
+                    var match = PickBestMatch(searchResults, entry.Issuer, cardName);
+                    if (match is null)
+                    {
+                        logger.LogWarning("RewardsCC search returned no match for '{Query}'", query);
+                        counters.Failed++;
+                        continue;
+                    }
+                    detail = await provider.GetCardDetailAsync(match.CardKey, cancellationToken);
+                }
+                catch (ExternalProviderAppException ex)
+                {
+                    logger.LogWarning(ex, "RewardsCC fetch failed for '{Query}'", query);
+                    counters.Failed++;
+                    continue;
+                }
+
+                await ApplyDetailAsync(detail, now, counters, cancellationToken);
+            }
+        }
+
+        return counters.ToResult();
+    }
+
+    private async Task<CatalogSyncResult> SyncFullCatalogAsync(DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<RapidApiSearchResult> allCards;
         try
         {
-            issuers = await provider.GetIssuersAsync(cancellationToken);
+            allCards = await provider.ListAllCardsAsync(cancellationToken);
         }
         catch (ExternalProviderAppException ex)
         {
-            logger.LogError(ex, "RewardsCC issuer sync failed during provider call");
-            return CatalogSyncResult.Empty with { Failed = 1 };
+            logger.LogError(ex, "RewardsCC list-all-cards failed; aborting full catalog sync");
+            return CatalogSyncResult.Empty;
         }
 
-        if (issuers.Count == 0) return CatalogSyncResult.Empty;
+        var counters = new SyncCounters();
 
-        var upsert = await catalogService.UpsertIssuersAsync(issuers, now, cancellationToken);
-        var seen = issuers.Select(i => i.ProviderIssuerId).ToHashSet(StringComparer.Ordinal);
-        var deactivated = await catalogService.DeactivateMissingIssuersAsync(seen, now, cancellationToken);
-        return new CatalogSyncResult(issuers.Count, upsert.Created, upsert.Updated, deactivated, 0);
-    }
-
-    public async Task<CatalogSyncResult> SyncCardProductsAsync(DateTimeOffset now, CancellationToken cancellationToken)
-    {
-        IReadOnlyList<RewardsCcCardProductData> products;
-        try
-        {
-            products = await provider.GetCardProductsAsync(cancellationToken);
-        }
-        catch (ExternalProviderAppException ex)
-        {
-            logger.LogError(ex, "RewardsCC card-product sync failed during provider call");
-            return CatalogSyncResult.Empty with { Failed = 1 };
-        }
-
-        if (products.Count == 0) return CatalogSyncResult.Empty;
-
-        var upsert = await catalogService.UpsertCardProductsAsync(products, now, cancellationToken);
-        var seen = products.Select(p => p.ProviderCardId).ToHashSet(StringComparer.Ordinal);
-        var deactivated = await catalogService.DeactivateMissingCardProductsAsync(seen, now, cancellationToken);
-        var mappingReview = products.Count - (upsert.Created + upsert.Updated);
-        return new CatalogSyncResult(products.Count, upsert.Created, upsert.Updated, deactivated, 0, Math.Max(0, mappingReview));
-    }
-
-    public async Task<CatalogSyncResult> SyncRewardRulesAsync(DateTimeOffset now, CancellationToken cancellationToken)
-    {
-        var cardLookups = await catalogService.GetCardProductIdLookupsAsync(cancellationToken);
-        if (cardLookups.Count == 0) return CatalogSyncResult.Empty;
-
-        var totalProcessed = 0;
-        var totalCreated = 0;
-        var totalUpdated = 0;
-        var totalExpired = 0;
-        var totalFailed = 0;
-
-        foreach (var card in cardLookups)
+        foreach (var card in allCards)
         {
             if (cancellationToken.IsCancellationRequested) break;
+            counters.Processed++;
 
-            IReadOnlyList<RewardsCcRewardRuleData> rules;
+            RapidApiCardDetail? detail;
             try
             {
-                rules = await provider.GetRewardRulesAsync(card.RewardsCcId, cancellationToken);
+                detail = await provider.GetCardDetailAsync(card.CardKey, cancellationToken);
             }
             catch (ExternalProviderAppException ex)
             {
-                logger.LogWarning(ex, "RewardsCC reward-rule fetch failed for card {RewardsCcId}", card.RewardsCcId);
-                totalFailed++;
+                logger.LogWarning(ex, "RewardsCC detail fetch failed for '{CardKey}'", card.CardKey);
+                counters.Failed++;
                 continue;
             }
 
-            totalProcessed += rules.Count;
-            if (rules.Count == 0) continue;
-
-            var upsert = await catalogService.UpsertRewardRulesForCardAsync(card.CardProductId, rules, now, cancellationToken);
-            totalCreated += upsert.Created;
-            totalUpdated += upsert.Updated;
-
-            var seenKeys = new List<(short?, decimal)>();
-            foreach (var rule in rules)
-            {
-                var categoryId = await catalogService.GetCategoryIdByCodeAsync(rule.CategoryCode, cancellationToken);
-                seenKeys.Add((categoryId, rule.Multiplier));
-            }
-            totalExpired += await catalogService.ExpireMissingRewardRulesAsync(card.CardProductId, seenKeys, now, cancellationToken);
+            await ApplyDetailAsync(detail, now, counters, cancellationToken);
         }
 
-        return new CatalogSyncResult(totalProcessed, totalCreated, totalUpdated, totalExpired, totalFailed);
+        return counters.ToResult();
     }
+
+    private async Task ApplyDetailAsync(RapidApiCardDetail? detail, DateTimeOffset now, SyncCounters counters, CancellationToken cancellationToken)
+    {
+        if (detail is null)
+        {
+            counters.Failed++;
+            return;
+        }
+
+        try
+        {
+            var (cardCreated, cardUpdated) = await UpsertCardAsync(detail, now, cancellationToken);
+            if (cardCreated) counters.Created++; else if (cardUpdated) counters.Updated++;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "RewardsCC upsert failed for '{CardKey}'", detail.CardKey);
+            counters.Failed++;
+        }
+    }
+
+    private sealed class SyncCounters
+    {
+        public int Processed;
+        public int Created;
+        public int Updated;
+        public int Failed;
+
+        public CatalogSyncResult ToResult() => new(Processed, Created, Updated, 0, Failed);
+    }
+
+    private async Task<(bool Created, bool Updated)> UpsertCardAsync(
+        RapidApiCardDetail detail,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var mapped = RewardsCcMapper.Map(detail);
+
+        var issuerId = await catalogService.UpsertIssuerByNameAsync(mapped.Card.IssuerDisplayName, now, cancellationToken);
+
+        var categoryIdByProviderId = new Dictionary<string, short>(StringComparer.Ordinal);
+        var distinctCategories = mapped.Categories
+            .GroupBy(c => c.ProviderCategoryId)
+            .Select(g => g.First());
+        foreach (var category in distinctCategories)
+        {
+            if (cancellationToken.IsCancellationRequested) break;
+            var categoryId = await catalogService.UpsertCategoryAsync(category, now, cancellationToken);
+            categoryIdByProviderId[category.ProviderCategoryId] = categoryId;
+        }
+
+        var cardResult = await catalogService.UpsertCardProductAsync(mapped.Card, issuerId, now, cancellationToken);
+
+        await catalogService.ReplaceRewardRulesForCardAsync(
+            cardResult.CardProductId,
+            mapped.Rules,
+            categoryIdByProviderId,
+            now,
+            cancellationToken);
+
+        return (cardResult.Created, !cardResult.Created);
+    }
+
+    private static RapidApiSearchResult? PickBestMatch(IReadOnlyList<RapidApiSearchResult> results, string issuer, string cardName)
+    {
+        if (results.Count == 0) return null;
+        var normalizedIssuer = Normalize(issuer);
+        var normalizedCard = Normalize(cardName);
+
+        // Prefer same issuer + card name contains; fall back to issuer match; finally to first result.
+        var issuerMatches = results.Where(r => Normalize(r.CardIssuer).Contains(normalizedIssuer)).ToList();
+        var pool = issuerMatches.Count > 0 ? issuerMatches : results;
+        return pool.FirstOrDefault(r => Normalize(r.CardName).Contains(normalizedCard)) ?? pool[0];
+    }
+
+    private static string Normalize(string value) =>
+        new string((value ?? string.Empty).ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
 }

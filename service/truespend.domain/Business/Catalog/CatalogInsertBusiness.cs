@@ -1,5 +1,4 @@
 using TrueSpend.Domain.BusinessInterfaces.Catalog;
-using TrueSpend.Domain.Events.Catalog;
 using TrueSpend.Domain.Models.Catalog;
 using TrueSpend.Domain.ServiceInterfaces.Catalog;
 using TrueSpend.Domain.Models.Common;
@@ -9,9 +8,7 @@ using TrueSpend.Domain.ServiceInterfaces.Messaging;
 using TrueSpend.Domain.ServiceInterfaces.Onboarding;
 using TrueSpend.Domain.ServiceInterfaces.Persistence;
 using TrueSpend.Domain.Validators;
-using System.Text.Json;
 using TrueSpend.Domain.Constants;
-using TrueSpend.Domain.Events.Cards;
 using TrueSpend.Domain.Models.Cards;
 
 namespace TrueSpend.Domain.Business.Catalog;
@@ -21,7 +18,7 @@ public sealed class CatalogInsertBusiness(
     ICardsInsertService cardsInsertService,
     IOnboardingReadService onboardingReadService,
     IOnboardingUpdateService onboardingUpdateService,
-    IMessagingInsertService messagingInsertService,
+    IMessagingInsertService messagingInsertService, // archived: kept for future async migration
     IUnitOfWork unitOfWork,
     CatalogValidator validator) : ICatalogInsertBusiness
 {
@@ -30,6 +27,8 @@ public sealed class CatalogInsertBusiness(
         CreateCardProductRequest request,
         CancellationToken cancellationToken)
     {
+        _ = messagingInsertService;
+
         var errors = validator.ValidateCreateCardProductRequest(request);
         if (errors.Count > 0)
         {
@@ -41,19 +40,6 @@ public sealed class CatalogInsertBusiness(
         await using (var tx = await unitOfWork.BeginTransactionAsync(cancellationToken))
         {
             catalogRequest = await catalogInsertService.InsertProductRequestAsync(user, request.IssuerName, request.CardName, cancellationToken);
-            await messagingInsertService.EnqueueOutboxEventAsync(
-                EventTypes.CardProductRequestCreated,
-                "catalog.card_product_request",
-                catalogRequest.Id,
-                JsonSerializer.Serialize(new CardProductRequestEventContract(
-                    catalogRequest.Id,
-                    user.UserId,
-                    catalogRequest.IssuerName,
-                    catalogRequest.CardName,
-                    catalogRequest.Status,
-                    DateTimeOffset.UtcNow)),
-                $"card_product_request.created:{catalogRequest.Id}",
-                cancellationToken);
 
             if (request.CreateUserCard)
             {
@@ -68,21 +54,6 @@ public sealed class CatalogInsertBusiness(
                     null);
 
                 card = await cardsInsertService.InsertCardAsync(user, null, draft, cancellationToken);
-                await messagingInsertService.EnqueueOutboxEventAsync(
-                    EventTypes.UserCardCreated,
-                    "finance.user_card",
-                    card.Id,
-                    JsonSerializer.Serialize(new UserCardEventContract(
-                        card.Id,
-                        user.UserId,
-                        null,
-                        catalogRequest.Id,
-                        "manual",
-                        card.SyncStatus,
-                        card.IsPrimary,
-                        DateTimeOffset.UtcNow)),
-                    $"user_card.created:{card.Id}",
-                    cancellationToken);
 
                 var onboarding = await onboardingReadService.GetOnboardingAsync(user, cancellationToken);
                 await onboardingUpdateService.SaveOnboardingAsync(user, onboarding with
@@ -97,4 +68,36 @@ public sealed class CatalogInsertBusiness(
 
         return BusinessResponse<CardProductRequestResponse>.Ok(new CardProductRequestResponse(catalogRequest, card));
     }
+
+    #region archive — async event-publish (disabled in MVP)
+    // CreateCardProductRequestAsync previously published two events to the messaging outbox:
+    //   1. CardProductRequestCreated — handler was log-only; no inline replacement needed.
+    //   2. UserCardCreated (when request.CreateUserCard == true) — handler was log-only; no inline replacement needed.
+    //
+    // using System.Text.Json;
+    // using TrueSpend.Domain.Events.Catalog;
+    // using TrueSpend.Domain.Events.Cards;
+    //
+    // // After InsertProductRequestAsync, inside the same tx:
+    // await messagingInsertService.EnqueueOutboxEventAsync(
+    //     EventTypes.CardProductRequestCreated,
+    //     "catalog.card_product_request",
+    //     catalogRequest.Id,
+    //     JsonSerializer.Serialize(new CardProductRequestEventContract(
+    //         catalogRequest.Id, user.UserId, catalogRequest.IssuerName, catalogRequest.CardName,
+    //         catalogRequest.Status, DateTimeOffset.UtcNow)),
+    //     $"card_product_request.created:{catalogRequest.Id}",
+    //     cancellationToken);
+    //
+    // // When request.CreateUserCard == true, after InsertCardAsync:
+    // await messagingInsertService.EnqueueOutboxEventAsync(
+    //     EventTypes.UserCardCreated,
+    //     "finance.user_card",
+    //     card.Id,
+    //     JsonSerializer.Serialize(new UserCardEventContract(
+    //         card.Id, user.UserId, null, catalogRequest.Id, "manual",
+    //         card.SyncStatus, card.IsPrimary, DateTimeOffset.UtcNow)),
+    //     $"user_card.created:{card.Id}",
+    //     cancellationToken);
+    #endregion
 }

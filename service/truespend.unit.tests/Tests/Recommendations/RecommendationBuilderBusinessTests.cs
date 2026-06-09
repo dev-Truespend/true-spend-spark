@@ -29,12 +29,14 @@ public sealed class RecommendationBuilderBusinessTests
                 new CardSummary(1, "American Express Gold Card", "American Express", "1111", "manual", true, "active", null),
                 10, 1.0m,
                 new Dictionary<string, decimal> { ["groceries"] = 4.0m, ["dining"] = 4.0m },
-                "points"),
+                "points",
+                Array.Empty<MerchantLockedRate>()),
             new UserCardReward(
                 new CardSummary(2, "Chase Sapphire Preferred", "Chase", "2222", "manual", false, "active", null),
                 11, 1.0m,
                 new Dictionary<string, decimal> { ["dining"] = 3.0m, ["travel"] = 2.0m },
-                "points")
+                "points",
+                Array.Empty<MerchantLockedRate>())
         };
         var (read, insert) = BuildMocks(profile);
         var builder = new RecommendationBuilderBusiness(read.Object, insert.Object);
@@ -57,7 +59,8 @@ public sealed class RecommendationBuilderBusinessTests
                 new CardSummary(1, "Chase Freedom Flex", "Chase", "4242", "plaid", true, "active", null),
                 12, 1.5m,
                 new Dictionary<string, decimal> { ["electronics"] = 2.0m },
-                "cash_back")
+                "cash_back",
+                Array.Empty<MerchantLockedRate>())
         };
         var (read, insert) = BuildMocks(profile);
         var merchant = SampleMerchant() with { IsMultiCategory = true };

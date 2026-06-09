@@ -1,10 +1,14 @@
+using Microsoft.EntityFrameworkCore;
 using TrueSpend.Domain.BusinessInterfaces.Auth;
 using TrueSpend.Domain.Constants;
 using TrueSpend.Domain.Models.Auth;
 using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.Models.Onboarding;
+using TrueSpend.Domain.Models.Privacy;
 using TrueSpend.Domain.ServiceInterfaces.Auth;
 using TrueSpend.Domain.ServiceInterfaces.Billing;
+using TrueSpend.Domain.ServiceInterfaces.Privacy;
+using TrueSpend.Domain.Services.Persistence;
 using TrueSpend.Domain.Validators;
 
 namespace TrueSpend.Domain.Business.Auth;
@@ -12,6 +16,7 @@ namespace TrueSpend.Domain.Business.Auth;
 public sealed class AuthBootstrapBusiness(
     IAuthBootstrapService authBootstrapService,
     IBillingReadService billingReadService,
+    IAccountDeletionService accountDeletionService,
     AuthBootstrapValidator validator) : IAuthBootstrapBusiness
 {
     public async Task<BusinessResponse<AuthBootstrapResult>> BootstrapAsync(
@@ -24,6 +29,21 @@ public sealed class AuthBootstrapBusiness(
             return BusinessResponse<AuthBootstrapResult>.Fail(errors, 400);
         }
 
+        try
+        {
+            return await BootstrapCoreAsync(input, cancellationToken);
+        }
+        catch (DbUpdateException ex) when (PostgresErrors.IsForeignKeyViolation(ex))
+        {
+            // user_id FK violation — auth user was deleted; tell the client to re-authenticate
+            return BusinessResponse<AuthBootstrapResult>.Fail(["User account not found. Please sign in again."], 401);
+        }
+    }
+
+    private async Task<BusinessResponse<AuthBootstrapResult>> BootstrapCoreAsync(
+        AuthBootstrapInput input,
+        CancellationToken cancellationToken)
+    {
         var profile = await EnsureProfileAsync(input, cancellationToken);
         var preferences = await EnsurePreferencesAsync(input, cancellationToken);
         var permissions = await EnsurePermissionsAsync(input.UserId, cancellationToken);
@@ -40,6 +60,12 @@ public sealed class AuthBootstrapBusiness(
         var workflowUser = new OnboardingWorkflowUser(input.UserId, input.Email);
         var entitlements = await billingReadService.GetEntitlementsAsync(workflowUser, cancellationToken);
 
+        // Login during the deletion grace window: signal the client to show the reactivate/cancel screen.
+        var pendingDeletionRequest = await accountDeletionService.GetActiveRequestAsync(input.UserId, cancellationToken);
+        var pendingDeletion = pendingDeletionRequest is null
+            ? null
+            : new AccountDeletionStatus(AccountDeletionStatus.StatePending, pendingDeletionRequest.RequestedAt, pendingDeletionRequest.PurgeAfter);
+
         var result = new AuthBootstrapResult(
             profile with { CountryCode = input.CountryCode, CurrentPlanCode = entitlements.PlanCode },
             preferences,
@@ -49,7 +75,8 @@ public sealed class AuthBootstrapBusiness(
                 entitlements.PlanCode,
                 entitlements.Features.ToDictionary(kv => kv.Key, kv => (object)kv.Value)),
             roles,
-            deviceId);
+            deviceId,
+            pendingDeletion);
 
         return BusinessResponse<AuthBootstrapResult>.Ok(result);
     }

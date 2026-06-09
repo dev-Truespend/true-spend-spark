@@ -1,3 +1,4 @@
+import { scaleFont } from "@/shared/theme/typography";
 import { StyleSheet, Text, View } from "react-native";
 import { colors } from "@/shared/theme/colors";
 import { spacing } from "@/shared/theme/spacing";
@@ -61,11 +62,11 @@ const styles = StyleSheet.create({
     padding: spacing.md
   },
   left: { flex: 1, gap: 2 },
-  brand: { color: colors.text, fontSize: 14, fontWeight: "700" },
-  last: { color: colors.text, fontSize: 13 },
-  muted: { color: colors.muted, fontSize: 12 },
+  brand: { color: colors.text, fontSize: scaleFont(14), fontWeight: "700" },
+  last: { color: colors.text, fontSize: scaleFont(13) },
+  muted: { color: colors.muted, fontSize: scaleFont(12) },
   defaultBadge: { backgroundColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing.sm, paddingVertical: 2 },
-  defaultText: { color: colors.surface, fontSize: 12, fontWeight: "700" },
+  defaultText: { color: colors.surface, fontSize: scaleFont(12), fontWeight: "700" },
   empty: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
@@ -73,5 +74,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: spacing.md
   },
-  emptyText: { color: colors.muted, fontSize: 13 }
+  emptyText: { color: colors.muted, fontSize: scaleFont(13) }
 });

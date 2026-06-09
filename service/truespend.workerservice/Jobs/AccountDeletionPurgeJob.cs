@@ -14,3 +14,4 @@ public sealed class AccountDeletionPurgeJob(
         return business.PurgeDueAccountsAsync(DateTimeOffset.UtcNow, cfg.BatchSize, cancellationToken);
     }
 }
+ 

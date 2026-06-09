@@ -19,6 +19,8 @@ builder.Services.AddNotificationsWorkflow(builder.Configuration);
 builder.Services.AddGeoWorkflow();
 builder.Services.AddPlaidWebhook();
 builder.Services.AddProfileWorkflow(builder.Configuration);
+builder.Services.AddPrivacyWorkflow(builder.Configuration);
+builder.Services.Configure<TrueSpend.Domain.Models.Billing.ManualResyncOptions>(builder.Configuration.GetSection("ManualResync"));
 
 var app = builder.Build();
 

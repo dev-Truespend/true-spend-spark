@@ -2,6 +2,20 @@
 
 Simple structure for the .NET service projects in this repo.
 
+## Post-commit side-effects
+
+| Topic | MVP behaviour |
+|---|---|
+| When | Producer business classes call the handler-target collaborator **after** `unitOfWork.CommitAsync(ct)` succeeds; never inside the transaction. |
+| Failure policy | Wrap each call in `try { await collaborator.X(...); } catch (Exception ex) { logger.LogWarning(ex, "..."); }`. Never re-throw to the API caller. |
+| Collaborators | Examples: `IAnalyticsComputeBusiness.RecomputeSnapshotsAsync`, `INotificationsDispatchBusiness.DispatchPushAsync`, `INotificationInboxCacheInvalidatorBusiness.InvalidateAsync`, `IEntitlementCacheInvalidatorBusiness.InvalidateAsync`, `IBillingPaymentMethodCacheInvalidatorBusiness.InvalidateAsync`, `IAIInsightsCacheInvalidatorBusiness.InvalidateForUserAsync`, `IPlaidReauthNotificationBusiness.ProduceForStatusChangeAsync`, `IPlaidNewAccountsNotificationBusiness.ProduceForNewAccountsAsync`, `ICardsCacheInvalidatorBusiness.InvalidateAsync`, `IMissedRewardNotificationBusiness.ProduceForMissedRewardEventAsync`. |
+| Per-user dedupe | When a producer writes N rows for the same user in one operation (e.g. Plaid transaction sync), call `RecomputeSnapshotsAsync(userId)` **once per user** at the end of the batch — not per row. The handler is full-snapshot. |
+| Two-subscriber events | Producers of `NotificationCreated` call both `INotificationsDispatchBusiness.DispatchPushAsync(notificationId)` and `INotificationInboxCacheInvalidatorBusiness.InvalidateAsync(userId)` inline, one `try/catch` per call. `INotificationsDispatchBusiness.DispatchPushAsync` handles both push and email in one call. |
+| `IMessagingInsertService` ctor param | Keep as a constructor parameter on producer business classes with the inline comment `// archived: kept for future async migration`. Do not touch DI registrations. The outbox enqueue itself is moved into a `#region archive — async event-publish (disabled in MVP)` block at the end of the class. |
+| Re-enable | See [_docs/Refactors/sync-execution-conversion.md § Re-enable async path later](../../Refactors/sync-execution-conversion.md#re-enable-async-path-later). |
+
+The async event-publish path (outbox + polling consumer + handlers) is preserved in the codebase but disabled in the MVP. See the archived "Events Pattern", "`truespend.eventconsumer`", and "Event Fan-Out" sections at the end of this file for the target shape.
+
 ## Folder Structure
 
 ```text
@@ -292,7 +306,7 @@ Business responsibilities:
 - Apply business decisions and rules.
 - Coordinate database transactions when one operation has multiple writes using `IUnitOfWork` / `IUnitOfWorkTransaction`.
 - Commit or roll back transactions explicitly; never leave them open.
-- Insert outbox/event rows inside the same transaction using `IMessagingInsertService`.
+- **MVP**: run handler-target side-effects inline post-commit (see § Post-commit side-effects). The outbox enqueue via `IMessagingInsertService` is archived; the constructor parameter is preserved with `// archived: kept for future async migration`.
 - Handle concurrency, conflicts, idempotency, and retries.
 - Call `Services/` to write database changes.
 - Write audit records when needed.
@@ -346,6 +360,8 @@ BusinessResponse<T>
 ```
 
 ### Events Pattern
+
+> **Archived in MVP** — Side-effects run inline post-commit (see § Post-commit side-effects). The event contracts below describe the target shape and remain in the codebase for the future async-migration re-enable.
 
 Events should be separated by feature and action.
 
@@ -554,6 +570,8 @@ truespend.unit.tests/
 - Database/service behavior should be covered by integration tests later.
 
 ## `truespend.eventconsumer`
+
+> **Archived in MVP** — The `OutboxPollingConsumer` hosted-service registration is archived in [EventConsumerExtensions.cs](../../../service/truespend.eventconsumer/Extensions/EventConsumerExtensions.cs); the consumer is built into the solution but not deployed. Side-effects run inline post-commit instead (see § Post-commit side-effects). The structure below describes the target shape and remains in the codebase for the future async-migration re-enable.
 
 Event consumer project structure:
 
@@ -802,6 +820,8 @@ Scheduler triggers job
 ```
 
 ## Event Fan-Out
+
+> **Archived in MVP** — In the MVP, producers call each handler-target inline post-commit; there is no fan-out via Service Bus. The mapping below describes the target shape and remains in the codebase for the future async-migration re-enable.
 
 Each outbox `event_type` maps to one Azure Service Bus topic.
 

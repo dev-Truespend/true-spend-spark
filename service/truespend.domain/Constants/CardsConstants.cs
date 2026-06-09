@@ -2,7 +2,6 @@ namespace TrueSpend.Domain.Constants;
 
 public static class CardsConstants
 {
-    public const int BasicPlanCardLimit = 3;
     public const string DefaultSyncStatus = "active";
     public const string DisconnectedSyncStatus = "disconnected";
 

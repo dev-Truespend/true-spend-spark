@@ -1,32 +1,40 @@
-import { ScrollView, StyleSheet } from "react-native";
-import { Button } from "@/shared/components/Button";
-import { spacing } from "@/shared/theme/spacing";
-import { CardProduct } from "@/features/catalog/types/catalog.types";
+import { useMemo } from "react";
+import { Dropdown } from "@/shared/components/Dropdown";
+import { CardProduct, Issuer } from "@/features/catalog/types/catalog.types";
 
 type Props = {
   products: CardProduct[];
   selectedId: number | null;
   onSelect: (id: number) => void;
+  // When provided, the product list is filtered to those belonging to this issuer
+  // (matched by issuer.displayName === product.issuerName, since CardProduct only
+  // carries issuerName, not issuerId).
+  issuer?: Issuer | null;
 };
 
-export function CardProductPicker({ products, selectedId, onSelect }: Props) {
+export function CardProductPicker({ products, selectedId, onSelect, issuer }: Props) {
+  const filtered = useMemo(() => {
+    if (!issuer) return products;
+    return products.filter((p) => p.issuerName === issuer.displayName);
+  }, [products, issuer]);
+
+  const placeholder = issuer ? `Select a ${issuer.displayName} card` : "Select a card";
+
   return (
-    <ScrollView horizontal contentContainerStyle={styles.row} showsHorizontalScrollIndicator={false}>
-      {products.map((product) => (
-        <Button
-          key={product.id}
-          label={product.displayName}
-          onPress={() => onSelect(product.id)}
-          variant={selectedId === product.id ? "primary" : "secondary"}
-        />
-      ))}
-    </ScrollView>
+    <Dropdown<number>
+      placeholder={placeholder}
+      value={selectedId}
+      options={filtered.map((p) => ({ label: p.displayName, value: p.id }))}
+      onChange={onSelect}
+      sheetTitle="Choose card"
+      searchable
+      searchPlaceholder="Search cards…"
+      disabled={!issuer}
+      emptyLabel={
+        issuer
+          ? `No ${issuer.displayName} cards in the catalog yet`
+          : "Select an issuer first"
+      }
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    gap: spacing.sm
-  }
-});

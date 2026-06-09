@@ -1,5 +1,7 @@
 # Insights And Analytics Workflow
 
+> **MVP execution note** — Any step below that mentions an outbox event runs **inline post-commit** in the MVP. Analytics recompute is triggered by `IAnalyticsComputeBusiness.RecomputeSnapshotsAsync(userId)` invoked inline from transaction/reward producers. See [api-design-patterns.md § Post-commit side-effects](../low-level-design/Service/api-design-patterns.md#post-commit-side-effects) and [_docs/Refactors/sync-execution-conversion.md](../Refactors/sync-execution-conversion.md).
+
 ## Scope
 
 Phase 1 online workflow for the Insights sub-tab: rewards summary, missed-rewards summary, daily/category breakdowns, top missed rewards, AI-generated reward optimization insights, and AI insight dismissal.
@@ -26,7 +28,7 @@ Phase 1 online workflow for the Insights sub-tab: rewards summary, missed-reward
 | Full | User can see top missed-reward events | 6.3 | `topMissedRewards` |
 | Full | User can open a top missed-reward event from analytics | 6.3, 6.2 | Uses transaction detail |
 | Full | User can see AI-generated reward optimization insights powered by Azure OpenAI | 6.3 | Async generation |
-| Partial | User can opt out of personalized AI insights via the Privacy toggle | 8.4, 6.3 | Privacy workflow owns setting update |
+| Full | User can opt out of personalized AI insights via the Privacy toggle | 8.4, 6.3 | Toggle implemented in `PrivacyDataScreen` (privacy workflow owns the setting write); generation respects `privacy.settings.personalized_ai_insights_enabled` |
 
 ## Preconditions
 
@@ -38,9 +40,8 @@ Phase 1 online workflow for the Insights sub-tab: rewards summary, missed-reward
 
 1. Load period summary: `GET /api/v1/analytics/rewards-summary?periodCode=month`.
 2. Load missed summary when needed: `GET /api/v1/analytics/missed-rewards-summary?periodCode=month`.
-3. Load AI insights: `GET /api/v1/ai-insights`.
-4. Trigger generation if needed: `POST /api/v1/ai-insights/generate`, then poll `GET /api/v1/ai-insights/generation/{runId}`.
-5. Open top missed item: `GET /api/v1/transactions/{transactionId}`.
+3. Load AI insights: `GET /api/v1/ai-insights`. Generation is **worker-only** (nightly `AIInsightGenerationJob`); there is no client-triggered generation in the MVP.
+4. Open top missed item: `GET /api/v1/transactions/{transactionId}`.
 
 ## Step Matrix
 
@@ -50,8 +51,8 @@ Phase 1 online workflow for the Insights sub-tab: rewards summary, missed-reward
 | Load missed-rewards summary | `GET /api/v1/analytics/missed-rewards-summary?periodCode=` | `MissedRewardsSummaryResponse`: `missed`, `missedDelta`, `topMissedRewards` (`MissedRewardVm[]`) | Precomputed Read Model | None on read | Read: `insights.analytics_snapshots`, `finance.missed_reward_events` | Same as rewards summary |
 | Change period | Same analytics APIs | Query `periodCode` from `lookup.analytics_periods` | Sync API / Precomputed Read Model | None | Read: `lookup.analytics_periods`, `insights.analytics_snapshots` | `analytics_periods` cached by default; summary cached by period |
 | Load AI insights | `GET /api/v1/ai-insights` | `AIInsightsResponse`: `insights` | Sync API | None | Read: `insights.ai_insights`, `insights.insight_generation_runs`, `lookup.ai_insight_types`, `lookup.priority_levels`, `privacy.settings` | Mobile memory/persistent latest insight cards; server short TTL per user |
-| Generate AI insights | `POST /api/v1/ai-insights/generate` | `AIInsightGenerationResponse`: `runId`, `status` | Async Job | Enqueues `AIInsightGenerationJob` ([job-architecture.md](../low-level-design/Service/job-architecture.md#aiinsightgenerationjob)) | Write: `insights.insight_generation_runs`; Read: `privacy.settings`, `billing.plan_features` for entitlement gate | Do not cache job start; invalidate AI insights when run completes |
-| Poll generation | `GET /api/v1/ai-insights/generation/{runId}` | `AIInsightGenerationResponse` | Sync API | `AIInsightGenerationJob` updates status | Read: `insights.insight_generation_runs` | Short mobile memory cache while polling |
+| Generate AI insights (worker-only) | Nightly `AIInsightGenerationJob` → `GenerateForAllEligibleUsersAsync` | n/a (no client endpoint in MVP) | Async Job | Worker creates + processes runs in one pass ([job-architecture.md](../low-level-design/Service/job-architecture.md#aiinsightgenerationjob)) | Write: `insights.insight_generation_runs`, `insights.ai_insights`; Read: `privacy.settings`, entitlements gate | Invalidate AI insights cache for user on completion |
+| Read generation run | `GET /api/v1/ai-insights/generation/{runId}` | `AIInsightGenerationResponse` | Sync API | None | Read: `insights.insight_generation_runs` | Retained read-only status endpoint; no client-side polling loop in MVP |
 | Complete AI generation | `AIInsightGenerationJob` (worker) | Writes `insights.ai_insights` rows + publishes `insights.ai_generation.completed` | Async Job | Worker -> `AIInsightsCacheInvalidator` consumes `insights.ai_generation.completed` | Write: `insights.ai_insights`, `messaging.event_outbox`; update `insights.insight_generation_runs`; Read: `privacy.settings`, `insights.analytics_snapshots`, transaction/reward tables, lookups | Invalidate AI insights cache for user |
 | Dismiss insight | `POST /api/v1/ai-insights/{insightId}/dismiss` | Empty -> `AIInsightsResponse` | Sync API + Event | Optional `insights.ai_insight.dismissed` audit/product analytics | Update: `insights.ai_insights` | Replace cached insights list |
 | Open top missed event | `GET /api/v1/transactions/{transactionId}` | `TransactionDetailResponse` | Sync API | None | Read transaction/reward/missed tables | Uses transaction detail cache rules |
@@ -119,7 +120,7 @@ Phase 1 online workflow for the Insights sub-tab: rewards summary, missed-reward
 | User can see category contribution breakdowns | Done | `CategoryBreakdownList` component |
 | User can see top missed-reward events | Done | `MissedRewardCard` list in Analytics sub-tab |
 | User can open a top missed-reward event from analytics | Done | Navigates to `/(app)/transactions/{id}` from `InsightsScreen` |
-| User can see AI-generated reward optimization insights | Done | `AIInsightCard` list + generate button in AI sub-tab |
+| User can see AI-generated reward optimization insights | Done | `AIInsightCard` list in AI sub-tab; generation is worker-only (nightly), no client generate trigger |
 | User can opt out of personalized AI insights via the Privacy toggle | Done (Partial) | Privacy gate enforced server-side; toggle UI owned by workflow 08 |
 
 ## Design Gaps

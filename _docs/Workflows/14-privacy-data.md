@@ -21,8 +21,9 @@ Phase 1 online workflow for privacy settings, data export, location history down
 | Full | User can control anonymous analytics | 8.4 | Privacy settings |
 | Full | User can control personalized AI insights | 8.4 | Privacy settings |
 | Full | User can opt out of personalized AI insights via the Privacy toggle | 8.4, 6.3 | Stops/gates AI generation |
-| Full | User can request account deletion | 8.4 | Requires confirmation before API call |
+| Full | User can request account deletion | 8.4 | Requires confirmation before API call; `purge_after = now + Privacy:DeletionGraceDays` (14) |
 | Full | User can cancel pending account deletion | 8.4 | Cancel API |
+| Full | User signing in during the grace window is offered reactivation | 1.x, 8.4 | Bootstrap returns `accountDeletion` when a pending request exists; app routes to the locked `AccountReactivationScreen` (Reactivate → cancel API + re-bootstrap, or Sign out) until reactivated or purge runs |
 | Full | User can see sensitive account actions require confirmation | 8.4 | Client confirmation before destructive request |
 
 ## Preconditions

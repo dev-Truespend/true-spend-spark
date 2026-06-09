@@ -1,7 +1,11 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Button } from "@/shared/components/Button";
+import { EmptyState } from "@/shared/components/EmptyState";
+import { ProLockBadge } from "@/shared/components/ProLockBadge";
+import { ProUpsell } from "@/shared/components/ProUpsell";
+import { SectionLabel } from "@/shared/components/SectionLabel";
 import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
+import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type Props = {
   onAddManual: () => void;
@@ -13,39 +17,60 @@ type Props = {
 
 export function CardEmptyState({ onAddManual, onConnectPlaid, onBrowseCatalog, onUpgrade, plaidEnabled }: Props) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Add your first card</Text>
-      <Text style={styles.body}>
-        {plaidEnabled
-          ? "Connect a bank account via Plaid or add a card manually to start tracking rewards."
-          : "Add a card manually to start tracking rewards. Bank linking is available on Pro."}
-      </Text>
-      {plaidEnabled ? (
-        <Button label="Connect bank account" onPress={onConnectPlaid} />
-      ) : (
-        <Button label="Upgrade to Pro to connect bank" onPress={onUpgrade} />
-      )}
-      <Button label="Add card manually" onPress={onAddManual} variant="secondary" />
-      <Button label="Add from catalog" onPress={onBrowseCatalog} variant="secondary" />
+    <View style={{ gap: 14 }}>
+      <EmptyState
+        iconLabel="💳"
+        title="No cards yet"
+        description="Add at least one card to start getting smart recommendations."
+        action={
+          <View style={{ gap: 8 }}>
+            <Button label="＋ Add manually" onPress={onAddManual} />
+            {plaidEnabled ? (
+              <Button label="Connect bank with Plaid" onPress={onConnectPlaid} variant="outline" />
+            ) : (
+              <Button label="Browse card catalog" onPress={onBrowseCatalog} variant="outline" />
+            )}
+          </View>
+        }
+      />
+
+      <ProUpsell
+        title={plaidEnabled ? "Basic includes Plaid" : "Upgrade to connect a bank"}
+        body={
+          plaidEnabled
+            ? "Connect up to 3 Plaid accounts and add 2 manual cards. Upgrade to Pro for unlimited links."
+            : "Bank linking unlocks live syncs and missed-rewards alerts. Available on Pro."
+        }
+        ctaLabel={plaidEnabled ? "Get Pro" : "Upgrade to Pro"}
+        onPress={onUpgrade}
+      />
+
+      <View style={{ gap: 6 }}>
+        <SectionLabel>What you'll get with a card linked</SectionLabel>
+        <View style={{ gap: 6 }}>
+          {[
+            'Real-time "best card to swipe" at any store',
+            '"Why this card?" reasoning vs. your others',
+            "Online merchant search & URL detection"
+          ].map((b) => (
+            <View key={b} style={styles.bullet}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={styles.bulletText}>{b}</Text>
+            </View>
+          ))}
+          <View style={styles.bullet}>
+            <Text style={styles.bulletDot}>•</Text>
+            <Text style={styles.bulletText}>Missed-rewards alerts after each purchase</Text>
+            <ProLockBadge />
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    gap: spacing.md,
-    paddingTop: spacing.xl
-  },
-  heading: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: "700",
-    textAlign: "center"
-  },
-  body: {
-    color: colors.muted,
-    fontSize: 14,
-    textAlign: "center"
-  }
+  bullet: { flexDirection: "row", alignItems: "center", gap: 8 },
+  bulletDot: { fontFamily: fontFamily.bold, color: colors.mutedFg, width: 12 },
+  bulletText: { flex: 1, fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: colors.text, lineHeight: 18 }
 });

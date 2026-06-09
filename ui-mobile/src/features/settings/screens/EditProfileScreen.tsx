@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { Stack, router } from "expo-router";
 import { Button } from "@/shared/components/Button";
+import { Card } from "@/shared/components/Card";
 import { Screen } from "@/shared/components/Screen";
 import { TextInput } from "@/shared/components/TextInput";
+import { Toast } from "@/shared/components/Toast";
 import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
 import { AvatarPicker } from "@/features/settings/components/AvatarPicker";
 import { BiometricToggle } from "@/features/settings/components/BiometricToggle";
 import { CurrencyPicker } from "@/features/settings/components/CurrencyPicker";
@@ -99,7 +100,7 @@ export function EditProfileScreen() {
     return (
       <Screen>
         <Stack.Screen options={{ title: "Edit profile" }} />
-        <ActivityIndicator color={colors.primary} style={styles.loader} />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 32 }} />
       </Screen>
     );
   }
@@ -108,55 +109,62 @@ export function EditProfileScreen() {
   const hasPhoneMethod = signInMethodsQuery.data?.some((m) => m.provider === "phone") ?? false;
 
   return (
-    <Screen>
+    <Screen scroll>
       <Stack.Screen options={{ title: "Edit profile" }} />
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <AvatarPicker
-            errorMessage={avatarErrorMessage}
-            isUploading={avatarPicker.isUploading}
-            onPick={() => void handlePickAvatar()}
-            profile={profile}
-          />
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+        <AvatarPicker
+          errorMessage={avatarErrorMessage}
+          isUploading={avatarPicker.isUploading}
+          onPick={() => void handlePickAvatar()}
+          profile={profile}
+        />
 
-          <SectionHeader title="Account details" />
-          <View style={styles.group}>
+        <SectionHeader title="Account details" />
+        <Card>
+          <View style={{ gap: 12 }}>
+            <TextInput
+              label="Display name"
+              accessibilityLabel="Display name"
+              autoCapitalize="words"
+              onChangeText={setDisplayName}
+              placeholder="Your name"
+              value={displayName}
+            />
+            <TextInput
+              label="Email"
+              accessibilityLabel="Email (read-only)"
+              accessibilityHint="Email is read-only. Contact support to change."
+              editable={false}
+              onChangeText={() => {}}
+              value={profile.email}
+            />
+            <TextInput
+              label="Phone"
+              accessibilityLabel="Phone number"
+              autoComplete="tel"
+              keyboardType="phone-pad"
+              onChangeText={setPhone}
+              placeholder="+1 555 010 0123"
+              value={phone}
+            />
             <View>
-              <Text style={styles.label}>Display name</Text>
-              <TextInput
-                accessibilityLabel="Display name"
-                autoCapitalize="words"
-                onChangeText={setDisplayName}
-                placeholder="Your name"
-                value={displayName}
-              />
-            </View>
-            <View>
-              <Text style={styles.label}>Phone</Text>
-              <TextInput
-                accessibilityLabel="Phone number"
-                autoComplete="tel"
-                keyboardType="phone-pad"
-                onChangeText={setPhone}
-                placeholder="+1 555 010 0123"
-                value={phone}
-              />
-            </View>
-            <View>
-              <Text style={styles.label}>Primary currency</Text>
               <CurrencyPicker onChange={setCurrencyCode} value={currencyCode} />
             </View>
           </View>
+        </Card>
 
-          <SectionHeader title="Security" />
+        <SectionHeader title="Security" />
+        <Card>
           <BiometricToggle
             disabled={biometricToggle.isSaving}
             enabled={!!preferences?.biometricUnlockEnabled}
             onChange={(next) => void handleBiometric(next)}
             status={biometricStatus}
           />
+        </Card>
 
-          <SectionHeader title="Sign-in methods" />
+        <SectionHeader title="Sign-in methods" />
+        <Card>
           <SignInMethodsList
             errorMessage={otpError}
             isLoading={signInMethodsQuery.isLoading}
@@ -168,54 +176,25 @@ export function EditProfileScreen() {
             phone={otpPhone}
             showAddPhone={!hasPhoneMethod}
           />
+        </Card>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          {savedAt && !error ? <Text style={styles.success}>Profile saved.</Text> : null}
+        {error ? <Toast tone="error" message={error} /> : null}
+        {savedAt && !error ? <Toast tone="success" message="Profile saved." /> : null}
 
-          <View style={styles.actions}>
-            <Button
-              disabled={updateProfile.isPending}
-              label={updateProfile.isPending ? "Saving…" : "Save changes"}
-              onPress={() => void submit()}
-            />
-            <Button label="Done" onPress={() => router.back()} variant="secondary" />
-          </View>
-        </ScrollView>
+        <View style={styles.actions}>
+          <Button
+            disabled={updateProfile.isPending}
+            loading={updateProfile.isPending}
+            label="Save changes"
+            onPress={() => void submit()}
+          />
+          <Button label="Done" onPress={() => router.back()} variant="outline" />
+        </View>
       </KeyboardAvoidingView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1
-  },
-  scroll: {
-    gap: spacing.md,
-    paddingBottom: spacing.xl
-  },
-  loader: {
-    marginTop: spacing.xl
-  },
-  group: {
-    gap: spacing.md
-  },
-  label: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: spacing.xs
-  },
-  actions: {
-    gap: spacing.sm,
-    marginTop: spacing.lg
-  },
-  error: {
-    color: colors.danger,
-    fontSize: 14
-  },
-  success: {
-    color: colors.primary,
-    fontSize: 14
-  }
+  actions: { gap: 8, marginTop: 16 }
 });

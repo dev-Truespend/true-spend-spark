@@ -16,14 +16,17 @@ public static class InsightsWorkflowExtensions
     public static IServiceCollection AddInsightsWorkflow(this IServiceCollection services)
     {
         services.AddScoped<IAnalyticsReadService, AnalyticsReadService>();
+        services.AddScoped<IAnalyticsUpdateService, AnalyticsUpdateService>();
         services.AddScoped<IAIInsightsReadService, AIInsightsReadService>();
         services.AddScoped<IAIInsightsInsertService, AIInsightsInsertService>();
         services.AddScoped<IAIInsightsUpdateService, AIInsightsUpdateService>();
 
         services.AddScoped<IAnalyticsReadBusiness, AnalyticsReadBusiness>();
+        services.AddScoped<IAnalyticsComputeBusiness, AnalyticsComputeBusiness>();
         services.AddScoped<IAIInsightsReadBusiness, AIInsightsReadBusiness>();
         services.AddScoped<IAIInsightsInsertBusiness, AIInsightsInsertBusiness>();
         services.AddScoped<IAIInsightsUpdateBusiness, AIInsightsUpdateBusiness>();
+        services.AddScoped<IAIInsightsCacheInvalidatorBusiness, AIInsightsCacheInvalidatorBusiness>();
 
         services.AddScoped<AnalyticsValidator>();
 

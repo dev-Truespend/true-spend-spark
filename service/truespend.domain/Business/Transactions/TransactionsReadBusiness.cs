@@ -71,4 +71,10 @@ public sealed class TransactionsReadBusiness(
         var missed = await readService.GetMissedRewardsAsync(user, cancellationToken);
         return BusinessResponse<MissedRewardEventsResponse>.Ok(new MissedRewardEventsResponse(missed));
     }
+
+    public async Task<BusinessResponse<TransactionCategoriesResponse>> GetCategoriesAsync(CancellationToken cancellationToken)
+    {
+        var categories = await readService.GetTransactionCategoriesAsync(cancellationToken);
+        return BusinessResponse<TransactionCategoriesResponse>.Ok(new TransactionCategoriesResponse(categories));
+    }
 }

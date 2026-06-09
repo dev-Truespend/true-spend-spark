@@ -1,3 +1,4 @@
+import { scaleFont } from "@/shared/theme/typography";
 import { StyleSheet, Switch, Text, View } from "react-native";
 import { colors } from "@/shared/theme/colors";
 import { spacing } from "@/shared/theme/spacing";
@@ -58,12 +59,12 @@ const styles = StyleSheet.create({
   },
   label: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: scaleFont(16),
     fontWeight: "600"
   },
   help: {
     color: colors.muted,
-    fontSize: 13,
+    fontSize: scaleFont(13),
     marginTop: 2
   }
 });

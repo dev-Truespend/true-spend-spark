@@ -1,6 +1,8 @@
 insert into billing.features (code, display_name, description, value_type)
 values
-  ('card_link_limit', 'Card link limit', 'Maximum linked cards included in the plan', 'integer'),
+  ('manual_card_limit', 'Manual card limit', 'Maximum manually added cards included in the plan', 'integer'),
+  ('plaid_card_limit', 'Plaid card limit', 'Maximum bank-linked (Plaid) cards included in the plan', 'integer'),
+  ('geo_recommendations_per_day', 'Geo recommendations per day', 'Maximum geo-arrival card recommendations per day', 'integer'),
   ('ai_insights_enabled', 'AI insights', 'Personalized AI reward insights', 'boolean'),
   ('unlimited_cards', 'Unlimited cards', 'Unlimited card linking', 'boolean'),
   ('plaid_linking_enabled', 'Plaid linking', 'Link bank cards via Plaid', 'boolean'),

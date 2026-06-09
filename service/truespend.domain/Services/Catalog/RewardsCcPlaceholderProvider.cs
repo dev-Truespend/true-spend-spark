@@ -3,60 +3,79 @@ using TrueSpend.Domain.ServiceInterfaces.Catalog;
 
 namespace TrueSpend.Domain.Services.Catalog;
 
+// Placeholder returning RapidAPI-shaped fixture data. Lets the sync flow run end-to-end
+// without RewardsCC credentials in development. Two fictional cards cover both shapes
+// (with and without spendBonusCategory entries) so downstream upserts exercise both
+// branches.
 public sealed class RewardsCcPlaceholderProvider : IRewardsCcProvider
 {
-    private static readonly RewardsCcIssuerData[] Issuers =
+    private static readonly RapidApiCardDetail SampleCard = new()
     {
-        new("rcc-issuer-chase", "Chase", null),
-        new("rcc-issuer-amex", "American Express", null),
-        new("rcc-issuer-capital-one", "Capital One", null),
-        new("rcc-issuer-citi", "Citi", null),
-        new("rcc-issuer-discover", "Discover", null),
+        CardKey = "rcc-placeholder-sapphire-preferred",
+        CardIssuer = "Chase",
+        CardName = "Sapphire Preferred (placeholder)",
+        CardNetwork = "Visa",
+        CardType = "Personal",
+        CardUrl = "https://example.com/sapphire-preferred",
+        AnnualFee = 95m,
+        FxFee = 0m,
+        CreditRange = "Good to Excellent",
+        BaseSpendAmount = 1m,
+        BaseSpendEarnType = "Ultimate Rewards",
+        BaseSpendEarnCurrency = "points",
+        BaseSpendEarnValuation = 1.25m,
+        IsActive = 1,
+        SpendBonusCategory = new[]
+        {
+            new RapidApiSpendBonusCategory
+            {
+                SpendBonusCategoryName = "Dining",
+                SpendBonusCategoryId = 1001,
+                SpendBonusCategoryGroup = "Dining",
+                SpendBonusSubcategoryGroup = "All Dining",
+                SpendBonusDesc = "3X points on dining",
+                EarnMultiplier = 3m
+            },
+            new RapidApiSpendBonusCategory
+            {
+                SpendBonusCategoryName = "Travel",
+                SpendBonusCategoryId = 1002,
+                SpendBonusCategoryGroup = "Travel",
+                SpendBonusSubcategoryGroup = "All Travel",
+                SpendBonusDesc = "2X points on travel",
+                EarnMultiplier = 2m
+            }
+        }
     };
 
-    private static readonly RewardsCcCardProductData[] CardProducts =
+    public Task<IReadOnlyList<RapidApiSearchResult>> SearchCardByNameAsync(string cardName, CancellationToken cancellationToken)
     {
-        new("rcc-card-chase-freedom-flex", "rcc-issuer-chase", "Freedom Flex", "Mastercard", 0m, null,
-            "5x rotating quarterly categories, 3x dining, 1x other.", "points", "Ultimate Rewards", 1.0m),
-        new("rcc-card-chase-sapphire-preferred", "rcc-issuer-chase", "Sapphire Preferred", "Visa", 95m, null,
-            "3x dining, 2x travel, 1x other.", "points", "Ultimate Rewards", 1.0m),
-        new("rcc-card-amex-blue-cash-preferred", "rcc-issuer-amex", "Blue Cash Preferred", "American Express", 95m, null,
-            "6% grocery (up to $6,000/yr), 3% transit, 1% other.", "cashback", "USD", 1.0m),
-        new("rcc-card-capital-one-savor", "rcc-issuer-capital-one", "Savor", "Mastercard", 95m, null,
-            "4% dining/entertainment, 2% grocery, 1% other.", "cashback", "USD", 1.0m),
-        new("rcc-card-citi-double-cash", "rcc-issuer-citi", "Double Cash", "Mastercard", 0m, null,
-            "2% on everything (1% buy + 1% pay).", "cashback", "USD", 2.0m),
-        new("rcc-card-discover-it-cashback", "rcc-issuer-discover", "It Cash Back", "Discover", 0m, null,
-            "5% rotating categories (up to $1,500/quarter), 1% other.", "cashback", "USD", 1.0m),
-    };
+        IReadOnlyList<RapidApiSearchResult> result = new[]
+        {
+            new RapidApiSearchResult
+            {
+                CardKey = SampleCard.CardKey,
+                CardIssuer = SampleCard.CardIssuer,
+                CardName = SampleCard.CardName
+            }
+        };
+        return Task.FromResult(result);
+    }
 
-    private static readonly Dictionary<string, RewardsCcRewardRuleData[]> RewardRules = new()
+    public Task<IReadOnlyList<RapidApiSearchResult>> ListAllCardsAsync(CancellationToken cancellationToken)
     {
-        ["rcc-card-chase-freedom-flex"] = new[]
+        IReadOnlyList<RapidApiSearchResult> result = new[]
         {
-            new RewardsCcRewardRuleData("rcc-card-chase-freedom-flex", "grocery", 5m, 1500m, "quarterly", null, null, true, "Rotating quarterly category"),
-            new RewardsCcRewardRuleData("rcc-card-chase-freedom-flex", "dining", 3m, null, null, null, null, false, null),
-            new RewardsCcRewardRuleData("rcc-card-chase-freedom-flex", null, 1m, null, null, null, null, false, "Base rate"),
-        },
-        ["rcc-card-amex-blue-cash-preferred"] = new[]
-        {
-            new RewardsCcRewardRuleData("rcc-card-amex-blue-cash-preferred", "grocery", 6m, 6000m, "yearly", null, null, false, null),
-            new RewardsCcRewardRuleData("rcc-card-amex-blue-cash-preferred", "transit", 3m, null, null, null, null, false, null),
-            new RewardsCcRewardRuleData("rcc-card-amex-blue-cash-preferred", null, 1m, null, null, null, null, false, "Base rate"),
-        },
-        ["rcc-card-citi-double-cash"] = new[]
-        {
-            new RewardsCcRewardRuleData("rcc-card-citi-double-cash", null, 2m, null, null, null, null, false, "Flat 2% everywhere"),
-        },
-    };
+            new RapidApiSearchResult
+            {
+                CardKey = SampleCard.CardKey,
+                CardIssuer = SampleCard.CardIssuer,
+                CardName = SampleCard.CardName
+            }
+        };
+        return Task.FromResult(result);
+    }
 
-    public Task<IReadOnlyList<RewardsCcIssuerData>> GetIssuersAsync(CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyList<RewardsCcIssuerData>>(Issuers);
-
-    public Task<IReadOnlyList<RewardsCcCardProductData>> GetCardProductsAsync(CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyList<RewardsCcCardProductData>>(CardProducts);
-
-    public Task<IReadOnlyList<RewardsCcRewardRuleData>> GetRewardRulesAsync(string providerCardId, CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyList<RewardsCcRewardRuleData>>(
-            RewardRules.TryGetValue(providerCardId, out var rules) ? rules : Array.Empty<RewardsCcRewardRuleData>());
+    public Task<RapidApiCardDetail?> GetCardDetailAsync(string cardKey, CancellationToken cancellationToken) =>
+        Task.FromResult<RapidApiCardDetail?>(string.Equals(cardKey, SampleCard.CardKey, StringComparison.OrdinalIgnoreCase) ? SampleCard : null);
 }

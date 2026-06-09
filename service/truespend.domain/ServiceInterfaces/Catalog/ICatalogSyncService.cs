@@ -4,45 +4,27 @@ namespace TrueSpend.Domain.ServiceInterfaces.Catalog;
 
 public sealed record CatalogUpsertCounts(int Created, int Updated);
 
-public sealed record CardProductIdLookup(int CardProductId, string RewardsCcId);
+public sealed record CardProductUpsertResult(int CardProductId, bool Created);
 
 public interface ICatalogSyncService
 {
-    Task<CatalogUpsertCounts> UpsertIssuersAsync(
-        IReadOnlyList<RewardsCcIssuerData> issuers,
+    Task<short> UpsertIssuerByNameAsync(string issuerDisplayName, DateTimeOffset now, CancellationToken cancellationToken);
+
+    Task<short> UpsertCategoryAsync(RewardsCcCategoryData category, DateTimeOffset now, CancellationToken cancellationToken);
+
+    Task<CardProductUpsertResult> UpsertCardProductAsync(
+        RewardsCcCardProductData product,
+        short issuerId,
         DateTimeOffset now,
         CancellationToken cancellationToken);
 
-    Task<int> DeactivateMissingIssuersAsync(
-        IReadOnlyCollection<string> seenProviderIds,
-        DateTimeOffset now,
-        CancellationToken cancellationToken);
-
-    Task<CatalogUpsertCounts> UpsertCardProductsAsync(
-        IReadOnlyList<RewardsCcCardProductData> products,
-        DateTimeOffset now,
-        CancellationToken cancellationToken);
-
-    Task<int> DeactivateMissingCardProductsAsync(
-        IReadOnlyCollection<string> seenProviderIds,
-        DateTimeOffset now,
-        CancellationToken cancellationToken);
-
-    Task<IReadOnlyList<CardProductIdLookup>> GetCardProductIdLookupsAsync(CancellationToken cancellationToken);
-
-    Task<CatalogUpsertCounts> UpsertRewardRulesForCardAsync(
+    Task<CatalogUpsertCounts> ReplaceRewardRulesForCardAsync(
         int cardProductId,
         IReadOnlyList<RewardsCcRewardRuleData> rules,
+        IReadOnlyDictionary<string, short> categoryIdByProviderId,
         DateTimeOffset now,
         CancellationToken cancellationToken);
 
-    Task<int> ExpireMissingRewardRulesAsync(
-        int cardProductId,
-        IReadOnlyCollection<(short? CategoryId, decimal Multiplier)> seenKeys,
-        DateTimeOffset now,
-        CancellationToken cancellationToken);
-
-    Task<short?> GetCategoryIdByCodeAsync(string? code, CancellationToken cancellationToken);
     Task<short?> GetCapPeriodIdByCodeAsync(string? code, CancellationToken cancellationToken);
     Task<short?> GetNetworkIdByCodeAsync(string code, CancellationToken cancellationToken);
     Task<short?> GetRewardCurrencyIdByCodeAsync(string? code, CancellationToken cancellationToken);

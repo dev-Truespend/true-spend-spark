@@ -1,8 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useEntitlements } from "@/features/billing/hooks/useEntitlements";
-import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
+import { colors, tints } from "@/shared/theme/colors";
+import { radii } from "@/shared/theme/spacing";
+import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 function daysRemaining(trialEndsAt: string): number | null {
   const end = new Date(trialEndsAt).getTime();
@@ -28,34 +29,32 @@ export function TrialBanner() {
   return (
     <Pressable
       onPress={() => router.push("/(app)/billing")}
-      style={styles.container}
       accessibilityRole="button"
       accessibilityLabel={label}
+      style={styles.banner}
     >
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.cta}>Manage</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.title}>✦ {label}</Text>
+        <Text style={styles.body}>Tap to manage billing or upgrade.</Text>
+      </View>
+      <Text style={styles.cta}>Manage →</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  banner: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radii.lg,
+    backgroundColor: tints.amber.bg,
+    borderWidth: 1,
+    borderColor: tints.amber.border
   },
-  label: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 13
-  },
-  cta: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 13,
-    textDecorationLine: "underline"
-  }
+  title: { color: colors.text, fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(13) },
+  body: { color: colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(11), marginTop: 2 },
+  cta: { color: colors.amberText, fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(12) }
 });

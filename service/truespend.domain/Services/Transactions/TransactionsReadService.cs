@@ -14,15 +14,20 @@ public sealed class TransactionsReadService(TrueSpendDbContext db) : ITransactio
         TransactionListQuery query,
         CancellationToken cancellationToken)
     {
+        // Hide transactions whose user_card was soft-deleted (IsActive=false) or hard-deleted (orphan).
+        // Spec keeps the soft-deleted card row for history/audit; the list filters it out for the user.
         var q = from tx in db.Transactions.AsNoTracking().Where(x => x.UserId == user.UserId)
                 join card in db.UserCards.AsNoTracking() on tx.UserCardId equals card.Id into cardJoin
                 from card in cardJoin.DefaultIfEmpty()
+                where card != null && card.IsActive
                 join product in db.CardProducts.AsNoTracking() on card.CardProductId equals product.Id into productJoin
                 from product in productJoin.DefaultIfEmpty()
                 join issuer in db.CardIssuers.AsNoTracking() on product.IssuerId equals issuer.Id into issuerJoin
                 from issuer in issuerJoin.DefaultIfEmpty()
-                join cat in db.Categories.AsNoTracking() on tx.CategoryId equals cat.Id into catJoin
-                from cat in catJoin.DefaultIfEmpty()
+                join leaf in db.TransactionCategories.AsNoTracking() on tx.TransactionCategoryId equals leaf.Id into leafJoin
+                from leaf in leafJoin.DefaultIfEmpty()
+                join primary in db.TransactionCategories.AsNoTracking() on leaf.ParentId equals primary.Id into primaryJoin
+                from primary in primaryJoin.DefaultIfEmpty()
                 join reward in db.TransactionRewardResults.AsNoTracking() on tx.Id equals reward.TransactionId into rewardJoin
                 from reward in rewardJoin.DefaultIfEmpty()
                 join rewardCur in db.RewardCurrencies.AsNoTracking() on reward.RewardCurrencyId equals rewardCur.Id into rewardCurJoin
@@ -39,8 +44,9 @@ public sealed class TransactionsReadService(TrueSpendDbContext db) : ITransactio
                     CurrencyCode = "USD",
                     CardId = card.Id,
                     CardDisplayName = card.Nickname ?? product.DisplayName ?? card.CustomCardName ?? "Card",
-                    CategoryCode = cat.Code,
-                    CategoryName = cat.DisplayName,
+                    CategoryCode = primary.Code ?? leaf.Code,
+                    CategoryName = primary.DisplayName ?? leaf.DisplayName,
+                    LeafCategoryCode = leaf.Code,
                     tx.TransactionDate,
                     tx.TransactionTime,
                     tx.LocationLabel,
@@ -59,7 +65,7 @@ public sealed class TransactionsReadService(TrueSpendDbContext db) : ITransactio
         }
 
         if (!string.IsNullOrWhiteSpace(query.CategoryCode))
-            q = q.Where(x => x.CategoryCode == query.CategoryCode);
+            q = q.Where(x => x.CategoryCode == query.CategoryCode || x.LeafCategoryCode == query.CategoryCode);
 
         if (query.CardId.HasValue)
             q = q.Where(x => x.CardId == query.CardId.Value);
@@ -83,10 +89,13 @@ public sealed class TransactionsReadService(TrueSpendDbContext db) : ITransactio
                              .Where(x => x.UserId == user.UserId && x.Id == transactionId)
                          join card in db.UserCards.AsNoTracking() on tx.UserCardId equals card.Id into cardJoin
                          from card in cardJoin.DefaultIfEmpty()
+                         where card != null && card.IsActive
                          join product in db.CardProducts.AsNoTracking() on card.CardProductId equals product.Id into productJoin
                          from product in productJoin.DefaultIfEmpty()
-                         join cat in db.Categories.AsNoTracking() on tx.CategoryId equals cat.Id into catJoin
-                         from cat in catJoin.DefaultIfEmpty()
+                         join leaf in db.TransactionCategories.AsNoTracking() on tx.TransactionCategoryId equals leaf.Id into leafJoin
+                         from leaf in leafJoin.DefaultIfEmpty()
+                         join primary in db.TransactionCategories.AsNoTracking() on leaf.ParentId equals primary.Id into primaryJoin
+                         from primary in primaryJoin.DefaultIfEmpty()
                          join merchant in db.Merchants.AsNoTracking() on tx.MerchantId equals merchant.Id into merchantJoin
                          from merchant in merchantJoin.DefaultIfEmpty()
                          select new
@@ -96,8 +105,8 @@ public sealed class TransactionsReadService(TrueSpendDbContext db) : ITransactio
                              tx.Amount,
                              CardId = card.Id,
                              CardDisplayName = card.Nickname ?? product.DisplayName ?? card.CustomCardName ?? "Card",
-                             CategoryCode = cat.Code,
-                             CategoryName = cat.DisplayName,
+                             CategoryCode = primary.Code ?? leaf.Code,
+                             CategoryName = leaf.DisplayName ?? primary.DisplayName,
                              tx.TransactionDate,
                              tx.TransactionTime,
                              tx.LocationLabel,
@@ -147,6 +156,14 @@ public sealed class TransactionsReadService(TrueSpendDbContext db) : ITransactio
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<TransactionCategory>> GetTransactionCategoriesAsync(CancellationToken cancellationToken) =>
+        await db.TransactionCategories.AsNoTracking()
+            .Where(c => c.IsActive && c.IsPrimary && c.IsOutflow)
+            .OrderBy(c => c.DisplayOrder)
+            .ThenBy(c => c.DisplayName)
+            .Select(c => new TransactionCategory(c.Id, c.Code, c.DisplayName, c.Icon, c.DisplayOrder))
+            .ToListAsync(cancellationToken);
+
     private IQueryable<(int TransactionId, MissedReward MissedReward)> BuildMissedRewardQuery(OnboardingWorkflowUser user)
     {
         return from missed in db.MissedRewardEvents.AsNoTracking()
@@ -156,6 +173,7 @@ public sealed class TransactionsReadService(TrueSpendDbContext db) : ITransactio
                from merchant in merchantJoin.DefaultIfEmpty()
                join actualCard in db.UserCards.AsNoTracking() on tx.UserCardId equals actualCard.Id into actualCardJoin
                from actualCard in actualCardJoin.DefaultIfEmpty()
+               where actualCard != null && actualCard.IsActive
                join actualProduct in db.CardProducts.AsNoTracking() on actualCard.CardProductId equals actualProduct.Id into actualProductJoin
                from actualProduct in actualProductJoin.DefaultIfEmpty()
                join actualIssuer in db.CardIssuers.AsNoTracking() on actualProduct.IssuerId equals actualIssuer.Id into actualIssuerJoin

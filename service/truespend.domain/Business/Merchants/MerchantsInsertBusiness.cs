@@ -1,15 +1,6 @@
-using System.Text.Json;
 using TrueSpend.Domain.BusinessInterfaces.Merchants;
-using TrueSpend.Domain.Constants;
 using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.Models.Onboarding;
-using TrueSpend.Domain.Models.Cards;
-using TrueSpend.Domain.Models.Catalog;
-using TrueSpend.Domain.Models.Billing;
-using TrueSpend.Domain.Models.Plaid;
-using TrueSpend.Domain.Models.Devices;
-using TrueSpend.Domain.Models.NotificationSettings;
-using TrueSpend.Domain.Models.Permissions;
 using TrueSpend.Domain.Models.Recommendations;
 using TrueSpend.Domain.ServiceInterfaces.Merchants;
 using TrueSpend.Domain.ServiceInterfaces.Messaging;
@@ -21,7 +12,7 @@ namespace TrueSpend.Domain.Business.Merchants;
 public sealed class MerchantsInsertBusiness(
     IMerchantsInsertService insertService,
     IMerchantsReadService readService,
-    IMessagingInsertService messagingInsertService,
+    IMessagingInsertService messagingInsertService, // archived: kept for future async migration
     IUnitOfWork unitOfWork,
     MerchantsValidator validator) : IMerchantsInsertBusiness
 {
@@ -30,6 +21,8 @@ public sealed class MerchantsInsertBusiness(
         ResolveMerchantRequest request,
         CancellationToken cancellationToken)
     {
+        _ = messagingInsertService;
+
         var errors = validator.ValidateResolveMerchant(request);
         if (errors.Count > 0)
         {
@@ -59,28 +52,38 @@ public sealed class MerchantsInsertBusiness(
             return BusinessResponse<MerchantVisitsResponse>.Fail(errors, 400);
         }
 
-        MerchantVisit visit;
         await using (var tx = await unitOfWork.BeginTransactionAsync(cancellationToken))
         {
-            visit = await insertService.RecordVisitAsync(user, request.MerchantId, request.SelectedCategoryCode, request.VisitedAt, cancellationToken);
-            var payload = JsonSerializer.Serialize(new
-            {
-                userId = user.UserId,
-                merchantId = request.MerchantId,
-                selectedCategoryCode = request.SelectedCategoryCode,
-                visitedAt = request.VisitedAt
-            });
-            await messagingInsertService.EnqueueOutboxEventAsync(
-                EventTypes.MerchantVisitCreated,
-                "finance.merchant_visit",
-                request.MerchantId,
-                payload,
-                $"{user.UserId}:{request.MerchantId}:{request.VisitedAt.UtcTicks}",
-                cancellationToken);
+            await insertService.RecordVisitAsync(user, request.MerchantId, request.SelectedCategoryCode, request.VisitedAt, cancellationToken);
             await tx.CommitAsync(cancellationToken);
         }
 
         var visits = await insertService.GetVisitsAsync(user, cancellationToken);
         return BusinessResponse<MerchantVisitsResponse>.Ok(new MerchantVisitsResponse(visits));
     }
+
+    #region archive — async event-publish (disabled in MVP)
+    // CreateVisitAsync previously published MerchantVisitCreated to the messaging outbox.
+    // The MerchantVisitCreatedHandler in truespend.eventconsumer was log-only, so no inline
+    // replacement is needed.
+    //
+    // using System.Text.Json;
+    // using TrueSpend.Domain.Constants;
+    //
+    // // Inside the committing tx, after RecordVisitAsync:
+    // var payload = JsonSerializer.Serialize(new
+    // {
+    //     userId = user.UserId,
+    //     merchantId = request.MerchantId,
+    //     selectedCategoryCode = request.SelectedCategoryCode,
+    //     visitedAt = request.VisitedAt
+    // });
+    // await messagingInsertService.EnqueueOutboxEventAsync(
+    //     EventTypes.MerchantVisitCreated,
+    //     "finance.merchant_visit",
+    //     request.MerchantId,
+    //     payload,
+    //     $"{user.UserId}:{request.MerchantId}:{request.VisitedAt.UtcTicks}",
+    //     cancellationToken);
+    #endregion
 }

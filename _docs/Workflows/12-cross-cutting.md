@@ -1,5 +1,7 @@
 # 12. Cross-Cutting Cold-Start And Infrastructure
 
+> **MVP execution note** — The `truespend.eventconsumer` container is not deployed in the MVP. Side-effects run inline post-commit in producer business classes. See [api-design-patterns.md § Post-commit side-effects](../low-level-design/Service/api-design-patterns.md#post-commit-side-effects) and [_docs/Refactors/sync-execution-conversion.md](../Refactors/sync-execution-conversion.md).
+
 ## Progress
 
 | User story | Status | Notes |

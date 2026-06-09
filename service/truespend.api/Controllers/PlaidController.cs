@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TrueSpend.Api.Mappers;
 using TrueSpend.Api.ViewModels.Plaid;
+using TrueSpend.Domain.BusinessInterfaces.Billing;
 using TrueSpend.Domain.BusinessInterfaces.Plaid;
 
 namespace TrueSpend.Api.Controllers;
@@ -13,6 +14,7 @@ public sealed class PlaidController(
     IPlaidInsertBusiness insertBusiness,
     IPlaidReadBusiness readBusiness,
     IPlaidUpdateBusiness updateBusiness,
+    IManualResyncQuotaBusiness resyncQuotaBusiness,
     IPlaidMapper mapper,
     ICardsMapper cardsMapper,
     IClientResponseMapper clientResponseMapper,
@@ -45,4 +47,8 @@ public sealed class PlaidController(
     [HttpPost("transactions/sync")]
     public async Task<IActionResult> SyncTransactions(SyncPlaidTransactionsRequestVm request, CancellationToken cancellationToken) =>
         Respond(await updateBusiness.SyncPlaidTransactionsAsync(CurrentUser(), mapper.ToDomain(request), cancellationToken), mapper.ToTransactionSync);
+
+    [HttpGet("resync-quota")]
+    public async Task<IActionResult> GetResyncQuota(CancellationToken cancellationToken) =>
+        Respond(await resyncQuotaBusiness.GetStatusAsync(CurrentUser(), cancellationToken), mapper.ToResyncQuota);
 }

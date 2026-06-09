@@ -11,6 +11,8 @@ public sealed class RewardRuleEntity
     public DateOnly? StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
     public bool RequiresActivation { get; set; }
+    public bool IsMerchantLocked { get; set; }
+    public string? MerchantBrand { get; set; }
     public string? Notes { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }

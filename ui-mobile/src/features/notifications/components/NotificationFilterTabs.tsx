@@ -1,15 +1,13 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity } from "react-native";
-import { colors } from "@/shared/theme/colors";
-import { spacing } from "@/shared/theme/spacing";
+import { SegmentedControl } from "@/shared/components/SegmentedControl";
 
 const FILTERS = [
-  { key: "all", label: "All" },
-  { key: "unread", label: "Unread" },
-  { key: "rewards", label: "Rewards" },
-  { key: "security", label: "Security" }
+  { value: "all", label: "All" },
+  { value: "unread", label: "Unread" },
+  { value: "rewards", label: "Rewards" },
+  { value: "security", label: "Security" }
 ] as const;
 
-type Filter = typeof FILTERS[number]["key"];
+type Filter = typeof FILTERS[number]["value"];
 
 type Props = {
   activeFilter: Filter;
@@ -18,46 +16,10 @@ type Props = {
 
 export function NotificationFilterTabs({ activeFilter, onFilterChange }: Props) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container} contentContainerStyle={styles.content}>
-      {FILTERS.map((f) => (
-        <TouchableOpacity
-          key={f.key}
-          style={[styles.tab, activeFilter === f.key && styles.activeTab]}
-          onPress={() => onFilterChange(f.key)}
-        >
-          <Text style={[styles.label, activeFilter === f.key && styles.activeLabel]}>{f.label}</Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+    <SegmentedControl<Filter>
+      value={activeFilter}
+      onChange={onFilterChange}
+      options={FILTERS.map((f) => ({ value: f.value, label: f.label }))}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 0,
-    marginBottom: spacing.md
-  },
-  content: {
-    gap: spacing.sm,
-    paddingHorizontal: 2
-  },
-  tab: {
-    borderColor: colors.border,
-    borderRadius: 20,
-    borderWidth: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs
-  },
-  activeTab: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary
-  },
-  label: {
-    color: colors.muted,
-    fontSize: 13,
-    fontWeight: "500"
-  },
-  activeLabel: {
-    color: colors.primaryText
-  }
-});

@@ -8,6 +8,29 @@ namespace TrueSpend.Domain.Services.Privacy;
 
 public sealed class AccountDeletionService(TrueSpendDbContext db) : IAccountDeletionService
 {
+    public async Task<AccountDeletionRequestEntity?> GetActiveRequestAsync(Guid userId, CancellationToken cancellationToken) =>
+        await db.AccountDeletionRequests
+            .AsNoTracking()
+            .Where(r => r.UserId == userId && r.Status == AccountDeletionStatusCodes.Pending)
+            .OrderByDescending(r => r.RequestedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public async Task<AccountDeletionRequestEntity> InsertRequestAsync(Guid userId, DateTimeOffset requestedAt, DateTimeOffset purgeAfter, CancellationToken cancellationToken)
+    {
+        var entity = new AccountDeletionRequestEntity
+        {
+            UserId = userId,
+            Status = AccountDeletionStatusCodes.Pending,
+            RequestedAt = requestedAt,
+            PurgeAfter = purgeAfter,
+            CreatedAt = requestedAt,
+            UpdatedAt = requestedAt,
+        };
+        db.AccountDeletionRequests.Add(entity);
+        await db.SaveChangesAsync(cancellationToken);
+        return entity;
+    }
+
     public async Task<IReadOnlyList<AccountPurgeCandidate>> GetDuePurgesAsync(DateTimeOffset now, int batchSize, CancellationToken cancellationToken)
     {
         return await db.AccountDeletionRequests
@@ -56,6 +79,7 @@ public sealed class AccountDeletionService(TrueSpendDbContext db) : IAccountDele
         await db.UserPermissions.Where(x => x.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.UserDevicePermissions.Where(x => x.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.UserPreferences.Where(x => x.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.UserDailyUsages.Where(x => x.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.UserRoles.Where(x => x.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.Profiles.Where(x => x.UserId == userId).ExecuteDeleteAsync(cancellationToken);
     }

@@ -31,8 +31,10 @@ public sealed class PlaidPlaceholderProvider : IPlaidProvider
         Task.FromResult(new PlaidTransactionsSyncResult(
             Added:
             [
-                new("txn-placeholder-1", "acct-placeholder-1", "Amazon", 42.99m, DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)), false, "Amazon"),
-                new("txn-placeholder-2", "acct-placeholder-1", "Whole Foods", 87.50m, DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-2)), false, "Whole Foods Market")
+                new("txn-placeholder-1", "acct-placeholder-1", "Amazon", 42.99m, DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)), false, "Amazon",
+                    "GENERAL_MERCHANDISE", "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES", "HIGH"),
+                new("txn-placeholder-2", "acct-placeholder-1", "Whole Foods", 87.50m, DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-2)), false, "Whole Foods Market",
+                    "FOOD_AND_DRINK", "FOOD_AND_DRINK_GROCERIES", "HIGH")
             ],
             Modified: [],
             RemovedPlaidTransactionIds: [],

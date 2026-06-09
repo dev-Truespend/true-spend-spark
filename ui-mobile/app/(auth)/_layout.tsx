@@ -1,4 +1,5 @@
-import { Redirect, Slot } from "expo-router";
+import { Redirect, Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useAuth } from "@/providers/AuthProvider";
 
 export default function AuthLayout() {
@@ -8,5 +9,10 @@ export default function AuthLayout() {
     return <Redirect href="/(app)/(tabs)" />;
   }
 
-  return <Slot />;
+  return (
+    <>
+      <StatusBar style="dark" />
+      <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }} />
+    </>
+  );
 }

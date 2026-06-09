@@ -1,7 +1,5 @@
-using System.Text.Json;
 using TrueSpend.Domain.BusinessInterfaces.Profile;
 using TrueSpend.Domain.Constants;
-using TrueSpend.Domain.Events.Profile;
 using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.Models.Onboarding;
 using TrueSpend.Domain.Models.Profile;
@@ -17,7 +15,7 @@ namespace TrueSpend.Domain.Business.Profile;
 public sealed class ProfileUpdateBusiness(
     IProfileUpdateService updateService,
     IStorageProvider storageProvider,
-    IMessagingInsertService messagingInsertService,
+    IMessagingInsertService messagingInsertService, // archived: kept for future async migration
     IUnitOfWork unitOfWork,
     ProfileValidator validator) : IProfileUpdateBusiness
 {
@@ -26,6 +24,8 @@ public sealed class ProfileUpdateBusiness(
         UpdateProfileRequest request,
         CancellationToken cancellationToken)
     {
+        _ = messagingInsertService;
+
         var errors = await validator.ValidateUpdateProfileAsync(request, cancellationToken);
         if (errors.Count > 0)
         {
@@ -36,7 +36,6 @@ public sealed class ProfileUpdateBusiness(
         await using (var tx = await unitOfWork.BeginTransactionAsync(cancellationToken))
         {
             profile = await updateService.UpdateProfileAsync(user, request, cancellationToken);
-            await EnqueueProfileUpdatedAsync(user, profile, "updated", cancellationToken);
             await tx.CommitAsync(cancellationToken);
         }
 
@@ -65,32 +64,10 @@ public sealed class ProfileUpdateBusiness(
         await using (var tx = await unitOfWork.BeginTransactionAsync(cancellationToken))
         {
             profile = await updateService.UpdateAvatarUrlAsync(user, uploadedUrl, cancellationToken);
-            await EnqueueProfileUpdatedAsync(user, profile, "avatar", cancellationToken);
             await tx.CommitAsync(cancellationToken);
         }
 
         return BusinessResponse<ProfileResponse>.Ok(profile);
-    }
-
-    private Task EnqueueProfileUpdatedAsync(OnboardingWorkflowUser user, ProfileResponse profile, string changeKey, CancellationToken cancellationToken)
-    {
-        var payload = JsonSerializer.Serialize(new ProfileUpdatedEvent(
-            1,
-            user.UserId,
-            profile.DisplayName,
-            profile.Phone,
-            profile.CountryCode,
-            profile.CurrencyCode,
-            profile.AvatarUrl));
-        // Guid suffix instead of yyyyMMddHHmmss so two profile saves in the same second
-        // do not collide on the outbox idempotency_key unique constraint.
-        return messagingInsertService.EnqueueOutboxEventAsync(
-            EventTypes.AppProfileUpdated,
-            "app.profile",
-            null,
-            payload,
-            $"app.profile.{changeKey}.{user.UserId}.{Guid.NewGuid():N}",
-            cancellationToken);
     }
 
     private static string ResolveExtension(string contentType, string fileName)
@@ -105,4 +82,32 @@ public sealed class ProfileUpdateBusiness(
             _ => ".jpg"
         };
     }
+
+    #region archive — async event-publish (disabled in MVP)
+    // UpdateProfileAsync and UploadAvatarAsync previously published AppProfileUpdated to the
+    // messaging outbox via EnqueueProfileUpdatedAsync. AppProfileUpdated has no subscriber in
+    // the EventDispatcher routes today, so no inline replacement is needed.
+    //
+    // using System.Text.Json;
+    // using TrueSpend.Domain.Events.Profile;
+    //
+    // private Task EnqueueProfileUpdatedAsync(OnboardingWorkflowUser user, ProfileResponse profile, string changeKey, CancellationToken cancellationToken)
+    // {
+    //     var payload = JsonSerializer.Serialize(new ProfileUpdatedEvent(
+    //         1, user.UserId, profile.DisplayName, profile.Phone,
+    //         profile.CountryCode, profile.CurrencyCode, profile.AvatarUrl));
+    //     // Guid suffix instead of yyyyMMddHHmmss so two profile saves in the same second
+    //     // do not collide on the outbox idempotency_key unique constraint.
+    //     return messagingInsertService.EnqueueOutboxEventAsync(
+    //         EventTypes.AppProfileUpdated, "app.profile", null,
+    //         payload, $"app.profile.{changeKey}.{user.UserId}.{Guid.NewGuid():N}",
+    //         cancellationToken);
+    // }
+    //
+    // // UpdateProfileAsync — inside the committing tx, after UpdateProfileAsync:
+    // await EnqueueProfileUpdatedAsync(user, profile, "updated", cancellationToken);
+    //
+    // // UploadAvatarAsync — inside the committing tx, after UpdateAvatarUrlAsync:
+    // await EnqueueProfileUpdatedAsync(user, profile, "avatar", cancellationToken);
+    #endregion
 }

@@ -5,6 +5,7 @@ using TrueSpend.Domain.Models.Billing;
 using TrueSpend.Domain.Models.Onboarding;
 using TrueSpend.Domain.ServiceInterfaces.Auth;
 using TrueSpend.Domain.ServiceInterfaces.Billing;
+using TrueSpend.Domain.ServiceInterfaces.Privacy;
 using TrueSpend.Domain.Validators;
 using TrueSpend.UnitTests.Helpers;
 using Xunit;
@@ -26,16 +27,16 @@ public sealed class AuthBootstrapBusinessTests
     public async Task Bootstrap_returns_ok_for_valid_input()
     {
         var input = ValidInput();
-        var (auth, billing) = MockServices();
+        var (auth, billing, deletion) = MockServices();
 
-        var business = new AuthBootstrapBusiness(auth.Object, billing.Object, new AuthBootstrapValidator());
+        var business = new AuthBootstrapBusiness(auth.Object, billing.Object, deletion.Object, new AuthBootstrapValidator());
         var response = await business.BootstrapAsync(input, CancellationToken.None);
 
         Assert.True(response.Success);
         Assert.NotNull(response.Data);
         Assert.Equal("Taylor", response.Data!.Profile.DisplayName);
         Assert.Equal("US", response.Data.Profile.CountryCode);
-        Assert.Equal("basic", response.Data.Entitlements.PlanCode);
+        Assert.Equal("free", response.Data.Entitlements.PlanCode);
         Assert.Equal("card_connection", response.Data.Onboarding.CurrentStepCode);
     }
 
@@ -43,9 +44,9 @@ public sealed class AuthBootstrapBusinessTests
     public async Task Bootstrap_provisions_default_profile_when_missing()
     {
         var input = ValidInput();
-        var (auth, billing) = MockServices(existingProfile: false);
+        var (auth, billing, deletion) = MockServices(existingProfile: false);
 
-        var business = new AuthBootstrapBusiness(auth.Object, billing.Object, new AuthBootstrapValidator());
+        var business = new AuthBootstrapBusiness(auth.Object, billing.Object, deletion.Object, new AuthBootstrapValidator());
         var response = await business.BootstrapAsync(input, CancellationToken.None);
 
         Assert.True(response.Success);
@@ -56,9 +57,9 @@ public sealed class AuthBootstrapBusinessTests
     public async Task Bootstrap_returns_validation_error_for_missing_user_id()
     {
         var input = ValidInput() with { UserId = Guid.Empty };
-        var (auth, billing) = MockServices();
+        var (auth, billing, deletion) = MockServices();
 
-        var business = new AuthBootstrapBusiness(auth.Object, billing.Object, new AuthBootstrapValidator());
+        var business = new AuthBootstrapBusiness(auth.Object, billing.Object, deletion.Object, new AuthBootstrapValidator());
         var response = await business.BootstrapAsync(input, CancellationToken.None);
 
         Assert.False(response.Success);
@@ -70,9 +71,9 @@ public sealed class AuthBootstrapBusinessTests
     public async Task Bootstrap_rejects_unsupported_device_platform()
     {
         var input = ValidInput(new DeviceInput("windows", null, null, null, null));
-        var (auth, billing) = MockServices();
+        var (auth, billing, deletion) = MockServices();
 
-        var business = new AuthBootstrapBusiness(auth.Object, billing.Object, new AuthBootstrapValidator());
+        var business = new AuthBootstrapBusiness(auth.Object, billing.Object, deletion.Object, new AuthBootstrapValidator());
         var response = await business.BootstrapAsync(input, CancellationToken.None);
 
         Assert.False(response.Success);
@@ -80,7 +81,7 @@ public sealed class AuthBootstrapBusinessTests
         auth.Verify(s => s.UpsertDeviceAsync(It.IsAny<Guid>(), It.IsAny<DeviceInput>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    private static (Mock<IAuthBootstrapService> Auth, Mock<IBillingReadService> Billing) MockServices(bool existingProfile = true)
+    private static (Mock<IAuthBootstrapService> Auth, Mock<IBillingReadService> Billing, Mock<IAccountDeletionService> Deletion) MockServices(bool existingProfile = true)
     {
         var auth = new Mock<IAuthBootstrapService>();
         auth.Setup(s => s.FindProfileAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -103,10 +104,12 @@ public sealed class AuthBootstrapBusinessTests
         var billing = new Mock<IBillingReadService>();
         billing.Setup(b => b.GetEntitlementsAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new EntitlementsResponse(
-                "basic",
+                "free",
                 Trialing: false,
                 TrialEndsAt: null,
-                CardLinkLimit: null,
+                ManualCardLimit: 1,
+                PlaidCardLimit: 0,
+                GeoRecommendationsPerDay: 1,
                 UnlimitedCards: false,
                 AiInsightsEnabled: false,
                 PlaidLinkingEnabled: false,
@@ -114,6 +117,10 @@ public sealed class AuthBootstrapBusinessTests
                 GeofencingEnabled: false,
                 Features: new Dictionary<string, string>()));
 
-        return (auth, billing);
+        var deletion = new Mock<IAccountDeletionService>();
+        deletion.Setup(d => d.GetActiveRequestAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TrueSpend.Domain.Entities.Privacy.AccountDeletionRequestEntity?)null);
+
+        return (auth, billing, deletion);
     }
 }

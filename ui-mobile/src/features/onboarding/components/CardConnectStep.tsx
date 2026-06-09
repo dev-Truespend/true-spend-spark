@@ -1,6 +1,11 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import { Button } from "@/shared/components/Button";
-import { onboardingPanelStyles as styles } from "@/features/onboarding/components/onboardingStyles";
+import { Card } from "@/shared/components/Card";
+import { ReasonCard } from "@/shared/components/ReasonCard";
+import { ListItem } from "@/shared/components/ListItem";
+import { SectionLabel } from "@/shared/components/SectionLabel";
+import { OnboardingHero } from "./OnboardingHero";
+import { StepHeader } from "./StepHeader";
 import { PlaidLinkButton } from "@/features/plaid/components/PlaidLinkButton";
 
 type Props = {
@@ -13,15 +18,39 @@ type Props = {
 
 export function CardConnectStep({ isLoading, cards, onConnectPlaid, onBeginManual, onSkip }: Props) {
   return (
-    <View style={styles.panel}>
-      <Text style={styles.heading}>Connect cards</Text>
-      <Text style={styles.body}>TrueSpend uses read-only card metadata to compare rewards. It never asks for a full card number.</Text>
-      <PlaidLinkButton disabled={isLoading} onPress={onConnectPlaid} label="Connect bank" />
-      <Button disabled={isLoading} label="Add manually" onPress={onBeginManual} variant="secondary" />
-      <Button disabled={isLoading} label="Skip for now" onPress={onSkip} variant="secondary" />
-      {cards.map((card) => (
-        <Text key={card} style={styles.listItem}>{card}</Text>
-      ))}
+    <View style={{ gap: 12 }}>
+      <StepHeader step={1} totalSteps={4} onSkip={onSkip} />
+      <OnboardingHero
+        iconLabel="🏦"
+        title="Connect your bank"
+        description="We use Plaid to securely identify your cards and account metadata. Read-only — we never see your password and can't move money."
+      />
+
+      <View style={{ gap: 8 }}>
+        <PlaidLinkButton disabled={isLoading} onPress={onConnectPlaid} label="🔒 Connect with Plaid" />
+        <Button disabled={isLoading} label="Add cards manually instead" onPress={onBeginManual} variant="outline" />
+      </View>
+
+      <ReasonCard
+        icon="🛡️"
+        title="Why we ask"
+        body="We need to know which cards you carry to recommend the best one. We never need your full card number — just issuer and product."
+      />
+      <ReasonCard
+        icon="🔐"
+        tone="blue"
+        title="Bank-level security"
+        body="256-bit encryption · used by Venmo, Robinhood, Coinbase · SOC 2 certified."
+      />
+
+      {cards.length ? (
+        <Card>
+          <SectionLabel>Connected so far</SectionLabel>
+          {cards.map((card, i) => (
+            <ListItem key={card + i} title={card} iconLabel="✓" iconTone="green" divider={i < cards.length - 1} />
+          ))}
+        </Card>
+      ) : null}
     </View>
   );
 }
