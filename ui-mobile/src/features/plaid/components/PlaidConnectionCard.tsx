@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge } from "@/shared/components/Badge";
 import { Button } from "@/shared/components/Button";
 import { PlaidConnection } from "@/features/plaid/types/plaid.types";
-import { colors, palette, tints } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
@@ -27,6 +27,33 @@ export function PlaidConnectionCard({
   isSyncing,
   isDisconnecting
 }: Props) {
+  const theme = useTheme();
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      card: {
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderWidth: 1,
+        borderRadius: radii.xxl,
+        padding: 14,
+        gap: 10
+      },
+      cardWarn: { borderColor: t.tints.amber.border },
+      headerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+      logo: { width: 38, height: 38, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+      logoText: { color: t.palette.white, fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(12), letterSpacing: 0.4 },
+      name: { fontFamily: fontFamily.bold, fontSize: scaleFont(14), fontWeight: "700", color: t.colors.text },
+      meta: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.mutedFg, marginTop: 2 },
+      actions: { flexDirection: "row", alignItems: "center", gap: 8 },
+      disconnect: { paddingHorizontal: 12, paddingVertical: 8, marginLeft: "auto" },
+      disconnectText: {
+        fontFamily: fontFamily.semibold,
+        fontWeight: "600",
+        fontSize: scaleFont(12),
+        color: t.tints.red.fg
+      }
+    })
+  );
   const needsReconnect = connection.status === "disconnected" || connection.status === "error";
   const syncLabel = connection.lastSyncAt
     ? `Synced ${new Date(connection.lastSyncAt).toLocaleDateString()}`
@@ -35,7 +62,7 @@ export function PlaidConnectionCard({
   return (
     <View style={[styles.card, needsReconnect && styles.cardWarn]}>
       <View style={styles.headerRow}>
-        <View style={[styles.logo, { backgroundColor: needsReconnect ? colors.destructive : colors.primary }]}>
+        <View style={[styles.logo, { backgroundColor: needsReconnect ? theme.colors.destructive : theme.colors.primary }]}>
           <Text style={styles.logoText}>{initials(connection.institutionName)}</Text>
         </View>
         <View style={{ flex: 1 }}>
@@ -75,28 +102,3 @@ export function PlaidConnectionCard({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: palette.white,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.xxl,
-    padding: 14,
-    gap: 10
-  },
-  cardWarn: { borderColor: tints.amber.border },
-  headerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  logo: { width: 38, height: 38, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  logoText: { color: palette.white, fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(12), letterSpacing: 0.4 },
-  name: { fontFamily: fontFamily.bold, fontSize: scaleFont(14), fontWeight: "700", color: colors.text },
-  meta: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.mutedFg, marginTop: 2 },
-  actions: { flexDirection: "row", alignItems: "center", gap: 8 },
-  disconnect: { paddingHorizontal: 12, paddingVertical: 8, marginLeft: "auto" },
-  disconnectText: {
-    fontFamily: fontFamily.semibold,
-    fontWeight: "600",
-    fontSize: scaleFont(12),
-    color: tints.red.fg
-  }
-});

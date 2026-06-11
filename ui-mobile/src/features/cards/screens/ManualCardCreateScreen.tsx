@@ -7,7 +7,7 @@ import { Screen } from "@/shared/components/Screen";
 import { Switch } from "@/shared/components/Switch";
 import { TextInput } from "@/shared/components/TextInput";
 import { Toast } from "@/shared/components/Toast";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { CardProductPicker } from "@/features/catalog/components/CardProductPicker";
 import { IssuerPicker } from "@/features/catalog/components/IssuerPicker";
@@ -22,6 +22,8 @@ export function ManualCardCreateScreen() {
   const preselectedProductId = params.cardProductId ? Number(params.cardProductId) : null;
   const gate = useEntitlementGate();
   const isUnlimited = gate.unlimitedCards || gate.isPro;
+  const { colors } = useTheme();
+  const styles = useThemedStyles(buildStyles);
 
   const issuersQuery = useCatalogIssuers();
   const issuers = issuersQuery.data?.data?.issuers ?? [];
@@ -147,17 +149,18 @@ export function ManualCardCreateScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  title: { color: colors.text, fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(22), letterSpacing: -0.4 },
-  formStack: { gap: 14 },
-  fieldLabel: { fontFamily: fontFamily.semibold, fontSize: scaleFont(12), color: colors.mutedFg, fontWeight: "600", marginBottom: 6 },
-  switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  switchLabel: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: colors.text },
-  limitHint: {
-    color: colors.mutedFg,
-    fontFamily: fontFamily.regular,
-    fontSize: scaleFont(11),
-    textAlign: "center",
-    marginTop: 4
-  }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    title: { color: t.colors.text, fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(22), letterSpacing: -0.4 },
+    formStack: { gap: 14 },
+    fieldLabel: { fontFamily: fontFamily.semibold, fontSize: scaleFont(12), color: t.colors.mutedFg, fontWeight: "600", marginBottom: 6 },
+    switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    switchLabel: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: t.colors.text },
+    limitHint: {
+      color: t.colors.mutedFg,
+      fontFamily: fontFamily.regular,
+      fontSize: scaleFont(11),
+      textAlign: "center",
+      marginTop: 4
+    }
+  });

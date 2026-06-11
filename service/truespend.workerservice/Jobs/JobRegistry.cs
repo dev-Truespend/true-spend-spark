@@ -25,5 +25,6 @@ public static class JobRegistry
             ["AdminNotificationDispatch"] = (sp, ct) => sp.GetRequiredService<AdminNotificationDispatchJob>().RunAsync(ct),
             ["CardCatalogMappingReview"] = (sp, ct) => sp.GetRequiredService<CardCatalogMappingReviewJob>().RunAsync(ct),
             ["AccountDeletionPurge"] = (sp, ct) => sp.GetRequiredService<AccountDeletionPurgeJob>().RunAsync(ct),
+            ["FoursquarePlacesCatalog"] = (sp, ct) => sp.GetRequiredService<FoursquarePlacesCatalogSyncJob>().RunAsync(ct),
         };
 }

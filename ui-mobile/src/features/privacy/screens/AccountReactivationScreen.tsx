@@ -5,7 +5,7 @@ import { Screen } from "@/shared/components/Screen";
 import { Toast } from "@/shared/components/Toast";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCancelAccountDeletion } from "@/features/privacy/hooks/useRequestAccountDeletion";
-import { colors } from "@/shared/theme/colors";
+import { useThemedStyles } from "@/providers/ThemeProvider";
 import { radii, spacing } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
@@ -17,6 +17,7 @@ function formatPurgeDate(value?: string | null): string | null {
 }
 
 export function AccountReactivationScreen() {
+  const styles = useStyles();
   const { session, bootstrap, completeSignedInSession, signOut, isSigningOut } = useAuth();
   const cancelDeletion = useCancelAccountDeletion();
   const [error, setError] = useState<string | null>(null);
@@ -73,49 +74,52 @@ export function AccountReactivationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  content: { flex: 1, justifyContent: "center" },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.hero,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    gap: spacing.md,
-    alignItems: "center"
-  },
-  iconBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceAlt,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  icon: { fontSize: scaleFont(30) },
-  title: {
-    color: colors.text,
-    fontFamily: fontFamily.heavy,
-    fontSize: scaleFont(22),
-    fontWeight: "800",
-    letterSpacing: -0.4,
-    textAlign: "center"
-  },
-  body: {
-    color: colors.muted,
-    fontFamily: fontFamily.regular,
-    fontSize: scaleFont(15),
-    lineHeight: scaleFont(22),
-    textAlign: "center"
-  },
-  bodyStrong: { color: colors.text, fontFamily: fontFamily.semibold, fontWeight: "600" },
-  actions: { alignSelf: "stretch", gap: spacing.sm, marginTop: spacing.xs },
-  footnote: {
-    color: colors.muted,
-    fontFamily: fontFamily.regular,
-    fontSize: scaleFont(12),
-    lineHeight: scaleFont(17),
-    textAlign: "center",
-    opacity: 0.8
-  }
-});
+const useStyles = () =>
+  useThemedStyles((t) =>
+    StyleSheet.create({
+      content: { flex: 1, justifyContent: "center" },
+      card: {
+        backgroundColor: t.colors.surface,
+        borderRadius: radii.hero,
+        borderWidth: 1,
+        borderColor: t.colors.border,
+        padding: spacing.lg,
+        gap: spacing.md,
+        alignItems: "center"
+      },
+      iconBadge: {
+        width: 64,
+        height: 64,
+        borderRadius: radii.pill,
+        backgroundColor: t.colors.surfaceAlt,
+        alignItems: "center",
+        justifyContent: "center"
+      },
+      icon: { fontSize: scaleFont(30) },
+      title: {
+        color: t.colors.text,
+        fontFamily: fontFamily.heavy,
+        fontSize: scaleFont(22),
+        fontWeight: "800",
+        letterSpacing: -0.4,
+        textAlign: "center"
+      },
+      body: {
+        color: t.colors.muted,
+        fontFamily: fontFamily.regular,
+        fontSize: scaleFont(15),
+        lineHeight: scaleFont(22),
+        textAlign: "center"
+      },
+      bodyStrong: { color: t.colors.text, fontFamily: fontFamily.semibold, fontWeight: "600" },
+      actions: { alignSelf: "stretch", gap: spacing.sm, marginTop: spacing.xs },
+      footnote: {
+        color: t.colors.muted,
+        fontFamily: fontFamily.regular,
+        fontSize: scaleFont(12),
+        lineHeight: scaleFont(17),
+        textAlign: "center",
+        opacity: 0.8
+      }
+    })
+  );

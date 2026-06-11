@@ -10,7 +10,8 @@ import { RewardRow } from "@/shared/components/RewardRow";
 import { Screen } from "@/shared/components/Screen";
 import { SectionLabel } from "@/shared/components/SectionLabel";
 import { Badge } from "@/shared/components/Badge";
-import { colors, GradientName, TintName } from "@/shared/theme/colors";
+import { GradientName, TintName } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { RewardOverrideEditor } from "@/features/cards/components/RewardOverrideEditor";
@@ -58,6 +59,8 @@ function variantForCard(cardId: number) {
 
 export function CardDetailScreen({ cardId }: Props) {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(buildStyles);
   const { detail, isLoading, error } = useCardDetail(cardId);
   const deleteMutation = useDeleteCard();
   const setPrimaryMutation = useSetPrimary();
@@ -228,13 +231,14 @@ export function CardDetailScreen({ cardId }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
-  termsWrap: { paddingHorizontal: 14 },
-  summary: { paddingVertical: 10 },
-  summaryText: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: colors.mutedFg, lineHeight: 17 },
-  actionGrid: { gap: 8 },
-  errorBlock: { color: colors.destructive, fontFamily: fontFamily.medium, textAlign: "center", marginTop: 16 }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+    topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: t.colors.text },
+    termsWrap: { paddingHorizontal: 14 },
+    summary: { paddingVertical: 10 },
+    summaryText: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: t.colors.mutedFg, lineHeight: 17 },
+    actionGrid: { gap: 8 },
+    errorBlock: { color: t.colors.destructive, fontFamily: fontFamily.medium, textAlign: "center", marginTop: 16 }
+  });

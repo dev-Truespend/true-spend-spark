@@ -3,7 +3,7 @@ import { Badge } from "@/shared/components/Badge";
 import { Button } from "@/shared/components/Button";
 import { PlanCard } from "@/shared/components/PlanCard";
 import { ReasonCard } from "@/shared/components/ReasonCard";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { PeriodToggle } from "@/features/billing/components/PeriodToggle";
@@ -86,6 +86,7 @@ export function PlanPickerStep({
   onContinueFree,
   onSwitchToPro
 }: Props) {
+  const styles = useThemedStyles(buildStyles);
   const hasProPlan = plans.some((p) => p.code.toLowerCase() === "pro");
   const cadence = periodCode === "annual" ? "/yr" : "/mo";
   // A plan with no price row is the Free tier — it skips Stripe checkout entirely.
@@ -193,22 +194,23 @@ export function PlanPickerStep({
   );
 }
 
-const styles = StyleSheet.create({
-  header: { alignItems: "center", paddingVertical: 4, gap: 6 },
-  title: { fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(22), color: colors.text, letterSpacing: -0.4 },
-  sub: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: colors.mutedFg, textAlign: "center", lineHeight: 19 },
-  bold: { fontFamily: fontFamily.bold, fontWeight: "700", color: colors.text },
-  planWrap: { borderRadius: radii.xxl },
-  planWrapSelected: {
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    elevation: 3
-  },
-  planFooter: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
-  selectHint: { color: colors.mutedFg, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(11), letterSpacing: 0.3 },
-  trial: { color: colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(12) },
-  checkoutHint: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: colors.mutedFg, textAlign: "center" },
-  fineprint: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.mutedFg, textAlign: "center", lineHeight: 15 }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    header: { alignItems: "center", paddingVertical: 4, gap: 6 },
+    title: { fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(22), color: t.colors.text, letterSpacing: -0.4 },
+    sub: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: t.colors.mutedFg, textAlign: "center", lineHeight: 19 },
+    bold: { fontFamily: fontFamily.bold, fontWeight: "700", color: t.colors.text },
+    planWrap: { borderRadius: radii.xxl },
+    planWrapSelected: {
+      shadowColor: t.colors.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.18,
+      shadowRadius: 6,
+      elevation: 3
+    },
+    planFooter: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+    selectHint: { color: t.colors.mutedFg, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(11), letterSpacing: 0.3 },
+    trial: { color: t.colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(12) },
+    checkoutHint: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: t.colors.mutedFg, textAlign: "center" },
+    fineprint: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.mutedFg, textAlign: "center", lineHeight: 15 }
+  });

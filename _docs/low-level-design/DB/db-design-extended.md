@@ -693,6 +693,47 @@ Inbound webhook log for Foursquare geofence/place enter events. Mirrors `plaid_w
 - `occurred_at` (timestamptz)
 - `created_at` (timestamptz)
 
+## `foursquare`
+
+Local POI store for the geo-arrival `custom` path ([10a-arrival-detection-provider.md](../../Workflows/10a-arrival-detection-provider.md)). Catalog-level reference data, shared across users, never PII. Pre-loaded by `FoursquarePlacesCatalogSyncJob` (batch) and filled on-demand by read-through upsert on a live-lookup miss. Requires the `postgis` + `pg_trgm` extensions (declared in `_init.sql`).
+
+### `chains` — brand/chain dimension
+
+- `id` (int, PK)
+- `provider_chain_id` (text, unique, nullable — Foursquare chain id)
+- `name` (text)
+- `normalized_name` (text) — GIN trigram index for fuzzy match
+- `default_category_id` (smallint, FK → `catalog.categories.id`, nullable)
+- `logo_url` (text, nullable)
+- `is_active` (boolean), `created_at`, `updated_at` (timestamptz)
+
+### `places` — geocoded POIs
+
+- `id` (int, PK)
+- `provider` (text — row source: `foursquare` | `google` | `overture`; on-miss fallback rows also land here)
+- `provider_place_id` (text); unique `(provider, provider_place_id)`
+- `chain_id` (int, FK → `foursquare.chains.id`, nullable)
+- `name` (text), `normalized_name` (text — GIN trigram)
+- `category_id` (smallint, FK → `catalog.categories.id`, nullable while reward mapping is pending)
+- `lat` (numeric(9,6)), `lng` (numeric(9,6))
+- `geog` (geography(Point,4326), generated from lat/lng) — GiST index for `ST_DWithin`/`<->` nearby
+- `address`, `locality`, `region`, `postal_code`, `country` (text, nullable)
+- `source` (text — `catalog_sync` | `on_demand_lookup`)
+- `is_active` (boolean), `last_seen_at`, `created_at`, `updated_at` (timestamptz)
+- Indexes: GiST on `geog`, GIN trigram on `normalized_name`/`locality`/`region`, btree on `chain_id` and `(lat, lng)`
+
+### `category_bridge` — FSQ category → internal category map + fetch allowlist (seeded)
+
+- `id` (int, PK)
+- `foursquare_category_id` (text, unique)
+- `foursquare_category_path` (text — `A > B > C` label for audit)
+- `category_id` (smallint, FK → `catalog.categories.id`, nullable while pending)
+- `include_descendants` (boolean, default true — a parent row covers its whole subtree)
+- `is_active` (boolean), `created_at`, `updated_at` (timestamptz)
+- The active rows ARE the categories `FoursquarePlacesCatalogSyncJob` fetches. Mirrors `finance.transaction_category_bridge`; deterministic lookup, no runtime AI.
+
+> `finance.foursquare_webhook_events` gains a `provider` column (default `foursquare`) and a unique `(provider, foursquare_event_id)` index so it dedups both the foursquare webhook and the `custom` device ingress on `(provider, eventId)`.
+
 ## `lookup`
 
 ### `onboarding_steps` — app onboarding flow steps (seeded)

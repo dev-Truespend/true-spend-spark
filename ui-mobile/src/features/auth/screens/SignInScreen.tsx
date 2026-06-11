@@ -6,7 +6,7 @@ import { Screen } from "@/shared/components/Screen";
 import { BrandMark } from "@/shared/components/BrandMark";
 import { Button } from "@/shared/components/Button";
 import { Divider } from "@/shared/components/Divider";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { useSignIn } from "@/features/auth/hooks/useSignIn";
 import { IdentifierForm } from "@/features/auth/components/IdentifierForm";
@@ -18,6 +18,8 @@ export function SignInScreen() {
   const [mode, setMode] = useState<Mode>("providers");
   const [identifier, setIdentifier] = useState("");
   const { error, isLoading, startOtp, startProvider } = useSignIn();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(buildStyles);
 
   async function submitOtp() {
     const channel: "email" | "phone" = mode === "phone" ? "phone" : "email";
@@ -92,44 +94,45 @@ export function SignInScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    alignItems: "center",
-    gap: 10,
-    marginTop: 24,
-    marginBottom: 8
-  },
-  title: {
-    color: colors.text,
-    fontFamily: fontFamily.heavy,
-    fontSize: scaleFont(26),
-    fontWeight: "800",
-    letterSpacing: -0.6,
-    textAlign: "center"
-  },
-  titleAccent: {
-    color: colors.accent
-  },
-  subtitle: {
-    color: colors.mutedFg,
-    fontFamily: fontFamily.regular,
-    fontSize: scaleFont(14),
-    lineHeight: 20,
-    textAlign: "center",
-    paddingHorizontal: 16
-  },
-  error: { color: colors.destructive, fontFamily: fontFamily.medium, textAlign: "center" },
-  backRow: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start" },
-  backLabel: { color: colors.mutedFg, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12) },
-  helper: { color: colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(12), textAlign: "center" },
-  terms: {
-    color: colors.mutedFg,
-    fontFamily: fontFamily.regular,
-    fontSize: scaleFont(11),
-    textAlign: "center",
-    marginTop: 12,
-    lineHeight: 16,
-    paddingHorizontal: 12
-  },
-  link: { color: colors.primary, fontFamily: fontFamily.semibold, fontWeight: "600" }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    header: {
+      alignItems: "center",
+      gap: 10,
+      marginTop: 24,
+      marginBottom: 8
+    },
+    title: {
+      color: t.colors.text,
+      fontFamily: fontFamily.heavy,
+      fontSize: scaleFont(26),
+      fontWeight: "800",
+      letterSpacing: -0.6,
+      textAlign: "center"
+    },
+    titleAccent: {
+      color: t.colors.accent
+    },
+    subtitle: {
+      color: t.colors.mutedFg,
+      fontFamily: fontFamily.regular,
+      fontSize: scaleFont(14),
+      lineHeight: 20,
+      textAlign: "center",
+      paddingHorizontal: 16
+    },
+    error: { color: t.colors.destructive, fontFamily: fontFamily.medium, textAlign: "center" },
+    backRow: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start" },
+    backLabel: { color: t.colors.mutedFg, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12) },
+    helper: { color: t.colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(12), textAlign: "center" },
+    terms: {
+      color: t.colors.mutedFg,
+      fontFamily: fontFamily.regular,
+      fontSize: scaleFont(11),
+      textAlign: "center",
+      marginTop: 12,
+      lineHeight: 16,
+      paddingHorizontal: 12
+    },
+    link: { color: t.colors.primary, fontFamily: fontFamily.semibold, fontWeight: "600" }
+  });

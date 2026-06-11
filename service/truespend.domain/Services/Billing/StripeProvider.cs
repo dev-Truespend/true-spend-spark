@@ -22,6 +22,9 @@ public sealed class StripeProviderOptions
     public string BillingSuccessUrl { get; set; } = "truespend://app/billing?checkout=success";
     public string BillingCancelUrl { get; set; } = "truespend://app/billing";
     public string PortalReturnUrl { get; set; } = "truespend://app/billing";
+    // TestFlight/QA only: when true, /billing/checkout provisions a trialing subscription locally
+    // (no Stripe call) and returns an empty Url. Prod leaves this false → real Stripe checkout.
+    public bool SimulateCheckout { get; set; }
 }
 
 public sealed class StripeProvider(IOptions<StripeProviderOptions> optionsAccessor) : IStripeProvider

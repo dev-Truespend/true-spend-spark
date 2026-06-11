@@ -3,6 +3,7 @@ using TrueSpend.Domain.Entities.App;
 using TrueSpend.Domain.Entities.Billing;
 using TrueSpend.Domain.Entities.Catalog;
 using TrueSpend.Domain.Entities.Finance;
+using TrueSpend.Domain.Entities.Foursquare;
 using TrueSpend.Domain.Entities.Insights;
 using TrueSpend.Domain.Entities.Lookup;
 using TrueSpend.Domain.Entities.Messaging;
@@ -54,6 +55,10 @@ public sealed class TrueSpendDbContext(DbContextOptions<TrueSpendDbContext> opti
     public DbSet<FoursquareWebhookEventEntity> FoursquareWebhookEvents => Set<FoursquareWebhookEventEntity>();
     public DbSet<PlaidWebhookEventEntity> PlaidWebhookEvents => Set<PlaidWebhookEventEntity>();
     public DbSet<LocationEventEntity> LocationEvents => Set<LocationEventEntity>();
+
+    public DbSet<FoursquareChainEntity> FoursquareChains => Set<FoursquareChainEntity>();
+    public DbSet<FoursquarePlaceEntity> FoursquarePlaces => Set<FoursquarePlaceEntity>();
+    public DbSet<FoursquareCategoryBridgeEntity> FoursquareCategoryBridges => Set<FoursquareCategoryBridgeEntity>();
 
     public DbSet<CurrencyEntity> Currencies => Set<CurrencyEntity>();
     public DbSet<OnboardingStepEntity> OnboardingSteps => Set<OnboardingStepEntity>();

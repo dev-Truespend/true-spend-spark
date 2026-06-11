@@ -8,6 +8,7 @@ namespace TrueSpend.Api.Mappers;
 public interface IGeoMapper
 {
     FoursquareWebhookInput ParseFoursquareEvent(string rawBody);
+    GeoArrivalInput ToArrivalInput(GeoArrivalRequestVm request, Guid userId);
     WebhookAckResponseVm ToAckResponse(FoursquareWebhookResult result);
 }
 
@@ -89,6 +90,26 @@ public sealed class GeoMapper : IGeoMapper
             OccurredAt: occurredAt,
             RawPayload: rawBody);
     }
+
+    public GeoArrivalInput ToArrivalInput(GeoArrivalRequestVm request, Guid userId) =>
+        new(
+            Provider: TrueSpend.Domain.Constants.GeoConstants.ProviderCustom,
+            EventId: request.EventId,
+            EventType: string.IsNullOrWhiteSpace(request.EventType) ? TrueSpend.Domain.Constants.GeoConstants.CustomEventArrival : request.EventType,
+            EventKind: TrueSpend.Domain.Enums.GeoArrivalEventKindEnum.Arrival,
+            UserId: userId == Guid.Empty ? null : userId,
+            ExternalUserId: null,
+            PlaceName: request.PlaceName,
+            ProviderPlaceId: request.ProviderPlaceId,
+            GeofenceTag: null,
+            PlaceChain: null,
+            Lat: request.Lat,
+            Lng: request.Lng,
+            AccuracyMeters: request.AccuracyMeters,
+            OccurredAt: request.OccurredAt == default ? DateTimeOffset.UtcNow : request.OccurredAt,
+            DwellSeconds: request.DwellSeconds,
+            MovementState: request.MovementState,
+            RawPayload: JsonSerializer.Serialize(request));
 
     public WebhookAckResponseVm ToAckResponse(FoursquareWebhookResult result) =>
         new(result.Received, result.Deduplicated);

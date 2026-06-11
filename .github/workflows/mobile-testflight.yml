@@ -1,0 +1,29 @@
+# Extracted from _docs/Deployment/deployment-guide.md §8.
+# EAS build (iOS, production profile) -> submit to TestFlight. One-time prereqs: eas login, eas init,
+# eas credentials (EAS-managed dist cert + provisioning profile + App Store Connect API key).
+# Set the EXPO_PUBLIC_* prod values as EAS environment variables so the binary embeds prod URLs.
+name: mobile-testflight
+on:
+  workflow_dispatch:   # manual trigger only — Run workflow button
+jobs:
+  build-submit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui-mobile
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Build iOS (production)
+        run: eas build --platform ios --profile production --non-interactive --wait
+      - name: Submit to TestFlight
+        run: eas submit --platform ios --profile production --latest --non-interactive

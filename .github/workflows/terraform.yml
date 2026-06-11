@@ -1,0 +1,75 @@
+# Terraform IaC pipeline for terraform/ (deployment-guide §4–§5, §3d).
+#
+# Manual trigger only (Run workflow button). Pick an env, then tick:
+#   - "plan"  -> terraform plan  (review the diff)
+#   - "apply" -> terraform apply (gated by the GitHub Environment's required reviewers)
+# Tick both to plan then apply in one run; tick neither and nothing runs.
+#
+# Auth: OIDC (no stored client secret). The CI app registration's identity needs, per subscription:
+#   - Contributor                    on the subscription / each rg-truespend-<env>
+#   - Storage Blob Data Contributor  on sttruespendtfstate (remote state account)
+# Set repo secrets: ARM_CLIENT_ID, ARM_TENANT_ID, ARM_SUBSCRIPTION_ID.
+#
+# NOTE: the FIRST apply of a brand-new env must be done locally — Container Apps/Gateway reference
+# Key Vault secrets + the agw-tls-cert that are seeded out of band between a partial and full apply
+# (terraform/README.md, deployment-guide §5). This pipeline is for applies once those KV entries exist.
+
+name: terraform
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: Environment to act on
+        type: choice
+        options: [dev, staging, prod]
+        default: dev
+      plan:
+        description: Run terraform plan
+        type: boolean
+        default: true
+      apply:
+        description: Run terraform apply (gated by the environment's required reviewers)
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write   # OIDC token for azure login
+  contents: read
+
+env:
+  ARM_USE_OIDC: "true"
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  # Terraform input variables (real *.tfvars are gitignored, so feed them here).
+  TF_VAR_env: ${{ inputs.env }}
+  TF_VAR_tenant_id: ${{ secrets.ARM_TENANT_ID }}
+  TF_VAR_subscription_id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+jobs:
+  plan:
+    if: ${{ inputs.plan }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init -backend-config="key=truespend-${{ inputs.env }}.tfstate"
+      - run: terraform fmt -check -recursive
+      - run: terraform validate
+      - run: terraform plan -input=false -no-color
+
+  apply:
+    if: ${{ inputs.apply }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}   # add required reviewers here to gate apply
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init -backend-config="key=truespend-${{ inputs.env }}.tfstate"
+      - run: terraform apply -input=false -auto-approve

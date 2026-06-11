@@ -34,7 +34,8 @@ TrueSpend.Worker (1 container, runs 24/7 in Azure Container Apps)
 ├── Scheduler component (library TBD)
 │   ├── Catalog jobs            (RewardsCcIssuerSyncJob, RewardsCcCardProductSyncJob,
 │   │                            RewardsCcRewardRuleSyncJob, RewardsCcCatalogReconcileJob,
-│   │                            CardCatalogMappingReviewJob, PlaidInstitutionCatalogJob)
+│   │                            CardCatalogMappingReviewJob, PlaidInstitutionCatalogJob,
+│   │                            FoursquarePlacesCatalogSyncJob)
 │   ├── Plaid sync              (PlaidTransactionSyncJob)
 │   ├── Notification producers  (ReminderFiringJob, AdminNotificationDispatchJob,
 │   │                            SubscriptionExpiryNotificationJob; UnusualTransactionJob disabled in MVP)
@@ -416,6 +417,137 @@ Downstream consumers:
 - `PlaidController` bank search dropdown.
 - Plaid onboarding common-bank list on screen 2.2.
 - Admin provider-health review.
+
+## FoursquarePlacesCatalogSyncJob
+
+> **Disabled in MVP (Phase 1).** Ships `Enabled = false`; tied to the geo-arrival `custom` provider rollout ([10a-arrival-detection-provider.md](../../Workflows/10a-arrival-detection-provider.md)). Re-enable when the custom path goes live. Still manually triggerable via `/jobs/FoursquarePlacesCatalog/run`.
+
+Purpose: pre-load well-known merchant locations (coordinates + merchant/chain/category info) from Foursquare into a **new local POI store** so the geo-arrival `custom` path resolves "which merchant is the user at" by a server-side spatial query against our own tables — no live Google Places / Foursquare call per arrival, no on-device API key. This is catalog-level reference data: shared across users, never user PII.
+
+Schedule: weekly Sunday 05:00 (`0 5 * * 0`). POI data changes slowly (stores open/close); weekly is enough.
+
+Responsibilities:
+
+- Pull merchant places from Foursquare in one of two modes (mode is selected by config, like the RewardsCC seed-vs-full pattern):
+  - **`bulk`** — import the Foursquare Open Source Places dataset (Parquet from object storage) for the configured regions. Full replace per region.
+  - **`api`** — tile the configured bounding boxes / chains through the Foursquare Places API. Incremental via the provider's `updated_since` / cursor when available.
+- Fetch **only** the FSQ categories in the configurable allowlist — the active, mapped rows of `foursquare.category_bridge`, where a parent row with `include_descendants = true` pulls in all child categories. Everything else (services, civic, residential, transit) is never fetched; this is the main lever that shrinks the dataset. Editing the table changes what loads — no redeploy.
+- Normalize chain/brand → upsert `foursquare.chains`; map each chain's default category to `catalog.categories.code` (fallback via `catalog.category_aliases`).
+- Upsert each location into `foursquare.places` by `(provider, provider_place_id)`; populate the `geog` point, link `chain_id` + `category_id`, set `last_seen_at`, `is_active = true`.
+- Mark places `is_active = false` when no longer returned (closed/removed) instead of hard-deleting, so historical `finance.location_events` references stay valid.
+- Idempotent: re-running upserts by `(provider, provider_place_id)`; no duplicates.
+
+External calls:
+
+Provider: Foursquare. `api` mode calls the Places API (abstracted behind `IFoursquarePlacesProvider`); `bulk` mode reads the open dataset from object storage (no live API).
+
+Expected provider calls (`api` mode):
+
+```http
+GET /v3/places/search
+```
+
+Worker configuration:
+
+```json
+{
+  "jobName": "FoursquarePlacesCatalogSyncJob",
+  "enabled": false,
+  "schedule": "0 5 * * 0",
+  "mode": "bulk",
+  "regions": ["US-CA", "US-NY"],
+  "chainAllowlist": [],
+  "categorySource": "foursquare.category_bridge",
+  "batchSize": 1000,
+  "dryRun": false,
+  "maxRetries": 3
+}
+```
+
+Worker result:
+
+```json
+{
+  "jobRunId": "uuid",
+  "status": "succeeded",
+  "provider": "foursquare",
+  "mode": "bulk",
+  "processed": 84210,
+  "placesCreated": 1240,
+  "placesUpdated": 82800,
+  "placesDeactivated": 170,
+  "chainsCreated": 6,
+  "chainsUpdated": 412,
+  "skippedByCategoryFilter": 9100,
+  "failed": 0
+}
+```
+
+Required schema additions — a new **`foursquare`** schema (add to [db-design-extended.md § foursquare](../DB/db-design-extended.md) before implementation). Requires the **PostGIS** and **pg_trgm** extensions:
+
+- `foursquare.chains` — brand/chain dimension: `id`, `provider_chain_id` (Foursquare chain id, nullable), `name`, `normalized_name`, `default_category_id` (fk `catalog.categories`, nullable), `logo_url` (nullable), `is_active`, `created_at`, `updated_at`. Unique `(provider_chain_id)`; **GIN trigram index on `normalized_name`**.
+- `foursquare.places` — geocoded POIs: `id`, `provider` (`foursquare` | `google` | `overture` — row source, since on-miss fallback rows also land here), `provider_place_id`, `chain_id` (fk `foursquare.chains`, nullable), `name`, `normalized_name`, `category_id` (fk `catalog.categories`, nullable), `lat numeric(9,6)`, `lng numeric(9,6)`, `geog geography(Point,4326)`, `address`, `locality`, `region`, `postal_code`, `country` (all nullable), `search_tsv tsvector` (optional, for full-text), `source` (`catalog_sync` | `on_demand_lookup`), `is_active`, `last_seen_at`, `created_at`, `updated_at`. Unique `(provider, provider_place_id)`. Indexes: **GiST on `geog`** (nearby), **GIN trigram on `normalized_name`** (plus `locality`, `region`) for fuzzy text, optional **GIN on `search_tsv`** for full-text, btree on `chain_id`.
+- `foursquare.category_bridge` — Foursquare category → internal category map **and** the configurable fetch allowlist; mirrors `finance.transaction_category_bridge` ([category-bridge.md](../../Workflows/category-bridge.md)): `id`, `foursquare_category_id`, `foursquare_category_path` (text, the `A > B > C` label for readability/audit), `category_id` (fk `catalog.categories`, nullable while a row is pending mapping), `include_descendants` (boolean, default true — a parent row covers all child categories), `is_active`, `created_at`, `updated_at`. Unique `(foursquare_category_id)`. **The active, mapped rows of this table ARE the list the job fetches** (see Category & chain selection). Built once, deterministic lookup at sync time — no runtime AI. Anything not covered by an active row is never fetched.
+
+> **Naming note.** The schema is `foursquare` because Foursquare is the primary/batch source. On-demand fallback rows from Google/Overture still land in `foursquare.places`, tagged by `provider`, so place matching stays single-source — they are not split into a separate table.
+
+### Category & chain selection
+
+The allowlists are **derived, not hand-written**:
+
+- **Categories — configurable, drives the fetch.** The allowlist lives in `foursquare.category_bridge`: each active row maps one FSQ category → a rewardable `catalog.categories` row, and a parent row (`include_descendants = true`) covers all its children — so you map `Dining and Drinking` once instead of listing every restaurant/cafe/bar leaf. The job reads this table at run time and fetches only those categories; **edit the table to change what loads, no redeploy**. Which categories count as "rewardable" is itself derived from `SELECT DISTINCT category_code FROM catalog.reward_rules WHERE multiplier > 1`. Same build process as the Plaid bridge: author a closed list once against the FSQ taxonomy, deterministic, no runtime AI; anything unmapped is skipped.
+- **Chains** = read off the dataset, not curated. A place is a chain location when its chain id is set; rank chains by location count within rewardable categories (`GROUP BY chain ORDER BY COUNT(*) DESC`) and take the top-N for `chainAllowlist`, or filter by category only and let all chains in those categories flow in.
+
+Start with rewardable chains in launch regions (likely <1% of Foursquare's full place count); expand on real coverage gaps — same trigger as [10-geo-recommendations.md](../../Workflows/10-geo-recommendations.md) "Later: Local Merchant Coverage".
+
+#### Initial category allowlist (seed)
+
+This is the provisional set the job fetches on first run. It is captured **before** the real RewardsCC reward categories are known, so the internal `category_id` mapping on these rows stays **pending (null)** for now — the *fetch* allowlist (which FSQ categories to pull) is independent and active immediately, while the *reward mapping* is filled in later.
+
+> **Pending RewardsCC mapping.** The exact internal/reward categories aren't available yet. Once `RewardsCcCatalogSyncOrchestrationJob` is run locally, `SELECT DISTINCT category_code FROM catalog.reward_rules WHERE multiplier > 1` gives the real reward categories; fill `category_id` on these rows then, and a re-sync backfills `foursquare.places.category_id`. **Still to add once their branch data is available:** Grocery, Gas, Travel/Hotel, and Pharmacy — high-value categories that live in the FSQ `Retail` / `Travel and Transportation` / `Health and Medicine` branches, whose IDs aren't in hand yet.
+
+All rows use `include_descendants = true`, so a parent row covers its whole subtree (e.g. `Dining and Drinking` covers every restaurant/cafe/bar leaf; `Health and Beauty Service` covers salons/spa/barbershop/etc.; `Performing Arts Venue` covers concert halls/theaters/music venues). Places fetched under a pending row are stored with `category_id` null and earn at base rate until the mapping is completed. Grouping below (Dining / Entertainment / Services) is the *intended* reward bucket — confirm against `catalog.reward_rules` before filling `category_id`.
+
+| FSQ category id | FSQ category path | bucket (intended) | `category_id` |
+|---|---|---|---|
+| `63be6904847c3692a84b9bb5` | Dining and Drinking | dining | pending |
+| `4bf58dd8d48988d182941735` | Arts and Entertainment > Amusement Park | entertainment | pending |
+| `4bf58dd8d48988d193941735` | Arts and Entertainment > Water Park | entertainment | pending |
+| `4fceea171983d5d06c3e9823` | Arts and Entertainment > Aquarium | entertainment | pending |
+| `4bf58dd8d48988d17b941735` | Arts and Entertainment > Zoo | entertainment | pending |
+| `4bf58dd8d48988d181941735` | Arts and Entertainment > Museum | entertainment | pending |
+| `4bf58dd8d48988d17f941735` | Arts and Entertainment > Movie Theater | entertainment | pending |
+| `4bf58dd8d48988d1e4931735` | Arts and Entertainment > Bowling Alley | entertainment | pending |
+| `4bf58dd8d48988d1e1931735` | Arts and Entertainment > Arcade | entertainment | pending |
+| `52e81612bcbc57f1066b79eb` | Arts and Entertainment > Mini Golf Course | entertainment | pending |
+| `52e81612bcbc57f1066b79ea` | Arts and Entertainment > Go Kart Track | entertainment | pending |
+| `52e81612bcbc57f1066b79e6` | Arts and Entertainment > Laser Tag Center | entertainment | pending |
+| `4bf58dd8d48988d17c941735` | Arts and Entertainment > Casino | entertainment | pending |
+| `4bf58dd8d48988d11f941735` | Arts and Entertainment > Night Club | entertainment | pending |
+| `4bf58dd8d48988d18e941735` | Arts and Entertainment > Comedy Club | entertainment | pending |
+| `4bf58dd8d48988d1f2931735` | Arts and Entertainment > Performing Arts Venue | entertainment | pending |
+| `4bf58dd8d48988d184941735` | Arts and Entertainment > Stadium | entertainment | pending |
+| `54541900498ea6ccd0202697` | Business and Professional Services > Health and Beauty Service | services | pending |
+| `4f04ae1f2fb6e1c99f3db0ba` | Business and Professional Services > Automotive Service > Car Wash and Detail | services | pending |
+| `52f2ab2ebcbc57f1066b8b33` | Business and Professional Services > Laundromat | services | pending |
+| `4bf58dd8d48988d1fc941735` | Business and Professional Services > Laundry Service | services | pending |
+
+This table is the seed for `foursquare.category_bridge`; the running job reads the active rows and fetches only these categories (+ their descendants). The `Health and Beauty Service` parent replaces the earlier itemized barbershop/hair/nail/spa/massage/dry-cleaner rows — they're all descendants, so the one parent row covers them.
+
+### Search & match strategy
+
+These tables back both background arrival matching and interactive "X near me" search. Query order:
+
+1. **Nearby (PostGIS)** — `ST_DWithin(geog, user_point, radius)` filtered to `is_active` rewardable places, ordered by distance (`geog <-> user_point`). Uses the GiST index.
+2. **Text (pg_trgm / full-text)** — trigram similarity on `normalized_name` / chain name (and optional `search_tsv` full-text), filtered to active rewardable categories. Uses the GIN indexes.
+3. **Hybrid ranking** for queries like "starbucks near me": combine a text-similarity score, a distance score (closer better), and source/confidence; **an exact chain match beats a fuzzy location match**.
+4. **Provider fallback + persist on miss** — if no good local match, call the configured provider (Foursquare / Google / Overture), return the result, and **upsert it into `foursquare.places`** with `source = on_demand_lookup` when its category is on the allowlist. The tables are the source of truth (no cache layer in MVP), so later searches/arrivals at that place read straight from them. Detailed flow in [10a-arrival-detection-provider.md](../../Workflows/10a-arrival-detection-provider.md).
+
+Downstream consumers:
+
+- Geo-arrival `custom` path ([10a-arrival-detection-provider.md](../../Workflows/10a-arrival-detection-provider.md)) — server-side nearest-merchant lookup (`ST_DWithin` + `<->`, confidence-gated) replaces the live place-match call.
+- Interactive merchant search/resolve — DB-first text + nearby, provider fallback on miss.
+- The matched `foursquare.places` row resolves to a `finance.merchants` row (by chain/name) for the existing `HandleEventAsync` recommendation pipeline.
 
 ## PlaidTransactionSyncJob
 
@@ -881,6 +1013,7 @@ Phase 1 (MVP). Cron is the Production schedule; in Development every job ships `
 | `UnusualTransactionJob` | `*/5 * * * *` | **Off** | Detect/notify on high-amount transactions — not needed in MVP | None |
 | `PlaidInstitutionCatalogJob` | `0 1 * * *` | **Off** | Bank catalog for a custom picker — replaced by Plaid Link's built-in picker | Plaid institutions APIs |
 | `RewardsCcCatalogReconcileJob` | `0 4 * * 0` | **Off** | Weekly full reconciliation — folded into the single nightly sync for MVP | RewardsCC catalog APIs |
+| `FoursquarePlacesCatalogSyncJob` | `0 5 * * 0` | **Off** | Pre-load merchant POIs (coords + chain/category) into new `foursquare.places` / `foursquare.chains` for the geo-arrival custom path | Foursquare Places API (`api` mode) / open dataset (`bulk` mode) |
 
 > The three RewardsCC catalog sections below (`RewardsCcIssuerSyncJob`, `RewardsCcCardProductSyncJob`, `RewardsCcRewardRuleSyncJob`) document the **sub-steps** the single `RewardsCcCatalogSyncOrchestrationJob` runs in order at 00:00. They are not separately scheduled jobs.
 

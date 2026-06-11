@@ -244,6 +244,7 @@ public sealed class FoursquareWebhookEventEntityConfiguration : IEntityTypeConfi
         builder.ToTable("foursquare_webhook_events", "finance");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.Provider).HasColumnName("provider");
         builder.Property(x => x.FoursquareEventId).HasColumnName("foursquare_event_id");
         builder.Property(x => x.EventType).HasColumnName("event_type");
         builder.Property(x => x.FoursquareUserId).HasColumnName("foursquare_user_id");
@@ -254,7 +255,7 @@ public sealed class FoursquareWebhookEventEntityConfiguration : IEntityTypeConfi
         builder.Property(x => x.ProcessedAt).HasColumnName("processed_at");
         builder.Property(x => x.ProcessingError).HasColumnName("processing_error");
         builder.Property(x => x.CreatedAt).HasColumnName("created_at");
-        builder.HasIndex(x => x.FoursquareEventId).IsUnique();
+        builder.HasIndex(x => new { x.Provider, x.FoursquareEventId }).IsUnique();
         builder.HasIndex(x => x.UserId);
         builder.HasIndex(x => x.EventType);
     }

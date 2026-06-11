@@ -6,7 +6,7 @@ import { Card } from "@/shared/components/Card";
 import { Switch } from "@/shared/components/Switch";
 import { TextInput } from "@/shared/components/TextInput";
 import { SectionLabel } from "@/shared/components/SectionLabel";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { OnboardingHero } from "./OnboardingHero";
 import { CardProductPicker } from "@/features/catalog/components/CardProductPicker";
@@ -24,6 +24,8 @@ type Props = {
 };
 
 export function ManualCardForm({ isLoading, issuers, products, onSaveCard, onRequestMissing, onBack, onSkip }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(buildStyles);
   const [issuerId, setIssuerId] = useState<number | null>(null);
   const [productId, setProductId] = useState<number | null>(null);
   const selectedIssuer = issuers.find((i) => i.id === issuerId) ?? null;
@@ -124,14 +126,15 @@ export function ManualCardForm({ isLoading, issuers, products, onSaveCard, onReq
   );
 }
 
-const styles = StyleSheet.create({
-  formStack: { gap: 14 },
-  fieldLabel: { fontFamily: fontFamily.semibold, fontSize: scaleFont(12), color: colors.mutedFg, fontWeight: "600", marginBottom: 6 },
-  switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  switchLabel: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: colors.text },
-  hint: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.mutedFg, textAlign: "center" },
-  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4 },
-  backBtn: { flexDirection: "row", alignItems: "center", gap: 2, minWidth: 60 },
-  backLabel: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), color: colors.text },
-  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(14), color: colors.text }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    formStack: { gap: 14 },
+    fieldLabel: { fontFamily: fontFamily.semibold, fontSize: scaleFont(12), color: t.colors.mutedFg, fontWeight: "600", marginBottom: 6 },
+    switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    switchLabel: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: t.colors.text },
+    hint: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.mutedFg, textAlign: "center" },
+    topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4 },
+    backBtn: { flexDirection: "row", alignItems: "center", gap: 2, minWidth: 60 },
+    backLabel: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), color: t.colors.text },
+    topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(14), color: t.colors.text }
+  });

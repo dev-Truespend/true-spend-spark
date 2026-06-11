@@ -6,7 +6,7 @@ import { EmptyState } from "@/shared/components/EmptyState";
 import { Screen } from "@/shared/components/Screen";
 import { SectionLabel } from "@/shared/components/SectionLabel";
 import { Toast } from "@/shared/components/Toast";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
@@ -39,6 +39,8 @@ function groupByBucket(items: Notification[]): [string, Notification[]][] {
 }
 
 export function NotificationsScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
   const { notifications, isLoading, error } = useNotifications(filter);
@@ -101,10 +103,13 @@ export function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  title: { color: colors.text, fontFamily: fontFamily.heavy, fontSize: scaleFont(24), fontWeight: "800", letterSpacing: -0.4 },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 12 },
-  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  markAllText: { color: colors.primary, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12) }
-});
+const useStyles = () =>
+  useThemedStyles((t) =>
+    StyleSheet.create({
+      header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+      title: { color: t.colors.text, fontFamily: fontFamily.heavy, fontSize: scaleFont(24), fontWeight: "800", letterSpacing: -0.4 },
+      headerActions: { flexDirection: "row", alignItems: "center", gap: 12 },
+      iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+      markAllText: { color: t.colors.primary, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12) }
+    })
+  );

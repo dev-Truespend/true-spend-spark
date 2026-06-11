@@ -7,8 +7,7 @@ import {
   View,
   ViewStyle
 } from "react-native";
-import { colors, palette } from "@/shared/theme/colors";
-import { radii, spacing } from "@/shared/theme/spacing";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 export type TextInputProps = RNTextInputProps & {
@@ -33,7 +32,45 @@ export function TextInput({
   ...rest
 }: TextInputProps) {
   const [focused, setFocused] = useState(false);
-  const borderColor = error ? colors.destructive : focused ? colors.primary : colors.border;
+  const t = useTheme();
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      label: {
+        fontFamily: fontFamily.semibold,
+        fontSize: scaleFont(12),
+        fontWeight: "600",
+        color: t.colors.mutedFg,
+        marginBottom: 6
+      },
+      field: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: t.colors.surface,
+        borderRadius: t.radii.lg,
+        borderWidth: 1,
+        minHeight: 48,
+        paddingHorizontal: 14
+      },
+      focusedRing: {
+        shadowColor: t.colors.primary,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.18,
+        shadowRadius: 6,
+        elevation: 2
+      },
+      input: {
+        flex: 1,
+        color: t.colors.text,
+        fontFamily: fontFamily.regular,
+        fontSize: scaleFont(15),
+        paddingVertical: t.spacing.sm
+      },
+      icon: { marginHorizontal: 6 },
+      hintText: { fontSize: scaleFont(12), color: t.colors.mutedFg, marginTop: 6, fontFamily: fontFamily.regular },
+      errorText: { fontSize: scaleFont(12), color: t.colors.destructive, marginTop: 6, fontFamily: fontFamily.medium }
+    })
+  );
+  const borderColor = error ? t.colors.destructive : focused ? t.colors.primary : t.colors.border;
 
   return (
     <View style={containerStyle}>
@@ -47,7 +84,7 @@ export function TextInput({
       >
         {leftIcon ? <View style={styles.icon}>{leftIcon}</View> : null}
         <NativeTextInput
-          placeholderTextColor={colors.mutedFg}
+          placeholderTextColor={t.colors.mutedFg}
           style={[styles.input, style]}
           onFocus={(e) => {
             setFocused(true);
@@ -69,39 +106,3 @@ export function TextInput({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  label: {
-    fontFamily: fontFamily.semibold,
-    fontSize: scaleFont(12),
-    fontWeight: "600",
-    color: colors.mutedFg,
-    marginBottom: 6
-  },
-  field: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: palette.white,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    minHeight: 48,
-    paddingHorizontal: 14
-  },
-  focusedRing: {
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    elevation: 2
-  },
-  input: {
-    flex: 1,
-    color: colors.text,
-    fontFamily: fontFamily.regular,
-    fontSize: scaleFont(15),
-    paddingVertical: spacing.sm
-  },
-  icon: { marginHorizontal: 6 },
-  hintText: { fontSize: scaleFont(12), color: colors.mutedFg, marginTop: 6, fontFamily: fontFamily.regular },
-  errorText: { fontSize: scaleFont(12), color: colors.destructive, marginTop: 6, fontFamily: fontFamily.medium }
-});

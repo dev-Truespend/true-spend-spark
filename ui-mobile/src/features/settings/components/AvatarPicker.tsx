@@ -1,7 +1,7 @@
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Button } from "@/shared/components/Button";
-import { colors, gradients, palette } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { Profile } from "@/features/profile/types/profile.types";
 
@@ -13,6 +13,23 @@ type Props = {
 };
 
 export function AvatarPicker({ profile, isUploading, errorMessage, onPick }: Props) {
+  const theme = useTheme();
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      container: { alignItems: "center", gap: 12, paddingVertical: 10 },
+      avatarWrap: { width: 108, height: 108, borderRadius: 54, overflow: "hidden" },
+      avatar: { flex: 1, alignItems: "center", justifyContent: "center" },
+      image: { width: "100%", height: "100%" },
+      initials: { color: t.palette.white, fontFamily: fontFamily.heavy, fontSize: scaleFont(32), fontWeight: "800" },
+      overlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: t.colors.overlay,
+        alignItems: "center",
+        justifyContent: "center"
+      },
+      error: { color: t.colors.destructive, fontFamily: fontFamily.medium, fontSize: scaleFont(12), textAlign: "center" }
+    })
+  );
   return (
     <View style={styles.container}>
       <Pressable
@@ -23,7 +40,7 @@ export function AvatarPicker({ profile, isUploading, errorMessage, onPick }: Pro
         testID="avatar-picker.trigger"
       >
         <LinearGradient
-          colors={[...gradients.brand]}
+          colors={[...theme.gradients.brand]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.avatar}
@@ -40,7 +57,7 @@ export function AvatarPicker({ profile, isUploading, errorMessage, onPick }: Pro
         </LinearGradient>
         {isUploading ? (
           <View style={styles.overlay}>
-            <ActivityIndicator color={palette.white} />
+            <ActivityIndicator color={theme.palette.white} />
           </View>
         ) : null}
       </Pressable>
@@ -58,18 +75,3 @@ export function AvatarPicker({ profile, isUploading, errorMessage, onPick }: Pro
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { alignItems: "center", gap: 12, paddingVertical: 10 },
-  avatarWrap: { width: 108, height: 108, borderRadius: 54, overflow: "hidden" },
-  avatar: { flex: 1, alignItems: "center", justifyContent: "center" },
-  image: { width: "100%", height: "100%" },
-  initials: { color: palette.white, fontFamily: fontFamily.heavy, fontSize: scaleFont(32), fontWeight: "800" },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.overlay,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  error: { color: colors.destructive, fontFamily: fontFamily.medium, fontSize: scaleFont(12), textAlign: "center" }
-});

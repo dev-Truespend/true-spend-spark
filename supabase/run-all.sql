@@ -42,6 +42,7 @@
 \ir migrations/catalog.sql
 \ir migrations/insights.sql
 \ir migrations/finance.sql
+\ir migrations/foursquare.sql
 \ir migrations/messaging.sql
 \ir migrations/app.sql
 
@@ -104,12 +105,9 @@ end$$;
 \ir seeds/lookup_roles.sql
 \ir seeds/lookup_subscription_statuses.sql
 
-\echo '-- catalog --'
-\ir seeds/catalog_card_issuers.sql
-\ir seeds/catalog_card_products.sql
-\ir seeds/catalog_categories.sql
-\ir seeds/catalog_category_aliases.sql
-\ir seeds/catalog_reward_rules.sql
+\echo '-- catalog -- (no static seeds: catalog.card_issuers/card_products/categories/category_aliases/reward_rules'
+\echo '--             are loaded at runtime by the RewardsCcCatalogSync worker job from the paid RewardsCC API,'
+\echo '--             upserted via CatalogSyncService — never seeded here, so re-runs never touch that data.)'
 
 \echo '-- billing --'
 \ir seeds/billing_countries.sql
@@ -121,6 +119,9 @@ end$$;
 \echo '-- finance --'
 \ir seeds/finance_transaction_categories.sql
 \ir seeds/finance_transaction_category_bridge.sql
+
+\echo '-- foursquare --'
+\ir seeds/foursquare_category_bridge.sql
 
 \echo '-- messaging --'
 \ir seeds/messaging_event_subscriptions.sql

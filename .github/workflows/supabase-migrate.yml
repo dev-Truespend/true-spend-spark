@@ -1,0 +1,19 @@
+# Extracted from _docs/Deployment/deployment-guide.md §7.
+# Applies the idempotent schema + RLS policies + seeds via psql (NOT supabase db push).
+# Use the DIRECT connection (port 5432) for DDL, not the transaction pooler.
+# SUPABASE_DB_URL = postgresql://postgres:<db-password>@db.<ref>.supabase.co:5432/postgres
+name: supabase-migrate
+on:
+  workflow_dispatch:   # manual trigger only — Run workflow button
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Apply migrations + policies + seeds
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/run-all.sql

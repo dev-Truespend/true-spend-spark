@@ -10,7 +10,7 @@ import { SectionLabel } from "@/shared/components/SectionLabel";
 import { Switch } from "@/shared/components/Switch";
 import { TextInput } from "@/shared/components/TextInput";
 import { Toast } from "@/shared/components/Toast";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles, type Theme } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { useNotificationSettings } from "@/features/notification-settings/hooks/useNotificationSettings";
@@ -49,6 +49,8 @@ function metaFor(code: string): TypeMeta {
 }
 
 export function NotificationSettingsScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(buildStyles);
   const router = useRouter();
   const settingsQuery = useNotificationSettings();
   const settings = settingsQuery.data?.data;
@@ -337,6 +339,7 @@ type TypeRowProps = {
 };
 
 function TypeRow({ type, disabled, isLast, onToggle }: TypeRowProps) {
+  const styles = useThemedStyles(buildStyles);
   const meta = metaFor(type.code);
   const title = meta.pro ? `${type.displayName}` : type.displayName;
   return (
@@ -360,18 +363,19 @@ function TypeRow({ type, disabled, isLast, onToggle }: TypeRowProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
-  group: { paddingHorizontal: 12 },
-  muted: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: colors.mutedFg, paddingVertical: 12, textAlign: "center" },
-  quietHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
-  quietTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(14), color: colors.text },
-  quietMeta: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.mutedFg, marginTop: 2 },
-  quietRange: { flexDirection: "row", gap: 10, marginTop: 10 },
-  quietCol: { flex: 1 },
-  quietErrorText: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.destructive, marginTop: 6 },
-  typeTrailing: { flexDirection: "row", alignItems: "center", gap: 8 },
-  proBadge: { paddingHorizontal: 6, paddingVertical: 1 }
-});
+const buildStyles = (t: Theme) =>
+  StyleSheet.create({
+    topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+    topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: t.colors.text },
+    group: { paddingHorizontal: 12 },
+    muted: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: t.colors.mutedFg, paddingVertical: 12, textAlign: "center" },
+    quietHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+    quietTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(14), color: t.colors.text },
+    quietMeta: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.mutedFg, marginTop: 2 },
+    quietRange: { flexDirection: "row", gap: 10, marginTop: 10 },
+    quietCol: { flex: 1 },
+    quietErrorText: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.destructive, marginTop: 6 },
+    typeTrailing: { flexDirection: "row", alignItems: "center", gap: 8 },
+    proBadge: { paddingHorizontal: 6, paddingVertical: 1 }
+  });

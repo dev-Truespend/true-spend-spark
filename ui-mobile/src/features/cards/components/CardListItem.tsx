@@ -2,7 +2,8 @@ import { StyleSheet, Text, View } from "react-native";
 import { Badge } from "@/shared/components/Badge";
 import { CreditCard } from "@/shared/components/CreditCard";
 import { CardSummary } from "@/features/cards/types/cards.types";
-import { colors, GradientName } from "@/shared/theme/colors";
+import { GradientName } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type Props = {
@@ -26,6 +27,7 @@ const VARIANTS: Array<Extract<GradientName, "brand" | "purple" | "cool" | "gold"
 const PEEK_OVERLAP = -72;
 
 export function CardListItem({ card, onPress, index = 0, peek }: Props) {
+  const styles = useThemedStyles(buildStyles);
   const isDisconnected = card.syncStatus === "disconnected";
   const variant = VARIANTS[index % VARIANTS.length]!;
 
@@ -65,9 +67,10 @@ export function CardListItem({ card, onPress, index = 0, peek }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { gap: 6, marginBottom: 4 },
-  peekWrap: {},
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  tap: { fontFamily: fontFamily.medium, fontSize: scaleFont(11), color: colors.onLightHint }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    wrap: { gap: 6, marginBottom: 4 },
+    peekWrap: {},
+    metaRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    tap: { fontFamily: fontFamily.medium, fontSize: scaleFont(11), color: t.colors.onLightHint }
+  });

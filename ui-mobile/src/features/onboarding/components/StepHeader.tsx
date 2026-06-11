@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type StepHeaderProps = {
@@ -10,6 +10,7 @@ type StepHeaderProps = {
 };
 
 export function StepHeader({ step, totalSteps, onSkip, skipLabel = "Skip" }: StepHeaderProps) {
+  const styles = useThemedStyles(buildStyles);
   return (
     <View style={styles.row}>
       <Text style={styles.step}>Step {step} of {totalSteps}</Text>
@@ -22,8 +23,9 @@ export function StepHeader({ step, totalSteps, onSkip, skipLabel = "Skip" }: Ste
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4 },
-  step: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12), color: colors.mutedFg },
-  skip: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), color: colors.primary }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4 },
+    step: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12), color: t.colors.mutedFg },
+    skip: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), color: t.colors.primary }
+  });

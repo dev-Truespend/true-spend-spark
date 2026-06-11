@@ -1,7 +1,7 @@
 import { scaleFont } from "@/shared/theme/typography";
 import { StyleSheet, Text, View } from "react-native";
-import { colors } from "@/shared/theme/colors";
 import { spacing } from "@/shared/theme/spacing";
+import { useThemedStyles } from "@/providers/ThemeProvider";
 import { PaymentMethod } from "@/features/billing/types/billing.types";
 
 type Props = {
@@ -16,6 +16,36 @@ function formatExpiry(month?: number | null, year?: number | null): string | nul
 }
 
 export function PaymentMethodList({ paymentMethods }: Props) {
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      list: { gap: spacing.xs },
+      row: {
+        alignItems: "center",
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderRadius: 8,
+        borderWidth: 1,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        padding: spacing.md
+      },
+      left: { flex: 1, gap: 2 },
+      brand: { color: t.colors.text, fontSize: scaleFont(14), fontWeight: "700" },
+      last: { color: t.colors.text, fontSize: scaleFont(13) },
+      muted: { color: t.colors.muted, fontSize: scaleFont(12) },
+      defaultBadge: { backgroundColor: t.colors.primary, borderRadius: 999, paddingHorizontal: spacing.sm, paddingVertical: 2 },
+      defaultText: { color: t.palette.white, fontSize: scaleFont(12), fontWeight: "700" },
+      empty: {
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderRadius: 8,
+        borderWidth: 1,
+        padding: spacing.md
+      },
+      emptyText: { color: t.colors.muted, fontSize: scaleFont(13) }
+    })
+  );
+
   if (paymentMethods.length === 0) {
     return (
       <View style={styles.empty}>
@@ -48,31 +78,3 @@ export function PaymentMethodList({ paymentMethods }: Props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  list: { gap: spacing.xs },
-  row: {
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: spacing.md
-  },
-  left: { flex: 1, gap: 2 },
-  brand: { color: colors.text, fontSize: scaleFont(14), fontWeight: "700" },
-  last: { color: colors.text, fontSize: scaleFont(13) },
-  muted: { color: colors.muted, fontSize: scaleFont(12) },
-  defaultBadge: { backgroundColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing.sm, paddingVertical: 2 },
-  defaultText: { color: colors.surface, fontSize: scaleFont(12), fontWeight: "700" },
-  empty: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: spacing.md
-  },
-  emptyText: { color: colors.muted, fontSize: scaleFont(13) }
-});

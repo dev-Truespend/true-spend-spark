@@ -3,9 +3,10 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { ThemeProvider, useThemeApi } from "@/providers/ThemeProvider";
+import { AppErrorBoundary } from "@/shared/components/AppErrorBoundary";
 import { usePreferences } from "@/features/preferences/hooks/usePreferences";
 import { usePushNotificationRouting } from "@/shared/native/usePushNotificationRouting";
-import { useFoursquareTracking } from "@/shared/native/useFoursquareTracking";
+import { useArrivalDetection } from "@/shared/native/useArrivalDetection";
 import { useEntitlementRequiredRouter } from "@/shared/native/useEntitlementRequiredRouter";
 import { useAppForegroundRefresh } from "@/shared/native/useAppForegroundRefresh";
 import { useLookupsWarmup } from "@/features/lookups/hooks/useLookupsWarmup";
@@ -15,8 +16,8 @@ function PushNotificationListener() {
   return null;
 }
 
-function FoursquareTrackingListener() {
-  useFoursquareTracking();
+function ArrivalDetectionListener() {
+  useArrivalDetection();
   return null;
 }
 
@@ -53,11 +54,11 @@ export function AppProviders({ children }: PropsWithChildren) {
           <AuthProvider>
             <ThemePreferenceBinder />
             <PushNotificationListener />
-            <FoursquareTrackingListener />
+            <ArrivalDetectionListener />
             <EntitlementRequiredRouter />
             <AppForegroundRefresh />
             <LookupsWarmup />
-            {children}
+            <AppErrorBoundary>{children}</AppErrorBoundary>
           </AuthProvider>
         </ThemeProvider>
       </QueryProvider>

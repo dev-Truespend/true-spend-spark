@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Switch } from "@/shared/components/Switch";
 import { NotificationType } from "@/features/notification-settings/api/notification-settings.api";
-import { colors } from "@/shared/theme/colors";
+import { useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
 };
 
 export function NotificationTypeList({ types, onToggle, disabled }: Props) {
+  const styles = useStyles();
   if (types.length === 0) return null;
   return (
     <View style={{ gap: 2 }}>
@@ -30,11 +31,14 @@ export function NotificationTypeList({ types, onToggle, disabled }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8 },
-  disabled: { opacity: 0.55 },
-  label: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: colors.text },
-  state: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(11) },
-  on: { color: colors.teal },
-  off: { color: colors.mutedFg }
-});
+const useStyles = () =>
+  useThemedStyles((t) =>
+    StyleSheet.create({
+      row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8 },
+      disabled: { opacity: 0.55 },
+      label: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: t.colors.text },
+      state: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(11) },
+      on: { color: t.colors.teal },
+      off: { color: t.colors.mutedFg }
+    })
+  );

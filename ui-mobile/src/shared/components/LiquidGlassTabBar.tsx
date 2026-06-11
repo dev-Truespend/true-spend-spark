@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { LayoutChangeEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,6 +22,9 @@ const ICON_MAP: Record<string, { focused: IconName; outline: IconName }> = {
 
 const SPRING_CONFIG = { damping: 18, stiffness: 220, mass: 0.6 };
 const ROW_PADDING = 6;
+// Min width per tab — when tabCount × this exceeds the bar width, the row
+// becomes horizontally scrollable; otherwise tabs evenly fill the width.
+const MIN_TAB_WIDTH = 96;
 
 export function LiquidGlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -54,11 +57,12 @@ export function LiquidGlassTabBar({ state, descriptors, navigation }: BottomTabB
       androidFallback: {
         backgroundColor: t.isDark ? "rgba(22,27,34,0.92)" : "rgba(255,255,255,0.92)"
       },
+      scroll: { flex: 1 },
       row: {
-        flex: 1,
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: ROW_PADDING
+        paddingHorizontal: ROW_PADDING,
+        height: "100%"
       },
       indicatorTrack: {
         position: "absolute",
@@ -75,7 +79,6 @@ export function LiquidGlassTabBar({ state, descriptors, navigation }: BottomTabB
         shadowOffset: { width: 0, height: 4 }
       },
       item: {
-        flex: 1,
         height: "100%",
         alignItems: "center",
         justifyContent: "center",
@@ -93,8 +96,12 @@ export function LiquidGlassTabBar({ state, descriptors, navigation }: BottomTabB
 
   const tabCount = state.routes.length;
 
-  const [rowWidth, setRowWidth] = useState(0);
-  const tabWidth = rowWidth > 0 ? (rowWidth - ROW_PADDING * 2) / tabCount : 0;
+  const [barWidth, setBarWidth] = useState(0);
+  const available = barWidth > 0 ? barWidth - ROW_PADDING * 2 : 0;
+  // Fill the bar when tabs fit; otherwise fall back to a fixed min width and scroll.
+  const evenWidth = available > 0 ? available / tabCount : 0;
+  const tabWidth = evenWidth > 0 ? Math.max(evenWidth, MIN_TAB_WIDTH) : 0;
+  const scrollable = tabWidth > evenWidth;
 
   const indicatorX = useSharedValue(state.index * tabWidth);
 
@@ -107,28 +114,30 @@ export function LiquidGlassTabBar({ state, descriptors, navigation }: BottomTabB
     transform: [{ translateX: indicatorX.value }]
   }));
 
-  function onRowLayout(e: LayoutChangeEvent) {
-    setRowWidth(e.nativeEvent.layout.width);
+  function onBarLayout(e: LayoutChangeEvent) {
+    setBarWidth(e.nativeEvent.layout.width);
   }
 
   return (
     <View pointerEvents="box-none" style={[styles.wrap, { bottom: Math.max(insets.bottom, 12) }]}>
       <View style={styles.shadowRing}>
-        <View style={styles.glass}>
+        <View style={styles.glass} onLayout={onBarLayout}>
           {Platform.OS === "ios" ? (
             <BlurView intensity={70} tint={theme.isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           ) : (
             <View style={[StyleSheet.absoluteFill, styles.androidFallback]} />
           )}
-          <View style={styles.row} onLayout={onRowLayout}>
+          <ScrollView
+            horizontal
+            scrollEnabled={scrollable}
+            showsHorizontalScrollIndicator={false}
+            style={styles.scroll}
+            contentContainerStyle={[styles.row, !scrollable && { width: "100%" }]}
+          >
             {tabWidth > 0 ? (
               <Animated.View
                 pointerEvents="none"
-                style={[
-                  styles.indicatorTrack,
-                  { width: tabWidth, height: 48 },
-                  indicatorStyle
-                ]}
+                style={[styles.indicatorTrack, { width: tabWidth, height: 48 }, indicatorStyle]}
               >
                 <View style={styles.indicatorPill} />
               </Animated.View>
@@ -157,20 +166,16 @@ export function LiquidGlassTabBar({ state, descriptors, navigation }: BottomTabB
                     }
                   }}
                   onLongPress={() => navigation.emit({ type: "tabLongPress", target: route.key })}
-                  style={styles.item}
+                  style={[styles.item, { width: tabWidth > 0 ? tabWidth : undefined, flexGrow: tabWidth > 0 ? 0 : 1 }]}
                 >
-                  <Ionicons
-                    name={focused ? icons.focused : icons.outline}
-                    size={20}
-                    color={tint}
-                  />
+                  <Ionicons name={focused ? icons.focused : icons.outline} size={20} color={tint} />
                   <Text style={[styles.label, { color: tint }]} numberOfLines={1}>
                     {label}
                   </Text>
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
         </View>
       </View>
     </View>

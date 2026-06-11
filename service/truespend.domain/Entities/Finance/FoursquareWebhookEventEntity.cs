@@ -3,6 +3,7 @@ namespace TrueSpend.Domain.Entities.Finance;
 public sealed class FoursquareWebhookEventEntity
 {
     public int Id { get; set; }
+    public string Provider { get; set; } = "foursquare";
     public string FoursquareEventId { get; set; } = string.Empty;
     public string EventType { get; set; } = string.Empty;
     public string? FoursquareUserId { get; set; }

@@ -1,8 +1,7 @@
 import { ReactNode } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { colors, gradients, palette } from "@/shared/theme/colors";
-import { radii, spacing } from "@/shared/theme/spacing";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { shadows } from "@/shared/theme/shadows";
 
@@ -34,8 +33,27 @@ export function Button({
   rightIcon,
   testID
 }: ButtonProps) {
+  const theme = useTheme();
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      base: {
+        alignItems: "center",
+        borderRadius: t.radii.lg,
+        justifyContent: "center"
+      },
+      md: { minHeight: 46, paddingHorizontal: t.spacing.md, paddingVertical: 13 },
+      sm: { minHeight: 36, paddingHorizontal: 14, paddingVertical: 8 },
+      contentRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+      label: { fontFamily: fontFamily.semibold, fontSize: scaleFont(14), fontWeight: "600", letterSpacing: -0.1 },
+      labelSm: { fontSize: scaleFont(13) },
+      iconLeft: { marginRight: 0 },
+      iconRight: { marginLeft: 0 },
+      disabled: { opacity: 0.5 },
+      pressed: { opacity: 0.92, transform: [{ scale: 0.985 }] }
+    })
+  );
   const isDisabled = disabled || loading;
-  const fg = textColorFor(variant);
+  const fg = textColorFor(variant, theme);
   const sizeStyle = size === "sm" ? styles.sm : styles.md;
   const widthStyle: ViewStyle = block ? { alignSelf: "stretch" } : { alignSelf: "flex-start" };
 
@@ -66,7 +84,7 @@ export function Button({
         ]}
       >
         <LinearGradient
-          colors={[...gradients.brand]}
+          colors={[...theme.gradients.brand]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[styles.base, sizeStyle]}
@@ -87,7 +105,7 @@ export function Button({
         styles.base,
         sizeStyle,
         widthStyle,
-        backgroundFor(variant),
+        backgroundFor(variant, theme),
         isDisabled && styles.disabled,
         pressed && !isDisabled && styles.pressed
       ]}
@@ -97,54 +115,37 @@ export function Button({
   );
 }
 
-function textColorFor(v: Variant): string {
+function textColorFor(v: Variant, t: ReturnType<typeof useTheme>): string {
   switch (v) {
     case "primary":
     case "dark":
-      return palette.white;
+      return t.palette.white;
     case "danger":
-      return colors.destructive;
+      return t.colors.destructive;
     case "ghost":
-      return colors.primary;
+      return t.colors.primary;
     case "outline":
     case "light":
     default:
-      return colors.text;
+      return t.colors.text;
   }
 }
 
-function backgroundFor(v: Variant): ViewStyle {
+function backgroundFor(v: Variant, t: ReturnType<typeof useTheme>): ViewStyle {
   switch (v) {
     case "secondary":
-      return { backgroundColor: colors.surfaceAlt, borderColor: colors.border, borderWidth: 1 };
+      return { backgroundColor: t.colors.surfaceAlt, borderColor: t.colors.border, borderWidth: 1 };
     case "dark":
-      return { backgroundColor: palette.black };
+      return { backgroundColor: t.palette.black };
     case "light":
-      return { backgroundColor: palette.white, borderColor: colors.border, borderWidth: 1, ...shadows.card };
+      return { backgroundColor: t.colors.surface, borderColor: t.colors.border, borderWidth: 1, ...shadows.card };
     case "outline":
-      return { backgroundColor: "transparent", borderColor: colors.border, borderWidth: 1 };
+      return { backgroundColor: "transparent", borderColor: t.colors.border, borderWidth: 1 };
     case "ghost":
       return { backgroundColor: "transparent" };
     case "danger":
-      return { backgroundColor: palette.white, borderColor: colors.destructive, borderWidth: 1 };
+      return { backgroundColor: t.colors.surface, borderColor: t.colors.destructive, borderWidth: 1 };
     default:
       return {};
   }
 }
-
-const styles = StyleSheet.create({
-  base: {
-    alignItems: "center",
-    borderRadius: radii.lg,
-    justifyContent: "center"
-  },
-  md: { minHeight: 46, paddingHorizontal: spacing.md, paddingVertical: 13 },
-  sm: { minHeight: 36, paddingHorizontal: 14, paddingVertical: 8 },
-  contentRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
-  label: { fontFamily: fontFamily.semibold, fontSize: scaleFont(14), fontWeight: "600", letterSpacing: -0.1 },
-  labelSm: { fontSize: scaleFont(13) },
-  iconLeft: { marginRight: 0 },
-  iconRight: { marginLeft: 0 },
-  disabled: { opacity: 0.5 },
-  pressed: { opacity: 0.92, transform: [{ scale: 0.985 }] }
-});

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TrueSpend.Domain.BusinessInterfaces.Billing;
 using TrueSpend.Domain.Constants;
@@ -25,8 +26,10 @@ public sealed class BillingInsertBusiness(
     IBillingInsertService billingInsertService,
     IOnboardingReadService onboardingReadService,
     IOnboardingUpdateService onboardingUpdateService,
+    IEntitlementCacheInvalidatorBusiness entitlementCacheInvalidator,
     IUnitOfWork unitOfWork,
     IOptions<StripeProviderOptions> stripeOptions,
+    ILogger<BillingInsertBusiness> logger,
     BillingValidator validator) : IBillingInsertBusiness
 {
     private const string FallbackCountryCode = "US";
@@ -50,6 +53,14 @@ public sealed class BillingInsertBusiness(
         {
             return BusinessResponse<HostedBillingResponse>.Fail([$"No active price found for plan {request.PlanCode} ({request.PeriodCode}, {countryCode})."], 404);
         }
+
+        // TestFlight/QA: provision the trial locally and skip Stripe entirely. Branches before the
+        // StripePriceId requirement because simulated plans need no Stripe price configured.
+        if (_stripeOptions.SimulateCheckout)
+        {
+            return await SimulateCheckoutAsync(user, request, cancellationToken);
+        }
+
         if (string.IsNullOrWhiteSpace(planPrice.StripePriceId))
         {
             return BusinessResponse<HostedBillingResponse>.Fail([$"Plan {request.PlanCode} has no Stripe price configured."], 422);
@@ -108,6 +119,38 @@ public sealed class BillingInsertBusiness(
         {
             return BusinessResponse<HostedBillingResponse>.Fail([ex.Message], 502);
         }
+    }
+
+    // Simulate-checkout (TestFlight): record a trialing subscription for the chosen plan with no Stripe
+    // call, advance onboarding when in that context, then return an empty Url so the client treats it as a
+    // completed checkout. Feature-gating reads the same local subscription row, so the plan takes effect
+    // immediately and lapses to Free when the trial ends — real behavior minus the charge.
+    private async Task<BusinessResponse<HostedBillingResponse>> SimulateCheckoutAsync(
+        OnboardingWorkflowUser user,
+        CreateCheckoutSessionRequest request,
+        CancellationToken cancellationToken)
+    {
+        await using var tx = await unitOfWork.BeginTransactionAsync(cancellationToken);
+        await billingInsertService.RecordSimulatedTrialingSubscriptionAsync(user, request.PlanCode, cancellationToken);
+        if (string.Equals(request.ReturnContextCode, BillingConstants.OnboardingReturnContext, StringComparison.OrdinalIgnoreCase))
+        {
+            var onboarding = await onboardingReadService.GetOnboardingAsync(user, cancellationToken);
+            await onboardingUpdateService.SaveOnboardingAsync(user, onboarding with { CurrentStepCode = "notifications" }, cancellationToken);
+        }
+        await tx.CommitAsync(cancellationToken);
+
+        // Post-commit: refresh the entitlement cache so the new plan is visible on the next read.
+        try
+        {
+            await entitlementCacheInvalidator.InvalidateAsync(user.UserId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Entitlement cache invalidation failed after simulated checkout for user {UserId}", user.UserId);
+        }
+
+        // Empty Url signals "no redirect" — the client skips the browser hand-off and refreshes entitlements.
+        return BusinessResponse<HostedBillingResponse>.Ok(new HostedBillingResponse(string.Empty));
     }
 
     private (string SuccessUrl, string CancelUrl) ResolveCheckoutUrls(string returnContextCode) =>

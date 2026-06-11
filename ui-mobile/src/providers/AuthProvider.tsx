@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { router } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { bootstrapAuth, signOutSupabase } from "@/features/auth/api/auth.api";
@@ -51,6 +51,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [isRestoring, setIsRestoring] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+  // Mirror of `session` for synchronous reads inside callbacks (e.g. the 401
+  // handler) so concurrent unauthorized responses don't each fire a redirect.
+  const sessionRef = useRef<Session | null>(null);
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   const completeSignedInSession = useCallback(async (nextSession: Session) => {
     setSession(nextSession);
@@ -114,6 +120,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [bootstrap?.deviceId]);
 
   const handleUnauthorized = useCallback(async () => {
+    // Already signed out — a 401 here is just a request that fired before/around
+    // sign-in (e.g. warmup queries on a signed-out cold start). Routing is owned
+    // by restoreSession in that case; re-redirecting would make the sign-in
+    // screen mount repeatedly.
+    if (sessionRef.current == null) return;
     try {
       await supabase.auth.signOut();
     } catch {

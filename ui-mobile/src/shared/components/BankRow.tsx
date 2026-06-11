@@ -1,6 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, palette } from "@/shared/theme/colors";
-import { radii } from "@/shared/theme/spacing";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type BankRowProps = {
@@ -12,7 +11,28 @@ type BankRowProps = {
   trailing?: React.ReactNode;
 };
 
-export function BankRow({ name, meta, logoLabel, logoColor = colors.primary, onPress, trailing }: BankRowProps) {
+export function BankRow({ name, meta, logoLabel, logoColor, onPress, trailing }: BankRowProps) {
+  const t = useTheme();
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      row: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        padding: 12,
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderWidth: 1,
+        borderRadius: t.radii.lg
+      },
+      pressed: { opacity: 0.92, borderColor: t.colors.primary },
+      logo: { width: 38, height: 38, borderRadius: t.radii.md, alignItems: "center", justifyContent: "center" },
+      logoText: { color: t.palette.white, fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(12), letterSpacing: 0.3 },
+      name: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(14), color: t.colors.text },
+      meta: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.mutedFg, marginTop: 2 }
+    })
+  );
+  const resolvedLogoColor = logoColor ?? t.colors.primary;
   const initials = logoLabel ?? name.slice(0, 2).toUpperCase();
   return (
     <Pressable
@@ -20,7 +40,7 @@ export function BankRow({ name, meta, logoLabel, logoColor = colors.primary, onP
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
-      <View style={[styles.logo, { backgroundColor: logoColor }]}>
+      <View style={[styles.logo, { backgroundColor: resolvedLogoColor }]}>
         <Text style={styles.logoText}>{initials}</Text>
       </View>
       <View style={{ flex: 1 }}>
@@ -31,21 +51,3 @@ export function BankRow({ name, meta, logoLabel, logoColor = colors.primary, onP
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 12,
-    backgroundColor: palette.white,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.lg
-  },
-  pressed: { opacity: 0.92, borderColor: colors.primary },
-  logo: { width: 38, height: 38, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  logoText: { color: palette.white, fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(12), letterSpacing: 0.3 },
-  name: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(14), color: colors.text },
-  meta: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.mutedFg, marginTop: 2 }
-});

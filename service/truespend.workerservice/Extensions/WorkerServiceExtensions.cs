@@ -4,6 +4,7 @@ using TrueSpend.Domain.Business.Analytics;
 using TrueSpend.Domain.Business.Billing;
 using TrueSpend.Domain.Business.Catalog;
 using TrueSpend.Domain.Business.Devices;
+using TrueSpend.Domain.Business.Geo;
 using TrueSpend.Domain.Business.Notifications;
 using TrueSpend.Domain.Business.Plaid;
 using TrueSpend.Domain.Business.Privacy;
@@ -12,6 +13,7 @@ using TrueSpend.Domain.BusinessInterfaces.Analytics;
 using TrueSpend.Domain.BusinessInterfaces.Billing;
 using TrueSpend.Domain.BusinessInterfaces.Catalog;
 using TrueSpend.Domain.BusinessInterfaces.Devices;
+using TrueSpend.Domain.BusinessInterfaces.Geo;
 using TrueSpend.Domain.BusinessInterfaces.Notifications;
 using TrueSpend.Domain.BusinessInterfaces.Plaid;
 using TrueSpend.Domain.BusinessInterfaces.Privacy;
@@ -24,6 +26,7 @@ using TrueSpend.Domain.ServiceInterfaces.Billing;
 using TrueSpend.Domain.Models.Catalog;
 using TrueSpend.Domain.ServiceInterfaces.Catalog;
 using TrueSpend.Domain.ServiceInterfaces.Devices;
+using TrueSpend.Domain.ServiceInterfaces.Geo;
 using TrueSpend.Domain.ServiceInterfaces.Messaging;
 using TrueSpend.Domain.ServiceInterfaces.Notifications;
 using TrueSpend.Domain.ServiceInterfaces.Persistence;
@@ -36,7 +39,9 @@ using TrueSpend.Domain.Services.Analytics;
 using TrueSpend.Domain.Services.Billing;
 using TrueSpend.Domain.Services.Catalog;
 using TrueSpend.Domain.Services.Devices;
+using TrueSpend.Domain.Services.Geo;
 using TrueSpend.Domain.Services.Messaging;
+using TrueSpend.Domain.Models.Geo;
 using TrueSpend.Domain.Services.Notifications;
 using TrueSpend.Domain.Services.Persistence;
 using TrueSpend.Domain.Services.Plaid;
@@ -178,6 +183,8 @@ public static class WorkerServiceExtensions
         builder.Services.AddScoped<IAccountDeletionService, AccountDeletionService>();
         builder.Services.AddScoped<IAccountDeletionPurgeBusiness, AccountDeletionPurgeBusiness>();
 
+        AddFoursquarePlaces(builder);
+
         builder.Services.AddScoped<ReminderFiringJob>();
         builder.Services.AddScoped<AIInsightGenerationJob>();
         builder.Services.AddScoped<PlaidTransactionSyncJob>();
@@ -191,6 +198,7 @@ public static class WorkerServiceExtensions
         builder.Services.AddScoped<AdminNotificationDispatchJob>();
         builder.Services.AddScoped<CardCatalogMappingReviewJob>();
         builder.Services.AddScoped<AccountDeletionPurgeJob>();
+        builder.Services.AddScoped<FoursquarePlacesCatalogSyncJob>();
 
         builder.Services.AddHostedService<ReminderScheduler>();
         builder.Services.AddHostedService<AIInsightGenerationScheduler>();
@@ -205,8 +213,36 @@ public static class WorkerServiceExtensions
         builder.Services.AddHostedService<RewardsCcCatalogSyncStartupRunner>();
         builder.Services.AddHostedService<AdminNotificationDispatchScheduler>();
         builder.Services.AddHostedService<AccountDeletionPurgeScheduler>();
+        builder.Services.AddHostedService<FoursquarePlacesCatalogSyncScheduler>();
 
         return builder;
+    }
+
+    private static void AddFoursquarePlaces(IHostApplicationBuilder builder)
+    {
+        builder.Services.Configure<FoursquarePlacesCatalogOptions>(
+            builder.Configuration.GetSection(FoursquarePlacesCatalogOptions.SectionName));
+
+        builder.Services.AddScoped<IFoursquareCatalogReadService, FoursquareCatalogReadService>();
+        builder.Services.AddScoped<IFoursquarePlacesWriteService, FoursquarePlacesWriteService>();
+        builder.Services.AddScoped<IFoursquarePlacesCatalogSyncBusiness, FoursquarePlacesCatalogSyncBusiness>();
+
+        var placesApiKey = builder.Configuration["Foursquare:PlacesApiKey"] ?? string.Empty;
+        var placesBaseUrl = builder.Configuration["Foursquare:BaseUrl"] ?? "https://api.foursquare.com";
+        if (!string.IsNullOrWhiteSpace(placesApiKey))
+        {
+            builder.Services.AddHttpClient<IFoursquarePlacesProvider, FoursquarePlacesProvider>(client =>
+            {
+                client.BaseAddress = new Uri(placesBaseUrl);
+                client.DefaultRequestHeaders.Accept.Add(new("application/json"));
+                client.DefaultRequestHeaders.Add("Authorization", placesApiKey);
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+        }
+        else
+        {
+            builder.Services.AddScoped<IFoursquarePlacesProvider, FoursquarePlacesPlaceholderProvider>();
+        }
     }
 
     private static void AddPushDelivery(IHostApplicationBuilder builder)

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
 import { Button } from "@/shared/components/Button";
-import { onboardingPanelStyles as panelStyles } from "@/features/onboarding/components/onboardingStyles";
+import { buildOnboardingPanelStyles } from "@/features/onboarding/components/onboardingStyles";
 import { NotificationTypeList } from "@/features/notification-settings/components/NotificationTypeList";
 import { NotificationType } from "@/features/notification-settings/api/notification-settings.api";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { spacing } from "@/shared/theme/spacing";
 
 type Props = {
@@ -16,6 +16,8 @@ type Props = {
 export function NotificationsStep({ isLoading, types, onSave }: Props) {
   const [push, setPush] = useState(true);
   const [email, setEmail] = useState(true);
+  const panelStyles = useThemedStyles(buildOnboardingPanelStyles);
+  const styles = useThemedStyles(buildStyles);
 
   return (
     <View style={panelStyles.panel}>
@@ -48,14 +50,15 @@ export function NotificationsStep({ isLoading, types, onSave }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingVertical: spacing.xs
-  },
-  rowText: { flex: 1 },
-  rowTitle: { color: colors.text, fontSize: 15, fontWeight: "600" },
-  rowBody: { color: colors.muted, fontSize: 13 }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    row: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.sm,
+      paddingVertical: spacing.xs
+    },
+    rowText: { flex: 1 },
+    rowTitle: { color: t.colors.text, fontSize: 15, fontWeight: "600" },
+    rowBody: { color: t.colors.muted, fontSize: 13 }
+  });

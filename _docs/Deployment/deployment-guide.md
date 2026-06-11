@@ -1,43 +1,50 @@
 # TrueSpend — Deployment & E2E Test Guide
 
 End-to-end deployment runbook: mobile to TestFlight (Expo/EAS), .NET service + worker to Azure
-Container Apps, Supabase Postgres migrations/seeds, Terraform IaC, Key Vault for all secrets, and a
-phased E2E test plan (auth → cards → Plaid; Foursquare and Stripe deferred to last).
+Container Apps (public ingress + custom domain), Supabase Postgres migrations/seeds, Terraform IaC,
+Key Vault for all secrets, and a phased E2E test plan (auth → cards → Plaid; Foursquare and Stripe
+deferred to last).
+
+> **Topology B (MVP).** No App Gateway / WAF / VNet. The API Container App is reached directly over a
+> public ingress bound to the custom domain `api.truespend.<env>` with your TLS cert. Auth is enforced
+> in-app (Supabase JWT; webhooks verify provider signatures), not at a network edge. An edge WAF can be
+> added later (e.g. Cloudflare in front, or App Gateway) without changing the app.
 
 This guide is the source of truth for the IaC and pipeline definitions. The HCL/YAML blocks below are
-ready to extract into `terraform/` and `.github/workflows/`. Ask before scaffolding if not already done.
+extracted into [`terraform/`](../../terraform/) (see its [README](../../terraform/README.md)) and
+[`.github/workflows/`](../../.github/workflows/) — `terraform.yml`, `service-deploy.yml`,
+`supabase-migrate.yml`, `mobile-testflight.yml`. All pipelines are **manual** (`workflow_dispatch`); the
+IaC pipeline has separate plan/apply checkboxes. Keep those files and these blocks in sync when either changes.
 
 ## 1. Topology
 
 | Component | Runtime | Source | Notes |
 |---|---|---|---|
 | Mobile app | iOS (TestFlight), Android later | `ui-mobile/` (Expo + EAS) | bundle id `com.truespend.mobile`, scheme `truespend` |
-| **Application Gateway (WAF v2)** | Azure App Gateway | this guide (Terraform) | **public HTTPS ingress**; TLS termination with a Key Vault cert; WAF in Prevention mode; routes to the API |
-| API service | Azure Container App `truespend-api` | `docker/truespend.api.Dockerfile` (target `production`, port 8080) | **internal ingress only** (VNet) — reachable solely through App Gateway |
+| API service | Azure Container App `truespend-api` | `docker/truespend.api.Dockerfile` (target `production`, port 8080) | **public ingress** on the custom domain `api.truespend.<env>` (TLS cert bound to the app) |
 | Worker service | Azure Container App `truespend-worker` | `docker/truespend.workerservice.Dockerfile` (target `production`) | cron jobs, no ingress |
 | Event consumer | **dormant in MVP** | `docker/truespend.eventconsumer.Dockerfile` | async→inline conversion ([sync-execution-conversion.md](../Refactors/sync-execution-conversion.md)); not deployed |
 | Database + Auth | Supabase (managed Postgres) | `supabase/` | Auth providers (Apple/Google/email OTP), RLS policies, storage |
-| Secrets | Azure Key Vault | this guide | app secrets + the App Gateway TLS cert; consumed via managed identity |
+| Secrets | Azure Key Vault | this guide | app secrets, consumed via managed identity (the custom-domain TLS cert is bound to the app, not via KV) |
 
-The Container Apps Environment is **internal** (VNet-integrated, internal load balancer). Only Application
-Gateway is public; it is the single front door for the API and the only component holding a public IP. Stripe
-and Plaid webhooks therefore arrive **through** App Gateway (custom-domain HTTPS), not the container directly.
+The Container Apps Environment is **public** (external). The API ingress is the single front door; Stripe and
+Plaid webhooks arrive directly at the custom domain over HTTPS. The worker has no ingress.
 
 ```text
-                     ┌────────────────────────────── Azure VNet ──────────────────────────────┐
-  iOS device         │  ┌──────────────┐     ┌─────────────┐    ┌──────────────┐               │
-  (TestFlight) ─HTTPS─▶ │ App Gateway  │ ───▶ │ truespend-  │    │ truespend-   │  cron          │
-   Stripe/Plaid ─────────▶ (WAF v2,    │ int. │ api (CA,    │    │ worker (CA)  │ (AI/Plaid/RC)  │
-   webhooks          │  │  public IP,  │  LB  │ internal    │    └──────┬───────┘               │
-       │             │  │  TLS from KV)│     │  :8080)      │           │                        │
-       │ Supabase    │  └──────────────┘     └──────┬──────┘           │   ┌────────┐ ┌────────┐ │
-       │ Auth SDK    │         ▲                    │                  │   │  ACR   │ │  Log   │ │
-       ▼             │  ┌──────┴──────┐             │                  │   │(images)│ │Analytics│ │
-  ┌──────────┐       │  │  Key Vault  │◀────────────┴──────────────────┘   └────────┘ └────────┘ │
-  │ Supabase │◀─────────┤ (managed id)│  app secrets + TLS cert                                  │
-  │ Postgres │       │  └─────────────┘                                                          │
-  │ + Auth   │       └───────────────────────────────────────────────────────────────────────────┘
-  └──────────┘        External providers: Stripe · Plaid · Resend · Azure OpenAI · Foursquare(later)
+  iOS device          ┌──────────────────────────────────────────────────────────────┐
+  (TestFlight) ─HTTPS──▶  ┌─────────────┐      ┌──────────────┐  cron                  │
+   Stripe/Plaid ─HTTPS───▶│ truespend-  │      │ truespend-   │ (AI/Plaid/RC)          │
+   webhooks            │  │ api (CA,    │      │ worker (CA)  │                        │
+       │               │  │ public      │      └──────┬───────┘                        │
+       │ Supabase      │  │ :8080,      │             │      ┌────────┐ ┌─────────┐    │
+       │ Auth SDK      │  │ custom dom.)│             │      │  ACR   │ │  Log    │    │
+       ▼               │  └──────┬──────┘             │      │(images)│ │Analytics│    │
+  ┌──────────┐         │  ┌──────┴──────┐             │      └────────┘ └─────────┘    │
+  │ Supabase │◀────────│  │  Key Vault  │◀────────────┘  app secrets via managed id    │
+  │ Postgres │         │  │ (managed id)│                                              │
+  │ + Auth   │         │  └─────────────┘            Azure resource group              │
+  └──────────┘         └──────────────────────────────────────────────────────────────┘
+                        External providers: Stripe · Plaid · Resend · Azure OpenAI · Foursquare(later)
 ```
 
 ## 2. Environments
@@ -50,7 +57,7 @@ and Plaid webhooks therefore arrive **through** App Gateway (custom-domain HTTPS
 
 TestFlight is fed by the **production** EAS profile (or `staging` for internal builds). One Azure Key Vault
 per environment. Resource naming: `<kind>-truespend-<env>` (e.g. `kv-truespend-dev`, `ca-truespend-api-dev`).
-Public API entry per env is the App Gateway custom domain `api.truespend.<env>` (prod: `api.truespend.app`).
+Public API entry per env is the API Container App's custom domain `api.truespend.<env>` (prod: `api.truespend.app`).
 
 ## 3. Secrets, certs & API keys — full inventory
 
@@ -58,6 +65,16 @@ For **how to create each external account and obtain these values**, see the com
 [external-setup-guide.md](external-setup-guide.md). This section is the inventory + destinations.
 
 Legend: **S** = secret (must be in Key Vault, never committed) · **C** = cert/key file · **P** = publishable/non-secret config.
+
+**GitHub secrets vs Key Vault — split by consumer (not "KV for everything"):**
+
+| Bucket | Lives in | Read by | Examples |
+|---|---|---|---|
+| App runtime secrets | per-env `kv-truespend-<env>` | the **Container App at runtime** via managed identity (`key_vault_secret_id` ref; plain env vars, no KV SDK) — **CI never reads these** | every **S**-row in §3a (`Plaid--Secret`, `Stripe--SecretKey`, `Supabase--JwtKeys`, `ConnectionStrings--TrueSpendDb`, …) |
+| CI/bootstrap secrets | GitHub Actions secrets | the **pipeline** (to auth + build/migrate) | §3d (`AZURE_CREDENTIALS`/OIDC, `ACR_NAME`, `SUPABASE_DB_URL`, `EXPO_TOKEN`, `ASC_API_KEY_*`) |
+| Master archive | `kv-truespend-shared` (external-setup §2.3a) | nothing at runtime — seeds the per-env vault at deploy | all `.p8`/PFX + collected secrets |
+
+The pipeline does **not** pull app secrets from KV — the Container App resolves them itself. The only near-duplicate is the DB connection: app reads `ConnectionStrings--TrueSpendDb` (KV); the migration job reads `SUPABASE_DB_URL` (GitHub) — different consumers.
 
 ### 3a. Backend (.NET) — bound config sections
 
@@ -86,7 +103,7 @@ Legend: **S** = secret (must be in Key Vault, never committed) · **C** = cert/k
 | `RewardsCc__Host` | P | worker | — | RapidAPI host header |
 | `Foursquare__WebhookSecret` | S (deferred) | api | `Foursquare--WebhookSecret` | set when geo is enabled |
 | `ServiceBus__ConnectionString` | S (dormant) | eventconsumer | — | only if async re-enabled |
-| TLS certificate (custom domain `api.truespend.<env>`) | C | App Gateway | `agw-tls-cert` (KV certificate) | imported/managed cert; App Gateway reads it via its managed identity |
+| TLS certificate (custom domain `api.truespend.<env>`) | C | API Container App | — (bound to the app) | bound to the Container App via `az containerapp hostname bind` (§4a); not stored in KV |
 
 > Key Vault secret names can't contain `__`; use `--` and let the Container App map `--`→`__` when it
 > projects the secret into an env var (see §6).
@@ -95,7 +112,7 @@ Legend: **S** = secret (must be in Key Vault, never committed) · **C** = cert/k
 
 | Env var | Type | Notes |
 |---|---|---|
-| `EXPO_PUBLIC_API_BASE_URL` | P | App Gateway custom domain, e.g. `https://api.truespend.<env>` (not the container FQDN) |
+| `EXPO_PUBLIC_API_BASE_URL` | P | API custom domain, e.g. `https://api.truespend.<env>` (once bound; the raw `*.azurecontainerapps.io` FQDN also works) |
 | `EXPO_PUBLIC_SUPABASE_URL` | P | Supabase project URL |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | P | anon key — publishable by design (RLS enforces access) |
 | `EXPO_PUBLIC_PLAID_REDIRECT_URI` | P | must match Plaid allowed redirect URIs |
@@ -154,18 +171,14 @@ Resources to provision per environment:
 | Container Registry | `azurerm_container_registry` | API + worker images |
 | Key Vault | `azurerm_key_vault` | all backend secrets (RBAC mode) |
 | User-assigned identity | `azurerm_user_assigned_identity` | shared by both Container Apps |
-| Role: AcrPull | `azurerm_role_assignment` | identity pulls from ACR |
-| Role: Key Vault Secrets User | `azurerm_role_assignment` | identity reads KV secrets + TLS cert |
-| Role: AcrPull | `azurerm_role_assignment` | identity pulls images |
-| Virtual network + 2 subnets | `azurerm_virtual_network`, `azurerm_subnet` | env infrastructure subnet (≥/23) + App Gateway subnet |
-| Container Apps Environment | `azurerm_container_app_environment` | **internal** LB, VNet-integrated, wired to Log Analytics |
-| Private DNS zone + record + link | `azurerm_private_dns_zone` (+ `a_record`, `virtual_network_link`) | resolve the internal env domain so App Gateway can reach the API |
-| Container App (api) | `azurerm_container_app` | **internal** ingress :8080 (VNet only) |
+| Role: AcrPull | `azurerm_role_assignment` | identity pulls images from ACR |
+| Role: Key Vault Secrets User | `azurerm_role_assignment` | identity reads KV secrets |
+| Container Apps Environment | `azurerm_container_app_environment` | **public** (external), wired to Log Analytics |
+| Container App (api) | `azurerm_container_app` | **public** ingress :8080; custom domain + cert bound out of band (§4a) |
 | Container App (worker) | `azurerm_container_app` | no ingress |
-| Public IP | `azurerm_public_ip` | App Gateway frontend (Standard, static) |
-| WAF policy | `azurerm_web_application_firewall_policy` | OWASP 3.2, Prevention mode |
-| Application Gateway | `azurerm_application_gateway` | WAF_v2; TLS from Key Vault; routes → API |
-| Key Vault secrets | `azurerm_key_vault_secret` | one per §3a secret |
+
+KV secret values are **not** Terraform resources — they're seeded out of band (§5). Terraform creates only the
+empty vault + RBAC.
 
 Core `main.tf` (abbreviated — fill variables; secrets seeded once then managed out-of-band):
 
@@ -218,52 +231,12 @@ resource "azurerm_role_assignment" "acr_pull" {
   principal_id         = azurerm_user_assigned_identity.app.principal_id
 }
 
-# ── Networking: VNet with a subnet for the Container Apps env and one for App Gateway ──
-resource "azurerm_virtual_network" "vnet" {
-  name                = "vnet-truespend-${var.env}"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-  address_space       = ["10.20.0.0/16"]
-}
-resource "azurerm_subnet" "cae" {            # Container Apps infrastructure subnet (min /23)
-  name                 = "snet-cae"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.20.0.0/23"]
-}
-resource "azurerm_subnet" "agw" {            # App Gateway dedicated subnet (no other resources)
-  name                 = "snet-agw"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.20.2.0/24"]
-}
-
+# Public (external) Container Apps environment — no VNet injection, no internal LB.
 resource "azurerm_container_app_environment" "cae" {
-  name                           = "cae-truespend-${var.env}"
-  resource_group_name            = azurerm_resource_group.rg.name
-  location                       = azurerm_resource_group.rg.location
-  log_analytics_workspace_id     = azurerm_log_analytics_workspace.law.id
-  infrastructure_subnet_id       = azurerm_subnet.cae.id
-  internal_load_balancer_enabled = true        # no public ingress — App Gateway is the front door
-}
-
-# Private DNS so App Gateway (in the VNet) resolves the internal env's default domain to its static IP.
-resource "azurerm_private_dns_zone" "cae" {
-  name                = azurerm_container_app_environment.cae.default_domain
-  resource_group_name = azurerm_resource_group.rg.name
-}
-resource "azurerm_private_dns_a_record" "cae_wildcard" {
-  name                = "*"
-  zone_name           = azurerm_private_dns_zone.cae.name
-  resource_group_name = azurerm_resource_group.rg.name
-  ttl                 = 300
-  records             = [azurerm_container_app_environment.cae.static_ip_address]
-}
-resource "azurerm_private_dns_zone_virtual_network_link" "cae" {
-  name                  = "cae-link"
-  resource_group_name   = azurerm_resource_group.rg.name
-  private_dns_zone_name  = azurerm_private_dns_zone.cae.name
-  virtual_network_id    = azurerm_virtual_network.vnet.id
+  name                       = "cae-truespend-${var.env}"
+  resource_group_name        = azurerm_resource_group.rg.name
+  location                   = azurerm_resource_group.rg.location
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
 }
 
 # Map of KV secret name -> env var name the app expects (-- becomes __)
@@ -312,11 +285,15 @@ resource "azurerm_container_app" "api" {
   }
 
   ingress {
-    # On an INTERNAL Container Apps env, external_enabled=true exposes the app on the
-    # internal load balancer only (VNet-reachable) — App Gateway is the sole public entry.
+    # Public ingress — internet-facing. Requests are still authenticated in-app (Supabase JWT).
+    # Bind the custom domain api.truespend.<env> + cert to this app out of band (§4a).
     external_enabled = true
     target_port      = 8080
-    traffic_weight { latest_revision = true; percentage = 100 }
+    traffic_weight {
+      latest_revision = true
+      percentage      = 100
+    }
+    # liveness/readiness probes hit /health (§13) — see terraform/main.tf for the probe blocks.
   }
 
   template {
@@ -357,126 +334,31 @@ terraform {
 `envs/prod.tfvars.example` (committed; copy to `prod.tfvars`, which is gitignored):
 
 ```hcl
-env                   = "prod"
-location              = "eastus"
-tenant_id             = "00000000-0000-0000-0000-000000000000"
-subscription_id       = "00000000-0000-0000-0000-000000000000"
-image_tag             = "latest"
-# KV certificate secret id for the App Gateway TLS cert (see §4a / §5)
-agw_tls_kv_secret_id  = "https://kv-truespend-prod.vault.azure.net/secrets/agw-tls-cert"
+env             = "prod"
+location        = "eastus"
+tenant_id       = "00000000-0000-0000-0000-000000000000"
+subscription_id = "00000000-0000-0000-0000-000000000000"
+image_tag       = "latest"
 ```
 
-### 4a. Application Gateway (WAF v2) — public ingress + TLS from Key Vault
+### 4a. Custom domain + TLS on the API Container App
 
-App Gateway is the only public component. It terminates TLS (cert from Key Vault), runs the OWASP WAF in
-Prevention mode, and forwards to the API container app over the internal load balancer. Add the
-`agw_tls_kv_secret_id` variable to `variables.tf`; the API container app's ingress must already be internal (§4).
+There is no App Gateway. The API Container App's public ingress serves `api.truespend.<env>` directly. Bind the
+custom domain + your existing TLS cert to the app **out of band** — Container Apps custom-domain binding requires
+DNS ownership validation to pass first, so it isn't a Terraform resource:
 
-```hcl
-# Public frontend IP for the gateway.
-resource "azurerm_public_ip" "agw" {
-  name                = "pip-truespend-agw-${var.env}"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-  allocation_method   = "Static"
-  sku                 = "Standard"
-}
-
-# OWASP WAF policy, blocking mode.
-resource "azurerm_web_application_firewall_policy" "agw" {
-  name                = "waf-truespend-${var.env}"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-  policy_settings { enabled = true, mode = "Prevention" }
-  managed_rules {
-    managed_rule_set { type = "OWASP", version = "3.2" }
-  }
-}
-
-# The gateway reads its TLS cert from Key Vault via the shared user-assigned identity.
-# (KV certs are exposed as secrets, so "Key Vault Secrets User" covers cert read.)
-resource "azurerm_role_assignment" "agw_kv_cert" {
-  scope                = azurerm_key_vault.kv.id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_user_assigned_identity.app.principal_id
-}
-
-resource "azurerm_application_gateway" "agw" {
-  name                = "agw-truespend-${var.env}"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-
-  sku { name = "WAF_v2", tier = "WAF_v2", capacity = 2 }
-  firewall_policy_id                = azurerm_web_application_firewall_policy.agw.id
-  force_firewall_policy_association = true
-
-  identity {
-    type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.app.id]
-  }
-
-  gateway_ip_configuration { name = "gwip", subnet_id = azurerm_subnet.agw.id }
-
-  frontend_ip_configuration { name = "feip", public_ip_address_id = azurerm_public_ip.agw.id }
-  frontend_port             { name = "https", port = 443 }
-
-  # TLS cert sourced from Key Vault (the KV certificate's secret id).
-  ssl_certificate {
-    name                = "api-tls"
-    key_vault_secret_id = var.agw_tls_kv_secret_id
-  }
-
-  # Backend = the API container app's internal FQDN (resolved via the private DNS zone, §4).
-  backend_address_pool {
-    name  = "api-pool"
-    fqdns = [azurerm_container_app.api.ingress[0].fqdn]
-  }
-
-  backend_http_settings {
-    name                                = "api-https"
-    cookie_based_affinity               = "Disabled"
-    port                                = 443
-    protocol                            = "Https"
-    pick_host_name_from_backend_address = true     # SNI/Host = the app FQDN
-    request_timeout                     = 30
-    probe_name                          = "api-probe"
-  }
-
-  probe {
-    name                                      = "api-probe"
-    protocol                                  = "Https"
-    path                                      = "/health"     # wire a probe endpoint (§13)
-    interval                                  = 30
-    timeout                                   = 30
-    unhealthy_threshold                       = 3
-    pick_host_name_from_backend_http_settings = true
-    match { status_code = ["200-399"] }
-  }
-
-  http_listener {
-    name                           = "https-listener"
-    frontend_ip_configuration_name = "feip"
-    frontend_port_name             = "https"
-    protocol                       = "Https"
-    ssl_certificate_name           = "api-tls"
-  }
-
-  request_routing_rule {
-    name                       = "api-rule"
-    rule_type                  = "Basic"
-    priority                   = 100
-    http_listener_name         = "https-listener"
-    backend_address_pool_name  = "api-pool"
-    backend_http_settings_name = "api-https"
-  }
-}
-
-output "agw_public_ip" { value = azurerm_public_ip.agw.ip_address }
+```bash
+APP=ca-truespend-api-<env>; RG=rg-truespend-<env>; DOMAIN=api.truespend.<env>
+# 1. CNAME $DOMAIN -> the app's public FQDN (terraform output api_public_fqdn), and add the
+#    asuid.<domain> TXT validation value that the next command reports. Then:
+az containerapp hostname add  -n $APP -g $RG --hostname $DOMAIN
+az containerapp hostname bind -n $APP -g $RG --hostname $DOMAIN \
+  --certificate-file ./api-truespend.pfx --password '<pfx-password>'
 ```
 
-DNS: create an A record `api.truespend.<env>` → `azurerm_public_ip.agw.ip_address`, and issue the TLS cert for
-that hostname (upload/managed in Key Vault as `agw-tls-cert`). The mobile `EXPO_PUBLIC_API_BASE_URL` and the
-Stripe/Plaid webhook URLs all point at `https://api.truespend.<env>` (the gateway), never the container FQDN.
+The mobile `EXPO_PUBLIC_API_BASE_URL` and the Stripe/Plaid webhook URLs point at `https://api.truespend.<env>`
+once bound (the raw `*.azurecontainerapps.io` FQDN also works before the domain is attached). No edge WAF in
+MVP — put Cloudflare in front of the ingress, or reintroduce an App Gateway, later if you want one.
 
 ## 5. Key Vault — secret seeding & rotation
 
@@ -494,14 +376,8 @@ az keyvault secret set --vault-name $KV --name "ConnectionStrings--TrueSpendDb" 
 3. The app reads them as plain env vars (`Stripe__SecretKey` etc.) — **no Key Vault SDK code change needed**;
    the Container App's `secret` + `env.secret_name` mapping does the projection. `.NET` binds `Section__Key`
    automatically.
-4. **App Gateway TLS cert** — import the `api.truespend.<env>` certificate into Key Vault as a *certificate*
-   named `agw-tls-cert` (not a plain secret); the gateway reads it via the shared identity (`agw_kv_cert` role).
-   Rotation is in-place — App Gateway auto-refreshes from the latest KV certificate version.
-
-```bash
-az keyvault certificate import --vault-name $KV --name "agw-tls-cert" --file api-truespend.pfx
-# managed cert alternative: az keyvault certificate create with a DigiCert/issuer policy.
-```
+4. **Custom-domain TLS cert** — not a Key Vault item. The `api.truespend.<env>` cert is bound directly to the
+   API Container App via `az containerapp hostname bind` (§4a); rotate by re-binding a new cert.
 
 ## 6. Service deployment pipeline (GitHub Actions)
 
@@ -510,9 +386,7 @@ az keyvault certificate import --vault-name $KV --name "agw-tls-cert" --file api
 ```yaml
 name: service-deploy
 on:
-  push:
-    branches: [main]
-    paths: ["service/**", "docker/**", ".github/workflows/service-deploy.yml"]
+  workflow_dispatch:   # manual trigger only
 jobs:
   build-test:
     runs-on: ubuntu-latest
@@ -563,10 +437,7 @@ timestamped-migration system; deploy with `psql`, not `supabase db push`.
 ```yaml
 name: supabase-migrate
 on:
-  push:
-    branches: [main]
-    paths: ["supabase/**", ".github/workflows/supabase-migrate.yml"]
-  workflow_dispatch:
+  workflow_dispatch:   # manual trigger only
 jobs:
   migrate:
     runs-on: ubuntu-latest
@@ -596,9 +467,7 @@ API key to EAS (`eas credentials` → iOS → App Store Connect API Key) so `eas
 ```yaml
 name: mobile-testflight
 on:
-  workflow_dispatch:
-  push:
-    tags: ["mobile-v*"]
+  workflow_dispatch:   # manual trigger only
 jobs:
   build-submit:
     runs-on: ubuntu-latest
@@ -697,18 +566,17 @@ Pass: paid plan unlocks the right features end-to-end, trial countdown shows, an
 
 ## 11. First-time deploy order
 
-1. `terraform apply` (per env) → RG, ACR, KV, identity, **VNet + subnets**, internal Container Apps Env,
-   private DNS, two Container Apps, Log Analytics, **public IP + WAF policy + Application Gateway**.
-   (Import `agw-tls-cert` into KV first, or split the apply: infra → cert → gateway.)
-2. Seed Key Vault secrets **and the `agw-tls-cert` certificate** (§5).
-3. Point DNS `api.truespend.<env>` → `agw_public_ip` output; verify HTTPS reaches the API through the gateway.
-4. Run the **supabase-migrate** pipeline → schema + policies + seeds.
-5. Configure Supabase Auth providers + SMTP + redirect URLs (§9).
-6. Run **service-deploy** → images to ACR, Container Apps roll to the new revision.
-7. Set EAS env vars (`EXPO_PUBLIC_API_BASE_URL=https://api.truespend.<env>`); run **mobile-testflight** →
+1. `terraform apply` (per env, two-phase per §5/terraform README) → RG, ACR, KV, identity, public Container
+   Apps Env, two Container Apps, Log Analytics. Seed KV secrets between the partial and full apply.
+2. Bind the custom domain + cert to the API app: `az containerapp hostname add` / `bind` (§4a). Point a CNAME
+   for `api.truespend.<env>` at the `api_public_fqdn` output and add the asuid TXT; verify HTTPS reaches the API.
+3. Run the **supabase-migrate** pipeline → schema + policies + seeds.
+4. Configure Supabase Auth providers + SMTP + redirect URLs (§9).
+5. Run **service-deploy** → images to ACR, Container Apps roll to the new revision.
+6. Set EAS env vars (`EXPO_PUBLIC_API_BASE_URL=https://api.truespend.<env>`); run **mobile-testflight** →
    build + submit; accept in TestFlight.
-8. Point Stripe + Plaid webhook URLs at `https://api.truespend.<env>/api/v1/webhooks/...` (through the gateway).
-9. Execute the E2E plan (§10) Phases 0→4, defer 5, finish with 6.
+7. Point Stripe + Plaid webhook URLs at `https://api.truespend.<env>/api/v1/webhooks/...`.
+8. Execute the E2E plan (§10) Phases 0→4, defer 5, finish with 6.
 
 ## 12. Rollback
 
@@ -722,9 +590,7 @@ Pass: paid plan unlocks the right features end-to-end, trial countdown shows, an
 ## 13. Open items before production
 
 - Re-enable `react-native-plaid-link-sdk` in `app.config.ts` (prebuild fix) ahead of Phase 4.
-- Add a `/health` endpoint to the API and wire it to both the App Gateway probe and Container App probes.
-- Tune the WAF: start in Prevention with OWASP 3.2; review blocked-request logs for false positives on the
-  Stripe/Plaid webhook bodies and add scoped rule exclusions before go-live.
-- Issue/renew the `api.truespend.<env>` TLS cert (managed in Key Vault); confirm App Gateway auto-rotates.
-- Stripe/Plaid webhooks now ingress **through App Gateway** — no Container App public exposure to allow-list.
+- Bind + renew the `api.truespend.<env>` TLS cert on the API Container App (`az containerapp hostname bind`, §4a).
+- Consider an edge WAF before heavy public traffic — Cloudflare in front of the ingress, or reintroduce an App
+  Gateway. MVP relies on in-app auth (Supabase JWT) + provider signature verification on webhooks.
 - Foursquare + Stripe live keys provisioned only when their phases begin.

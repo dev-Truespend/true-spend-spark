@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, palette } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
@@ -16,6 +16,28 @@ type Props = {
 };
 
 export function SettingsRow({ label, value, onPress, testID, trailingTone = "default", disabled }: Props) {
+  const theme = useTheme();
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      container: {
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderRadius: radii.lg,
+        borderWidth: 1,
+        paddingHorizontal: 14,
+        paddingVertical: 12
+      },
+      pressed: { opacity: 0.85 },
+      disabled: { opacity: 0.5 },
+      row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+      label: { color: t.colors.text, flexShrink: 1, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(14) },
+      right: { flexDirection: "row", alignItems: "center", gap: 8, marginLeft: 12, maxWidth: "55%" },
+      value: { fontFamily: fontFamily.regular, fontSize: scaleFont(12) },
+      tone_muted: { color: t.colors.mutedFg },
+      tone_warning: { color: t.colors.amberText },
+      tone_danger: { color: t.colors.destructive }
+    })
+  );
   const toneStyle = trailingTone === "warning"
     ? styles.tone_warning
     : trailingTone === "danger"
@@ -27,7 +49,7 @@ export function SettingsRow({ label, value, onPress, testID, trailingTone = "def
       <View style={styles.right}>
         {value ? <Text style={[styles.value, toneStyle]} numberOfLines={1}>{value}</Text> : null}
         {onPress && !disabled ? (
-          <Ionicons name="chevron-forward" size={16} color={colors.mutedFg} />
+          <Ionicons name="chevron-forward" size={16} color={theme.colors.mutedFg} />
         ) : null}
       </View>
     </View>
@@ -48,23 +70,3 @@ export function SettingsRow({ label, value, onPress, testID, trailingTone = "def
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: palette.white,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 12
-  },
-  pressed: { opacity: 0.85 },
-  disabled: { opacity: 0.5 },
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  label: { color: colors.text, flexShrink: 1, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(14) },
-  right: { flexDirection: "row", alignItems: "center", gap: 8, marginLeft: 12, maxWidth: "55%" },
-  value: { fontFamily: fontFamily.regular, fontSize: scaleFont(12) },
-  tone_muted: { color: colors.mutedFg },
-  tone_warning: { color: colors.amberText },
-  tone_danger: { color: colors.destructive }
-});

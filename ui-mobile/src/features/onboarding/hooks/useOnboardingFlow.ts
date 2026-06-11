@@ -162,9 +162,28 @@ export function useOnboardingFlow() {
     });
   }
 
+  async function refreshAndAdvanceAfterCheckout() {
+    // Refresh subscription/entitlement state so any downstream gates see the
+    // latest plan (after Stripe's webhook fires, or immediately for a simulated checkout).
+    try {
+      await Promise.all([billingApi.getSubscription(), billingApi.getEntitlements()]);
+    } catch {
+      // Subscription may still be pending — let the user move on either way.
+    }
+    setCheckoutPending(false);
+    setStepOverride("notifications");
+  }
+
   async function startCheckout() {
     await run(async () => {
       const response = await checkoutMutation.mutateAsync({ planCode: selectedPlanCode, periodCode });
+      // Simulated checkout (TestFlight, no Stripe): the server provisions a trialing subscription
+      // directly and returns an empty url. Treat it exactly like returning from a real checkout —
+      // refresh entitlements and advance, with no browser hand-off.
+      if (!response.data.url) {
+        await refreshAndAdvanceAfterCheckout();
+        return;
+      }
       await openExternalUrl(response.data.url);
       // Do not advance the step here — the user has only been handed off to Stripe.
       // Their subscription is webhook driven; advance after they return and we
@@ -182,17 +201,7 @@ export function useOnboardingFlow() {
   }
 
   async function continueAfterCheckout() {
-    await run(async () => {
-      // Refresh subscription/entitlement state so any downstream gates see the
-      // latest plan once Stripe's webhook has fired.
-      try {
-        await Promise.all([billingApi.getSubscription(), billingApi.getEntitlements()]);
-      } catch {
-        // Subscription may still be pending — let the user move on either way.
-      }
-      setCheckoutPending(false);
-      setStepOverride("notifications");
-    });
+    await run(refreshAndAdvanceAfterCheckout);
   }
 
   async function saveNotifications(pushEnabled: boolean, emailEnabled: boolean) {

@@ -21,7 +21,7 @@ import { fontFamily, typography } from "@/shared/theme/typography";
 
 type ThemeMode = "light" | "dark" | "system";
 
-type Theme = {
+export type Theme = {
   scheme: Scheme;
   isDark: boolean;
   colors: (typeof colorsByScheme)[Scheme];

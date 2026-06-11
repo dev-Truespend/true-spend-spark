@@ -24,7 +24,10 @@ export function toAppError(error: unknown): AppError {
     const status = error.response?.status;
     const payload = error.response?.data as ClientErrorPayload | undefined;
     const errors = Array.isArray(payload?.errors) ? payload?.errors ?? [] : [];
-    const message = payload?.message ?? errors[0] ?? defaultMessageForStatus(status);
+    // Always surface friendly copy to the UI; the raw server/provider text is
+    // kept only on `cause` (the original axios error) for logging. Requirement:
+    // never show raw backend error strings to the user.
+    const message = defaultMessageForStatus(status);
 
     switch (status) {
       case 400:
@@ -61,5 +64,6 @@ function defaultMessageForStatus(status?: number): string {
   if (status === 404) return errorMessages.notFound;
   if (status === 409) return errorMessages.conflict;
   if (status === 400) return errorMessages.validation;
+  if (status >= 500) return errorMessages.server;
   return errorMessages.unknown;
 }

@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type DividerProps = {
@@ -7,6 +7,7 @@ type DividerProps = {
 };
 
 export function Divider({ label }: DividerProps) {
+  const styles = useThemedStyles(buildStyles);
   if (!label) {
     return <View style={styles.line} />;
   }
@@ -19,17 +20,18 @@ export function Divider({ label }: DividerProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  line: { height: 1, backgroundColor: colors.border, marginVertical: 8 },
-  row: { flexDirection: "row", alignItems: "center", marginVertical: 14 },
-  lineGrow: { flex: 1, height: 1, backgroundColor: colors.border },
-  label: {
-    marginHorizontal: 10,
-    fontFamily: fontFamily.bold,
-    fontWeight: "700",
-    fontSize: scaleFont(10),
-    color: colors.mutedFg,
-    letterSpacing: 1,
-    textTransform: "uppercase"
-  }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    line: { height: 1, backgroundColor: t.colors.border, marginVertical: 8 },
+    row: { flexDirection: "row", alignItems: "center", marginVertical: 14 },
+    lineGrow: { flex: 1, height: 1, backgroundColor: t.colors.border },
+    label: {
+      marginHorizontal: 10,
+      fontFamily: fontFamily.bold,
+      fontWeight: "700",
+      fontSize: scaleFont(10),
+      color: t.colors.mutedFg,
+      letterSpacing: 1,
+      textTransform: "uppercase"
+    }
+  });

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors } from "@/shared/theme/colors";
 import { spacing } from "@/shared/theme/spacing";
+import { useThemedStyles } from "@/providers/ThemeProvider";
 import { Plan, PlanFeature, PlanPrice } from "@/features/billing/types/billing.types";
 
 type Props = {
@@ -29,6 +29,38 @@ function valueLabel(feature: PlanFeature, planCode: string): string {
 }
 
 export function PlanComparisonCard({ plan, price, features, isCurrentPlan }: Props) {
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      card: {
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderRadius: 8,
+        borderWidth: 1,
+        gap: spacing.sm,
+        padding: spacing.md
+      },
+      headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm },
+      titleColumn: { flex: 1, gap: 4 },
+      name: { color: t.colors.text, fontSize: 18, fontWeight: "700" },
+      description: { color: t.colors.muted, fontSize: 13 },
+      priceColumn: { alignItems: "flex-end", gap: 4 },
+      price: { color: t.colors.primary, fontSize: 18, fontWeight: "800" },
+      trial: { color: t.colors.muted, fontSize: 12 },
+      badge: {
+        alignSelf: "flex-start",
+        backgroundColor: t.colors.primary,
+        borderRadius: 999,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 2
+      },
+      badgeText: { color: t.palette.white, fontSize: 12, fontWeight: "700" },
+      featureList: { gap: 4, marginTop: spacing.xs },
+      featureRow: { flexDirection: "row", justifyContent: "space-between" },
+      featureName: { color: t.colors.text, fontSize: 13 },
+      featureValue: { color: t.colors.muted, fontSize: 13 }
+    })
+  );
+
   const orderedFeatures = [...features].sort((a, b) => {
     const ai = FEATURE_ORDER.indexOf(a.code);
     const bi = FEATURE_ORDER.indexOf(b.code);
@@ -68,33 +100,3 @@ export function PlanComparisonCard({ plan, price, features, isCurrentPlan }: Pro
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: spacing.sm,
-    padding: spacing.md
-  },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm },
-  titleColumn: { flex: 1, gap: 4 },
-  name: { color: colors.text, fontSize: 18, fontWeight: "700" },
-  description: { color: colors.muted, fontSize: 13 },
-  priceColumn: { alignItems: "flex-end", gap: 4 },
-  price: { color: colors.primary, fontSize: 18, fontWeight: "800" },
-  trial: { color: colors.muted, fontSize: 12 },
-  badge: {
-    alignSelf: "flex-start",
-    backgroundColor: colors.primary,
-    borderRadius: 999,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2
-  },
-  badgeText: { color: colors.surface, fontSize: 12, fontWeight: "700" },
-  featureList: { gap: 4, marginTop: spacing.xs },
-  featureRow: { flexDirection: "row", justifyContent: "space-between" },
-  featureName: { color: colors.text, fontSize: 13 },
-  featureValue: { color: colors.muted, fontSize: 13 }
-});

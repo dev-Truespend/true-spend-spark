@@ -1,10 +1,11 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Button } from "@/shared/components/Button";
-import { EmptyState } from "@/shared/components/EmptyState";
+import { GradientHeroCard } from "@/shared/components/GradientHeroCard";
 import { ProLockBadge } from "@/shared/components/ProLockBadge";
 import { ProUpsell } from "@/shared/components/ProUpsell";
 import { SectionLabel } from "@/shared/components/SectionLabel";
-import { colors } from "@/shared/theme/colors";
+import { GlobeCard } from "@/features/cards/components/GlobeCard";
+import { useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type Props = {
@@ -12,27 +13,45 @@ type Props = {
   onConnectPlaid: () => void;
   onBrowseCatalog: () => void;
   onUpgrade: () => void;
+  onOpenMap: () => void;
   plaidEnabled: boolean;
 };
 
-export function CardEmptyState({ onAddManual, onConnectPlaid, onBrowseCatalog, onUpgrade, plaidEnabled }: Props) {
+export function CardEmptyState({
+  onAddManual,
+  onConnectPlaid,
+  onBrowseCatalog,
+  onUpgrade,
+  onOpenMap,
+  plaidEnabled
+}: Props) {
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      bullet: { flexDirection: "row", alignItems: "center", gap: 8 },
+      bulletDot: { fontFamily: fontFamily.bold, color: t.colors.primary, width: 12 },
+      bulletText: { flex: 1, fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: t.colors.text, lineHeight: 18 }
+    })
+  );
+
   return (
     <View style={{ gap: 14 }}>
-      <EmptyState
-        iconLabel="💳"
-        title="No cards yet"
-        description="Add at least one card to start getting smart recommendations."
-        action={
-          <View style={{ gap: 8 }}>
-            <Button label="＋ Add manually" onPress={onAddManual} />
-            {plaidEnabled ? (
-              <Button label="Connect bank with Plaid" onPress={onConnectPlaid} variant="outline" />
-            ) : (
-              <Button label="Browse card catalog" onPress={onBrowseCatalog} variant="outline" />
-            )}
-          </View>
-        }
+      <GradientHeroCard
+        tag="✦ Get started"
+        title="Add your first card"
+        subtitle="TrueSpend tells you the best card to swipe at every store — and what you'd miss with the wrong one."
+        gradient="brand"
       />
+
+      <View style={{ gap: 8 }}>
+        <Button label="＋ Add manually" onPress={onAddManual} />
+        {plaidEnabled ? (
+          <Button label="Connect bank with Plaid" onPress={onConnectPlaid} variant="outline" />
+        ) : (
+          <Button label="Browse card catalog" onPress={onBrowseCatalog} variant="outline" />
+        )}
+      </View>
+
+      <GlobeCard onPress={onOpenMap} />
 
       <ProUpsell
         title={plaidEnabled ? "Basic includes Plaid" : "Upgrade to connect a bank"}
@@ -68,9 +87,3 @@ export function CardEmptyState({ onAddManual, onConnectPlaid, onBrowseCatalog, o
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  bullet: { flexDirection: "row", alignItems: "center", gap: 8 },
-  bulletDot: { fontFamily: fontFamily.bold, color: colors.mutedFg, width: 12 },
-  bulletText: { flex: 1, fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: colors.text, lineHeight: 18 }
-});

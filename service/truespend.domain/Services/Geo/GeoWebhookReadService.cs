@@ -8,8 +8,8 @@ namespace TrueSpend.Domain.Services.Geo;
 
 public sealed class GeoWebhookReadService(TrueSpendDbContext db) : IGeoWebhookReadService
 {
-    public Task<bool> WebhookEventExistsAsync(string foursquareEventId, CancellationToken cancellationToken) =>
-        db.FoursquareWebhookEvents.AsNoTracking().AnyAsync(x => x.FoursquareEventId == foursquareEventId, cancellationToken);
+    public Task<bool> WebhookEventExistsAsync(string provider, string eventId, CancellationToken cancellationToken) =>
+        db.FoursquareWebhookEvents.AsNoTracking().AnyAsync(x => x.Provider == provider && x.FoursquareEventId == eventId, cancellationToken);
 
     public async Task<Guid?> ResolveUserIdAsync(string externalUserId, CancellationToken cancellationToken)
     {

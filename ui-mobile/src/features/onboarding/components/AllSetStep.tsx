@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/shared/components/Button";
 import { Switch } from "@/shared/components/Switch";
-import { colors, gradients, palette } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
@@ -16,10 +16,83 @@ type Props = {
 export function AllSetStep({ isLoading, onComplete }: Props) {
   const [allowNotifications, setAllowNotifications] = useState(true);
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      wrap: {
+        flex: 1,
+        paddingHorizontal: 24,
+        paddingTop: 24
+      },
+      hero: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12
+      },
+      check: {
+        width: 96,
+        height: 96,
+        borderRadius: 28,
+        backgroundColor: t.colors.onBrandSurface,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 8
+      },
+      checkGlyph: { color: t.palette.white, fontSize: scaleFont(42), fontFamily: fontFamily.heavy, fontWeight: "800" },
+      title: {
+        color: t.palette.white,
+        fontFamily: fontFamily.heavy,
+        fontWeight: "800",
+        fontSize: scaleFont(28),
+        letterSpacing: -0.5,
+        textAlign: "center"
+      },
+      desc: {
+        color: t.colors.onBrandMuted,
+        fontFamily: fontFamily.regular,
+        fontSize: scaleFont(14),
+        textAlign: "center",
+        lineHeight: 20,
+        paddingHorizontal: 12,
+        maxWidth: 320
+      },
+      badges: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        gap: 6,
+        marginTop: 12
+      },
+      badge: {
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 999,
+        backgroundColor: t.colors.onBrandSurface
+      },
+      badgeText: { color: t.palette.white, fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(11) },
+      actions: { gap: 12 },
+      notifCard: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        width: "100%",
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        borderRadius: radii.lg,
+        backgroundColor: t.colors.onBrandSurface,
+        borderWidth: 1,
+        borderColor: t.colors.onBrandBorder
+      },
+      notifText: { flex: 1, gap: 2 },
+      notifTitle: { color: t.palette.white, fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(14) },
+      notifBody: { color: t.colors.onBrandMuted, fontFamily: fontFamily.regular, fontSize: scaleFont(12), lineHeight: 16 }
+    })
+  );
 
   return (
     <LinearGradient
-      colors={[...gradients.brand]}
+      colors={[...theme.gradients.brand]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}
@@ -55,74 +128,3 @@ export function AllSetStep({ isLoading, onComplete }: Props) {
     </LinearGradient>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24
-  },
-  hero: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12
-  },
-  check: {
-    width: 96,
-    height: 96,
-    borderRadius: 28,
-    backgroundColor: colors.onBrandSurface,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8
-  },
-  checkGlyph: { color: palette.white, fontSize: scaleFont(42), fontFamily: fontFamily.heavy, fontWeight: "800" },
-  title: {
-    color: palette.white,
-    fontFamily: fontFamily.heavy,
-    fontWeight: "800",
-    fontSize: scaleFont(28),
-    letterSpacing: -0.5,
-    textAlign: "center"
-  },
-  desc: {
-    color: colors.onBrandMuted,
-    fontFamily: fontFamily.regular,
-    fontSize: scaleFont(14),
-    textAlign: "center",
-    lineHeight: 20,
-    paddingHorizontal: 12,
-    maxWidth: 320
-  },
-  badges: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: 12
-  },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: colors.onBrandSurface
-  },
-  badgeText: { color: palette.white, fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(11) },
-  actions: { gap: 12 },
-  notifCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    width: "100%",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: radii.lg,
-    backgroundColor: colors.onBrandSurface,
-    borderWidth: 1,
-    borderColor: colors.onBrandBorder
-  },
-  notifText: { flex: 1, gap: 2 },
-  notifTitle: { color: palette.white, fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(14) },
-  notifBody: { color: colors.onBrandMuted, fontFamily: fontFamily.regular, fontSize: scaleFont(12), lineHeight: 16 }
-});

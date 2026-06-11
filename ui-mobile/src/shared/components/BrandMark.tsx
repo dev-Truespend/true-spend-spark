@@ -1,7 +1,6 @@
 import { StyleSheet, Text, View, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { gradients, palette } from "@/shared/theme/colors";
-import { radii } from "@/shared/theme/spacing";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily } from "@/shared/theme/typography";
 import { shadows } from "@/shared/theme/shadows";
 
@@ -13,6 +12,8 @@ type BrandMarkProps = {
 };
 
 export function BrandMark({ size = 48, glyph = "T", style, translucent = false }: BrandMarkProps) {
+  const theme = useTheme();
+  const styles = useThemedStyles(buildStyles);
   const radius = Math.round(size * 0.28);
   if (translucent) {
     return (
@@ -35,7 +36,7 @@ export function BrandMark({ size = 48, glyph = "T", style, translucent = false }
   }
   return (
     <LinearGradient
-      colors={[...gradients.brand]}
+      colors={[...theme.gradients.brand]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[
@@ -44,7 +45,9 @@ export function BrandMark({ size = 48, glyph = "T", style, translucent = false }
           height: size,
           borderRadius: radius,
           alignItems: "center",
-          justifyContent: "center"
+          justifyContent: "center",
+          // Solid bg under the gradient lets RN compute the shadow efficiently.
+          backgroundColor: theme.gradients.brand[0]
         },
         shadows.brandBlue,
         style
@@ -55,10 +58,11 @@ export function BrandMark({ size = 48, glyph = "T", style, translucent = false }
   );
 }
 
-const styles = StyleSheet.create({
-  glyph: {
-    color: palette.white,
-    fontFamily: fontFamily.heavy,
-    fontWeight: "800"
-  }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    glyph: {
+      color: t.palette.white,
+      fontFamily: fontFamily.heavy,
+      fontWeight: "800"
+    }
+  });

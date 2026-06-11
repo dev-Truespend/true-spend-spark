@@ -6,7 +6,7 @@ import { Card } from "@/shared/components/Card";
 import { Screen } from "@/shared/components/Screen";
 import { RewardRow } from "@/shared/components/RewardRow";
 import { Toast } from "@/shared/components/Toast";
-import { colors, tints } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { useTransactionDetail } from "@/features/transactions/hooks/useTransactionDetail";
@@ -14,6 +14,8 @@ import { useMarkNotAMiss } from "@/features/transactions/hooks/useMarkNotAMiss";
 import { MissedRewardBanner } from "@/features/transactions/components/MissedRewardBanner";
 
 export function TransactionDetailScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const transactionId = Number(id);
   const router = useRouter();
@@ -110,32 +112,35 @@ export function TransactionDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
-  hero: { alignItems: "center", paddingVertical: 16, gap: 6 },
-  iconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: radii.xxl,
-    backgroundColor: tints.amber.bg,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4
-  },
-  iconGlyph: { fontSize: scaleFont(26) },
-  merchant: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(18), color: colors.text },
-  meta: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: colors.mutedFg, marginTop: 2, textAlign: "center" },
-  amount: {
-    fontFamily: fontFamily.heavy,
-    fontWeight: "800",
-    fontSize: scaleFont(32),
-    color: colors.text,
-    letterSpacing: -0.8,
-    marginTop: 8
-  }
-});
+const useStyles = () =>
+  useThemedStyles((t) =>
+    StyleSheet.create({
+      topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+      iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+      topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: t.colors.text },
+      hero: { alignItems: "center", paddingVertical: 16, gap: 6 },
+      iconBox: {
+        width: 64,
+        height: 64,
+        borderRadius: radii.xxl,
+        backgroundColor: t.tints.amber.bg,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 4
+      },
+      iconGlyph: { fontSize: scaleFont(26) },
+      merchant: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(18), color: t.colors.text },
+      meta: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: t.colors.mutedFg, marginTop: 2, textAlign: "center" },
+      amount: {
+        fontFamily: fontFamily.heavy,
+        fontWeight: "800",
+        fontSize: scaleFont(32),
+        color: t.colors.text,
+        letterSpacing: -0.8,
+        marginTop: 8
+      }
+    })
+  );
 
 /* region: archive — manual transaction edit/delete actions (removed from MVP)
  *

@@ -3,8 +3,8 @@ import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from "
 import { useRouter } from "expo-router";
 import { Button } from "@/shared/components/Button";
 import { Screen } from "@/shared/components/Screen";
-import { colors } from "@/shared/theme/colors";
 import { spacing } from "@/shared/theme/spacing";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { PeriodToggle } from "@/features/billing/components/PeriodToggle";
 import { PlanOption } from "@/features/billing/components/PlanOption";
 import { useBillingPlans } from "@/features/billing/hooks/useBillingPlans";
@@ -14,6 +14,30 @@ import { useCheckout } from "@/features/billing/hooks/useCheckout";
 type Period = "monthly" | "annual";
 
 export function BillingPlansScreen() {
+  const theme = useTheme();
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      content: { gap: spacing.md, paddingBottom: spacing.xl },
+      title: { color: t.colors.text, fontSize: 24, fontWeight: "800" },
+      subtitle: { color: t.colors.muted, fontSize: 14 },
+      loader: { marginVertical: spacing.xl },
+      list: { gap: spacing.sm },
+      planCard: {
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderRadius: 8,
+        borderWidth: 1,
+        gap: spacing.sm,
+        padding: spacing.md
+      },
+      planHeader: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
+      planName: { color: t.colors.text, fontSize: 16, fontWeight: "700" },
+      planPrice: { color: t.colors.primary, fontSize: 16, fontWeight: "800" },
+      planDescription: { color: t.colors.muted, fontSize: 13 },
+      error: { color: t.colors.danger, fontSize: 13 }
+    })
+  );
+
   const router = useRouter();
   const [period, setPeriod] = useState<Period>("monthly");
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -58,7 +82,7 @@ export function BillingPlansScreen() {
         <PeriodToggle value={period} onChange={setPeriod} />
 
         {isLoading ? (
-          <ActivityIndicator color={colors.primary} style={styles.loader} />
+          <ActivityIndicator color={theme.colors.primary} style={styles.loader} />
         ) : (
           <View style={styles.list}>
             {plans.map((plan) => {
@@ -98,24 +122,3 @@ export function BillingPlansScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  content: { gap: spacing.md, paddingBottom: spacing.xl },
-  title: { color: colors.text, fontSize: 24, fontWeight: "800" },
-  subtitle: { color: colors.muted, fontSize: 14 },
-  loader: { marginVertical: spacing.xl },
-  list: { gap: spacing.sm },
-  planCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: spacing.sm,
-    padding: spacing.md
-  },
-  planHeader: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
-  planName: { color: colors.text, fontSize: 16, fontWeight: "700" },
-  planPrice: { color: colors.primary, fontSize: 16, fontWeight: "800" },
-  planDescription: { color: colors.muted, fontSize: 13 },
-  error: { color: colors.danger, fontSize: 13 }
-});

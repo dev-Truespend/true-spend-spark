@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { gradients, GradientName, palette } from "@/shared/theme/colors";
+import { GradientName } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { shadows } from "@/shared/theme/shadows";
@@ -43,6 +44,8 @@ export function CreditCard({
   onPress,
   style
 }: CreditCardProps) {
+  const theme = useTheme();
+  const styles = useThemedStyles(buildStyles);
   const dims = stackMode
     ? { minHeight: 115, padding: 14, radius: 16 }
     : size === "sm"
@@ -53,7 +56,7 @@ export function CreditCard({
 
   const content = (
     <LinearGradient
-      colors={[...gradients[variant]]}
+      colors={[...theme.gradients[variant]]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[
@@ -113,24 +116,25 @@ export function CreditCard({
   return content;
 }
 
-const styles = StyleSheet.create({
-  base: {
-    justifyContent: "space-between",
-    overflow: "hidden",
-    borderRadius: radii.xxl
-  },
-  topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  network: { color: palette.white, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), letterSpacing: 0.2 },
-  chip: { color: "rgba(255,255,255,0.8)", fontSize: scaleFont(18) },
-  num: { color: palette.white, fontFamily: fontFamily.mono, fontSize: scaleFont(16), letterSpacing: 2, marginTop: 8 },
-  numSm: { fontSize: scaleFont(13), letterSpacing: 1.5 },
-  bottomRow: { flexDirection: "row", marginTop: 10, gap: 12 },
-  label: { color: "rgba(255,255,255,0.75)", fontSize: scaleFont(9), fontFamily: fontFamily.bold, letterSpacing: 0.8, textTransform: "uppercase" },
-  name: { color: palette.white, fontSize: scaleFont(13), fontFamily: fontFamily.semibold, fontWeight: "600", marginTop: 2 },
-  nameSm: { fontSize: scaleFont(11) },
-  stackBorder: { borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.22)" },
-  stackJustify: { justifyContent: "flex-start", gap: 6 },
-  stackName: { color: palette.white, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), flexShrink: 1 },
-  stackNum: { color: palette.white, fontFamily: fontFamily.mono, fontSize: scaleFont(16), letterSpacing: 1.8, fontWeight: "600", marginTop: 6 },
-  pressed: { transform: [{ scale: 0.98 }] }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    base: {
+      justifyContent: "space-between",
+      overflow: "hidden",
+      borderRadius: radii.xxl
+    },
+    topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    network: { color: t.palette.white, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), letterSpacing: 0.2 },
+    chip: { color: "rgba(255,255,255,0.8)", fontSize: scaleFont(18) },
+    num: { color: t.palette.white, fontFamily: fontFamily.mono, fontSize: scaleFont(16), letterSpacing: 2, marginTop: 8 },
+    numSm: { fontSize: scaleFont(13), letterSpacing: 1.5 },
+    bottomRow: { flexDirection: "row", marginTop: 10, gap: 12 },
+    label: { color: "rgba(255,255,255,0.75)", fontSize: scaleFont(9), fontFamily: fontFamily.bold, letterSpacing: 0.8, textTransform: "uppercase" },
+    name: { color: t.palette.white, fontSize: scaleFont(13), fontFamily: fontFamily.semibold, fontWeight: "600", marginTop: 2 },
+    nameSm: { fontSize: scaleFont(11) },
+    stackBorder: { borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.22)" },
+    stackJustify: { justifyContent: "flex-start", gap: 6 },
+    stackName: { color: t.palette.white, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), flexShrink: 1 },
+    stackNum: { color: t.palette.white, fontFamily: fontFamily.mono, fontSize: scaleFont(16), letterSpacing: 1.8, fontWeight: "600", marginTop: 6 },
+    pressed: { transform: [{ scale: 0.98 }] }
+  });

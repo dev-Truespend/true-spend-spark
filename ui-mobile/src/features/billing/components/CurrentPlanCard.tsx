@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors } from "@/shared/theme/colors";
 import { spacing } from "@/shared/theme/spacing";
+import { useThemedStyles } from "@/providers/ThemeProvider";
 import { Subscription } from "@/features/billing/types/billing.types";
 
 type Props = {
@@ -15,6 +15,26 @@ function formatDate(value?: string | null): string | null {
 }
 
 export function CurrentPlanCard({ subscription }: Props) {
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      card: {
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderRadius: 8,
+        borderWidth: 1,
+        gap: 4,
+        padding: spacing.md
+      },
+      row: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
+      label: { color: t.colors.muted, fontSize: 13 },
+      badge: { backgroundColor: t.colors.primary, borderRadius: 999, paddingHorizontal: spacing.sm, paddingVertical: 2 },
+      badgeText: { color: t.palette.white, fontSize: 12, fontWeight: "700" },
+      status: { color: t.colors.text, fontSize: 14, fontWeight: "600" },
+      muted: { color: t.colors.muted, fontSize: 13 },
+      warning: { color: t.colors.danger, fontSize: 13 }
+    })
+  );
+
   const planLabel = subscription?.planCode ? subscription.planCode.toUpperCase() : "BASIC";
   const status = subscription?.status ?? "none";
   const periodEnd = formatDate(subscription?.currentPeriodEnd ?? null);
@@ -37,21 +57,3 @@ export function CurrentPlanCard({ subscription }: Props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 4,
-    padding: spacing.md
-  },
-  row: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
-  label: { color: colors.muted, fontSize: 13 },
-  badge: { backgroundColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing.sm, paddingVertical: 2 },
-  badgeText: { color: colors.surface, fontSize: 12, fontWeight: "700" },
-  status: { color: colors.text, fontSize: 14, fontWeight: "600" },
-  muted: { color: colors.muted, fontSize: 13 },
-  warning: { color: colors.danger, fontSize: 13 }
-});

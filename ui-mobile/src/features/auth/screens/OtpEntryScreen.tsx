@@ -7,7 +7,7 @@ import { Screen } from "@/shared/components/Screen";
 import { Button } from "@/shared/components/Button";
 import { Toast } from "@/shared/components/Toast";
 import { OtpInput } from "@/shared/components/OtpInput";
-import { colors, gradients, palette } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { shadows } from "@/shared/theme/shadows";
@@ -26,6 +26,9 @@ export function OtpEntryScreen() {
   const { isLoading: isResending, startOtp } = useSignIn();
   const value = params.value ?? "";
   const channel = params.channel === "phone" ? "phone" : "email";
+  const theme = useTheme();
+  const styles = useThemedStyles(buildStyles);
+  const { colors } = theme;
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -58,12 +61,12 @@ export function OtpEntryScreen() {
 
       <View style={styles.hero}>
         <LinearGradient
-          colors={[...gradients.brand]}
+          colors={[...theme.gradients.brand]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[styles.illust, shadows.brandBlue]}
         >
-          <Ionicons name="lock-closed" size={34} color={palette.white} />
+          <Ionicons name="lock-closed" size={34} color={theme.palette.white} />
         </LinearGradient>
         <Text style={styles.title}>Enter the 6-digit code</Text>
         <Text style={styles.desc}>
@@ -107,25 +110,26 @@ export function OtpEntryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4 },
-  back: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
-  hero: { alignItems: "center", paddingVertical: 12 },
-  illust: {
-    width: 80,
-    height: 80,
-    borderRadius: radii.hero,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 14
-  },
-  title: { fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(20), color: colors.text, letterSpacing: -0.4 },
-  desc: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: colors.mutedFg, marginTop: 6, textAlign: "center", lineHeight: 19 },
-  value: { fontFamily: fontFamily.bold, fontWeight: "700", color: colors.text },
-  resend: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: colors.mutedFg, textAlign: "center" },
-  resendCount: { fontFamily: fontFamily.semibold, color: colors.primary, fontWeight: "600" },
-  link: { color: colors.primary, fontFamily: fontFamily.semibold, fontWeight: "600" },
-  error: { color: colors.destructive, fontFamily: fontFamily.medium, textAlign: "center" },
-  notice: { color: colors.primary, fontFamily: fontFamily.medium, fontSize: scaleFont(12), textAlign: "center" }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4 },
+    back: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+    topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: t.colors.text },
+    hero: { alignItems: "center", paddingVertical: 12 },
+    illust: {
+      width: 80,
+      height: 80,
+      borderRadius: radii.hero,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 14
+    },
+    title: { fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(20), color: t.colors.text, letterSpacing: -0.4 },
+    desc: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: t.colors.mutedFg, marginTop: 6, textAlign: "center", lineHeight: 19 },
+    value: { fontFamily: fontFamily.bold, fontWeight: "700", color: t.colors.text },
+    resend: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: t.colors.mutedFg, textAlign: "center" },
+    resendCount: { fontFamily: fontFamily.semibold, color: t.colors.primary, fontWeight: "600" },
+    link: { color: t.colors.primary, fontFamily: fontFamily.semibold, fontWeight: "600" },
+    error: { color: t.colors.destructive, fontFamily: fontFamily.medium, textAlign: "center" },
+    notice: { color: t.colors.primary, fontFamily: fontFamily.medium, fontSize: scaleFont(12), textAlign: "center" }
+  });

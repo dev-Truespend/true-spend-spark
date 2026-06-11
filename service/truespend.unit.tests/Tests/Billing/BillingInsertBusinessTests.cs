@@ -1,6 +1,8 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using TrueSpend.Domain.Business.Billing;
+using TrueSpend.Domain.BusinessInterfaces.Billing;
 using TrueSpend.Domain.Models.Onboarding;
 using TrueSpend.Domain.Models.Cards;
 using TrueSpend.Domain.Models.Catalog;
@@ -29,13 +31,15 @@ public sealed class BillingInsertBusinessTests
                     Mock<IBillingInsertService> insert,
                     Mock<IOnboardingReadService> onboardingRead,
                     Mock<IOnboardingUpdateService> onboardingUpdate,
-                    BillingInsertBusiness business) NewBusiness(PlanPriceLookup? planPrice = null, string? stripeCustomerId = null)
+                    Mock<IEntitlementCacheInvalidatorBusiness> entitlement,
+                    BillingInsertBusiness business) NewBusiness(PlanPriceLookup? planPrice = null, string? stripeCustomerId = null, bool simulateCheckout = false)
     {
         var stripe = new Mock<IStripeProvider>();
         var read = new Mock<IBillingReadService>();
         var insert = new Mock<IBillingInsertService>();
         var onboardingRead = new Mock<IOnboardingReadService>();
         var onboardingUpdate = new Mock<IOnboardingUpdateService>();
+        var entitlement = new Mock<IEntitlementCacheInvalidatorBusiness>();
 
         read.Setup(r => r.LookupPlanPriceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(planPrice ?? new PlanPriceLookup(2, "pro", 100, 7, "price_pro_annual"));
@@ -51,16 +55,18 @@ public sealed class BillingInsertBusinessTests
 
         insert.Setup(i => i.RecordTrialingSubscriptionAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SubscriptionResponse("pro", "trialing", TestUserFactory.FixedNow.AddDays(7), TestUserFactory.FixedNow.AddMonths(1), false));
+        insert.Setup(i => i.RecordSimulatedTrialingSubscriptionAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SubscriptionResponse("pro", "trialing", TestUserFactory.FixedNow.AddDays(7), TestUserFactory.FixedNow.AddDays(7), false));
 
         onboardingRead.Setup(r => r.GetOnboardingAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new OnboardingResponse("plan_selection", true, false, false, false));
         onboardingUpdate.Setup(u => u.SaveOnboardingAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<OnboardingResponse>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((OnboardingWorkflowUser _, OnboardingResponse value, CancellationToken _) => value);
 
-        var options = Options.Create(new StripeProviderOptions());
-        var business = new BillingInsertBusiness(stripe.Object, read.Object, insert.Object, onboardingRead.Object, onboardingUpdate.Object, new FakeUnitOfWork(), options, new BillingValidator());
+        var options = Options.Create(new StripeProviderOptions { SimulateCheckout = simulateCheckout });
+        var business = new BillingInsertBusiness(stripe.Object, read.Object, insert.Object, onboardingRead.Object, onboardingUpdate.Object, entitlement.Object, new FakeUnitOfWork(), options, NullLogger<BillingInsertBusiness>.Instance, new BillingValidator());
 
-        return (stripe, read, insert, onboardingRead, onboardingUpdate, business);
+        return (stripe, read, insert, onboardingRead, onboardingUpdate, entitlement, business);
     }
 
     [Fact]
@@ -128,5 +134,49 @@ public sealed class BillingInsertBusinessTests
         Assert.False(response.Success);
         Assert.Contains(response.Errors, e => e.Contains("Return context"));
         ctx.stripe.Verify(s => s.CreateCheckoutSessionAsync(It.IsAny<CheckoutSessionInput>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SimulateCheckout_onboarding_records_trial_advances_step_invalidates_cache_and_skips_stripe()
+    {
+        var ctx = NewBusiness(simulateCheckout: true);
+
+        var response = await ctx.business.CreateCheckoutAsync(TestUserFactory.AnyUser(), OnboardingRequest(), CancellationToken.None);
+
+        Assert.True(response.Success);
+        Assert.Equal(string.Empty, response.Data!.Url); // empty url => client treats as completed, no browser hand-off
+        ctx.insert.Verify(b => b.RecordSimulatedTrialingSubscriptionAsync(It.IsAny<OnboardingWorkflowUser>(), "pro", It.IsAny<CancellationToken>()), Times.Once);
+        ctx.onboardingUpdate.Verify(u => u.SaveOnboardingAsync(
+            It.IsAny<OnboardingWorkflowUser>(),
+            It.Is<OnboardingResponse>(o => o.CurrentStepCode == "notifications"),
+            It.IsAny<CancellationToken>()), Times.Once);
+        ctx.entitlement.Verify(e => e.InvalidateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
+        ctx.stripe.Verify(s => s.CreateCheckoutSessionAsync(It.IsAny<CheckoutSessionInput>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SimulateCheckout_billing_context_switches_plan_without_onboarding_or_stripe()
+    {
+        var ctx = NewBusiness(simulateCheckout: true);
+
+        var response = await ctx.business.CreateCheckoutAsync(TestUserFactory.AnyUser(), BillingRequest(), CancellationToken.None);
+
+        Assert.True(response.Success);
+        Assert.Equal(string.Empty, response.Data!.Url);
+        ctx.insert.Verify(b => b.RecordSimulatedTrialingSubscriptionAsync(It.IsAny<OnboardingWorkflowUser>(), "pro", It.IsAny<CancellationToken>()), Times.Once);
+        ctx.onboardingUpdate.Verify(u => u.SaveOnboardingAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<OnboardingResponse>(), It.IsAny<CancellationToken>()), Times.Never);
+        ctx.stripe.Verify(s => s.CreateCheckoutSessionAsync(It.IsAny<CheckoutSessionInput>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SimulateCheckout_succeeds_even_when_plan_has_no_stripe_price()
+    {
+        // TestFlight plans may have no Stripe price configured; simulate must bypass the 422 gate.
+        var ctx = NewBusiness(planPrice: new PlanPriceLookup(2, "pro", 100, 7, null), simulateCheckout: true);
+
+        var response = await ctx.business.CreateCheckoutAsync(TestUserFactory.AnyUser(), OnboardingRequest(), CancellationToken.None);
+
+        Assert.True(response.Success);
+        ctx.insert.Verify(b => b.RecordSimulatedTrialingSubscriptionAsync(It.IsAny<OnboardingWorkflowUser>(), "pro", It.IsAny<CancellationToken>()), Times.Once);
     }
 }

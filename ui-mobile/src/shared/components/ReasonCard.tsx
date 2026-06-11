@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, tints, TintName } from "@/shared/theme/colors";
+import { TintName } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
@@ -11,15 +12,17 @@ type ReasonCardProps = {
 };
 
 export function ReasonCard({ title = "Why this card?", body, icon = "✦", tone = "teal" }: ReasonCardProps) {
-  const palette = tints[tone];
+  const theme = useTheme();
+  const styles = useThemedStyles(buildStyles);
+  const toneSet = theme.tints[tone];
   return (
     <View
       style={[
         styles.card,
-        { backgroundColor: palette.bg, borderColor: borderFor(tone) }
+        { backgroundColor: toneSet.bg, borderColor: borderFor(tone) }
       ]}
     >
-      <Text style={[styles.title, { color: palette.fg }]}>
+      <Text style={[styles.title, { color: toneSet.fg }]}>
         {icon} {title}
       </Text>
       <Text style={styles.body}>{body}</Text>
@@ -43,19 +46,20 @@ function borderFor(tone: ReasonCardProps["tone"]) {
   }
 }
 
-const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderRadius: radii.lg,
-    padding: 12,
-    gap: 6
-  },
-  title: {
-    fontFamily: fontFamily.bold,
-    fontWeight: "700",
-    fontSize: scaleFont(11),
-    letterSpacing: 0.6,
-    textTransform: "uppercase"
-  },
-  body: { color: colors.text, fontFamily: fontFamily.regular, fontSize: scaleFont(13), lineHeight: 19 }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    card: {
+      borderWidth: 1,
+      borderRadius: radii.lg,
+      padding: 12,
+      gap: 6
+    },
+    title: {
+      fontFamily: fontFamily.bold,
+      fontWeight: "700",
+      fontSize: scaleFont(11),
+      letterSpacing: 0.6,
+      textTransform: "uppercase"
+    },
+    body: { color: t.colors.text, fontFamily: fontFamily.regular, fontSize: scaleFont(13), lineHeight: 19 }
+  });

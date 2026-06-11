@@ -3,12 +3,13 @@ import { Card } from "@/shared/components/Card";
 import { ProgressBar } from "@/shared/components/ProgressBar";
 import { SectionLabel } from "@/shared/components/SectionLabel";
 import { RewardBreakdownItem } from "@/features/insights/types/analytics.types";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type Props = { items: RewardBreakdownItem[] };
 
 export function CategoryBreakdownList({ items }: Props) {
+  const styles = useThemedStyles(buildStyles);
   if (items.length === 0) return null;
   const max = items.reduce((m, item) => Math.max(m, item.earned.amount), 0);
   const safeMax = max > 0 ? max : 1;
@@ -36,9 +37,10 @@ export function CategoryBreakdownList({ items }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  label: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), color: colors.text },
-  amount: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(13), color: colors.text },
-  missed: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.amberText }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    label: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), color: t.colors.text },
+    amount: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(13), color: t.colors.text },
+    missed: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.amberText }
+  });

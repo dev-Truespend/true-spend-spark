@@ -3,7 +3,7 @@ import { GradientHeroCard } from "@/shared/components/GradientHeroCard";
 import { LocationBanner } from "@/shared/components/LocationBanner";
 import { ReasonCard } from "@/shared/components/ReasonCard";
 import { Toast } from "@/shared/components/Toast";
-import { colors } from "@/shared/theme/colors";
+import { useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type RecommendationVm = {
@@ -33,6 +33,17 @@ function heroGradient(reason: string): "brand" | "warm" | "cool" | "dark" | "pur
 }
 
 export function RecommendationCard({ recommendation, onOpenCard, onRefresh }: Props) {
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      refresh: {
+        alignSelf: "flex-end",
+        fontFamily: fontFamily.semibold,
+        fontWeight: "600",
+        fontSize: scaleFont(12),
+        color: t.colors.primary
+      }
+    })
+  );
   const card = recommendation.recommendedCard.card;
   const category = recommendation.categoryDisplayName ?? "this purchase";
   return (
@@ -69,13 +80,3 @@ export function RecommendationCard({ recommendation, onOpenCard, onRefresh }: Pr
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  refresh: {
-    alignSelf: "flex-end",
-    fontFamily: fontFamily.semibold,
-    fontWeight: "600",
-    fontSize: scaleFont(12),
-    color: colors.primary
-  }
-});

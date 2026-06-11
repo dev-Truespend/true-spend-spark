@@ -11,8 +11,7 @@ import {
   View
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, palette, tints } from "@/shared/theme/colors";
-import { radii, spacing } from "@/shared/theme/spacing";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 export type DropdownOption<T> = {
@@ -48,6 +47,122 @@ export function Dropdown<T extends string | number>({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const selected = options.find((o) => o.value === value);
+  const t = useTheme();
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      flex: { flex: 1 },
+      label: {
+        fontFamily: fontFamily.semibold,
+        fontSize: scaleFont(12),
+        fontWeight: "600",
+        color: t.colors.mutedFg,
+        marginBottom: 6
+      },
+      field: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        backgroundColor: t.colors.surface,
+        borderRadius: t.radii.lg,
+        borderWidth: 1,
+        borderColor: t.colors.border,
+        minHeight: 48,
+        paddingHorizontal: 14,
+        gap: 8
+      },
+      disabled: { opacity: 0.5 },
+      pressed: { borderColor: t.colors.primary },
+      value: { flex: 1, color: t.colors.text, fontFamily: fontFamily.regular, fontSize: scaleFont(15) },
+      placeholder: { color: t.colors.mutedFg },
+
+      overlay: {
+        flex: 1,
+        backgroundColor: t.colors.overlay,
+        justifyContent: "flex-end"
+      },
+      sheet: {
+        backgroundColor: t.colors.surface,
+        borderTopLeftRadius: t.radii.hero,
+        borderTopRightRadius: t.radii.hero,
+        paddingTop: 8,
+        paddingHorizontal: t.spacing.md,
+        paddingBottom: t.spacing.lg,
+        maxHeight: "85%"
+      },
+      handle: {
+        alignSelf: "center",
+        width: 40,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: t.colors.borderStrong,
+        marginBottom: 12
+      },
+      sheetHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 12
+      },
+      sheetSpacer: { width: 32, height: 32 },
+      sheetTitle: {
+        flex: 1,
+        fontFamily: fontFamily.bold,
+        fontWeight: "700",
+        fontSize: scaleFont(17),
+        color: t.colors.text,
+        textAlign: "center"
+      },
+      closeBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: t.colors.surfaceAlt
+      },
+      pressedSubtle: { opacity: 0.6 },
+      searchWrap: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        backgroundColor: t.colors.surfaceAlt,
+        borderRadius: t.radii.pill,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        marginBottom: 12
+      },
+      searchInput: {
+        flex: 1,
+        color: t.colors.text,
+        fontFamily: fontFamily.regular,
+        fontSize: scaleFont(15),
+        padding: 0
+      },
+      list: { flexGrow: 0 },
+      listContent: { paddingBottom: t.spacing.sm },
+      empty: {
+        textAlign: "center",
+        color: t.colors.mutedFg,
+        fontFamily: fontFamily.regular,
+        fontSize: scaleFont(13),
+        paddingVertical: 20
+      },
+      row: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingVertical: 14,
+        paddingHorizontal: 14,
+        borderRadius: t.radii.lg,
+        gap: 8,
+        marginBottom: 2
+      },
+      rowSelected: { backgroundColor: t.tints.blue.bg },
+      rowPressed: { backgroundColor: t.colors.surfaceAlt },
+      rowLabel: { flex: 1, color: t.colors.text, fontFamily: fontFamily.regular, fontSize: scaleFont(15) },
+      rowLabelSelected: { fontFamily: fontFamily.semibold, fontWeight: "600", color: t.colors.primary }
+    })
+  );
 
   const filteredOptions = useMemo(() => {
     if (!searchable || query.trim().length === 0) return options;
@@ -81,7 +196,7 @@ export function Dropdown<T extends string | number>({
         >
           {selected?.label ?? placeholder}
         </Text>
-        <Ionicons name="chevron-down" size={18} color={colors.mutedFg} />
+        <Ionicons name="chevron-down" size={18} color={t.colors.mutedFg} />
       </Pressable>
 
       <Modal transparent visible={open} animationType="slide" onRequestClose={close}>
@@ -104,17 +219,17 @@ export function Dropdown<T extends string | number>({
                   accessibilityRole="button"
                   accessibilityLabel="Close"
                 >
-                  <Ionicons name="close" size={18} color={colors.mutedFg} />
+                  <Ionicons name="close" size={18} color={t.colors.mutedFg} />
                 </Pressable>
               </View>
               {searchable ? (
                 <View style={styles.searchWrap}>
-                  <Ionicons name="search" size={18} color={colors.mutedFg} />
+                  <Ionicons name="search" size={18} color={t.colors.mutedFg} />
                   <TextInput
                     value={query}
                     onChangeText={setQuery}
                     placeholder={searchPlaceholder}
-                    placeholderTextColor={colors.mutedFg}
+                    placeholderTextColor={t.colors.mutedFg}
                     style={styles.searchInput}
                     autoCorrect={false}
                     autoCapitalize="none"
@@ -124,7 +239,7 @@ export function Dropdown<T extends string | number>({
                   />
                   {query.length > 0 ? (
                     <Pressable onPress={() => setQuery("")} hitSlop={8} accessibilityLabel="Clear search">
-                      <Ionicons name="close-circle" size={18} color={colors.mutedFg} />
+                      <Ionicons name="close-circle" size={18} color={t.colors.mutedFg} />
                     </Pressable>
                   ) : null}
                 </View>
@@ -159,7 +274,7 @@ export function Dropdown<T extends string | number>({
                         {opt.label}
                       </Text>
                       {isSelected ? (
-                        <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                        <Ionicons name="checkmark-circle" size={20} color={t.colors.primary} />
                       ) : null}
                     </Pressable>
                   );
@@ -172,117 +287,3 @@ export function Dropdown<T extends string | number>({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  label: {
-    fontFamily: fontFamily.semibold,
-    fontSize: scaleFont(12),
-    fontWeight: "600",
-    color: colors.mutedFg,
-    marginBottom: 6
-  },
-  field: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: palette.white,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    minHeight: 48,
-    paddingHorizontal: 14,
-    gap: 8
-  },
-  disabled: { opacity: 0.5 },
-  pressed: { borderColor: colors.primary },
-  value: { flex: 1, color: colors.text, fontFamily: fontFamily.regular, fontSize: scaleFont(15) },
-  placeholder: { color: colors.mutedFg },
-
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: "flex-end"
-  },
-  sheet: {
-    backgroundColor: palette.white,
-    borderTopLeftRadius: radii.hero,
-    borderTopRightRadius: radii.hero,
-    paddingTop: 8,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.lg,
-    maxHeight: "85%"
-  },
-  handle: {
-    alignSelf: "center",
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.borderStrong,
-    marginBottom: 12
-  },
-  sheetHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12
-  },
-  sheetSpacer: { width: 32, height: 32 },
-  sheetTitle: {
-    flex: 1,
-    fontFamily: fontFamily.bold,
-    fontWeight: "700",
-    fontSize: scaleFont(17),
-    color: colors.text,
-    textAlign: "center"
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surfaceAlt
-  },
-  pressedSubtle: { opacity: 0.6 },
-  searchWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radii.pill,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12
-  },
-  searchInput: {
-    flex: 1,
-    color: colors.text,
-    fontFamily: fontFamily.regular,
-    fontSize: scaleFont(15),
-    padding: 0
-  },
-  list: { flexGrow: 0 },
-  listContent: { paddingBottom: spacing.sm },
-  empty: {
-    textAlign: "center",
-    color: colors.mutedFg,
-    fontFamily: fontFamily.regular,
-    fontSize: scaleFont(13),
-    paddingVertical: 20
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderRadius: radii.lg,
-    gap: 8,
-    marginBottom: 2
-  },
-  rowSelected: { backgroundColor: tints.blue.bg },
-  rowPressed: { backgroundColor: colors.surfaceAlt },
-  rowLabel: { flex: 1, color: colors.text, fontFamily: fontFamily.regular, fontSize: scaleFont(15) },
-  rowLabelSelected: { fontFamily: fontFamily.semibold, fontWeight: "600", color: colors.primary }
-});

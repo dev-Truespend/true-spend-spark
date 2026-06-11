@@ -1,6 +1,6 @@
 import { Image, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { colors, gradients, palette } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { Profile } from "@/features/profile/types/profile.types";
 
@@ -10,10 +10,52 @@ type Props = {
 };
 
 export function ProfileHeader({ profile, centered = false }: Props) {
+  const theme = useTheme();
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      row: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12 },
+      centered: { alignItems: "center", gap: 6, paddingVertical: 12 },
+      avatar: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden"
+      },
+      avatarCentered: { width: 72, height: 72, borderRadius: 36 },
+      image: { width: "100%", height: "100%" },
+      initials: {
+        color: t.palette.white,
+        fontFamily: fontFamily.heavy,
+        fontSize: scaleFont(22),
+        fontWeight: "800",
+        letterSpacing: 0.4
+      },
+      initialsCentered: { fontSize: scaleFont(24) },
+      text: { flex: 1 },
+      name: { color: t.colors.text, fontFamily: fontFamily.bold, fontSize: scaleFont(18), fontWeight: "700" },
+      email: { color: t.colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(13), marginTop: 2 },
+      nameCentered: {
+        color: t.colors.text,
+        fontFamily: fontFamily.bold,
+        fontSize: scaleFont(18),
+        fontWeight: "700",
+        marginTop: 10,
+        textAlign: "center"
+      },
+      emailCentered: {
+        color: t.colors.mutedFg,
+        fontFamily: fontFamily.regular,
+        fontSize: scaleFont(13),
+        textAlign: "center"
+      }
+    })
+  );
   const hasAvatar = !!profile.avatarUrl;
   const avatar = (
     <LinearGradient
-      colors={[...gradients.brand]}
+      colors={[...theme.gradients.brand]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.avatar, centered && styles.avatarCentered]}
@@ -55,43 +97,3 @@ export function ProfileHeader({ profile, centered = false }: Props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12 },
-  centered: { alignItems: "center", gap: 6, paddingVertical: 12 },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden"
-  },
-  avatarCentered: { width: 72, height: 72, borderRadius: 36 },
-  image: { width: "100%", height: "100%" },
-  initials: {
-    color: palette.white,
-    fontFamily: fontFamily.heavy,
-    fontSize: scaleFont(22),
-    fontWeight: "800",
-    letterSpacing: 0.4
-  },
-  initialsCentered: { fontSize: scaleFont(24) },
-  text: { flex: 1 },
-  name: { color: colors.text, fontFamily: fontFamily.bold, fontSize: scaleFont(18), fontWeight: "700" },
-  email: { color: colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(13), marginTop: 2 },
-  nameCentered: {
-    color: colors.text,
-    fontFamily: fontFamily.bold,
-    fontSize: scaleFont(18),
-    fontWeight: "700",
-    marginTop: 10,
-    textAlign: "center"
-  },
-  emailCentered: {
-    color: colors.mutedFg,
-    fontFamily: fontFamily.regular,
-    fontSize: scaleFont(13),
-    textAlign: "center"
-  }
-});

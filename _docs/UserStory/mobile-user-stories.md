@@ -178,7 +178,7 @@ Phase 1 scope note: Plaid is used for card metadata and linked transaction impor
 - User can receive push notifications on iOS (blocked: expo-notifications dependency needed)
 - User can receive push notifications on Android (blocked: expo-notifications dependency needed)
 - User can recover from missing notification permissions (blocked: expo-notifications dependency needed)
-- **[Done - Workflow 10]** User can receive a lock-screen card nudge when arriving at a known merchant, powered by Foursquare background geofencing (`P2.7b`, lock screen, `7.2`)
+- **[Done - Workflow 10/10a]** User can receive a lock-screen card nudge when arriving at a known merchant, via a config-selectable detection provider — Foursquare Movement SDK or an own-built `custom` detector (iOS/Android) feeding `POST /api/v1/geo/arrival` (`P2.7b`, lock screen, `7.2`)
 - **[Done - Workflow 10]** User can navigate from the lock-screen nudge to the related recommendation/notification detail (`P2.7b`, `7.2`)
 - **[Done - Workflow 10]** User can opt out of geo-arrival nudges by disabling the best-card-alert notification type (`7.3`)
 

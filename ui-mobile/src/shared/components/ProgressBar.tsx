@@ -1,6 +1,7 @@
 import { StyleSheet, View, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { colors, gradients, GradientName } from "@/shared/theme/colors";
+import { GradientName } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 
 type ProgressBarProps = {
   value: number; // 0..1
@@ -10,15 +11,17 @@ type ProgressBarProps = {
 };
 
 export function ProgressBar({ value, variant = "brand", danger, style }: ProgressBarProps) {
+  const theme = useTheme();
+  const styles = useThemedStyles(buildStyles);
   const v = Math.max(0, Math.min(1, value));
   const widthPct = `${Math.round(v * 100)}%` as const;
   return (
     <View style={[styles.track, style]}>
       {danger ? (
-        <View style={[styles.fill, { width: widthPct, backgroundColor: colors.destructive }]} />
+        <View style={[styles.fill, { width: widthPct, backgroundColor: theme.colors.destructive }]} />
       ) : (
         <LinearGradient
-          colors={[...gradients[variant]]}
+          colors={[...theme.gradients[variant]]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.fill, { width: widthPct }]}
@@ -28,13 +31,14 @@ export function ProgressBar({ value, variant = "brand", danger, style }: Progres
   );
 }
 
-const styles = StyleSheet.create({
-  track: {
-    width: "100%",
-    height: 6,
-    borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
-    overflow: "hidden"
-  },
-  fill: { height: "100%", borderRadius: 999 }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    track: {
+      width: "100%",
+      height: 6,
+      borderRadius: 999,
+      backgroundColor: t.colors.surfaceAlt,
+      overflow: "hidden"
+    },
+    fill: { height: "100%", borderRadius: 999 }
+  });

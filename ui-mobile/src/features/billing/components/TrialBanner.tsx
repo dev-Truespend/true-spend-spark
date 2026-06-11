@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useEntitlements } from "@/features/billing/hooks/useEntitlements";
-import { colors, tints } from "@/shared/theme/colors";
-import { radii } from "@/shared/theme/spacing";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 function daysRemaining(trialEndsAt: string): number | null {
@@ -14,6 +14,8 @@ function daysRemaining(trialEndsAt: string): number | null {
 
 export function TrialBanner() {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useThemedStyles(buildStyles);
   const { entitlements } = useEntitlements();
   if (!entitlements?.trialing) return null;
 
@@ -30,31 +32,32 @@ export function TrialBanner() {
     <Pressable
       onPress={() => router.push("/(app)/billing")}
       accessibilityRole="button"
-      accessibilityLabel={label}
-      style={styles.banner}
+      accessibilityLabel={`${label}. Tap to manage billing.`}
+      style={({ pressed }) => [styles.banner, pressed && styles.pressed]}
     >
-      <View style={{ flex: 1 }}>
-        <Text style={styles.title}>✦ {label}</Text>
-        <Text style={styles.body}>Tap to manage billing or upgrade.</Text>
-      </View>
-      <Text style={styles.cta}>Manage →</Text>
+      <Ionicons name="sparkles" size={14} color={theme.colors.amberText} />
+      <Text style={styles.title} numberOfLines={1}>{label}</Text>
+      <Text style={styles.cta}>Manage</Text>
+      <Ionicons name="chevron-forward" size={13} color={theme.colors.amberText} />
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  banner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: radii.lg,
-    backgroundColor: tints.amber.bg,
-    borderWidth: 1,
-    borderColor: tints.amber.border
-  },
-  title: { color: colors.text, fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(13) },
-  body: { color: colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(11), marginTop: 2 },
-  cta: { color: colors.amberText, fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(12) }
-});
+function buildStyles(t: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    banner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 7,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: t.radii.pill,
+      backgroundColor: t.tints.amber.bg,
+      borderWidth: 1,
+      borderColor: t.tints.amber.border
+    },
+    pressed: { opacity: 0.7 },
+    title: { flex: 1, color: t.colors.text, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12) },
+    cta: { color: t.colors.amberText, fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(12) }
+  });
+}

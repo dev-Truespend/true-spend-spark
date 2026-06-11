@@ -35,12 +35,21 @@ export default {
         foregroundImage: "./assets/icon.png",
         backgroundColor: "#3D1AB8"
       },
+      // react-native-maps on Android renders Google Maps and needs an API key.
+      // Set GOOGLE_MAPS_ANDROID_API_KEY in the build env. iOS uses Apple Maps
+      // (PROVIDER_DEFAULT) and needs no key.
+      ...(process.env.GOOGLE_MAPS_ANDROID_API_KEY && {
+        config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY } }
+      }),
       permissions: [
         "NOTIFICATIONS",
         "POST_NOTIFICATIONS",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
+        "ACCESS_BACKGROUND_LOCATION",
+        // Required for the geo-arrival background location foreground-service (10a, Android 14+).
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
       ]
     },
     plugins: [
@@ -57,10 +66,14 @@ export default {
       [
         "expo-splash-screen",
         {
-          image: "./assets/logo-primary.png",
-          backgroundColor: "#FFFFFF",
+          // Brand icon on the deep-indigo launch background (matches the start of
+          // gradients.launch), so the native launch screen flows seamlessly into
+          // the animated JS SplashScreen — no white flash on cold start.
+          // NOTE: changing this requires `npx expo prebuild` + a native rebuild.
+          image: "./assets/icon.png",
+          backgroundColor: "#2A0F66",
           resizeMode: "contain",
-          imageWidth: 220
+          imageWidth: 160
         }
       ],
       [
@@ -93,6 +106,8 @@ export default {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? "",
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "",
       foursquareApiKey: process.env.EXPO_PUBLIC_FOURSQUARE_API_KEY ?? "",
+      geoProvider: process.env.EXPO_PUBLIC_GEO_PROVIDER ?? "auto",
+      foursquareMovementKey: process.env.EXPO_PUBLIC_FOURSQUARE_MOVEMENT_KEY ?? "",
       plaidRedirectUri: process.env.EXPO_PUBLIC_PLAID_REDIRECT_URI ?? "",
       eas: {
         projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? ""

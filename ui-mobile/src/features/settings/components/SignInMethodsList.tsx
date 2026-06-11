@@ -2,7 +2,7 @@ import { scaleFont } from "@/shared/theme/typography";
 import { StyleSheet, Text, View } from "react-native";
 import { Button } from "@/shared/components/Button";
 import { TextInput } from "@/shared/components/TextInput";
-import { colors } from "@/shared/theme/colors";
+import { useThemedStyles } from "@/providers/ThemeProvider";
 import { spacing } from "@/shared/theme/spacing";
 import { SignInMethod } from "@/features/auth/hooks/useSignInMethods";
 
@@ -29,6 +29,7 @@ export function SignInMethodsList({
   onChangePhone,
   onSendOtp
 }: Props) {
+  const styles = useStyles();
   return (
     <View style={styles.container}>
       {isLoading ? <Text style={styles.muted}>Loading sign-in methods…</Text> : null}
@@ -78,50 +79,53 @@ function providerLabel(code: string): string {
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: spacing.sm
-  },
-  row: {
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: spacing.md
-  },
-  method: {
-    color: colors.text,
-    fontSize: scaleFont(14),
-    fontWeight: "600"
-  },
-  detail: {
-    color: colors.muted,
-    flex: 1,
-    fontSize: scaleFont(13),
-    marginLeft: spacing.md,
-    textAlign: "right"
-  },
-  muted: {
-    color: colors.muted
-  },
-  addPhone: {
-    gap: spacing.sm,
-    marginTop: spacing.md
-  },
-  label: {
-    color: colors.text,
-    fontSize: scaleFont(13),
-    fontWeight: "600"
-  },
-  success: {
-    color: colors.primary,
-    fontSize: scaleFont(13)
-  },
-  error: {
-    color: colors.danger,
-    fontSize: scaleFont(13)
-  }
-});
+const useStyles = () =>
+  useThemedStyles((t) =>
+    StyleSheet.create({
+      container: {
+        gap: spacing.sm
+      },
+      row: {
+        alignItems: "center",
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderRadius: 8,
+        borderWidth: 1,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        padding: spacing.md
+      },
+      method: {
+        color: t.colors.text,
+        fontSize: scaleFont(14),
+        fontWeight: "600"
+      },
+      detail: {
+        color: t.colors.muted,
+        flex: 1,
+        fontSize: scaleFont(13),
+        marginLeft: spacing.md,
+        textAlign: "right"
+      },
+      muted: {
+        color: t.colors.muted
+      },
+      addPhone: {
+        gap: spacing.sm,
+        marginTop: spacing.md
+      },
+      label: {
+        color: t.colors.text,
+        fontSize: scaleFont(13),
+        fontWeight: "600"
+      },
+      success: {
+        color: t.colors.primary,
+        fontSize: scaleFont(13)
+      },
+      error: {
+        color: t.colors.danger,
+        fontSize: scaleFont(13)
+      }
+    })
+  );

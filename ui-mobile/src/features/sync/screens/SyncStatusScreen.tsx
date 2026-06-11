@@ -7,7 +7,7 @@ import { Screen } from "@/shared/components/Screen";
 import { SectionLabel } from "@/shared/components/SectionLabel";
 import { SyncBanner } from "@/shared/components/SyncBanner";
 import { Toast } from "@/shared/components/Toast";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { useSyncStatus } from "@/features/sync/hooks/useSyncStatus";
@@ -34,6 +34,8 @@ function toneFor(severity: SyncEventSeverity): "info" | "success" | "warn" | "er
 }
 
 export function SyncStatusScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const router = useRouter();
   const { status, isLoading, error, refetch, isFetching } = useSyncStatus();
   const retry = useRetrySync();
@@ -118,40 +120,43 @@ export function SyncStatusScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
-  statGrid: { flexDirection: "row", gap: 8 },
-  statCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.xl,
-    padding: 12,
-    gap: 4
-  },
-  statLabel: {
-    fontFamily: fontFamily.bold,
-    fontSize: scaleFont(10),
-    color: colors.mutedFg,
-    letterSpacing: 0.6,
-    textTransform: "uppercase"
-  },
-  statValue: { fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(15), color: colors.text, letterSpacing: -0.2 },
-  statDelta: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(11), color: colors.successText },
-  statDeltaDown: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(11), color: colors.destructive },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.md
-  },
-  rowLabel: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), color: colors.text }
-});
+const useStyles = () =>
+  useThemedStyles((t) =>
+    StyleSheet.create({
+      topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+      iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+      topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: t.colors.text },
+      statGrid: { flexDirection: "row", gap: 8 },
+      statCard: {
+        flex: 1,
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderWidth: 1,
+        borderRadius: radii.xl,
+        padding: 12,
+        gap: 4
+      },
+      statLabel: {
+        fontFamily: fontFamily.bold,
+        fontSize: scaleFont(10),
+        color: t.colors.mutedFg,
+        letterSpacing: 0.6,
+        textTransform: "uppercase"
+      },
+      statValue: { fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(15), color: t.colors.text, letterSpacing: -0.2 },
+      statDelta: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(11), color: t.colors.successText },
+      statDeltaDown: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(11), color: t.colors.destructive },
+      row: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderWidth: 1,
+        borderRadius: radii.md
+      },
+      rowLabel: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), color: t.colors.text }
+    })
+  );

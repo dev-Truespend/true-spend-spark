@@ -1,6 +1,6 @@
 import { scaleFont } from "@/shared/theme/typography";
 import { StyleSheet, Switch, Text, View } from "react-native";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { spacing } from "@/shared/theme/spacing";
 
 type Status = "checking" | "available" | "unavailable";
@@ -13,6 +13,8 @@ type Props = {
 };
 
 export function BiometricToggle({ enabled, status, disabled, onChange }: Props) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       <View style={styles.text}>
@@ -43,28 +45,31 @@ function statusHelp(status: Status): string {
   }
 }
 
-const styles = StyleSheet.create({
-  row: {
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 10,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: spacing.md,
-    padding: spacing.md
-  },
-  text: {
-    flex: 1
-  },
-  label: {
-    color: colors.text,
-    fontSize: scaleFont(16),
-    fontWeight: "600"
-  },
-  help: {
-    color: colors.muted,
-    fontSize: scaleFont(13),
-    marginTop: 2
-  }
-});
+const useStyles = () =>
+  useThemedStyles((t) =>
+    StyleSheet.create({
+      row: {
+        alignItems: "center",
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderRadius: 10,
+        borderWidth: 1,
+        flexDirection: "row",
+        gap: spacing.md,
+        padding: spacing.md
+      },
+      text: {
+        flex: 1
+      },
+      label: {
+        color: t.colors.text,
+        fontSize: scaleFont(16),
+        fontWeight: "600"
+      },
+      help: {
+        color: t.colors.muted,
+        fontSize: scaleFont(13),
+        marginTop: 2
+      }
+    })
+  );

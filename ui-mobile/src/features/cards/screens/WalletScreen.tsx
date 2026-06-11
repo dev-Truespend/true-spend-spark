@@ -9,6 +9,7 @@ import { SegmentedControl } from "@/shared/components/SegmentedControl";
 import { Toast } from "@/shared/components/Toast";
 import { CardEmptyState } from "@/features/cards/components/CardEmptyState";
 import { CardListItem } from "@/features/cards/components/CardListItem";
+import { GlobeCard } from "@/features/cards/components/GlobeCard";
 import { CardsSkeleton } from "@/features/cards/components/CardsSkeleton";
 import { CategoryChips } from "@/features/cards/components/CategoryChips";
 import { Greeting } from "@/features/cards/components/Greeting";
@@ -18,6 +19,7 @@ import { RunnerUpList } from "@/features/cards/components/RunnerUpList";
 import { useCardsList } from "@/features/cards/hooks/useCardsList";
 import { useHomeRecommendations } from "@/features/cards/hooks/useHomeRecommendations";
 import { PlaidLinkCancelledError, useAddPlaidConnection } from "@/features/plaid/hooks/usePlaidConnections";
+import { friendlyMessage } from "@/shared/errors/friendlyMessage";
 import { useEntitlementGate } from "@/shared/navigation/useEntitlementGate";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -64,12 +66,16 @@ export function WalletScreen() {
       router.push("/(app)/cards/plaid-connections");
     } catch (err) {
       if (err instanceof PlaidLinkCancelledError) return;
-      Alert.alert("Couldn't link bank", err instanceof Error ? err.message : "Something went wrong.");
+      Alert.alert("Couldn't link bank", friendlyMessage(err, "plaid"));
     }
   }
 
   function handleBrowseCatalog() {
     router.push("/(app)/cards/catalog");
+  }
+
+  function handleOpenMap() {
+    router.push("/(app)/map");
   }
 
   function handleUpgrade() {
@@ -90,6 +96,7 @@ export function WalletScreen() {
           onConnectPlaid={handleConnectPlaid}
           onBrowseCatalog={handleBrowseCatalog}
           onUpgrade={handleUpgrade}
+          onOpenMap={handleOpenMap}
           plaidEnabled={plaidEnabled}
         />
       ) : null}
@@ -123,6 +130,8 @@ export function WalletScreen() {
           onSelect={(id) => home.openCardDetails(id)}
         />
       ) : null}
+
+      {hasCards ? <GlobeCard onPress={handleOpenMap} /> : null}
 
       {hasCards ? (
         <>

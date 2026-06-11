@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { gradients, colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
@@ -14,10 +14,12 @@ type EmptyStateProps = {
 };
 
 export function EmptyState({ icon, iconLabel, title, description, action }: EmptyStateProps) {
+  const theme = useTheme();
+  const styles = useThemedStyles(buildStyles);
   return (
     <View style={styles.wrap}>
       <LinearGradient
-        colors={[...gradients.blueWash]}
+        colors={[...theme.gradients.blueWash]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.ill}
@@ -31,17 +33,18 @@ export function EmptyState({ icon, iconLabel, title, description, action }: Empt
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { alignItems: "center", paddingVertical: 24, gap: 8 },
-  ill: {
-    width: 86,
-    height: 86,
-    borderRadius: radii.hero,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  illGlyph: { fontSize: scaleFont(36) },
-  title: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(16), color: colors.text, marginTop: 12 },
-  desc: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: colors.mutedFg, textAlign: "center", lineHeight: 20, marginHorizontal: 12 },
-  action: { alignSelf: "stretch", marginTop: 12 }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    wrap: { alignItems: "center", paddingVertical: 24, gap: 8 },
+    ill: {
+      width: 86,
+      height: 86,
+      borderRadius: radii.hero,
+      alignItems: "center",
+      justifyContent: "center"
+    },
+    illGlyph: { fontSize: scaleFont(36) },
+    title: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(16), color: t.colors.text, marginTop: 12 },
+    desc: { fontFamily: fontFamily.regular, fontSize: scaleFont(13), color: t.colors.mutedFg, textAlign: "center", lineHeight: 20, marginHorizontal: 12 },
+    action: { alignSelf: "stretch", marginTop: 12 }
+  });

@@ -10,7 +10,7 @@ import { Screen } from "@/shared/components/Screen";
 import { SectionLabel } from "@/shared/components/SectionLabel";
 import { TextInput } from "@/shared/components/TextInput";
 import { Toast } from "@/shared/components/Toast";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { useTransactionsList } from "@/features/transactions/hooks/useTransactionsList";
 import { TransactionListItem } from "@/features/transactions/components/TransactionListItem";
@@ -49,6 +49,8 @@ function formatDateHeader(iso: string): string {
 }
 
 export function TransactionsContent({ embedded }: Props) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -206,14 +208,17 @@ export function TransactionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { gap: 10, paddingBottom: 100 },
-  embedded: { paddingBottom: 80 },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  title: { color: colors.text, fontFamily: fontFamily.heavy, fontSize: scaleFont(24), fontWeight: "800", letterSpacing: -0.4 },
-  chipScroll: { flexDirection: "row", paddingVertical: 4, gap: 6, paddingRight: 14 },
-  chipSpacer: { marginRight: 0 }
-});
+const useStyles = () =>
+  useThemedStyles((t) =>
+    StyleSheet.create({
+      container: { gap: 10, paddingBottom: 100 },
+      embedded: { paddingBottom: 80 },
+      header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+      title: { color: t.colors.text, fontFamily: fontFamily.heavy, fontSize: scaleFont(24), fontWeight: "800", letterSpacing: -0.4 },
+      chipScroll: { flexDirection: "row", paddingVertical: 4, gap: 6, paddingRight: 14 },
+      chipSpacer: { marginRight: 0 }
+    })
+  );
 
 /* region: archive — manual transaction add FAB (removed from MVP)
  *

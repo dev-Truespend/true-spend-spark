@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Card } from "@/shared/components/Card";
 import { MiniCardSwatch, MiniCardSwatchVariant } from "@/shared/components/MiniCardSwatch";
 import { SectionLabel } from "@/shared/components/SectionLabel";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type RunnerUp = {
@@ -32,6 +32,7 @@ function swatchLabelFor(issuer: string | undefined, displayName: string): string
 }
 
 export function RunnerUpList({ runnerUps, onSelect }: Props) {
+  const styles = useThemedStyles(buildStyles);
   if (runnerUps.length === 0) return null;
   return (
     <View style={{ gap: 8 }}>
@@ -79,12 +80,13 @@ export function RunnerUpList({ runnerUps, onSelect }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
-  divider: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  body: { flex: 1, minWidth: 0 },
-  title: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(14), color: colors.text },
-  meta: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.mutedFg, marginTop: 2 },
-  amount: { fontFamily: fontFamily.bold, fontSize: scaleFont(14), fontWeight: "700", color: colors.primary, marginLeft: 8 },
-  pressed: { opacity: 0.7 }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
+    divider: { borderBottomWidth: 1, borderBottomColor: t.colors.border },
+    body: { flex: 1, minWidth: 0 },
+    title: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(14), color: t.colors.text },
+    meta: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.mutedFg, marginTop: 2 },
+    amount: { fontFamily: fontFamily.bold, fontSize: scaleFont(14), fontWeight: "700", color: t.colors.primary, marginLeft: 8 },
+    pressed: { opacity: 0.7 }
+  });

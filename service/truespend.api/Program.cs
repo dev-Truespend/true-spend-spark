@@ -16,7 +16,7 @@ builder.Services.AddPlaidProvider(builder.Configuration);
 builder.Services.AddStripeProvider(builder.Configuration);
 builder.Services.AddTransactionWorkflow();
 builder.Services.AddNotificationsWorkflow(builder.Configuration);
-builder.Services.AddGeoWorkflow();
+builder.Services.AddGeoWorkflow(builder.Configuration);
 builder.Services.AddPlaidWebhook();
 builder.Services.AddProfileWorkflow(builder.Configuration);
 builder.Services.AddPrivacyWorkflow(builder.Configuration);
@@ -29,5 +29,9 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Unauthenticated liveness probe for the App Gateway health probe and Container App probes
+// (deployment-guide §4a/§13). Kept off the api/v1 controller routes so the gateway can hit /health directly.
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" })).AllowAnonymous();
 
 app.Run();

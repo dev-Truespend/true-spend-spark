@@ -1,5 +1,7 @@
 # Geo Arrival Recommendations Workflow
 
+> **Detection provider** — The on-device "user reached a merchant" detection that triggers this flow is pluggable between Foursquare and an own-built implementation. See [10a-arrival-detection-provider.md](10a-arrival-detection-provider.md). This doc owns the server-side handler, recommendation, and push fan-out that both providers reuse.
+
 > **MVP execution note** — When the Foursquare webhook persists a best-card alert notification, `INotificationsDispatchBusiness.DispatchPushAsync` + `INotificationInboxCacheInvalidatorBusiness.InvalidateAsync` run **inline post-commit** in place of the archived `NotificationCreated` outbox event. See [api-design-patterns.md § Post-commit side-effects](../low-level-design/Service/api-design-patterns.md#post-commit-side-effects) and [_docs/Refactors/sync-execution-conversion.md](../Refactors/sync-execution-conversion.md).
 
 ## Progress

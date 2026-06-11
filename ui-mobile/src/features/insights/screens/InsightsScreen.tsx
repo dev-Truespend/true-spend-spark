@@ -9,7 +9,7 @@ import { Screen } from "@/shared/components/Screen";
 import { SectionLabel } from "@/shared/components/SectionLabel";
 import { SegmentedControl } from "@/shared/components/SegmentedControl";
 import { Toast } from "@/shared/components/Toast";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { TransactionsContent } from "@/features/transactions/screens/TransactionsScreen";
 import { AIInsightCard } from "@/features/insights/components/AIInsightCard";
@@ -30,6 +30,7 @@ type Tab = "transactions" | "insights";
 export function InsightsScreen() {
   const [activeTab, setActiveTab] = useState<Tab>("transactions");
   const gate = useEntitlementGate();
+  const styles = useThemedStyles(buildStyles);
 
   return (
     <Screen padded={false}>
@@ -62,6 +63,7 @@ export function InsightsScreen() {
 
 function InsightsContent() {
   const router = useRouter();
+  const theme = useTheme();
   const [period, setPeriod] = useState<AnalyticsPeriod>("month");
 
   const gate = useEntitlementGate();
@@ -80,7 +82,7 @@ function InsightsContent() {
       <PeriodSelector selected={period} onSelect={setPeriod} />
 
       {summaryLoading ? (
-        <ActivityIndicator color={colors.primary} style={{ marginTop: 24 }} />
+        <ActivityIndicator color={theme.colors.primary} style={{ marginTop: 24 }} />
       ) : summaryError ? (
         <Toast tone="error" message={summaryError} />
       ) : summary ? (
@@ -114,7 +116,7 @@ function InsightsContent() {
         <View style={{ gap: 8 }}>
           <SectionLabel>AI insight</SectionLabel>
           {insightsLoading ? (
-            <ActivityIndicator color={colors.primary} />
+            <ActivityIndicator color={theme.colors.primary} />
           ) : insights.length > 0 ? (
             insights.map((insight) => (
               <AIInsightCard key={insight.id} insight={insight} onDismiss={dismiss} />
@@ -131,8 +133,10 @@ function InsightsContent() {
   );
 }
 
-const styles = StyleSheet.create({
-  page: { flex: 1, padding: 14, gap: 12 },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  title: { color: colors.text, fontFamily: fontFamily.heavy, fontSize: scaleFont(24), fontWeight: "800", letterSpacing: -0.4 }
-});
+function buildStyles(t: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    page: { flex: 1, padding: 14, gap: 12 },
+    headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    title: { color: t.colors.text, fontFamily: fontFamily.heavy, fontSize: scaleFont(24), fontWeight: "800", letterSpacing: -0.4 }
+  });
+}

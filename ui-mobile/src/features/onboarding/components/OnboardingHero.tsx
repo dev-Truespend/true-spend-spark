@@ -1,8 +1,8 @@
 import { ReactNode } from "react";
 import { StyleSheet, Text, View, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { colors, gradients, GradientName, palette } from "@/shared/theme/colors";
-import { radii } from "@/shared/theme/spacing";
+import { GradientName } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { shadows } from "@/shared/theme/shadows";
 
@@ -25,12 +25,37 @@ export function OnboardingHero({
   size = "md",
   style
 }: OnboardingHeroProps) {
+  const theme = useTheme();
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      wrap: { alignItems: "center", paddingVertical: 14, gap: 4 },
+      ill: { alignItems: "center", justifyContent: "center", marginBottom: 12 },
+      illGlyph: { fontSize: scaleFont(40) },
+      title: {
+        fontFamily: fontFamily.heavy,
+        fontSize: scaleFont(22),
+        fontWeight: "800",
+        color: t.colors.text,
+        letterSpacing: -0.4,
+        textAlign: "center"
+      },
+      desc: {
+        marginTop: 6,
+        fontFamily: fontFamily.regular,
+        fontSize: scaleFont(13),
+        lineHeight: 19,
+        color: t.colors.onLightSoft,
+        textAlign: "center",
+        paddingHorizontal: 14
+      }
+    })
+  );
   const illSize = size === "sm" ? 80 : 100;
   const radius = size === "sm" ? 22 : 26;
   return (
     <View style={[styles.wrap, style]}>
       <LinearGradient
-        colors={[...gradients[gradient]]}
+        colors={[...theme.gradients[gradient]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[
@@ -50,26 +75,3 @@ export function OnboardingHero({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: { alignItems: "center", paddingVertical: 14, gap: 4 },
-  ill: { alignItems: "center", justifyContent: "center", marginBottom: 12 },
-  illGlyph: { fontSize: scaleFont(40) },
-  title: {
-    fontFamily: fontFamily.heavy,
-    fontSize: scaleFont(22),
-    fontWeight: "800",
-    color: palette.black,
-    letterSpacing: -0.4,
-    textAlign: "center"
-  },
-  desc: {
-    marginTop: 6,
-    fontFamily: fontFamily.regular,
-    fontSize: scaleFont(13),
-    lineHeight: 19,
-    color: colors.onLightSoft,
-    textAlign: "center",
-    paddingHorizontal: 14
-  }
-});

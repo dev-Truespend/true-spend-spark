@@ -1,7 +1,7 @@
 import { scaleFont } from "@/shared/theme/typography";
 import { useMemo, useState } from "react";
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { colors } from "@/shared/theme/colors";
+import { useThemedStyles } from "@/providers/ThemeProvider";
 import { spacing } from "@/shared/theme/spacing";
 import { TextInput } from "@/shared/components/TextInput";
 import { useCurrencies } from "@/features/lookups/hooks/useCurrencies";
@@ -12,6 +12,7 @@ type Props = {
 };
 
 export function CurrencyPicker({ value, onChange }: Props) {
+  const styles = useStyles();
   const { data: currencies = [], isLoading } = useCurrencies();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -84,80 +85,83 @@ export function CurrencyPicker({ value, onChange }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  field: {
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    minHeight: 48,
-    paddingHorizontal: spacing.md
-  },
-  pressed: {
-    opacity: 0.85
-  },
-  fieldText: {
-    color: colors.text,
-    flex: 1,
-    fontSize: scaleFont(16)
-  },
-  placeholder: {
-    color: colors.muted
-  },
-  chevron: {
-    color: colors.muted,
-    fontSize: scaleFont(18),
-    marginLeft: spacing.sm
-  },
-  modal: {
-    backgroundColor: colors.background,
-    flex: 1,
-    gap: spacing.sm,
-    padding: spacing.lg
-  },
-  header: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: spacing.md
-  },
-  headerText: {
-    color: colors.text,
-    fontSize: scaleFont(18),
-    fontWeight: "700"
-  },
-  cancel: {
-    color: colors.primary,
-    fontSize: scaleFont(16),
-    fontWeight: "600"
-  },
-  muted: {
-    color: colors.muted,
-    marginTop: spacing.md,
-    textAlign: "center"
-  },
-  option: {
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: spacing.md,
-    marginTop: spacing.sm,
-    padding: spacing.md
-  },
-  optionCode: {
-    color: colors.text,
-    fontSize: scaleFont(16),
-    fontWeight: "700"
-  },
-  optionName: {
-    color: colors.muted,
-    flex: 1,
-    fontSize: scaleFont(14)
-  }
-});
+const useStyles = () =>
+  useThemedStyles((t) =>
+    StyleSheet.create({
+      field: {
+        alignItems: "center",
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderRadius: 8,
+        borderWidth: 1,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        minHeight: 48,
+        paddingHorizontal: spacing.md
+      },
+      pressed: {
+        opacity: 0.85
+      },
+      fieldText: {
+        color: t.colors.text,
+        flex: 1,
+        fontSize: scaleFont(16)
+      },
+      placeholder: {
+        color: t.colors.muted
+      },
+      chevron: {
+        color: t.colors.muted,
+        fontSize: scaleFont(18),
+        marginLeft: spacing.sm
+      },
+      modal: {
+        backgroundColor: t.colors.background,
+        flex: 1,
+        gap: spacing.sm,
+        padding: spacing.lg
+      },
+      header: {
+        alignItems: "center",
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginBottom: spacing.md
+      },
+      headerText: {
+        color: t.colors.text,
+        fontSize: scaleFont(18),
+        fontWeight: "700"
+      },
+      cancel: {
+        color: t.colors.primary,
+        fontSize: scaleFont(16),
+        fontWeight: "600"
+      },
+      muted: {
+        color: t.colors.muted,
+        marginTop: spacing.md,
+        textAlign: "center"
+      },
+      option: {
+        alignItems: "center",
+        backgroundColor: t.colors.surface,
+        borderColor: t.colors.border,
+        borderRadius: 8,
+        borderWidth: 1,
+        flexDirection: "row",
+        gap: spacing.md,
+        marginTop: spacing.sm,
+        padding: spacing.md
+      },
+      optionCode: {
+        color: t.colors.text,
+        fontSize: scaleFont(16),
+        fontWeight: "700"
+      },
+      optionName: {
+        color: t.colors.muted,
+        flex: 1,
+        fontSize: scaleFont(14)
+      }
+    })
+  );

@@ -1,0 +1,43 @@
+# Extracted from _docs/Deployment/deployment-guide.md §6.
+# Build/test -> build & push API + worker images to ACR -> roll the prod Container Apps.
+# Container App secrets/env are projected from Key Vault by Terraform; this pipeline only swaps images.
+name: service-deploy
+on:
+  workflow_dispatch:   # manual trigger only — Run workflow button
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      - run: dotnet test service/TrueSpend.sln -c Release
+  deploy:
+    needs: build-test
+    runs-on: ubuntu-latest
+    env:
+      ACR: ${{ secrets.ACR_NAME }}
+      TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - run: az acr login --name "$ACR"
+      - name: Build & push API
+        run: |
+          docker build -f docker/truespend.api.Dockerfile --target production \
+            -t "$ACR.azurecr.io/truespend-api:$TAG" service
+          docker push "$ACR.azurecr.io/truespend-api:$TAG"
+      - name: Build & push worker
+        run: |
+          docker build -f docker/truespend.workerservice.Dockerfile --target production \
+            -t "$ACR.azurecr.io/truespend-worker:$TAG" service
+          docker push "$ACR.azurecr.io/truespend-worker:$TAG"
+      - name: Roll Container Apps
+        run: |
+          az containerapp update -n ca-truespend-api-prod    -g rg-truespend-prod \
+            --image "$ACR.azurecr.io/truespend-api:$TAG"
+          az containerapp update -n ca-truespend-worker-prod -g rg-truespend-prod \
+            --image "$ACR.azurecr.io/truespend-worker:$TAG"

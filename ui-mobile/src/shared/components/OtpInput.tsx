@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Platform, StyleSheet, Text, TextInput, View } from "react-native";
-import { colors, palette, tints } from "@/shared/theme/colors";
-import { radii } from "@/shared/theme/spacing";
+import { useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type OtpInputProps = {
@@ -13,6 +12,26 @@ type OtpInputProps = {
 
 export function OtpInput({ length = 6, value, onChange, autoFocus = true }: OtpInputProps) {
   const ref = useRef<TextInput>(null);
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      row: { flexDirection: "row", gap: 6, marginVertical: 10 },
+      cell: {
+        flex: 1,
+        height: 50,
+        borderRadius: t.radii.md,
+        borderWidth: 1.5,
+        borderColor: t.colors.border,
+        backgroundColor: t.colors.surface,
+        alignItems: "center",
+        justifyContent: "center"
+      },
+      filled: { borderColor: t.colors.primary },
+      cursor: { borderColor: t.colors.primary, backgroundColor: t.tints.blue.wash },
+      cellText: { fontFamily: fontFamily.bold, fontSize: scaleFont(20), fontWeight: "700", color: t.colors.text },
+      cellTextFilled: { color: t.colors.primary },
+      hidden: { position: "absolute", opacity: 0, width: 1, height: 1 }
+    })
+  );
   useEffect(() => {
     if (autoFocus) {
       const id = setTimeout(() => ref.current?.focus(), 80);
@@ -57,22 +76,3 @@ export function OtpInput({ length = 6, value, onChange, autoFocus = true }: OtpI
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: 6, marginVertical: 10 },
-  cell: {
-    flex: 1,
-    height: 50,
-    borderRadius: radii.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: palette.white,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  filled: { borderColor: colors.primary },
-  cursor: { borderColor: colors.primary, backgroundColor: tints.blue.wash },
-  cellText: { fontFamily: fontFamily.bold, fontSize: scaleFont(20), fontWeight: "700", color: colors.text },
-  cellTextFilled: { color: colors.primary },
-  hidden: { position: "absolute", opacity: 0, width: 1, height: 1 }
-});

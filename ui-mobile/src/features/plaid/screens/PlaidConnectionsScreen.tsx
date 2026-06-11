@@ -2,7 +2,6 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "rea
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Button } from "@/shared/components/Button";
-import { Card } from "@/shared/components/Card";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { Screen } from "@/shared/components/Screen";
 import { SectionLabel } from "@/shared/components/SectionLabel";
@@ -18,12 +17,14 @@ import {
 } from "@/features/plaid/hooks/usePlaidConnections";
 import { useResyncQuota } from "@/features/plaid/hooks/useResyncQuota";
 import { useEntitlementGate } from "@/shared/navigation/useEntitlementGate";
-import { colors } from "@/shared/theme/colors";
-import { radii } from "@/shared/theme/spacing";
+import { friendlyMessage } from "@/shared/errors/friendlyMessage";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 export function PlaidConnectionsScreen() {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useThemedStyles(buildStyles);
   const gate = useEntitlementGate();
   const { connections, isLoading, error } = usePlaidConnections();
   const addMutation = useAddPlaidConnection();
@@ -60,8 +61,7 @@ export function PlaidConnectionsScreen() {
     try {
       await syncMutation.mutateAsync({ connectionId });
     } catch (err) {
-      // Covers the daily-limit (429) and transient sync failures with the server's message.
-      Alert.alert("Sync unavailable", err instanceof Error ? err.message : "Could not sync right now.");
+      Alert.alert("Sync unavailable", friendlyMessage(err));
     }
   }
 
@@ -70,7 +70,7 @@ export function PlaidConnectionsScreen() {
       await reconnectMutation.mutateAsync({ connectionId });
     } catch (err) {
       if (err instanceof PlaidLinkCancelledError) return;
-      throw err;
+      Alert.alert("Couldn't reconnect", friendlyMessage(err, "plaid"));
     }
   }
 
@@ -79,7 +79,7 @@ export function PlaidConnectionsScreen() {
       await addMutation.mutateAsync();
     } catch (err) {
       if (err instanceof PlaidLinkCancelledError) return;
-      Alert.alert("Couldn't link bank", err instanceof Error ? err.message : "Something went wrong.");
+      Alert.alert("Couldn't link bank", friendlyMessage(err, "plaid"));
     }
   }
 
@@ -90,8 +90,12 @@ export function PlaidConnectionsScreen() {
         text: "Disconnect",
         style: "destructive",
         onPress: async () => {
-          await disconnectMutation.mutateAsync({ connectionId });
-          if (connections.length <= 1) router.back();
+          try {
+            await disconnectMutation.mutateAsync({ connectionId });
+            if (connections.length <= 1) router.back();
+          } catch (err) {
+            Alert.alert("Couldn't disconnect", friendlyMessage(err));
+          }
         }
       }
     ]);
@@ -103,7 +107,7 @@ export function PlaidConnectionsScreen() {
     <Screen scroll>
       <Header onBack={() => router.back()} />
 
-      {isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+      {isLoading ? <ActivityIndicator color={theme.colors.primary} /> : null}
       {error ? <Toast tone="error" message={error} /> : null}
 
       {!isLoading && connections.length > 0 ? (
@@ -168,10 +172,12 @@ export function PlaidConnectionsScreen() {
 }
 
 function Header({ onBack }: { onBack: () => void }) {
+  const theme = useTheme();
+  const styles = useThemedStyles(buildStyles);
   return (
     <View style={styles.topBar}>
       <Pressable onPress={onBack} style={styles.iconBtn} accessibilityRole="button">
-        <Ionicons name="chevron-back" size={20} color={colors.text} />
+        <Ionicons name="chevron-back" size={20} color={theme.colors.text} />
       </Pressable>
       <Text style={styles.topTitle}>Plaid connections</Text>
       <View style={styles.iconBtn} />
@@ -179,9 +185,11 @@ function Header({ onBack }: { onBack: () => void }) {
   );
 }
 
-const styles = StyleSheet.create({
-  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
-  fineprint: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.mutedFg, textAlign: "center" }
-});
+function buildStyles(t: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    iconBtn: { width: 36, height: 36, borderRadius: t.radii.md, alignItems: "center", justifyContent: "center" },
+    topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: t.colors.text },
+    fineprint: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.mutedFg, textAlign: "center" }
+  });
+}

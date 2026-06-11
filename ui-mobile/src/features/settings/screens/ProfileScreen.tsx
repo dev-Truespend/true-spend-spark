@@ -9,7 +9,7 @@ import { ListItem } from "@/shared/components/ListItem";
 import { Screen } from "@/shared/components/Screen";
 import { SectionLabel } from "@/shared/components/SectionLabel";
 import { Switch } from "@/shared/components/Switch";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles, type Theme } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { useAuth } from "@/providers/AuthProvider";
 import { ProfileHeader } from "@/features/settings/components/ProfileHeader";
@@ -58,6 +58,8 @@ function themeLabel(theme: ThemeOption | undefined): string {
 }
 
 export function ProfileScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(buildStyles);
   const { bootstrap, isSigningOut, signOut } = useAuth();
   const profileQuery = useProfile();
   const permissionsQuery = usePermissions();
@@ -272,13 +274,15 @@ export function ProfileScreen() {
 }
 
 function Chevron() {
+  const styles = useThemedStyles(buildStyles);
   return <Text style={styles.chevron}>›</Text>;
 }
 
-const styles = StyleSheet.create({
-  hero: { alignItems: "center", paddingTop: 4, paddingBottom: 4 },
-  group: { paddingHorizontal: 12 },
-  chevron: { color: colors.mutedFg, fontSize: scaleFont(22), fontFamily: fontFamily.regular, marginLeft: 6 },
-  footer: { gap: 10, marginTop: 12 },
-  version: { color: colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(11), textAlign: "center" }
-});
+const buildStyles = (t: Theme) =>
+  StyleSheet.create({
+    hero: { alignItems: "center", paddingTop: 4, paddingBottom: 4 },
+    group: { paddingHorizontal: 12 },
+    chevron: { color: t.colors.mutedFg, fontSize: scaleFont(22), fontFamily: fontFamily.regular, marginLeft: 6 },
+    footer: { gap: 10, marginTop: 12 },
+    version: { color: t.colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(11), textAlign: "center" }
+  });

@@ -12,8 +12,8 @@ import { Screen } from "@/shared/components/Screen";
 import { SectionLabel } from "@/shared/components/SectionLabel";
 import { Toast } from "@/shared/components/Toast";
 import { QueryKeys } from "@/shared/constants/QueryKeys";
-import { colors, gradients, palette } from "@/shared/theme/colors";
-import { radii, spacing } from "@/shared/theme/spacing";
+import { friendlyMessage } from "@/shared/errors/friendlyMessage";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { useBillingPlans } from "@/features/billing/hooks/useBillingPlans";
 import { useBillingPrices } from "@/features/billing/hooks/useBillingPrices";
@@ -60,6 +60,8 @@ function buildFeatureList(plan: Plan, features: PlanFeature[]): string[] {
 
 export function BillingProScreen() {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useThemedStyles(buildStyles);
   const queryClient = useQueryClient();
   const [period, setPeriod] = useState<Period>("annual");
 
@@ -114,19 +116,28 @@ export function BillingProScreen() {
 
   async function handleUpgrade() {
     if (!upgradeTarget) return;
-    const result = await checkout.mutateAsync({
-      planCode: upgradeTarget.code,
-      periodCode: period,
-      returnContextCode: "billing"
-    });
-    const url = result.data?.url;
-    if (url) await Linking.openURL(url);
+    try {
+      const result = await checkout.mutateAsync({
+        planCode: upgradeTarget.code,
+        periodCode: period,
+        returnContextCode: "billing"
+      });
+      const url = result.data?.url;
+      if (url) await Linking.openURL(url);
+    } catch {
+      // Friendly copy is rendered via the reactive `error` toast below; the
+      // catch only prevents an unhandled promise rejection.
+    }
   }
 
   async function handleManage() {
-    const result = await portal.mutateAsync();
-    const url = result.data?.url;
-    if (url) await Linking.openURL(url);
+    try {
+      const result = await portal.mutateAsync();
+      const url = result.data?.url;
+      if (url) await Linking.openURL(url);
+    } catch {
+      // See handleUpgrade — error surfaced via the reactive `error` toast.
+    }
   }
 
   const isLoading =
@@ -137,13 +148,15 @@ export function BillingProScreen() {
     entitlementsQuery.isLoading ||
     paymentMethodsQuery.isLoading;
 
-  const error =
-    plansQuery.error ? (plansQuery.error as Error).message :
-    pricesQuery.error ? (pricesQuery.error as Error).message :
-    subscriptionQuery.error ? (subscriptionQuery.error as Error).message :
-    checkout.error ? (checkout.error as Error).message :
-    portal.error ? (portal.error as Error).message :
-    null;
+  // Portal 409 ("no Stripe customer yet") gets a guiding message; everything
+  // else uses friendly copy. Never the raw server/Stripe string.
+  const rawError =
+    plansQuery.error ?? pricesQuery.error ?? subscriptionQuery.error ?? checkout.error ?? portal.error ?? null;
+  const error = portal.error
+    ? "Start a subscription before managing billing in the Stripe portal."
+    : rawError
+      ? friendlyMessage(rawError, "billing")
+      : null;
 
   const onProPlan = currentPlanCode === "pro";
   const currentPillLabel = `CURRENT: ${currentPlanCode.toUpperCase()}`;
@@ -153,7 +166,7 @@ export function BillingProScreen() {
     <Screen scroll>
       <View style={styles.topBar}>
         <Pressable onPress={() => router.back()} style={styles.iconBtn} accessibilityRole="button">
-          <Ionicons name="chevron-back" size={20} color={colors.text} />
+          <Ionicons name="chevron-back" size={20} color={theme.colors.text} />
         </Pressable>
         <Text style={styles.topTitle}>Subscription</Text>
         <View style={styles.iconBtn} />
@@ -161,7 +174,7 @@ export function BillingProScreen() {
 
       <View style={styles.hero}>
         <LinearGradient
-          colors={[...gradients.brand]}
+          colors={[...theme.gradients.brand]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.currentPill}
@@ -177,25 +190,30 @@ export function BillingProScreen() {
         <Text style={styles.savings}>Save {annualSavings.pct}% with annual billing.</Text>
       ) : null}
 
-      {isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+      {isLoading ? <ActivityIndicator color={theme.colors.primary} /> : null}
 
       <View style={{ gap: 12 }}>
         {plans.map((plan) => {
+          const code = plan.code.toLowerCase();
+          const isFreeTier = code === "free";
           const price = prices.find((p) => p.planCode === plan.code);
+          // Free has no price row — render "$0" with no cadence rather than "—".
+          const priceDisplay = price?.amount.display ?? (isFreeTier ? "$0" : "—");
+          const planCadence = price ? cadence : isFreeTier ? "" : cadence;
           return (
             <PlanCard
               key={plan.code}
               name={plan.displayName}
-              price={price?.amount.display ?? "—"}
-              cadence={cadence}
+              price={priceDisplay}
+              cadence={planCadence}
               features={buildFeatureList(plan, features)}
-              featured={plan.code.toLowerCase() === "pro" && !onProPlan}
+              featured={code === "pro" && !onProPlan}
               ribbon="BEST VALUE"
               footer={
                 <PlanFooter
                   plan={plan}
                   price={price}
-                  isCurrent={plan.code.toLowerCase() === currentPlanCode}
+                  isCurrent={code === currentPlanCode}
                 />
               }
             />
@@ -213,7 +231,7 @@ export function BillingProScreen() {
           divider={paymentMethods.length > 0}
         />
         {paymentMethodsQuery.isLoading ? (
-          <ActivityIndicator color={colors.primary} style={{ marginVertical: 8 }} />
+          <ActivityIndicator color={theme.colors.primary} style={{ marginVertical: 8 }} />
         ) : paymentMethods.length > 0 ? (
           <View style={{ paddingVertical: 4 }}>
             <PaymentMethodList paymentMethods={paymentMethods} />
@@ -258,6 +276,7 @@ export function BillingProScreen() {
 }
 
 function PlanFooter({ plan, price, isCurrent }: { plan: Plan; price: PlanPrice | undefined; isCurrent: boolean }) {
+  const styles = useThemedStyles(buildStyles);
   if (isCurrent) {
     return (
       <View style={styles.currentChip}>
@@ -271,25 +290,27 @@ function PlanFooter({ plan, price, isCurrent }: { plan: Plan; price: PlanPrice |
   return null;
 }
 
-const styles = StyleSheet.create({
-  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
-  hero: { alignItems: "center", gap: 6, paddingTop: spacing.sm },
-  currentPill: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: radii.pill },
-  currentPillText: { color: palette.white, fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(11), letterSpacing: 1.2 },
-  title: { color: colors.text, fontFamily: fontFamily.heavy, fontSize: scaleFont(22), fontWeight: "800", letterSpacing: -0.4, textAlign: "center", marginTop: 8 },
-  subtitle: { color: colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(13), textAlign: "center", lineHeight: 19 },
-  savings: { color: colors.successText, fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(12), textAlign: "center" },
-  group: { paddingHorizontal: 12 },
-  currentChip: {
-    alignSelf: "flex-start",
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radii.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 3
-  },
-  currentChipText: { color: colors.text, fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(11), letterSpacing: 0.3 },
-  trial: { color: colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(12) },
-  footnote: { color: colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(11), textAlign: "center", marginTop: 4 }
-});
+function buildStyles(t: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    iconBtn: { width: 36, height: 36, borderRadius: t.radii.md, alignItems: "center", justifyContent: "center" },
+    topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: t.colors.text },
+    hero: { alignItems: "center", gap: 6, paddingTop: t.spacing.sm },
+    currentPill: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: t.radii.pill },
+    currentPillText: { color: t.palette.white, fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(11), letterSpacing: 1.2 },
+    title: { color: t.colors.text, fontFamily: fontFamily.heavy, fontSize: scaleFont(22), fontWeight: "800", letterSpacing: -0.4, textAlign: "center", marginTop: 8 },
+    subtitle: { color: t.colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(13), textAlign: "center", lineHeight: 19 },
+    savings: { color: t.colors.successText, fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(12), textAlign: "center" },
+    group: { paddingHorizontal: 12 },
+    currentChip: {
+      alignSelf: "flex-start",
+      backgroundColor: t.colors.surfaceAlt,
+      borderRadius: t.radii.pill,
+      paddingHorizontal: 10,
+      paddingVertical: 3
+    },
+    currentChipText: { color: t.colors.text, fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(11), letterSpacing: 0.3 },
+    trial: { color: t.colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(12) },
+    footnote: { color: t.colors.mutedFg, fontFamily: fontFamily.regular, fontSize: scaleFont(11), textAlign: "center", marginTop: 4 }
+  });
+}

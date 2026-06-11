@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Chip, ChipRow } from "@/shared/components/Chip";
-import { colors, tints } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
@@ -27,6 +27,9 @@ export function CategoryChips({
   title,
   hint
 }: Props) {
+  const theme = useTheme();
+  const styles = useThemedStyles(buildStyles);
+
   if (!categories.length) return null;
 
   const resolvedTitle =
@@ -47,11 +50,13 @@ export function CategoryChips({
         ? `Based on your ${merchantName} history. Change it if you're buying something else.`
         : "Change it if you're buying something else.");
 
-  const palette = ambiguous ? AMBER : PURPLE;
+  const toneSet = ambiguous
+    ? { wash: theme.tints.amber.wash, border: theme.tints.amber.border, title: theme.colors.amberText }
+    : { wash: theme.tints.purple.wash, border: theme.tints.purple.border, title: theme.colors.accent };
 
   return (
-    <View style={[styles.card, { backgroundColor: palette.wash, borderColor: palette.border }]}>
-      <Text style={[styles.title, { color: palette.title }]}>🛒 {resolvedTitle}</Text>
+    <View style={[styles.card, { backgroundColor: toneSet.wash, borderColor: toneSet.border }]}>
+      <Text style={[styles.title, { color: toneSet.title }]}>🛒 {resolvedTitle}</Text>
       <Text style={styles.hint}>{resolvedHint}</Text>
       <ChipRow>
         {categories.map((c) => (
@@ -67,16 +72,14 @@ export function CategoryChips({
   );
 }
 
-const PURPLE = { wash: tints.purple.wash, border: tints.purple.border, title: colors.accent };
-const AMBER = { wash: tints.amber.wash, border: tints.amber.border, title: colors.amberText };
-
-const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderRadius: radii.xxl,
-    padding: 14,
-    gap: 6
-  },
-  title: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(14) },
-  hint: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: colors.mutedFg, lineHeight: 17 }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    card: {
+      borderWidth: 1,
+      borderRadius: radii.xxl,
+      padding: 14,
+      gap: 6
+    },
+    title: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(14) },
+    hint: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: t.colors.mutedFg, lineHeight: 17 }
+  });

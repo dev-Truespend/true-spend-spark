@@ -1,7 +1,7 @@
 import { View, StyleSheet, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Button } from "@/shared/components/Button";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type Props = {
@@ -12,6 +12,8 @@ type Props = {
 };
 
 export function SocialProviderButtons({ disabled, onApple, onGoogle, onPhone }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(buildStyles);
   return (
     <View style={styles.stack}>
       <Button
@@ -41,12 +43,13 @@ export function SocialProviderButtons({ disabled, onApple, onGoogle, onPhone }: 
   );
 }
 
-const styles = StyleSheet.create({
-  stack: { gap: 10 },
-  googleG: {
-    fontFamily: fontFamily.heavy,
-    fontWeight: "800",
-    fontSize: scaleFont(15),
-    color: colors.text
-  }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    stack: { gap: 10 },
+    googleG: {
+      fontFamily: fontFamily.heavy,
+      fontWeight: "800",
+      fontSize: scaleFont(15),
+      color: t.colors.text
+    }
+  });

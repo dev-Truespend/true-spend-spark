@@ -1,7 +1,7 @@
 import { ActivityIndicator } from "react-native";
 import { Screen } from "@/shared/components/Screen";
 import { Toast } from "@/shared/components/Toast";
-import { colors } from "@/shared/theme/colors";
+import { useTheme } from "@/providers/ThemeProvider";
 import { useOnboardingFlow } from "@/features/onboarding/hooks/useOnboardingFlow";
 import { AllSetStep } from "@/features/onboarding/components/AllSetStep";
 import { CardConnectStep } from "@/features/onboarding/components/CardConnectStep";
@@ -11,6 +11,7 @@ import { PlanPickerStep } from "@/features/onboarding/components/PlanPickerStep"
 
 export function OnboardingScreen() {
   const flow = useOnboardingFlow();
+  const { colors } = useTheme();
   const isAllSet = flow.step === "notifications" || flow.step === "done";
 
   // The "You're all set!" step is a full-bleed celebration screen — the gradient

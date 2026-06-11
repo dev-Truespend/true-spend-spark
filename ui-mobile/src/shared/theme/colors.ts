@@ -115,6 +115,9 @@ function buildGradients(p: PaletteShape) {
     gold: ["#F4C13A", "#D87F0F"] as const,
     purple: [p.brandPurple, p.brandBlue] as const,
     splash: [p.brandBlue, p.brandPurple] as const,
+    // Deep indigo → brand purple. Used by the launch/splash hero so the native
+    // splash (purple) transitions seamlessly into the animated JS splash.
+    launch: ["#2A0F66", "#5B1AA8", p.brandPurple] as const,
     blueWash: ["rgba(55, 125, 246, 0.12)", "rgba(155, 52, 234, 0.12)"] as const,
     warmWash: ["rgba(245, 147, 10, 0.14)", "rgba(239, 68, 68, 0.14)"] as const,
     goldWash: ["rgba(244, 193, 58, 0.14)", "rgba(216, 127, 15, 0.14)"] as const

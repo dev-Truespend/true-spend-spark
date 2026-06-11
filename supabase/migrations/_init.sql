@@ -1,4 +1,6 @@
 create extension if not exists pgcrypto;
+create extension if not exists postgis;
+create extension if not exists pg_trgm;
 
 create schema if not exists app;
 create schema if not exists billing;
@@ -9,3 +11,4 @@ create schema if not exists messaging;
 create schema if not exists security;
 create schema if not exists insights;
 create schema if not exists privacy;
+create schema if not exists foursquare;

@@ -2,7 +2,7 @@ import { View, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Button } from "@/shared/components/Button";
 import { TextInput } from "@/shared/components/TextInput";
-import { colors } from "@/shared/theme/colors";
+import { useTheme } from "@/providers/ThemeProvider";
 
 type Channel = "email" | "phone";
 
@@ -15,6 +15,7 @@ type Props = {
 };
 
 export function IdentifierForm({ channel, disabled, identifier, onChange, onSubmit }: Props) {
+  const { colors } = useTheme();
   const isPhone = channel === "phone";
   return (
     <View style={styles.stack}>

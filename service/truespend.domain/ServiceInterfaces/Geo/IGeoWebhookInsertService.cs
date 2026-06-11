@@ -7,7 +7,7 @@ namespace TrueSpend.Domain.ServiceInterfaces.Geo;
 public interface IGeoWebhookInsertService
 {
     Task<int> RecordWebhookEventAsync(
-        FoursquareWebhookInput input,
+        GeoArrivalInput input,
         Guid? userId,
         int? merchantId,
         CancellationToken cancellationToken);

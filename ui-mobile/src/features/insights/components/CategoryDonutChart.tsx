@@ -3,20 +3,9 @@ import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, G } from "react-native-svg";
 import { Card } from "@/shared/components/Card";
 import { SectionLabel } from "@/shared/components/SectionLabel";
-import { colors, palette } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { RewardBreakdownItem } from "@/features/insights/types/analytics.types";
-
-// Mockup 6.3 "Where it came from" donut. Four-color rotation cycles the brand
-// palette so the chart stays visually consistent with the rest of the app.
-const SLICE_COLORS = [
-  palette.brandBlue,
-  palette.brandPurple,
-  palette.brandAmber,
-  palette.brandTeal,
-  palette.success,
-  palette.destructive
-] as const;
 
 type Props = {
   items: RewardBreakdownItem[];
@@ -25,6 +14,19 @@ type Props = {
 };
 
 export function CategoryDonutChart({ items, size = 140, thickness = 22 }: Props) {
+  const theme = useTheme();
+  const styles = useThemedStyles(buildStyles);
+  // Mockup 6.3 "Where it came from" donut. Color rotation cycles the brand
+  // palette so the chart stays visually consistent with the rest of the app.
+  const SLICE_COLORS = [
+    theme.palette.brandBlue,
+    theme.palette.brandPurple,
+    theme.palette.brandAmber,
+    theme.palette.brandTeal,
+    theme.palette.success,
+    theme.palette.destructive
+  ] as const;
+
   const total = items.reduce((sum, item) => sum + Math.max(0, item.earned.amount), 0);
   const radius = (size - thickness) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -47,7 +49,7 @@ export function CategoryDonutChart({ items, size = 140, thickness = 22 }: Props)
       cursor += pct;
       return slice;
     });
-  }, [items, total, circumference]);
+  }, [items, total, circumference, SLICE_COLORS]);
 
   if (total <= 0 || slices.length === 0) return null;
 
@@ -63,7 +65,7 @@ export function CategoryDonutChart({ items, size = 140, thickness = 22 }: Props)
                 cx={size / 2}
                 cy={size / 2}
                 r={radius}
-                stroke={colors.surfaceAlt}
+                stroke={theme.colors.surfaceAlt}
                 strokeWidth={thickness}
                 fill="none"
               />
@@ -100,11 +102,12 @@ export function CategoryDonutChart({ items, size = 140, thickness = 22 }: Props)
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 16 },
-  legend: { flex: 1, gap: 6 },
-  legendRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  swatch: { width: 10, height: 10, borderRadius: 3 },
-  legendLabel: { flex: 1, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12), color: colors.text },
-  legendValue: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(12), color: colors.mutedFg, fontVariant: ["tabular-nums"] }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    row: { flexDirection: "row", alignItems: "center", gap: 16 },
+    legend: { flex: 1, gap: 6 },
+    legendRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    swatch: { width: 10, height: 10, borderRadius: 3 },
+    legendLabel: { flex: 1, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12), color: t.colors.text },
+    legendValue: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(12), color: t.colors.mutedFg, fontVariant: ["tabular-nums"] }
+  });

@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Transaction } from "@/features/transactions/types/transactions.types";
 import { ListItem } from "@/shared/components/ListItem";
-import { colors, TintName } from "@/shared/theme/colors";
+import { useThemedStyles } from "@/providers/ThemeProvider";
+import { TintName } from "@/shared/theme/colors";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type Props = {
@@ -28,6 +29,7 @@ function tone(code?: string | null) {
 }
 
 export function TransactionListItem({ transaction, onPress }: Props) {
+  const styles = useStyles();
   const t = tone(transaction.categoryCode);
   const cardLabel = transaction.card.lastFour
     ? `${transaction.card.displayName} ••${transaction.card.lastFour}`
@@ -59,14 +61,17 @@ export function TransactionListItem({ transaction, onPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  pending: { opacity: 0.65 },
-  pendingLabel: {
-    fontFamily: fontFamily.medium,
-    fontSize: scaleFont(10),
-    color: colors.mutedFg,
-    marginLeft: 46,
-    marginTop: -6,
-    marginBottom: 4
-  }
-});
+const useStyles = () =>
+  useThemedStyles((theme) =>
+    StyleSheet.create({
+      pending: { opacity: 0.65 },
+      pendingLabel: {
+        fontFamily: fontFamily.medium,
+        fontSize: scaleFont(10),
+        color: theme.colors.mutedFg,
+        marginLeft: 46,
+        marginTop: -6,
+        marginBottom: 4
+      }
+    })
+  );

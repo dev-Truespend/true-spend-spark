@@ -178,9 +178,14 @@ create table if not exists finance.missed_reward_events (
   updated_at timestamptz not null default now()
 );
 
+-- Geo-arrival ingress idempotency for BOTH providers (10a). provider distinguishes the
+-- source ('foursquare' webhook vs 'custom' device JWT); event id dedup is per (provider, event id).
+-- The custom path's foursquare_event_id is a stable per-stop key (custom:{user}:{bucket}:{latlng}:{place}),
+-- not a fresh GUID, so background retries dedup instead of re-notifying.
 create table if not exists finance.foursquare_webhook_events (
   id int generated always as identity primary key,
-  foursquare_event_id text not null unique,
+  provider text not null default 'foursquare',
+  foursquare_event_id text not null,
   event_type text not null,
   foursquare_user_id text,
   user_id uuid references auth.users(id) on delete set null,
@@ -191,6 +196,9 @@ create table if not exists finance.foursquare_webhook_events (
   processing_error text,
   created_at timestamptz not null default now()
 );
+
+create unique index if not exists finance_foursquare_webhook_events_provider_event_idx
+  on finance.foursquare_webhook_events(provider, foursquare_event_id);
 
 create table if not exists finance.plaid_webhook_events (
   id int generated always as identity primary key,

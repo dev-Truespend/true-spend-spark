@@ -7,7 +7,7 @@ import { Screen } from "@/shared/components/Screen";
 import { SectionLabel } from "@/shared/components/SectionLabel";
 import { Switch } from "@/shared/components/Switch";
 import { Toast } from "@/shared/components/Toast";
-import { colors, tints } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles, type Theme } from "@/providers/ThemeProvider";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { usePrivacySettings } from "@/features/privacy/hooks/usePrivacySettings";
@@ -24,6 +24,8 @@ import {
 import { useClearLocationHistory } from "@/features/privacy/hooks/useClearLocationHistory";
 
 export function PrivacyDataScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(buildStyles);
   const router = useRouter();
   const { settings, isLoading, error } = usePrivacySettings();
   const updateSettings = useUpdatePrivacySettings();
@@ -213,6 +215,8 @@ type ActionCardProps = {
 };
 
 function ActionCard({ iconName, title, subtitle, onPress, loading }: ActionCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(buildStyles);
   return (
     <Pressable accessibilityRole="button" onPress={onPress} disabled={loading} style={({ pressed }) => [styles.actionCard, pressed && styles.actionPressed]}>
       <View style={styles.actionIcon}>
@@ -240,6 +244,7 @@ type ToggleRowProps = {
 };
 
 function ToggleRow({ title, subtitle, value, onChange, disabled }: ToggleRowProps) {
+  const styles = useThemedStyles(buildStyles);
   return (
     <View style={styles.toggleRow}>
       <View style={{ flex: 1 }}>
@@ -251,45 +256,46 @@ function ToggleRow({ title, subtitle, value, onChange, disabled }: ToggleRowProp
   );
 }
 
-const styles = StyleSheet.create({
-  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
-  deletionPending: { gap: 8 },
-  actionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 12,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.xl
-  },
-  actionPressed: { opacity: 0.9 },
-  actionIcon: {
-    width: 36, height: 36, borderRadius: radii.md,
-    backgroundColor: tints.blue.bg,
-    alignItems: "center", justifyContent: "center"
-  },
-  actionTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(14), color: colors.text },
-  actionSubtitle: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.mutedFg, marginTop: 2 },
-  toggleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 8
-  },
-  toggleTitle: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), color: colors.text },
-  toggleSubtitle: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.mutedFg, marginTop: 2 },
-  dangerLabel: {
-    fontFamily: fontFamily.bold,
-    fontWeight: "700",
-    fontSize: scaleFont(11),
-    color: colors.destructive,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginTop: 8
-  },
-  dangerHint: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.mutedFg, lineHeight: 16 }
-});
+const buildStyles = (t: Theme) =>
+  StyleSheet.create({
+    topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+    topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: t.colors.text },
+    deletionPending: { gap: 8 },
+    actionCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      padding: 12,
+      backgroundColor: t.colors.surface,
+      borderColor: t.colors.border,
+      borderWidth: 1,
+      borderRadius: radii.xl
+    },
+    actionPressed: { opacity: 0.9 },
+    actionIcon: {
+      width: 36, height: 36, borderRadius: radii.md,
+      backgroundColor: t.tints.blue.bg,
+      alignItems: "center", justifyContent: "center"
+    },
+    actionTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(14), color: t.colors.text },
+    actionSubtitle: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.mutedFg, marginTop: 2 },
+    toggleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingVertical: 8
+    },
+    toggleTitle: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), color: t.colors.text },
+    toggleSubtitle: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.mutedFg, marginTop: 2 },
+    dangerLabel: {
+      fontFamily: fontFamily.bold,
+      fontWeight: "700",
+      fontSize: scaleFont(11),
+      color: t.colors.destructive,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+      marginTop: 8
+    },
+    dangerHint: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.mutedFg, lineHeight: 16 }
+  });

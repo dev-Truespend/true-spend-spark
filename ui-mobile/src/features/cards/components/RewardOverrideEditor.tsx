@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Button } from "@/shared/components/Button";
 import { TextInput } from "@/shared/components/TextInput";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { spacing } from "@/shared/theme/spacing";
 import { RewardOverride } from "@/features/cards/types/cards.types";
 
@@ -29,6 +29,8 @@ export function RewardOverrideEditor({
   const [multiplier, setMultiplier] = useState("");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const { colors } = useTheme();
+  const styles = useThemedStyles(buildStyles);
 
   async function handleSave() {
     setFormError(null);
@@ -101,37 +103,38 @@ export function RewardOverrideEditor({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: spacing.sm,
-    padding: spacing.md
-  },
-  sectionTitle: {
-    color: colors.muted,
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-    textTransform: "uppercase"
-  },
-  empty: { color: colors.muted, fontSize: 13 },
-  overrideRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: spacing.xs
-  },
-  overrideText: { flex: 1 },
-  overrideCategory: { color: colors.text, fontSize: 14, fontWeight: "600" },
-  overrideMultiplier: { color: colors.primary, fontSize: 13, fontWeight: "700" },
-  overrideNotes: { color: colors.muted, fontSize: 12 },
-  deleteBtn: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
-  deleteBtnText: { color: colors.danger, fontSize: 13, fontWeight: "600" },
-  form: { gap: spacing.xs, marginTop: spacing.sm },
-  formHeading: { color: colors.text, fontSize: 14, fontWeight: "700" },
-  label: { color: colors.muted, fontSize: 12, fontWeight: "600" },
-  error: { color: colors.danger, fontSize: 12 }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: t.colors.surface,
+      borderColor: t.colors.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      gap: spacing.sm,
+      padding: spacing.md
+    },
+    sectionTitle: {
+      color: t.colors.muted,
+      fontSize: 12,
+      fontWeight: "600",
+      letterSpacing: 0.5,
+      textTransform: "uppercase"
+    },
+    empty: { color: t.colors.muted, fontSize: 13 },
+    overrideRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingVertical: spacing.xs
+    },
+    overrideText: { flex: 1 },
+    overrideCategory: { color: t.colors.text, fontSize: 14, fontWeight: "600" },
+    overrideMultiplier: { color: t.colors.primary, fontSize: 13, fontWeight: "700" },
+    overrideNotes: { color: t.colors.muted, fontSize: 12 },
+    deleteBtn: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+    deleteBtnText: { color: t.colors.danger, fontSize: 13, fontWeight: "600" },
+    form: { gap: spacing.xs, marginTop: spacing.sm },
+    formHeading: { color: t.colors.text, fontSize: 14, fontWeight: "700" },
+    label: { color: t.colors.muted, fontSize: 12, fontWeight: "600" },
+    error: { color: t.colors.danger, fontSize: 12 }
+  });

@@ -7,7 +7,7 @@ import { EmptyState } from "@/shared/components/EmptyState";
 import { Screen } from "@/shared/components/Screen";
 import { TextInput } from "@/shared/components/TextInput";
 import { Toast } from "@/shared/components/Toast";
-import { colors } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { radii, spacing } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { useCatalogIssuers } from "@/features/catalog/hooks/useCatalogIssuers";
@@ -19,6 +19,8 @@ import { CardProduct, Issuer } from "@/features/catalog/types/catalog.types";
 
 export function CatalogBrowseScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(buildStyles);
   const [query, setQuery] = useState("");
   const [issuerId, setIssuerId] = useState<number | null>(null);
 
@@ -153,53 +155,54 @@ function initialsFor(product: CardProduct): string {
     .join("");
 }
 
-const styles = StyleSheet.create({
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm
-  },
-  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
-  search: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
-  issuerRow: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: 6 },
-  issuerChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radii.pill,
-    borderColor: colors.border,
-    borderWidth: 1,
-    backgroundColor: colors.surface,
-    marginRight: 6
-  },
-  issuerChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  issuerChipText: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12), color: colors.text },
-  issuerChipTextActive: { color: colors.white },
-  list: { paddingHorizontal: spacing.md, paddingBottom: spacing.lg },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.xl,
-    paddingHorizontal: 12,
-    paddingVertical: 10
-  },
-  rowPressed: { opacity: 0.85 },
-  rowIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: radii.md,
-    backgroundColor: colors.surfaceAlt,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  rowIconText: { fontFamily: fontFamily.heavy, fontSize: scaleFont(12), color: colors.text, letterSpacing: 0.4 },
-  rowTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(14), color: colors.text },
-  rowMeta: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.mutedFg, marginTop: 2 },
-  empty: { paddingHorizontal: spacing.md, paddingTop: spacing.md }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    topBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.sm
+    },
+    iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+    topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: t.colors.text },
+    search: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
+    issuerRow: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: 6 },
+    issuerChip: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: radii.pill,
+      borderColor: t.colors.border,
+      borderWidth: 1,
+      backgroundColor: t.colors.surface,
+      marginRight: 6
+    },
+    issuerChipActive: { backgroundColor: t.colors.primary, borderColor: t.colors.primary },
+    issuerChipText: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12), color: t.colors.text },
+    issuerChipTextActive: { color: t.palette.white },
+    list: { paddingHorizontal: spacing.md, paddingBottom: spacing.lg },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: t.colors.surface,
+      borderColor: t.colors.border,
+      borderWidth: 1,
+      borderRadius: radii.xl,
+      paddingHorizontal: 12,
+      paddingVertical: 10
+    },
+    rowPressed: { opacity: 0.85 },
+    rowIcon: {
+      width: 38,
+      height: 38,
+      borderRadius: radii.md,
+      backgroundColor: t.colors.surfaceAlt,
+      alignItems: "center",
+      justifyContent: "center"
+    },
+    rowIconText: { fontFamily: fontFamily.heavy, fontSize: scaleFont(12), color: t.colors.text, letterSpacing: 0.4 },
+    rowTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(14), color: t.colors.text },
+    rowMeta: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.mutedFg, marginTop: 2 },
+    empty: { paddingHorizontal: spacing.md, paddingTop: spacing.md }
+  });

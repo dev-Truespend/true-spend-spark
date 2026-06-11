@@ -13,10 +13,11 @@ import { SectionLabel } from "@/shared/components/SectionLabel";
 import { Switch } from "@/shared/components/Switch";
 import { TextInput } from "@/shared/components/TextInput";
 import { Toast } from "@/shared/components/Toast";
-import { colors, gradients, tints } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles, type Theme } from "@/providers/ThemeProvider";
+import { GradientName } from "@/shared/theme/colors";
 import { radii } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
-import { shadows } from "@/shared/theme/shadows";
+import { shadows, type ShadowName } from "@/shared/theme/shadows";
 import { useNotificationDetail } from "@/features/notifications/hooks/useNotificationDetail";
 import { useMarkNotificationRead } from "@/features/notifications/hooks/useMarkNotificationRead";
 import { useCreateNotificationReminder } from "@/features/notifications/hooks/useCreateNotificationReminder";
@@ -58,7 +59,7 @@ function topBarTitleFor(detail: NotificationDetail | null | undefined): string {
   return "Notification";
 }
 
-const HERO_STYLES: Record<HeroVariant, { gradient: keyof typeof gradients; glyph: string; shadow: keyof typeof shadows | null }> = {
+const HERO_STYLES: Record<HeroVariant, { gradient: GradientName; glyph: string; shadow: ShadowName | null }> = {
   missed: { gradient: "warm", glyph: "💸", shadow: "brandWarm" },
   reward: { gradient: "warm", glyph: "⭐", shadow: "brandWarm" },
   security: { gradient: "warm", glyph: "🚨", shadow: "brandWarm" },
@@ -73,6 +74,8 @@ function plusOneWeek(): string {
 }
 
 export function NotificationDetailScreen() {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(buildStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const notificationId = Number(id);
@@ -328,6 +331,7 @@ function ToggleRow({
   disabled?: boolean;
   divider?: boolean;
 }) {
+  const styles = useThemedStyles(buildStyles);
   return (
     <View style={[styles.toggleRow, divider && styles.toggleDivider]}>
       <Text style={styles.toggleLabel}>{title}</Text>
@@ -336,36 +340,37 @@ function ToggleRow({
   );
 }
 
-const styles = StyleSheet.create({
-  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: colors.text },
-  hero: { alignItems: "center", paddingVertical: 16, gap: 6 },
-  iconBox: { width: 84, height: 84, borderRadius: radii.hero, alignItems: "center", justifyContent: "center", marginBottom: 8 },
-  iconGlyph: { fontSize: scaleFont(36) },
-  heroTitle: { fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(20), color: colors.text, textAlign: "center", letterSpacing: -0.4 },
-  heroMeta: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: colors.mutedFg, textAlign: "center" },
-  body: { fontFamily: fontFamily.regular, fontSize: scaleFont(14), color: colors.text, lineHeight: 21 },
-  compareRow: { flexDirection: "row", gap: 8 },
-  compareCol: {
-    flex: 1,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radii.md,
-    padding: 10,
-    gap: 4
-  },
-  compareColBetter: { backgroundColor: tints.red.wash, borderColor: tints.red.border, borderWidth: 1 },
-  compareLabel: { fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(10), color: colors.mutedFg, letterSpacing: 0.6, textTransform: "uppercase" },
-  compareCard: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12), color: colors.text },
-  compareValue: { fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(18), letterSpacing: -0.3 },
-  captureCaption: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: colors.mutedFg, marginTop: 6, textAlign: "center" },
-  relatedRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
-  relatedTitle: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(14), color: colors.text },
-  relatedAmount: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(13), color: colors.text },
-  relatedAction: { color: colors.primary, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12), marginTop: 6 },
-  reminderGroup: { paddingHorizontal: 12 },
-  toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, gap: 12 },
-  toggleDivider: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  toggleLabel: { flex: 1, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), color: colors.text },
-  dismissed: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: colors.mutedFg, textAlign: "center", marginTop: 4 }
-});
+const buildStyles = (t: Theme) =>
+  StyleSheet.create({
+    topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    iconBtn: { width: 36, height: 36, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+    topTitle: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(15), color: t.colors.text },
+    hero: { alignItems: "center", paddingVertical: 16, gap: 6 },
+    iconBox: { width: 84, height: 84, borderRadius: radii.hero, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+    iconGlyph: { fontSize: scaleFont(36) },
+    heroTitle: { fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(20), color: t.colors.text, textAlign: "center", letterSpacing: -0.4 },
+    heroMeta: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: t.colors.mutedFg, textAlign: "center" },
+    body: { fontFamily: fontFamily.regular, fontSize: scaleFont(14), color: t.colors.text, lineHeight: 21 },
+    compareRow: { flexDirection: "row", gap: 8 },
+    compareCol: {
+      flex: 1,
+      backgroundColor: t.colors.surfaceAlt,
+      borderRadius: radii.md,
+      padding: 10,
+      gap: 4
+    },
+    compareColBetter: { backgroundColor: t.tints.red.wash, borderColor: t.tints.red.border, borderWidth: 1 },
+    compareLabel: { fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(10), color: t.colors.mutedFg, letterSpacing: 0.6, textTransform: "uppercase" },
+    compareCard: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12), color: t.colors.text },
+    compareValue: { fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(18), letterSpacing: -0.3 },
+    captureCaption: { fontFamily: fontFamily.regular, fontSize: scaleFont(11), color: t.colors.mutedFg, marginTop: 6, textAlign: "center" },
+    relatedRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
+    relatedTitle: { fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(14), color: t.colors.text },
+    relatedAmount: { fontFamily: fontFamily.bold, fontWeight: "700", fontSize: scaleFont(13), color: t.colors.text },
+    relatedAction: { color: t.colors.primary, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(12), marginTop: 6 },
+    reminderGroup: { paddingHorizontal: 12 },
+    toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, gap: 12 },
+    toggleDivider: { borderBottomWidth: 1, borderBottomColor: t.colors.border },
+    toggleLabel: { flex: 1, fontFamily: fontFamily.semibold, fontWeight: "600", fontSize: scaleFont(13), color: t.colors.text },
+    dismissed: { fontFamily: fontFamily.regular, fontSize: scaleFont(12), color: t.colors.mutedFg, textAlign: "center", marginTop: 4 }
+  });

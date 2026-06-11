@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { colors, gradients, palette } from "@/shared/theme/colors";
-import { radii, spacing } from "@/shared/theme/spacing";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
+import { spacing } from "@/shared/theme/spacing";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
 type ChipProps = {
@@ -12,11 +12,31 @@ type ChipProps = {
 };
 
 export function Chip({ label, active, onPress, icon }: ChipProps) {
+  const theme = useTheme();
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      base: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: t.radii.pill,
+        borderWidth: 1,
+        borderColor: "transparent"
+      },
+      inactive: { backgroundColor: t.colors.surfaceAlt },
+      pressed: { opacity: 0.85 },
+      icon: { marginRight: 4 },
+      label: { fontFamily: fontFamily.semibold, fontSize: scaleFont(12), fontWeight: "600" },
+      activeLabel: { color: t.palette.white },
+      inactiveLabel: { color: t.colors.text }
+    })
+  );
   if (active) {
     return (
       <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: true }}>
         <LinearGradient
-          colors={[...gradients.brand]}
+          colors={[...theme.gradients.brand]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.base}
@@ -47,24 +67,6 @@ type ChipRowProps = {
 export function ChipRow({ children }: ChipRowProps) {
   return <View style={rowStyles.row}>{children}</View>;
 }
-
-const styles = StyleSheet.create({
-  base: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: "transparent"
-  },
-  inactive: { backgroundColor: colors.surfaceAlt },
-  pressed: { opacity: 0.85 },
-  icon: { marginRight: 4 },
-  label: { fontFamily: fontFamily.semibold, fontSize: scaleFont(12), fontWeight: "600" },
-  activeLabel: { color: palette.white },
-  inactiveLabel: { color: colors.text }
-});
 
 const rowStyles = StyleSheet.create({
   row: {

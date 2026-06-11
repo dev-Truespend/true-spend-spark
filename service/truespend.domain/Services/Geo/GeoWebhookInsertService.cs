@@ -10,14 +10,15 @@ namespace TrueSpend.Domain.Services.Geo;
 public sealed class GeoWebhookInsertService(TrueSpendDbContext db) : IGeoWebhookInsertService
 {
     public async Task<int> RecordWebhookEventAsync(
-        FoursquareWebhookInput input,
+        GeoArrivalInput input,
         Guid? userId,
         int? merchantId,
         CancellationToken cancellationToken)
     {
         var entity = new FoursquareWebhookEventEntity
         {
-            FoursquareEventId = input.FoursquareEventId,
+            Provider = input.Provider,
+            FoursquareEventId = input.EventId,
             EventType = input.EventType,
             FoursquareUserId = input.ExternalUserId,
             UserId = userId,

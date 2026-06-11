@@ -13,4 +13,8 @@ namespace TrueSpend.Domain.ServiceInterfaces.Billing;
 public interface IBillingInsertService
 {
     Task<SubscriptionResponse> RecordTrialingSubscriptionAsync(OnboardingWorkflowUser user, string planCode, CancellationToken cancellationToken);
+
+    // TestFlight/QA simulate-checkout: upserts the user's subscription to a trialing row for the chosen
+    // plan (no Stripe). Idempotent + re-runnable so testers can freely switch tiers without row growth.
+    Task<SubscriptionResponse> RecordSimulatedTrialingSubscriptionAsync(OnboardingWorkflowUser user, string planCode, CancellationToken cancellationToken);
 }

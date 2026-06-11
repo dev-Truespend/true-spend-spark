@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from "react-native";
-import { colors, palette } from "@/shared/theme/colors";
+import { useThemedStyles } from "@/providers/ThemeProvider";
 
 type SwitchProps = {
   value: boolean;
@@ -8,6 +8,25 @@ type SwitchProps = {
 };
 
 export function Switch({ value, onChange, disabled }: SwitchProps) {
+  const styles = useThemedStyles((t) =>
+    StyleSheet.create({
+      track: { width: 40, height: 24, borderRadius: 14, padding: 2, justifyContent: "center" },
+      off: { backgroundColor: t.colors.surfaceAlt },
+      on: { backgroundColor: t.colors.teal },
+      knob: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: t.palette.white,
+        shadowColor: "#000",
+        shadowOpacity: 0.18,
+        shadowOffset: { width: 0, height: 1 },
+        shadowRadius: 2,
+        elevation: 2
+      },
+      knobOn: { alignSelf: "flex-end" }
+    })
+  );
   return (
     <Pressable
       accessibilityRole="switch"
@@ -20,21 +39,3 @@ export function Switch({ value, onChange, disabled }: SwitchProps) {
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  track: { width: 40, height: 24, borderRadius: 14, padding: 2, justifyContent: "center" },
-  off: { backgroundColor: colors.surfaceAlt },
-  on: { backgroundColor: colors.teal },
-  knob: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: palette.white,
-    shadowColor: "#000",
-    shadowOpacity: 0.18,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 2
-  },
-  knobOn: { alignSelf: "flex-end" }
-});

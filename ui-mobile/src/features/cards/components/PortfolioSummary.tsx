@@ -3,7 +3,8 @@ import { Card } from "@/shared/components/Card";
 import { MiniCardSwatch, MiniCardSwatchVariant } from "@/shared/components/MiniCardSwatch";
 import { RewardRow } from "@/shared/components/RewardRow";
 import { SectionLabel } from "@/shared/components/SectionLabel";
-import { colors, TintName } from "@/shared/theme/colors";
+import { TintName } from "@/shared/theme/colors";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 import { radii } from "@/shared/theme/spacing";
 import { PortfolioCard } from "@/features/cards/types/home.types";
@@ -38,6 +39,7 @@ function variantForCard(cardId: number): MiniCardSwatchVariant {
 }
 
 export function PortfolioSummary({ cards, onOpenCard }: Props) {
+  const styles = useThemedStyles(buildStyles);
   if (cards.length === 0) return null;
 
   return (
@@ -92,33 +94,34 @@ export function PortfolioSummary({ cards, onOpenCard }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { gap: 8 },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 10
-  },
-  cardTitleBlock: { flex: 1, gap: 2 },
-  cardTitle: {
-    color: colors.text,
-    fontFamily: fontFamily.heavy,
-    fontWeight: "800",
-    fontSize: scaleFont(14)
-  },
-  cardIssuer: {
-    color: colors.mutedFg,
-    fontFamily: fontFamily.regular,
-    fontSize: scaleFont(12)
-  },
-  chevron: {
-    color: colors.mutedFg,
-    fontFamily: fontFamily.bold,
-    fontSize: scaleFont(22),
-    paddingRight: 4
-  },
-  rows: { paddingHorizontal: 0, borderTopWidth: 1, borderTopColor: colors.border, borderTopLeftRadius: radii.sm }
-});
+const buildStyles = (t: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    wrap: { gap: 8 },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingHorizontal: 14,
+      paddingTop: 12,
+      paddingBottom: 10
+    },
+    cardTitleBlock: { flex: 1, gap: 2 },
+    cardTitle: {
+      color: t.colors.text,
+      fontFamily: fontFamily.heavy,
+      fontWeight: "800",
+      fontSize: scaleFont(14)
+    },
+    cardIssuer: {
+      color: t.colors.mutedFg,
+      fontFamily: fontFamily.regular,
+      fontSize: scaleFont(12)
+    },
+    chevron: {
+      color: t.colors.mutedFg,
+      fontFamily: fontFamily.bold,
+      fontSize: scaleFont(22),
+      paddingRight: 4
+    },
+    rows: { paddingHorizontal: 0, borderTopWidth: 1, borderTopColor: t.colors.border, borderTopLeftRadius: radii.sm }
+  });

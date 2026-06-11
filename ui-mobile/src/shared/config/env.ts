@@ -5,6 +5,8 @@ type ExtraConfig = {
   supabaseUrl?: string;
   supabaseAnonKey?: string;
   foursquareApiKey?: string;
+  geoProvider?: string;
+  foursquareMovementKey?: string;
   plaidRedirectUri?: string;
 };
 
@@ -15,5 +17,9 @@ export const env = {
   supabaseUrl: extra.supabaseUrl ?? "",
   supabaseAnonKey: extra.supabaseAnonKey ?? "",
   foursquareApiKey: extra.foursquareApiKey ?? "",
+  // 10a arrival-detection provider switch: "foursquare" | "custom" | "auto".
+  geoProvider: extra.geoProvider ?? "auto",
+  // Presence is the `auto` signal for the Foursquare path (distinct from the Places-search key above).
+  foursquareMovementKey: extra.foursquareMovementKey ?? "",
   plaidRedirectUri: extra.plaidRedirectUri ?? ""
 };

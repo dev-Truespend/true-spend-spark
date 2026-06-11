@@ -6,7 +6,7 @@ import { Card } from "@/shared/components/Card";
 import { Screen } from "@/shared/components/Screen";
 import { TextInput } from "@/shared/components/TextInput";
 import { Toast } from "@/shared/components/Toast";
-import { colors } from "@/shared/theme/colors";
+import { useTheme } from "@/providers/ThemeProvider";
 import { AvatarPicker } from "@/features/settings/components/AvatarPicker";
 import { BiometricToggle } from "@/features/settings/components/BiometricToggle";
 import { CurrencyPicker } from "@/features/settings/components/CurrencyPicker";
@@ -22,6 +22,7 @@ import { useAddPhoneSignIn } from "@/features/auth/hooks/useAddPhoneSignIn";
 import { useSignInMethods } from "@/features/auth/hooks/useSignInMethods";
 
 export function EditProfileScreen() {
+  const { colors } = useTheme();
   const profileQuery = useProfile();
   const preferencesQuery = usePreferences();
   const updateProfile = useUpdateProfile();
