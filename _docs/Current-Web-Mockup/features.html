@@ -4,77 +4,413 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Features — TrueSpend</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <meta name="description" content="Ten location-aware notifications. Twelve analytics dashboards. A home screen built for the three seconds at the register. Every feature inside TrueSpend." />
+  <link rel="icon" type="image/png" sizes="32x32" href="../../public/assets/images_and_logos/favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../../public/assets/images_and_logos/apple-touch-icon-180x180.png" />
+  <meta property="og:title" content="Features — TrueSpend" />
+  <meta property="og:description" content="Every notification, dashboard, and insight that powers TrueSpend." />
+  <meta property="og:image" content="../../public/assets/images_and_logos/truespend-og-image-1200x630.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/forest-amber.css" />
 </head>
 <body>
-  <div id="nav-host"></div>
 
-  <main class="page">
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a href="index.html" class="brand" aria-label="TrueSpend home">
+      <img src="assets/web-logo/truespend-mark.png" alt="" />
+      <span><span class="brand__true">True</span><span class="brand__spend">Spend</span></span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="features.html" class="is-active">Features</a>
+      <a href="index.html#how-it-works">How it works</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="about.html">About</a>
+    </nav>
+    <div class="site-header__cta">
+      <a href="#" class="btn btn--ghost">Log in</a>
+      <a href="index.html#waitlist" class="btn btn--primary">Get started</a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section class="page-hero">
     <div class="container">
-      <div class="text-center mb-6">
-        <span class="badge badge-blue">Core features</span>
-        <h1 class="h1 mt-2">Everything in TrueSpend</h1>
-        <p class="lead mt-2" style="max-width: 640px; margin: 1rem auto 0;">
-          A plain-English view of what the product does across the mobile app, browser extension, and website.
-        </p>
-      </div>
-
-      <div class="grid grid-3">
-        <div class="feature-card">
-          <div class="feature-icon blue">💳</div>
-          <h3 class="card-title">Best card recommendation</h3>
-          <p class="card-desc">TrueSpend tells you which credit card is likely to earn the most rewards for a purchase.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon purple">🏬</div>
-          <h3 class="card-title">Store and website helper</h3>
-          <p class="card-desc">Use location for physical stores or a website link for online shopping.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon teal">🛒</div>
-          <h3 class="card-title">Category choice</h3>
-          <p class="card-desc">For big stores that sell many things, choose what you are buying so the advice is accurate.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon amber">📈</div>
-          <h3 class="card-title">Missed rewards</h3>
-          <p class="card-desc">See where a different card could have earned more cash back or points.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon blue">🔗</div>
-          <h3 class="card-title">Card linking</h3>
-          <p class="card-desc">Connect cards through Plaid or add them manually by issuer and card name.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon purple">🧾</div>
-          <h3 class="card-title">Receipt capture</h3>
-          <p class="card-desc">Take a receipt photo and review the merchant, amount, date, and items.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon teal">🎯</div>
-          <h3 class="card-title">Budgets</h3>
-          <p class="card-desc">Set spending limits by category and get alerts before you go over.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon amber">🔔</div>
-          <h3 class="card-title">Notifications</h3>
-          <p class="card-desc">Get reminders for better card choices, budget warnings, receipts, and sync issues.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon blue">📱</div>
-          <h3 class="card-title">Three product phases</h3>
-          <p class="card-desc">First mobile app, then browser extension, then website for larger-screen management.</p>
-        </div>
-      </div>
-
-      <div class="text-center mt-6 muted" style="font-size: .9rem;">
-        Mobile app (iOS &amp; Android) shipping first, followed by browser extension and website.
+      <span class="eyebrow">Every feature, demystified</span>
+      <h1>Built on the data we have. <br />Quiet about the data we don't.</h1>
+      <p>
+        TrueSpend runs on 24 months of your real credit card transactions, the full reward grid of
+        every card you carry, and your live location. No income, no checking balance, no bank ties.
+        Just the smartest possible advice on the cards already in your pocket.
+      </p>
+      <div class="hero__actions" style="justify-content: center; margin-top: 32px;">
+        <a href="index.html#waitlist" class="btn btn--primary btn--lg">Join the waitlist</a>
+        <a href="#notifications" class="btn btn--secondary btn--lg">Skip to the features</a>
       </div>
     </div>
-  </main>
+  </section>
 
-  <div id="footer-host"></div>
-  <script src="js/app.js"></script>
+  <!-- 10 PUSH NOTIFICATIONS -->
+  <section class="feature-block" id="notifications">
+    <div class="container">
+      <div class="feature-block__head">
+        <div>
+          <span class="kicker">Ten notifications</span>
+          <h2>Worth ≥ $1 each. Or you'll never hear them.</h2>
+        </div>
+        <p class="lede">
+          Max three to five per day. Suppressed if you ignore the same type three times.
+          Quiet hours 10 pm – 7 am. Notifications get tighter as you get smarter — by day 90,
+          you only hear about misses ≥ $2.
+        </p>
+      </div>
+      <div class="tile-grid">
+        <article class="tile">
+          <span class="tile__badge tile__badge--geo">Geo</span>
+          <h3>Best card at store</h3>
+          <p>Enter the geofence — see the right card before you reach the register.</p>
+          <div class="tile__example">
+            You're at Whole Foods. Use <strong>Amex Gold (4×)</strong> — saves ~$3.40 on your avg $85 basket.
+          </div>
+        </article>
+        <article class="tile">
+          <span class="tile__badge tile__badge--geo">Geo</span>
+          <h3>Active offer + location</h3>
+          <p>Targeted-offer expiry meets your physical presence at the store.</p>
+          <div class="tile__example">
+            Near Target. Amex offer: <strong>$10 off $50</strong>, expires in 2 days. Use Amex Gold.
+          </div>
+        </article>
+        <article class="tile">
+          <span class="tile__badge tile__badge--post">Post-txn</span>
+          <h3>Wrong card used</h3>
+          <p>Post-transaction nudge with annualised impact so you actually fix the default.</p>
+          <div class="tile__example">
+            $147 at Costco on Visa (1.5%). Citi earns 2%. Missed $0.74 today → <strong>$38/yr</strong> at your pace.
+          </div>
+        </article>
+        <article class="tile">
+          <span class="tile__badge tile__badge--post">Post-txn</span>
+          <h3>Category cap hit</h3>
+          <p>The moment a card's bonus category cap closes for the quarter — switch.</p>
+          <div class="tile__example">
+            You hit Chase Freedom's $1,500 cap. Switch to <strong>Amex Gold (4×)</strong> for the rest of Q3.
+          </div>
+        </article>
+        <article class="tile">
+          <span class="tile__badge tile__badge--calendar">Calendar</span>
+          <h3>Credit expiring</h3>
+          <p>Three days before a monthly credit resets unused, with a one-tap action.</p>
+          <div class="tile__example">
+            $15 Uber credit expires tomorrow. You haven't used it. <strong>Order UberEats?</strong>
+          </div>
+        </article>
+        <article class="tile">
+          <span class="tile__badge tile__badge--pace">Pace</span>
+          <h3>Welcome bonus pace</h3>
+          <p>Weekly check-in when you're at risk; daily inside the final week.</p>
+          <div class="tile__example">
+            <strong>$412 left in 18 days</strong> for your $200 Amex Gold bonus. Spend ~$23/day to hit it.
+          </div>
+        </article>
+        <article class="tile">
+          <span class="tile__badge tile__badge--calendar">Calendar</span>
+          <h3>Quarterly bonus activation</h3>
+          <p>Day before a new quarter unlocks rotating-category cards.</p>
+          <div class="tile__example">
+            Q3 starts tomorrow: Chase Freedom 5% on groceries. You spend ~$680/qtr → <strong>$34 bonus</strong>. Activate now.
+          </div>
+        </article>
+        <article class="tile">
+          <span class="tile__badge tile__badge--calendar">Calendar</span>
+          <h3>Annual fee warning</h3>
+          <p>Thirty days before a renewal, with the calculated value you've actually used.</p>
+          <div class="tile__example">
+            CSR fee ($550) renews Jul 15. You've used <strong>$420 in value</strong>. Review card ROI.
+          </div>
+        </article>
+        <article class="tile">
+          <span class="tile__badge tile__badge--detect">Detect</span>
+          <h3>Subscription price hike</h3>
+          <p>Recurring detection plus amount change — and the better card to move it to.</p>
+          <div class="tile__example">
+            Netflix went $15.49 → $22.99. That's <strong>+$90/yr</strong>. Also: move it to Freedom (3%).
+          </div>
+        </article>
+        <article class="tile">
+          <span class="tile__badge tile__badge--digest">Digest</span>
+          <h3>Weekly digest</h3>
+          <p>Sunday morning: one screen with last week's score and the single biggest miss.</p>
+          <div class="tile__example">
+            This week: Earned $11.20 | Missed $3.40 | Grade A-. <strong>Biggest miss:</strong> 2 Costco trips.
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 ANALYTICS DASHBOARDS -->
+  <section class="feature-block section--alt">
+    <div class="container">
+      <div class="feature-block__head">
+        <div>
+          <span class="kicker">Twelve analytics tiles</span>
+          <h2>Every metric ends with "so what should I do?"</h2>
+        </div>
+        <p class="lede">
+          No vanity stats. Every tile shows a dollar amount and a single, clear next action —
+          because the only point of analytics is to change what you do tomorrow.
+        </p>
+      </div>
+      <div class="tile-grid">
+        <article class="dashboard-tile">
+          <h3>💰 Money left on the table</h3>
+          <div class="dashboard-tile__big">$487 <small>lost in last 12 months</small></div>
+          <p>You earned $760. Optimal: $1,247. Difference is the hero number that drives every recommendation.</p>
+        </article>
+        <article class="dashboard-tile">
+          <h3>📊 Monthly scorecard</h3>
+          <div class="dashboard-tile__big">B+ <small>↑ 8% vs last month</small></div>
+          <p>Earned $47 · Missed $12 · Grade is earned ÷ (earned + missed) translated to a letter.</p>
+        </article>
+        <article class="dashboard-tile">
+          <h3>🏪 Top merchant drain</h3>
+          <div class="dashboard-tile__big">$230 <small>fix the top 5 = +$230/yr</small></div>
+          <p>Costco $78, Whole Foods $54, Amazon $42, Shell $34, Starbucks $22 — the merchants quietly costing you the most.</p>
+        </article>
+        <article class="dashboard-tile">
+          <h3>💳 Card efficiency</h3>
+          <div class="dashboard-tile__big">94% <small>Amex Gold efficiency score</small></div>
+          <p>Per card: percentage of swipes where that card actually was the optimal choice.</p>
+        </article>
+        <article class="dashboard-tile">
+          <h3>📈 Optimisation trend</h3>
+          <div class="dashboard-tile__big">+17% <small>since joining TrueSpend</small></div>
+          <p>Monthly grade plotted over six months — proves the app is actually changing behaviour.</p>
+        </article>
+        <article class="dashboard-tile">
+          <h3>📅 Annual fee ROI</h3>
+          <div class="dashboard-tile__big">$162 <small>Amex Gold net positive</small></div>
+          <p>Fee vs. (rewards earned + credits used + perks). One of three verdicts: keep, review, cancel.</p>
+        </article>
+        <article class="dashboard-tile">
+          <h3>🔁 Subscriptions audit</h3>
+          <div class="dashboard-tile__big">$10.61 <small>fix 3 subs → +$10.61/yr</small></div>
+          <p>Every recurring charge, the optimal card to put it on, and detected price hikes.</p>
+        </article>
+        <article class="dashboard-tile">
+          <h3>🔀 Card overlap analysis</h3>
+          <div class="dashboard-tile__big">$420 <small>drop CSR net of unique value</small></div>
+          <p>Two cards earning 3× on dining is fine — until the fees stack. Surface the overlap.</p>
+        </article>
+        <article class="dashboard-tile">
+          <h3>🗓️ Bonus calendar</h3>
+          <div class="dashboard-tile__big">Q3 <small>activate Freedom 5% groceries</small></div>
+          <p>Quarterly grid of every card's rotating category alongside your historical spend.</p>
+        </article>
+        <article class="dashboard-tile">
+          <h3>⚡ Quick wins</h3>
+          <div class="dashboard-tile__big">$207 <small>three actions, three minutes</small></div>
+          <p>Change default card (+$168/yr) · Move Netflix (+$5.57/yr) · Activate Q3 (+$34/qtr).</p>
+        </article>
+        <article class="dashboard-tile">
+          <h3>📆 Spending patterns</h3>
+          <div class="dashboard-tile__big">2.4× <small>Friday spend vs. weekday avg</small></div>
+          <p>Day-of-week, seasonal, and merchant-level patterns — useful when you can act on them.</p>
+        </article>
+        <article class="dashboard-tile">
+          <h3>🎯 Welcome bonus tracker</h3>
+          <div class="dashboard-tile__big">$2,100 <small>of $4,000 · 32 days left</small></div>
+          <p>Per-card progress bar, days remaining, the daily pace needed to hit the bonus.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOME SCREEN -->
+  <section class="feature-block">
+    <div class="container">
+      <div class="feature-block__head">
+        <div>
+          <span class="kicker">Home screen</span>
+          <h2>Five sections. Answers "what should I do RIGHT NOW?" in three seconds.</h2>
+        </div>
+        <p class="lede">
+          Maximum one scroll. Zero clutter. If you can't act on it before the next set of cars
+          honk behind you, it doesn't belong on the home screen.
+        </p>
+      </div>
+      <div class="tile-grid">
+        <article class="tile">
+          <h3>🔍 Quick card lookup</h3>
+          <p>Search bar at the top: "What card at ___?" Type the merchant, get the answer instantly.</p>
+        </article>
+        <article class="tile">
+          <h3>📍 Near you now</h3>
+          <p>Two to three nearby stores, the best card for each, estimated dollars per visit. Updates with GPS.</p>
+        </article>
+        <article class="tile">
+          <h3>⚡ Action needed</h3>
+          <p>Max three highest-urgency items — expiring credits, at-risk bonuses, unactivated quarters.</p>
+        </article>
+        <article class="tile">
+          <h3>💰 This month</h3>
+          <p>Earned · Missed · Grade · trend vs. last month — one compact row, tap for the full scorecard.</p>
+        </article>
+        <article class="tile">
+          <h3>🏆 Lifetime saved</h3>
+          <p>Small footer line that grows over time: "Saved $347 since joining TrueSpend."</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSIGHT CARDS / WOW MOMENTS -->
+  <section class="feature-block section--alt">
+    <div class="container">
+      <div class="feature-block__head">
+        <div>
+          <span class="kicker">Insight cards</span>
+          <h2>The "wow" moments that move users from curious to loyal.</h2>
+        </div>
+        <p class="lede">
+          Dark-forest cards with gold accents on the dashboard. One or two at a time, rotated
+          based on what's most relevant this week. These are the screenshots that get sent in group chats.
+        </p>
+      </div>
+      <div class="tile-grid">
+        <article class="tile" style="background: linear-gradient(180deg, var(--primary-dark), var(--primary)); color: #fff; border: none;">
+          <h3 style="color: var(--gold);">Highest-value single swap</h3>
+          <p style="color: rgba(255,255,255,0.85);">Change Apple Pay default from Visa → Amex Gold. <strong style="color: var(--gold);">+$168/yr.</strong> One settings change.</p>
+        </article>
+        <article class="tile" style="background: linear-gradient(180deg, var(--primary-dark), var(--primary)); color: #fff; border: none;">
+          <h3 style="color: var(--gold);">Most expensive habit</h3>
+          <p style="color: rgba(255,255,255,0.85);">Starbucks 4.2×/week = <strong style="color: var(--gold);">$1,247/yr.</strong> Right card earns $62 vs. $12 today.</p>
+        </article>
+        <article class="tile" style="background: linear-gradient(180deg, var(--primary-dark), var(--primary)); color: #fff; border: none;">
+          <h3 style="color: var(--gold);">If you'd had TrueSpend last year…</h3>
+          <p style="color: rgba(255,255,255,0.85);">You would have earned <strong style="color: var(--gold);">$1,247 instead of $760.</strong> That's two flights to Vegas.</p>
+        </article>
+        <article class="tile" style="background: linear-gradient(180deg, var(--primary-dark), var(--primary)); color: #fff; border: none;">
+          <h3 style="color: var(--gold);">Dead card alert</h3>
+          <p style="color: rgba(255,255,255,0.85);">CSR: zero transactions in 90 days. You're paying <strong style="color: var(--gold);">$550/yr for nothing.</strong></p>
+        </article>
+        <article class="tile" style="background: linear-gradient(180deg, var(--primary-dark), var(--primary)); color: #fff; border: none;">
+          <h3 style="color: var(--gold);">Subscription creep</h3>
+          <p style="color: rgba(255,255,255,0.85);">Three new subs in six months: Disney+, ChatGPT, Peloton = <strong style="color: var(--gold);">+$563/yr.</strong></p>
+        </article>
+        <article class="tile" style="background: linear-gradient(180deg, var(--primary-dark), var(--primary)); color: #fff; border: none;">
+          <h3 style="color: var(--gold);">Your rewards would buy…</h3>
+          <p style="color: rgba(255,255,255,0.85);">Monthly rewards ($47) = a nice dinner out. Annual ($564) = <strong style="color: var(--gold);">two flights.</strong></p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREDICTIVE -->
+  <section class="feature-block">
+    <div class="container">
+      <div class="feature-block__head">
+        <div>
+          <span class="kicker">Predictive</span>
+          <h2>24 months of history means we can see the next 90 days coming.</h2>
+        </div>
+        <p class="lede">
+          Same-period-last-year comparison, recurring-charge growth, cap-projection — the kind
+          of forecast that lets you act before a problem becomes a regret.
+        </p>
+      </div>
+      <div class="tile-grid">
+        <article class="tile">
+          <h3>Spending forecast</h3>
+          <p>"Based on patterns, you'll likely spend $4,200 in December (+34%). Pre-activate holiday bonus categories now."</p>
+        </article>
+        <article class="tile">
+          <h3>Category cap prediction</h3>
+          <p>"At your pace, you'll hit Freedom's $1,500 cap by Aug 12. After that, switch to Amex Gold."</p>
+        </article>
+        <article class="tile">
+          <h3>Subscription budget alert</h3>
+          <p>"Your subscriptions grew $98 → $127/mo in six months. That's +$348/yr. Worth reviewing?"</p>
+        </article>
+        <article class="tile">
+          <h3>New habit detection</h3>
+          <p>"You started shopping at Trader Joe's last month (4 visits). Best card: Amex Gold (4×). Added to Near You."</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-band">
+    <div class="container">
+      <span class="kicker">Ready when you are</span>
+      <h2>Stop leaving money on the table.</h2>
+      <p>Add your cards, set your home and work locations, and let TrueSpend handle the rest.</p>
+      <div class="hero__actions" style="justify-content: center; margin-top: 24px;">
+        <a href="index.html#waitlist" class="btn btn--primary btn--lg">Join the waitlist</a>
+        <a href="pricing.html" class="btn btn--secondary btn--lg">See pricing</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="site-footer__grid">
+      <div>
+        <div class="site-footer__brand">
+          <img src="assets/web-logo/truespend-mark.png" alt="" />
+          <span>TrueSpend</span>
+        </div>
+        <p class="site-footer__tagline">Maximise every swipe. The quiet assistant that picks the right credit card, every time.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="features.html">Features</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="index.html#how-it-works">How it works</a></li>
+          <li><a href="index.html#waitlist">Join waitlist</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Press kit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="#">Help centre</a></li>
+          <li><a href="#">Security</a></li>
+          <li><a href="#">API</a></li>
+          <li><a href="#">Status</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">Disclosures</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer__bottom">
+      <span>© 2026 TrueSpend, Inc. All rights reserved.</span>
+      <span>TrueSpend is not a credit card issuer, bank, or financial advisor.</span>
+    </div>
+  </div>
+</footer>
+
 </body>
 </html>

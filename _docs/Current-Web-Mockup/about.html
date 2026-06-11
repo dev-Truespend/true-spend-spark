@@ -4,173 +4,254 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>About — TrueSpend</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <meta name="description" content="We're building TrueSpend because the average household is quietly losing hundreds a year in unclaimed rewards. The fix isn't another budgeting app — it's a quiet assistant that just tells you which card to use." />
+  <link rel="icon" type="image/png" sizes="32x32" href="../../public/assets/images_and_logos/favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../../public/assets/images_and_logos/apple-touch-icon-180x180.png" />
+  <meta property="og:title" content="About TrueSpend" />
+  <meta property="og:description" content="Why we're building TrueSpend, and the principles we won't compromise on." />
+  <meta property="og:image" content="../../public/assets/images_and_logos/truespend-og-image-1200x630.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/forest-amber.css" />
 </head>
 <body>
-  <div id="nav-host"></div>
-  <main class="page">
-    <div class="container-narrow">
-      <span class="badge badge-blue">About</span>
-      <h1 class="h1 mt-2">We're building the <span class="gradient-text">privacy-first</span> finance app.</h1>
-      <p class="lead mt-4">
-        Most finance apps treat your data like a product. We treat it like a responsibility. TrueSpend
-        is built around three principles: your data stays yours, the AI works for you (not for advertisers),
-        and the interface gets out of the way.
-      </p>
 
-      <div class="grid grid-3 mt-6">
-        <div class="card">
-          <div class="feature-icon blue">🎯</div>
-          <h3 class="card-title">Our mission</h3>
-          <p class="card-desc">Help people understand and direct their spending without giving up control of their data.</p>
-        </div>
-        <div class="card">
-          <div class="feature-icon purple">📅</div>
-          <h3 class="card-title">Founded</h3>
-          <p class="card-desc">2025 · Built across 16 phases / 51 weeks. Solo-engineered with AI assistance.</p>
-        </div>
-        <div class="card">
-          <div class="feature-icon teal">🌍</div>
-          <h3 class="card-title">Where</h3>
-          <p class="card-desc">Distributed team. Servers in US-East with cross-region replication.</p>
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a href="index.html" class="brand" aria-label="TrueSpend home">
+      <img src="assets/web-logo/truespend-mark.png" alt="" />
+      <span><span class="brand__true">True</span><span class="brand__spend">Spend</span></span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="features.html">Features</a>
+      <a href="index.html#how-it-works">How it works</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="about.html" class="is-active">About</a>
+    </nav>
+    <div class="site-header__cta">
+      <a href="#" class="btn btn--ghost">Log in</a>
+      <a href="index.html#waitlist" class="btn btn--primary">Get started</a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section class="page-hero">
+    <div class="container">
+      <span class="eyebrow">About TrueSpend</span>
+      <h1>Built by people who hate <br /><span class="text-accent">leaving money on the table.</span></h1>
+      <p>
+        The average household loses $487 a year in unclaimed rewards because nobody can remember
+        which card earns what. We thought that was a job worth solving — quietly, privately, and
+        without a single intrusive popup.
+      </p>
+    </div>
+  </section>
+
+  <!-- MISSION SPLIT -->
+  <section class="section">
+    <div class="container split">
+      <div class="image-card">
+        <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1200&h=900&fit=crop&auto=format&q=80" alt="A team in a sunlit office working on a product whiteboard" />
+        <div class="image-card__tag">
+          Founded 2024<br />
+          <strong>Toronto · New York</strong>
         </div>
       </div>
+      <div>
+        <span class="kicker">Our mission</span>
+        <h2 style="font-size: clamp(32px, 4vw, 52px); line-height: 1.05; margin-top: 12px;">
+          Make every household <span class="text-accent">$500 a year richer</span> without changing anything they spend.
+        </h2>
+        <p style="margin-top: 24px; font-size: 18px;">
+          We're not here to sell you another card, push you to a new bank, or shame your spending.
+          Your money is yours. Your habits are yours. We're just the quiet assistant making sure
+          that — when you do spend — the swipe pays you the most it possibly can.
+        </p>
+        <p style="font-size: 18px;">
+          That's it. That's the whole product.
+        </p>
+      </div>
+    </div>
+  </section>
 
-      <h2 class="h2 mt-6">The stack</h2>
-      <p class="muted mt-2" style="font-size: .95rem;">
-        A full inventory of the tools, services, and libraries TrueSpend is being built on — across mobile,
-        browser extension, and web.
-      </p>
+  <!-- VALUES -->
+  <section class="section section--alt">
+    <div class="container">
+      <div class="section__head">
+        <span class="kicker">What we won't compromise on</span>
+        <h2>Three principles. Non-negotiable.</h2>
+        <p>If a feature can't be shipped without bending one of these, the feature doesn't ship.</p>
+      </div>
+      <div class="about-values">
+        <article class="value-card">
+          <div class="value-card__num">01</div>
+          <h3>Privacy first, always</h3>
+          <p>Your transactions, location, and reward history never leave your phone. We don't sell data. We don't run ads. We never will.</p>
+        </article>
+        <article class="value-card">
+          <div class="value-card__num">02</div>
+          <h3>Every dollar is earned</h3>
+          <p>If a tile shows you a number, we can show you the maths behind it. No "estimated savings" sleight of hand.</p>
+        </article>
+        <article class="value-card">
+          <div class="value-card__num">03</div>
+          <h3>Quiet by default</h3>
+          <p>Every push notification is worth $1 or more. Every dashboard tile answers "so what should I do?" If it's noise, we delete it.</p>
+        </article>
+      </div>
+    </div>
+  </section>
 
-      <div class="grid grid-2 mt-4">
-        <div class="card">
-          <div class="feature-icon blue">📱</div>
-          <h3 class="card-title">Mobile (Phase 1 · iOS &amp; Android)</h3>
-          <p class="card-desc">
-            <strong>Capacitor 6</strong> · <strong>React 18</strong> · <strong>TypeScript</strong> ·
-            React Router · Vite · Tailwind CSS · shadcn/ui · TanStack Query · Zustand · React Hook Form ·
-            Zod · Capacitor Camera, Geolocation, Push Notifications, Secure Storage, Biometrics ·
-            Native iOS (Swift / Xcode) &amp; Android (Kotlin / Gradle) build targets · Sentry mobile SDK.
-          </p>
-        </div>
+  <!-- TEAM -->
+  <section class="section">
+    <div class="container">
+      <div class="section__head">
+        <span class="kicker">The founding team</span>
+        <h2>Small team. Long memory.</h2>
+        <p>Engineers, designers, and rewards-card nerds. Between us, we've shipped at Plaid, Stripe, Mint, and Square.</p>
+      </div>
+      <div class="about-team">
+        <article class="team-card">
+          <img src="https://images.unsplash.com/photo-1556157382-97eda2d62296?w=600&h=600&fit=crop&crop=faces&auto=format&q=80" alt="" />
+          <h3>Aanya Patel</h3>
+          <p>Co-founder &amp; CEO · ex-Plaid</p>
+        </article>
+        <article class="team-card">
+          <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&h=600&fit=crop&crop=faces&auto=format&q=80" alt="" />
+          <h3>Marcus Cole</h3>
+          <p>Co-founder &amp; CTO · ex-Stripe</p>
+        </article>
+        <article class="team-card">
+          <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&h=600&fit=crop&crop=faces&auto=format&q=80" alt="" />
+          <h3>Priya Iyer</h3>
+          <p>Head of Design · ex-Square</p>
+        </article>
+      </div>
+    </div>
+  </section>
 
-        <div class="card">
-          <div class="feature-icon purple">🧩</div>
-          <h3 class="card-title">Browser extension (Phase 2)</h3>
-          <p class="card-desc">
-            <strong>Chrome &amp; Edge Manifest V3</strong> · TypeScript · Vite + CRXJS · React popup UI ·
-            Content scripts &amp; service workers · WebExtension Polyfill · IndexedDB (Dexie) ·
-            chrome.storage.sync · OAuth flow to Supabase · merchant-page DOM scrapers for purchase capture.
-          </p>
-        </div>
+  <!-- STORY / TIMELINE -->
+  <section class="section section--alt">
+    <div class="container">
+      <div class="section__head">
+        <span class="kicker">How we got here</span>
+        <h2>One missed Amex offer at Whole Foods, two years of building.</h2>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; max-width: 1100px; margin: 0 auto;">
+        <article class="tile">
+          <h3 style="color: var(--accent);">2024 Q1</h3>
+          <p>Aanya tries six rewards-tracking apps. None of them tell her which card to use. She sketches the first wireframe on a Costco receipt.</p>
+        </article>
+        <article class="tile">
+          <h3 style="color: var(--accent);">2024 Q3</h3>
+          <p>Marcus joins. First closed alpha launches with 40 hand-picked users. Average recovered rewards: $387 in 90 days.</p>
+        </article>
+        <article class="tile">
+          <h3 style="color: var(--accent);">2025 Q2</h3>
+          <p>Internal rewards database hits 99% credit card coverage. Geofence engine ships. Notification fatigue rules go live.</p>
+        </article>
+        <article class="tile">
+          <h3 style="color: var(--accent);">2026</h3>
+          <p>Public waitlist opens. 2,400+ sign-ups in eight weeks. Premium pricing locked at $5/month — and we mean it.</p>
+        </article>
+      </div>
+    </div>
+  </section>
 
-        <div class="card">
-          <div class="feature-icon teal">💻</div>
-          <h3 class="card-title">Web app (Phase 3)</h3>
-          <p class="card-desc">
-            <strong>React 18</strong> · TypeScript · Vite · React Router · Tailwind · shadcn/ui · Radix UI ·
-            TanStack Query · TanStack Table · Recharts · Leaflet (maps) · Framer Motion · Lucide icons ·
-            React Hook Form · Zod · date-fns.
-          </p>
-        </div>
-
-        <div class="card">
-          <div class="feature-icon amber">⚙️</div>
-          <h3 class="card-title">Backend &amp; data</h3>
-          <p class="card-desc">
-            <strong>Supabase</strong> — Postgres 15, Row-Level Security, Auth (email/OTP + OAuth), Realtime,
-            Storage, Edge Functions (Deno) · Database migrations · pgvector for AI memory ·
-            Redis (Upstash) for rate limiting &amp; caching · Cron via Supabase scheduled functions.
-          </p>
-        </div>
-
-        <div class="card">
-          <div class="feature-icon blue">🤖</div>
-          <h3 class="card-title">AI &amp; OCR</h3>
-          <p class="card-desc">
-            <strong>Anthropic Claude</strong> (primary) · <strong>Google Gemini</strong> · <strong>OpenAI GPT-4</strong>
-            (cascade fallback for categorization &amp; insights) · <strong>Google Vision API</strong> for receipt OCR ·
-            <strong>HuggingFace Inference</strong> (Donut / LayoutLM) as OCR fallback · Vercel AI SDK ·
-            Anomaly detection via custom statistical models.
-          </p>
-        </div>
-
-        <div class="card">
-          <div class="feature-icon purple">🔌</div>
-          <h3 class="card-title">Integrations</h3>
-          <p class="card-desc">
-            <strong>Plaid</strong> — Link, Transactions, Auth, Identity, Webhooks · <strong>Stripe</strong> for billing &amp;
-            subscriptions · <strong>RevenueCat</strong> for mobile in-app purchases · <strong>Resend</strong> for
-            transactional email · <strong>Twilio</strong> for SMS / MFA · <strong>Mapbox + Leaflet</strong> for geofencing.
-          </p>
-        </div>
-
-        <div class="card">
-          <div class="feature-icon teal">🛡️</div>
-          <h3 class="card-title">Security &amp; privacy</h3>
-          <p class="card-desc">
-            End-to-end encryption (libsodium) · TOTP MFA with backup codes · WebAuthn / passkeys ·
-            <strong>Cloudflare WAF</strong> + rate limiting · CSP, HSTS, SRI · Audit logs · Row-level security ·
-            <strong>1Password Secrets Automation</strong> · GitHub secret scanning · Snyk &amp; Dependabot.
-          </p>
-        </div>
-
-        <div class="card">
-          <div class="feature-icon amber">☁️</div>
-          <h3 class="card-title">Hosting &amp; infra</h3>
-          <p class="card-desc">
-            <strong>Vercel</strong> (web + extension preview builds) · <strong>Supabase Cloud</strong> US-East with
-            cross-region replication · <strong>Cloudflare</strong> DNS, WAF, R2 (object storage) ·
-            <strong>Apple App Store</strong> &amp; <strong>Google Play</strong> for mobile distribution ·
-            <strong>Chrome Web Store</strong> &amp; <strong>Edge Add-ons</strong> for extension.
-          </p>
-        </div>
-
-        <div class="card">
-          <div class="feature-icon blue">🧪</div>
-          <h3 class="card-title">Testing &amp; quality</h3>
-          <p class="card-desc">
-            <strong>Vitest</strong> · <strong>Playwright</strong> (E2E) · <strong>React Testing Library</strong> ·
-            <strong>Detox</strong> (mobile E2E) · MSW (API mocking) · Storybook · ESLint · Prettier ·
-            TypeScript strict · Husky pre-commit hooks · Lighthouse CI.
-          </p>
-        </div>
-
-        <div class="card">
-          <div class="feature-icon purple">📊</div>
-          <h3 class="card-title">Observability</h3>
-          <p class="card-desc">
-            <strong>Sentry</strong> (errors + performance, web &amp; mobile) · <strong>PostHog</strong> (product analytics,
-            self-hosted) · <strong>Logflare</strong> for Supabase logs · <strong>Better Stack</strong> uptime &amp; status page ·
-            <strong>Grafana</strong> dashboards for SLOs.
-          </p>
-        </div>
-
-        <div class="card">
-          <div class="feature-icon teal">🔧</div>
-          <h3 class="card-title">DevEx &amp; tooling</h3>
-          <p class="card-desc">
-            <strong>pnpm</strong> monorepo · <strong>Turborepo</strong> · <strong>GitHub Actions</strong> CI/CD ·
-            <strong>Fastlane</strong> for mobile release automation · EAS Build (fallback) ·
-            <strong>Claude Code</strong> &amp; <strong>Cursor</strong> as primary AI pair-programmers ·
-            Figma for design · Linear for project management.
-          </p>
-        </div>
-
-        <div class="card">
-          <div class="feature-icon amber">📦</div>
-          <h3 class="card-title">Shared libraries</h3>
-          <p class="card-desc">
-            <strong>Zod</strong> schemas shared across mobile / extension / web · <strong>tRPC</strong>-style typed
-            Edge Function clients · shared design tokens · shared Plaid &amp; AI client packages ·
-            shared analytics event taxonomy.
-          </p>
+  <!-- LIFESTYLE IMAGE / STORY -->
+  <section class="section">
+    <div class="container split">
+      <div>
+        <span class="kicker">Built in public</span>
+        <h2 style="font-size: clamp(32px, 4vw, 52px); line-height: 1.05; margin-top: 12px;">
+          We publish our roadmap. <span class="text-accent">And our misses.</span>
+        </h2>
+        <p style="margin-top: 24px; font-size: 18px;">
+          Every quarter, we publish the median recovered rewards across our user base. We publish
+          the features that didn't work and the ones we removed. The point of TrueSpend is to
+          earn your trust — once, and then over and over again.
+        </p>
+        <a href="#" class="btn btn--primary">Read the latest update</a>
+      </div>
+      <div class="image-card">
+        <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1200&h=900&fit=crop&auto=format&q=80" alt="A couple looking at a phone together at a kitchen table" />
+        <div class="image-card__tag">
+          Median user recovers<br />
+          <strong>$564 / year</strong>
         </div>
       </div>
     </div>
-  </main>
-  <div id="footer-host"></div>
-  <script src="js/app.js"></script>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-band">
+    <div class="container">
+      <span class="kicker">Join the waitlist</span>
+      <h2>Spend the same. Earn more.</h2>
+      <p>Free during early access. Setup takes 90 seconds and you can disconnect any card any time.</p>
+      <div class="hero__actions" style="justify-content: center; margin-top: 24px;">
+        <a href="index.html#waitlist" class="btn btn--primary btn--lg">Get an invite</a>
+        <a href="features.html" class="btn btn--secondary btn--lg">See every feature</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="site-footer__grid">
+      <div>
+        <div class="site-footer__brand">
+          <img src="assets/web-logo/truespend-mark.png" alt="" />
+          <span>TrueSpend</span>
+        </div>
+        <p class="site-footer__tagline">Maximise every swipe. The quiet assistant that picks the right credit card, every time.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="features.html">Features</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="index.html#how-it-works">How it works</a></li>
+          <li><a href="index.html#waitlist">Join waitlist</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Press kit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="#">Help centre</a></li>
+          <li><a href="#">Security</a></li>
+          <li><a href="#">API</a></li>
+          <li><a href="#">Status</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">Disclosures</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer__bottom">
+      <span>© 2026 TrueSpend, Inc. All rights reserved.</span>
+      <span>TrueSpend is not a credit card issuer, bank, or financial advisor.</span>
+    </div>
+  </div>
+</footer>
+
 </body>
 </html>
