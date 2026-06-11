@@ -1,7 +1,8 @@
 import { PropsWithChildren } from "react";
 import { ScrollView, StyleSheet, View, ViewStyle } from "react-native";
-import { SafeAreaView, Edge } from "react-native-safe-area-context";
+import { Edge, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemedStyles } from "@/providers/ThemeProvider";
+import { useChromeActive } from "@/shared/navigation/chromeInset";
 import { spacing } from "@/shared/theme/spacing";
 
 type ScreenProps = PropsWithChildren<{
@@ -20,6 +21,10 @@ export function Screen({
   edges,
   contentStyle
 }: ScreenProps) {
+  const insets = useSafeAreaInsets();
+  // When the shared chrome is mounted it already consumed the top safe area, so
+  // re-applying it here would leave an empty band beneath the chrome.
+  const chromeActive = useChromeActive();
   const styles = useThemedStyles((t) =>
     StyleSheet.create({
       safeArea: { flex: 1 },
@@ -36,6 +41,16 @@ export function Screen({
         ? styles.surface
         : styles.default;
 
+  // Manual safe-area padding (was <SafeAreaView>). We read insets via the hook
+  // so the chrome override actually takes effect — see chromeInset.ts.
+  const want = (e: Edge) => !edges || edges.includes(e);
+  const safePad: ViewStyle = {
+    paddingTop: chromeActive ? 0 : want("top") ? insets.top : 0,
+    paddingBottom: want("bottom") ? insets.bottom : 0,
+    paddingLeft: want("left") ? insets.left : 0,
+    paddingRight: want("right") ? insets.right : 0
+  };
+
   // Bottom padding clears the floating liquid-glass tab bar (60px pill + lift).
   const inner: ViewStyle = {
     flex: scroll ? undefined : 1,
@@ -47,7 +62,7 @@ export function Screen({
 
   if (scroll) {
     return (
-      <SafeAreaView style={[styles.safeArea, bgStyle]} edges={edges}>
+      <View style={[styles.safeArea, bgStyle, safePad]}>
         <ScrollView
           contentContainerStyle={[inner, contentStyle]}
           showsVerticalScrollIndicator={false}
@@ -55,13 +70,13 @@ export function Screen({
         >
           {children}
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, bgStyle]} edges={edges}>
+    <View style={[styles.safeArea, bgStyle, safePad]}>
       <View style={[inner, contentStyle]}>{children}</View>
-    </SafeAreaView>
+    </View>
   );
 }

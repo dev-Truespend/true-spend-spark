@@ -1,4 +1,5 @@
 import { PropsWithChildren, useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
@@ -48,6 +49,7 @@ function ThemePreferenceBinder() {
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
       <QueryProvider>
         <ThemeProvider>
@@ -63,5 +65,6 @@ export function AppProviders({ children }: PropsWithChildren) {
         </ThemeProvider>
       </QueryProvider>
     </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -10,6 +10,7 @@ import {
   TextInput,
   View
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
@@ -48,6 +49,10 @@ export function Dropdown<T extends string | number>({
   const [query, setQuery] = useState("");
   const selected = options.find((o) => o.value === value);
   const t = useTheme();
+  // Captured here (normal tree) because react-native-safe-area-context does not
+  // propagate the SafeAreaProvider into a fullScreen RN Modal on iOS — reading
+  // it inside the modal yields 0, so we apply these insets manually below.
+  const insets = useSafeAreaInsets();
   const styles = useThemedStyles((t) =>
     StyleSheet.create({
       flex: { flex: 1 },
@@ -75,27 +80,14 @@ export function Dropdown<T extends string | number>({
       value: { flex: 1, color: t.colors.text, fontFamily: fontFamily.regular, fontSize: scaleFont(15) },
       placeholder: { color: t.colors.mutedFg },
 
-      overlay: {
+      screen: {
         flex: 1,
-        backgroundColor: t.colors.overlay,
-        justifyContent: "flex-end"
+        backgroundColor: t.colors.background
       },
-      sheet: {
-        backgroundColor: t.colors.surface,
-        borderTopLeftRadius: t.radii.hero,
-        borderTopRightRadius: t.radii.hero,
-        paddingTop: 8,
+      body: {
+        flex: 1,
         paddingHorizontal: t.spacing.md,
-        paddingBottom: t.spacing.lg,
-        maxHeight: "85%"
-      },
-      handle: {
-        alignSelf: "center",
-        width: 40,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: t.colors.borderStrong,
-        marginBottom: 12
+        paddingTop: 8
       },
       sheetHeader: {
         flexDirection: "row",
@@ -138,7 +130,7 @@ export function Dropdown<T extends string | number>({
         fontSize: scaleFont(15),
         padding: 0
       },
-      list: { flexGrow: 0 },
+      list: { flex: 1 },
       listContent: { paddingBottom: t.spacing.sm },
       empty: {
         textAlign: "center",
@@ -199,14 +191,18 @@ export function Dropdown<T extends string | number>({
         <Ionicons name="chevron-down" size={18} color={t.colors.mutedFg} />
       </Pressable>
 
-      <Modal transparent visible={open} animationType="slide" onRequestClose={close}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={styles.flex}
-        >
-          <Pressable style={styles.overlay} onPress={close}>
-            <Pressable style={styles.sheet} onPress={() => undefined}>
-              <View style={styles.handle} />
+      <Modal
+        visible={open}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={close}
+      >
+        <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={styles.flex}
+          >
+            <View style={styles.body}>
               <View style={styles.sheetHeader}>
                 <View style={styles.sheetSpacer} />
                 <Text style={styles.sheetTitle} numberOfLines={1}>
@@ -280,9 +276,9 @@ export function Dropdown<T extends string | number>({
                   );
                 })}
               </ScrollView>
-            </Pressable>
-          </Pressable>
-        </KeyboardAvoidingView>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
     </View>
   );

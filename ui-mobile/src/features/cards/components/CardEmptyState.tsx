@@ -4,7 +4,6 @@ import { GradientHeroCard } from "@/shared/components/GradientHeroCard";
 import { ProLockBadge } from "@/shared/components/ProLockBadge";
 import { ProUpsell } from "@/shared/components/ProUpsell";
 import { SectionLabel } from "@/shared/components/SectionLabel";
-import { GlobeCard } from "@/features/cards/components/GlobeCard";
 import { useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
 
@@ -13,7 +12,6 @@ type Props = {
   onConnectPlaid: () => void;
   onBrowseCatalog: () => void;
   onUpgrade: () => void;
-  onOpenMap: () => void;
   plaidEnabled: boolean;
 };
 
@@ -22,7 +20,6 @@ export function CardEmptyState({
   onConnectPlaid,
   onBrowseCatalog,
   onUpgrade,
-  onOpenMap,
   plaidEnabled
 }: Props) {
   const styles = useThemedStyles((t) =>
@@ -50,8 +47,6 @@ export function CardEmptyState({
           <Button label="Browse card catalog" onPress={onBrowseCatalog} variant="outline" />
         )}
       </View>
-
-      <GlobeCard onPress={onOpenMap} />
 
       <ProUpsell
         title={plaidEnabled ? "Basic includes Plaid" : "Upgrade to connect a bank"}
