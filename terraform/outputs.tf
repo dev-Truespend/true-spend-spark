@@ -9,8 +9,8 @@ output "api_public_fqdn" {
 }
 
 output "key_vault_uri" {
-  description = "Key Vault URI for seeding secrets (deployment-guide §5)."
-  value       = azurerm_key_vault.kv.vault_uri
+  description = "Runtime Key Vault URI (the shared vault, reused for this single-env MVP)."
+  value       = data.azurerm_key_vault.kv.vault_uri
 }
 
 output "app_identity_principal_id" {

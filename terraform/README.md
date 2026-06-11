@@ -14,33 +14,54 @@ signatures). The custom domain + TLS cert are bound to the API Container App out
 | `providers.tf` | azurerm provider (pinned `~> 3.116`) + required versions |
 | `backend.tf` | remote state in Azure Storage (`rg-truespend-tfstate` / `sttruespendtfstate`) |
 | `variables.tf` | `env`, `location`, `tenant_id`, `subscription_id`, `image_tag` |
-| `main.tf` | RG, Log Analytics, ACR, identity + role assignments, Key Vault, public Container Apps env, API (public ingress) + worker Container Apps |
+| `main.tf` | RG, Log Analytics, ACR, identity + role assignments, **data** ref to the shared Key Vault, public Container Apps env, API (public ingress) + worker Container Apps |
 | `outputs.tf` | `acr_login_server`, `api_public_fqdn`, `key_vault_uri`, identity principal |
 | `envs/*.tfvars.example` | committed templates — copy to `<env>.tfvars` (gitignored) and fill real ids |
 
 ## Secrets are NOT in Terraform
 
-Per §5, Terraform creates the **empty** Key Vault + identity + RBAC only. Secret values are seeded out of band
-(`az keyvault secret set`). The Container Apps reference those KV entries by id, so they must exist **before**
-the apps are applied.
+Single-env MVP: Terraform does **not** create a per-env vault. It **references the existing shared vault**
+`kv-truespend-shared` (`data.azurerm_key_vault.kv`, in `rg-truespend-shared`) as the runtime vault and grants
+the app identity `Key Vault Secrets User` on it. Secret values are seeded out of band (`az keyvault secret set`)
+and the Container Apps reference them by id, so **all required secrets must exist in `kv-truespend-shared`
+before apply** — a missing one fails the app's create.
+
+### Required secrets (must exist in `kv-truespend-shared`)
+
+| KV secret name | Consumer |
+|---|---|
+| `ConnectionStrings--TrueSpendDb` | api + worker |
+| `Supabase--JwtKeys` (JWKS JSON — project uses asymmetric ECC signing keys) | api |
+| `SupabaseStorage--ServiceRoleKey` | api |
+| `Stripe--SecretKey` | api |
+| `Stripe--WebhookSecret` | api |
+| `Resend--ApiKey` | api |
+| `Plaid--ClientId` | api + worker |
+| `Plaid--Secret` | api + worker |
+| `AzureOpenAI--ApiKey` | worker |
+| `RewardsCc--ApiKey` | worker |
+
+(`--` maps to `__` when projected into the app's env vars. KV names can't contain `__`.)
 
 ## Apply order (per env)
+
+Because the vault already exists and is pre-seeded, this is a **single apply** (no partial/seed/full dance):
 
 ```bash
 terraform init -backend-config="key=truespend-<env>.tfstate"
 
-# 1. Infra first (vault, identity, env) so KV exists to seed into.
-terraform apply -var-file=envs/<env>.tfvars \
-  -target=azurerm_key_vault.kv \
-  -target=azurerm_container_app_environment.cae \
-  -target=azurerm_user_assigned_identity.app
+# 1. Seed any missing secrets from the table above into kv-truespend-shared.
+#    az keyvault secret set --vault-name kv-truespend-shared --name "Stripe--SecretKey" --value ...
 
-# 2. Seed every S-row secret (deployment-guide §5).
-#    az keyvault secret set --vault-name kv-truespend-<env> --name "Stripe--SecretKey" --value ...
-
-# 3. Full apply — Container Apps now resolve the seeded KV references.
+# 2. Apply. Needs: Secrets Officer (to have seeded) + User Access Administrator/Owner on the
+#    shared vault's RG (so TF can create the Key Vault Secrets User role assignment on it).
 terraform apply -var-file=envs/<env>.tfvars
 ```
+
+> Image chicken-and-egg: the Container Apps reference `…:latest`, which isn't in ACR yet. Apply normally still
+> creates them (first revision unhealthy until an image lands); **service-deploy** pushes the real image next.
+> If apply *errors* on the two container apps, apply ACR + identity + roles + env with `-target=…` first, push
+> images, then re-run the full apply.
 
 ## Bind the custom domain + cert (out of band)
 

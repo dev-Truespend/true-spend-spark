@@ -3,12 +3,13 @@
 # Container Apps with PUBLIC ingress directly — no App Gateway / WAF / VNet. The custom domain
 # (api.truespend.<env>) + TLS cert are bound to the API Container App out of band (README).
 #
-# IMPORTANT — secrets are NOT in Terraform. The Container Apps project Key Vault secrets by id;
-# those KV entries are seeded out of band (CLI, deployment-guide §5) and are NOT created here.
-# First apply infra (RG/KV/identity/env), seed the secrets, then apply again so the apps resolve them:
-#   terraform apply -target=azurerm_key_vault.kv -target=azurerm_container_app_environment.cae ...
-#   az keyvault secret set ...
-#   terraform apply
+# IMPORTANT — secrets are NOT in Terraform. The Container Apps project Key Vault secrets by id.
+# Single-env MVP: we reuse the EXISTING shared vault (kv-truespend-shared) as the runtime vault
+# instead of creating a per-env one (see data.azurerm_key_vault.kv below). All 10 app secrets must
+# already exist in that vault before apply (the apps fail to create if a referenced secret is
+# missing), so seed any missing ones first, then a single apply:
+#   az keyvault secret set --vault-name kv-truespend-shared --name "ConnectionStrings--TrueSpendDb" --value ...
+#   terraform apply -var-file=envs/prod.tfvars
 # ──────────────────────────────────────────────────────────────────────────────────────────
 
 resource "azurerm_resource_group" "rg" {
@@ -38,18 +39,15 @@ resource "azurerm_user_assigned_identity" "app" {
   location            = azurerm_resource_group.rg.location
 }
 
-resource "azurerm_key_vault" "kv" {
-  name                      = "kv-truespend-${var.env}"
-  resource_group_name       = azurerm_resource_group.rg.name
-  location                  = azurerm_resource_group.rg.location
-  tenant_id                 = var.tenant_id
-  sku_name                  = "standard"
-  enable_rbac_authorization = true
-  purge_protection_enabled  = true
+# Single-env MVP: reuse the existing shared vault as the runtime vault rather than creating a
+# per-env kv-truespend-<env>. It already exists (rg-truespend-shared) and holds the app secrets.
+data "azurerm_key_vault" "kv" {
+  name                = "kv-truespend-shared"
+  resource_group_name = "rg-truespend-shared"
 }
 
 resource "azurerm_role_assignment" "kv_read" {
-  scope                = azurerm_key_vault.kv.id
+  scope                = data.azurerm_key_vault.kv.id
   role_definition_name = "Key Vault Secrets User"
   principal_id         = azurerm_user_assigned_identity.app.principal_id
 }
@@ -73,7 +71,7 @@ resource "azurerm_container_app_environment" "cae" {
 locals {
   api_secrets = {
     "ConnectionStrings--TrueSpendDb"  = "ConnectionStrings__TrueSpendDb"
-    "Supabase--JwtSecret"             = "Supabase__JwtSecret"
+    "Supabase--JwtKeys"               = "Supabase__JwtKeys"
     "SupabaseStorage--ServiceRoleKey" = "SupabaseStorage__ServiceRoleKey"
     "Stripe--SecretKey"               = "Stripe__SecretKey"
     "Stripe--WebhookSecret"           = "Stripe__WebhookSecret"
@@ -97,6 +95,9 @@ resource "azurerm_container_app" "api" {
   container_app_environment_id = azurerm_container_app_environment.cae.id
   revision_mode                = "Single"
 
+  # Ensure the identity can read KV secrets before the app tries to resolve them.
+  depends_on = [azurerm_role_assignment.kv_read, azurerm_role_assignment.acr_pull]
+
   identity {
     type         = "UserAssigned"
     identity_ids = [azurerm_user_assigned_identity.app.id]
@@ -111,7 +112,7 @@ resource "azurerm_container_app" "api" {
     for_each = local.api_secrets
     content {
       name                = lower(replace(secret.key, "--", "-")) # ca secret name
-      key_vault_secret_id = "${azurerm_key_vault.kv.vault_uri}secrets/${secret.key}"
+      key_vault_secret_id = "${data.azurerm_key_vault.kv.vault_uri}secrets/${secret.key}"
       identity            = azurerm_user_assigned_identity.app.id
     }
   }
@@ -176,6 +177,9 @@ resource "azurerm_container_app" "worker" {
   container_app_environment_id = azurerm_container_app_environment.cae.id
   revision_mode                = "Single"
 
+  # Ensure the identity can read KV secrets before the app tries to resolve them.
+  depends_on = [azurerm_role_assignment.kv_read, azurerm_role_assignment.acr_pull]
+
   identity {
     type         = "UserAssigned"
     identity_ids = [azurerm_user_assigned_identity.app.id]
@@ -190,7 +194,7 @@ resource "azurerm_container_app" "worker" {
     for_each = local.worker_secrets
     content {
       name                = lower(replace(secret.key, "--", "-"))
-      key_vault_secret_id = "${azurerm_key_vault.kv.vault_uri}secrets/${secret.key}"
+      key_vault_secret_id = "${data.azurerm_key_vault.kv.vault_uri}secrets/${secret.key}"
       identity            = azurerm_user_assigned_identity.app.id
     }
   }
