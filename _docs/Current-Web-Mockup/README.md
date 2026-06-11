@@ -1,8 +1,9 @@
 # TrueSpend — UI Mockup
 
-A clickable, navigable static HTML/CSS/JS mockup of the TrueSpend app, using the same brand
-colors as `src/index.css` (brand-blue `218 91% 59%`, brand-purple `274 81% 56%`, brand-teal
-`194 75% 37%`, plus the gradient-brand 135° blue→purple).
+A clickable, navigable static HTML/CSS/JS mockup of the TrueSpend app, using the **Forest & Amber**
+identity from `public/assets/css/truespend-option1-website.css` (forest `#1B4332`, amber `#D4763A`,
+olive `#5A7A3B`, warm off-white `#FAFAF7`; Playfair Display headings, DM Sans body, Fraunces
+numbers). The TrueSpend logo lockup lives at `assets/web-logo/truespend-logo-primary.png`.
 
 ## How to use
 

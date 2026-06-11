@@ -29,11 +29,11 @@
   function logoMarkup() {
     return `
     <img
-      src="/assets/web-logo/truespend-logo-cropped.png"
+      src="/assets/web-logo/truespend-logo-primary.png"
       alt=""
       class="brand-logo"
       aria-hidden="true"
-      onerror="this.onerror=null;this.src='assets/web-logo/truespend-logo-cropped.png';"
+      onerror="this.onerror=null;this.src='assets/web-logo/truespend-logo-primary.png';"
     />
     <span class="sr-only">TrueSpend</span>
   `;
