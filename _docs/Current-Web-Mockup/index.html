@@ -3,291 +3,362 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TrueSpend — Every Purchase. Perfectly Rewarded.</title>
+  <title>TrueSpend — Maximise every swipe</title>
+  <meta name="description" content="TrueSpend picks the right credit card for every purchase, watches your rewards, and tells you what's worth your attention. Maximise every swipe." />
+  <link rel="icon" type="image/png" sizes="32x32" href="../../public/assets/images_and_logos/favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../../public/assets/images_and_logos/apple-touch-icon-180x180.png" />
+  <meta property="og:title" content="TrueSpend — Maximise every swipe" />
+  <meta property="og:description" content="Pick the right credit card for every purchase. Spot every missed reward. Stop leaving money on the table." />
+  <meta property="og:image" content="../../public/assets/images_and_logos/truespend-og-image-1200x630.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/forest-amber.css" />
 </head>
-<body class="landing-page landing-v2">
-  <div id="nav-host"></div>
+<body>
 
-  <main>
-    <section class="v2-hero">
-      <div class="container v2-hero-grid">
-        <div class="v2-hero-copy">
-          <h1>Every Purchase. <span>Perfectly Rewarded.</span></h1>
-          <p>
-            TrueSpend helps you choose the best credit card for every purchase, maximize rewards
-            automatically, and understand where your money goes with privacy-first AI insights.
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a href="index.html" class="brand" aria-label="TrueSpend home">
+      <img src="assets/web-logo/truespend-mark.png" alt="" />
+      <span><span class="brand__true">True</span><span class="brand__spend">Spend</span></span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="features.html">Features</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="about.html">About</a>
+    </nav>
+    <div class="site-header__cta">
+      <a href="#" class="btn btn--ghost">Log in</a>
+      <a href="#waitlist" class="btn btn--primary">Get started</a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container hero__grid">
+      <div>
+        <span class="eyebrow">Maximise every swipe</span>
+        <h1 class="hero__title">Spend smarter. <span>Live freer.</span></h1>
+        <div class="hero__divider"></div>
+        <p class="hero__copy">
+          TrueSpend watches every transaction across your credit cards and tells you the
+          single best card to swipe — at the right store, at the right time, on the right
+          category. Quietly. Privately. Profitably.
+        </p>
+        <div class="hero__actions">
+          <a href="#waitlist" class="btn btn--primary btn--lg">Get started — free</a>
+          <a href="#how-it-works" class="btn btn--secondary btn--lg">See how it works</a>
+        </div>
+        <div class="social-proof">
+          <div class="avatar-stack" aria-hidden="true">
+            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop&crop=faces&auto=format&q=80" alt="" />
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&crop=faces&auto=format&q=80" alt="" />
+            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&h=120&fit=crop&crop=faces&auto=format&q=80" alt="" />
+            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop&crop=faces&auto=format&q=80" alt="" />
+          </div>
+          <p class="social-proof__text">
+            <strong>2,400+</strong> people on the waitlist
+            <span class="social-proof__rating">★ 4.9 / 5</span>
           </p>
-          <form class="waitlist-form v2-form" id="waitlist" action="https://formspree.io/f/meedvnak" method="POST">
-            <input type="email" name="email" placeholder="Enter your email" aria-label="Email address" required />
-            <button class="btn btn-primary" type="submit">Join the Waitlist</button>
-          </form>
-          <div class="hero-trust-row v2-trust-row">
-            <span><i>AI</i> AI Rewards Optimizer</span>
-            <span><i>✓</i> Privacy First</span>
-            <span><i>NA</i> Built for North America</span>
-          </div>
-        </div>
-
-        <div class="v2-rec-panel">
-          <div class="v2-panel-head">
-            <div>
-              <h2>Best Card to Use</h2>
-              <span>Walmart</span>
-            </div>
-            <div>
-              <small>AI Recommendation</small>
-              <strong>$142.35</strong>
-            </div>
-          </div>
-          <div class="v2-rec-card">
-            <span class="v2-label">Use this card</span>
-            <div class="v2-rec-row">
-              <div class="v2-credit-card blue-card"><strong>Chase</strong><em>VISA</em></div>
-              <div>
-                <h3>Amex Cobalt</h3>
-                <p>5X Points</p>
-                <small>Better than your current card</small>
-              </div>
-              <strong class="reward-green">+$11.40</strong>
-            </div>
-          </div>
-          <div class="v2-rec-card muted-card">
-            <span class="v2-label">Your current card</span>
-            <div class="v2-rec-row">
-              <div class="v2-credit-card black-card"><strong>TD</strong><em>MC</em></div>
-              <div>
-                <h3>TD Cashback Visa</h3>
-                <p>1% Cashback</p>
-              </div>
-              <strong class="reward-green">+$1.42</strong>
-            </div>
-          </div>
-          <div class="v2-why">
-            <strong>Why this card?</strong>
-            <p>Amex Cobalt earns 5x points on eligible grocery purchases. That's an extra $10.00 in rewards.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="v2-split-row">
-      <div class="v2-problem-pane">
-        <span class="eyebrow">The problem</span>
-        <h2>Most people are using the <span>wrong card.</span></h2>
-        <p>You could be missing hundreds of dollars in cashback and rewards every year.</p>
-        <ul>
-          <li>Different categories</li>
-          <li>Merchant restrictions</li>
-          <li>Rotating offers</li>
-          <li>Travel perks</li>
-          <li>Foreign transaction fees</li>
-        </ul>
-        <h3>TrueSpend simplifies all of it using AI.</h3>
-        <p>We analyze your spending and tell you which card to use, where you're losing rewards, and how to maximize cashback and points.</p>
-        <div class="card-orbit" aria-hidden="true">
-          <span class="orbit-glow"></span>
-          <span class="orbit-ring"></span>
-          <div class="orbit-card light">
-            <span class="oc-chip"></span>
-            <span class="oc-dot"></span>
-          </div>
-          <div class="orbit-card dark">
-            <span class="oc-chip"></span>
-            <span class="oc-dot"></span>
-          </div>
-          <div class="orbit-card purple">
-            <span class="oc-chip"></span>
-            <span class="oc-dot"></span>
-          </div>
         </div>
       </div>
 
-      <div class="v2-steps-pane" id="how-it-works">
-        <span class="eyebrow">How it works</span>
-        <h2>Smarter rewards in 3 simple steps</h2>
-        <div class="v2-step-grid">
-          <article>
-            <b>1</b>
-            <i>▣</i>
-            <h3>Add Your Cards</h3>
-            <p>Tell TrueSpend which credit cards you already use.</p>
-          </article>
-          <article>
-            <b>2</b>
-            <i>▥</i>
-            <h3>Connect Spending</h3>
-            <p>Securely connect your accounts or upload receipts.</p>
-          </article>
-          <article>
-            <b>3</b>
-            <i>↗</i>
-            <h3>Get Smart Recommendations</h3>
-            <p>See the best card for every purchase and discover missed rewards.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="v2-demo-section">
-      <div class="v2-action-card">
-        <span class="eyebrow">See True AI in action</span>
-        <h2>Know the best card. Earn more rewards.</h2>
-        <div class="purchase-card">
-          <p>Example Purchase</p>
-          <div class="purchase-line"><span>Groceries at Walmart</span><strong>$142.35</strong></div>
-          <div class="purchase-line muted"><span>You used</span><strong>TD Cashback Visa</strong></div>
-          <div class="purchase-line good"><span>Potential extra rewards</span><strong>+$11.40 / month</strong></div>
-          <div class="purchase-line"><span>Recommended card</span><strong>Amex Cobalt</strong></div>
-        </div>
-      </div>
-
-      <div class="v2-dashboard">
-        <aside>
-          <strong class="dash-brand">TrueSpend</strong>
-          <span class="active">Overview</span>
-          <span>Transactions</span>
-          <span>Recommendations</span>
-          <span>Cards</span>
-          <span>Insights</span>
-          <span>Subscriptions</span>
-          <span>Settings</span>
-        </aside>
-        <div class="dash-main">
-          <div class="dash-top">
-            <div>
-              <h2>Welcome back, Mike!</h2>
-              <p>Here's your spending and rewards overview for this month.</p>
-            </div>
-            <small>This Month</small>
+      <aside class="dashboard-preview" aria-label="Dashboard preview">
+        <div class="dashboard-preview__top">
+          <div>
+            <p class="metric-label">Money left on the table</p>
+            <p class="metric-value">$487</p>
+            <p class="metric-change">↑ Recovered last 12 months</p>
           </div>
-          <div class="dash-metrics">
-            <article><span>Total Spend</span><strong>$2,430.50</strong><em>+6.2%</em></article>
-            <article><span>Estimated Rewards</span><strong>$128.40</strong><em>+12.5%</em></article>
-            <article><span>Missed Rewards</span><strong>$36.20</strong><em>-5.4%</em></article>
-            <article><span>Transactions</span><strong>78</strong><em>+10</em></article>
-          </div>
-          <div class="dash-panels">
-            <div class="donut-card">
-              <h3>Spending Breakdown</h3>
-              <div class="donut"></div>
-            </div>
-            <div class="insight-card">
-              <h3>Top Insight</h3>
-              <p>You could earn an extra <strong>$36.20 this month</strong> by using the right card.</p>
-              <button class="btn btn-primary btn-sm">See Recommendations</button>
-            </div>
-          </div>
-          <div class="mini-insights">
-            <span>Amex Cobalt gives more points</span>
-            <span>Recurring charge detected</span>
-            <span>Spotify renewed for $12</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="v2-features" id="features">
-      <h2>Everything you need to maximize rewards</h2>
-      <div class="v2-feature-grid">
-        <article><i>☆</i><h3>Best Card Recommendations</h3><p>Get the best card for every purchase.</p></article>
-        <article><i>▤</i><h3>Missed Rewards Reports</h3><p>Discover rewards you left on the table.</p></article>
-        <article><i>◔</i><h3>Spending Insights</h3><p>Understand your habits and cash flow.</p></article>
-        <article><i>▣</i><h3>Subscription Tracking</h3><p>Track, manage, and get reminded.</p></article>
-        <article><i>□</i><h3>Receipt Scanning</h3><p>Scan receipts and categorize automatically.</p></article>
-        <article><i>⚑</i><h3>AI Saving Suggestions</h3><p>Smart tips to save more every month.</p></article>
-        <article><i>◇</i><h3>Merchant-Level Analysis</h3><p>Get deeper insights by merchant.</p></article>
-        <article><i>◎</i><h3>North America Support</h3><p>Canada and U.S. cards supported.</p></article>
-      </div>
-    </section>
-
-    <section class="v2-privacy-cta" id="privacy">
-      <div class="v2-privacy-dark">
-        <h2>Your privacy. Our priority.</h2>
-        <p>TrueSpend is designed to help you understand your spending without compromising your trust.</p>
-        <ul>
-          <li>We never sell your data</li>
-          <li>Secure financial connections</li>
-          <li>You control connected accounts</li>
-          <li>Bank-level encryption</li>
-          <li>Transparent recommendations</li>
-        </ul>
-        <div class="shield-art" aria-hidden="true">
-          <span class="shield-lock">
-            <span class="lock-body"></span>
-          </span>
-        </div>
-        <div class="partner-row"><span>Yodlee</span><span>AWS</span><span>Stripe</span></div>
-      </div>
-
-      <div class="v2-purple-cta">
-        <h2>Stop leaving rewards on the table.</h2>
-        <p>Join the TrueSpend waitlist and be among the first to optimize your spending with AI.</p>
-        <form class="waitlist-form compact" action="https://formspree.io/f/meedvnak" method="POST">
-          <input type="email" name="email" placeholder="Enter your email address" aria-label="Email address" required />
-          <button class="btn btn-primary" type="submit">Join the Waitlist</button>
-        </form>
-        <div class="waitlist-proof">
-          <span class="proof-avatars"><i></i><i></i><i></i><i></i></span>
-          <small>Join 500+ people on the waitlist</small>
-        </div>
-      </div>
-    </section>
-
-    <section class="v2-bottom-grid">
-      <article class="optimizer-panel">
-        <span class="eyebrow">Rewards optimizer</span>
-        <h2>Know the best card before you pay.</h2>
-        <p>Search any merchant and TrueSpend will recommend the card that earns you the most rewards.</p>
-        <select><option>Where are you shopping?</option></select>
-        <div class="mini-result"><span>Rogers World Elite Mastercard</span><strong>2% Cashback</strong></div>
-        <div class="mini-result"><span>TD Cashback Visa</span><strong>1.5% Cashback</strong></div>
-        <div class="mini-result"><span>Amex Cobalt</span><strong>Not Accepted</strong></div>
-      </article>
-
-      <article class="database-panel">
-        <span class="eyebrow">Card database</span>
-        <h2>Compare cards. Find the best for you.</h2>
-        <p>Compare credit cards across categories, fees, and reward types.</p>
-        <table>
-          <tr><th>Card</th><th>Best For</th><th>Grocery</th><th>Travel</th><th>Fee</th></tr>
-          <tr><td>Amex Cobalt</td><td>Food Rewards</td><td>5x</td><td>2x</td><td>$156</td></tr>
-          <tr><td>Rogers World Elite</td><td>Everyday Cashback</td><td>1.5%</td><td>1.5%</td><td>$0</td></tr>
-          <tr><td>Scotiabank Passport</td><td>Travel</td><td>1x</td><td>2x</td><td>$150</td></tr>
-        </table>
-        <button class="btn btn-primary btn-sm">Find my best card</button>
-      </article>
-
-      <article class="signup-panel">
-        <span class="eyebrow">Waitlist</span>
-        <h2>Get early access to TrueSpend.</h2>
-        <p>Join the waitlist and be the first to experience smarter rewards and spending insights.</p>
-        <form class="stack-form waitlist-form" action="https://formspree.io/f/meedvnak" method="POST">
-          <input type="text" name="name" placeholder="Full Name" autocomplete="name" />
-          <input type="email" name="email" placeholder="Email Address" required />
-          <select name="country" required data-country-select>
-            <option value="">Country</option>
-            <option value="Canada">Canada</option>
-            <option value="United States">United States</option>
-            <option value="Other">Other</option>
+          <select class="select-pill" aria-label="Range">
+            <option>Last 12 months</option>
+            <option>This quarter</option>
           </select>
-          <input class="hidden" type="text" name="other_country" placeholder="Enter your country" data-country-other />
-          <select name="goal" required>
-            <option value="">What's your biggest goal?</option>
-            <option value="Earn more rewards">Earn more rewards</option>
-            <option value="Track spending">Track spending</option>
-            <option value="Compare cards">Compare cards</option>
-            <option value="Manage receipts">Manage receipts</option>
-            <option value="Find better credit cards">Find better credit cards</option>
-          </select>
-          <button class="btn btn-primary" type="submit">Join the Waitlist</button>
-        </form>
-      </article>
-    </section>
-  </main>
+        </div>
+        <div class="metric-grid">
+          <div class="metric-card">
+            <p class="metric-label">Earned</p>
+            <p class="metric-value" style="font-size:26px;">$760</p>
+          </div>
+          <div class="metric-card">
+            <p class="metric-label">Optimal</p>
+            <p class="metric-value" style="font-size:26px;">$1,247</p>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card__head">
+            <span class="chart-card__title">Rewards trend</span>
+            <span class="chart-card__legend">$ earned per month</span>
+          </div>
+          <div class="chart-placeholder">
+            <div class="chart-line"></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
 
-  <script src="js/app.js"></script>
+  <!-- PARTNERS / LOGO STRIP -->
+  <section class="container partners">
+    <p class="partners__label">Plays nice with the cards you already carry</p>
+    <div class="partners__row" aria-hidden="true">
+      <span>Amex</span><span>Chase</span><span>Citi</span><span>Capital One</span>
+      <span>Discover</span><span>Wells Fargo</span><span>Apple Pay</span>
+    </div>
+  </section>
+
+  <!-- PROBLEM / SOLUTION SPLIT -->
+  <section class="section">
+    <div class="container split">
+      <div>
+        <span class="kicker">The problem</span>
+        <h2 style="font-size: clamp(32px, 4vw, 52px); line-height: 1.05; margin-top: 12px;">
+          Most people are quietly losing <span class="text-accent">hundreds a year</span> in unclaimed rewards.
+        </h2>
+        <p style="margin-top: 24px; font-size: 18px;">
+          You have the right cards. Amex Gold for groceries. Chase Sapphire for dining. A 2% Citi
+          for everything else. But standing at the Whole Foods register, you tap the wrong card —
+          because remembering five reward grids is a job nobody asked for.
+        </p>
+        <p style="font-size: 18px;">
+          TrueSpend is the quiet assistant that does that job for you. One nudge, the right card,
+          every time.
+        </p>
+      </div>
+      <div class="image-card">
+        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=900&fit=crop&auto=format&q=80" alt="Person tapping a credit card at a contactless reader" />
+        <div class="image-card__tag">
+          The average user leaves<br />
+          <strong>$487 / year</strong> in rewards unclaimed
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4-UP FEATURES -->
+  <section class="section section--alt" id="how-it-works">
+    <div class="container">
+      <div class="section__head">
+        <span class="kicker">How it works</span>
+        <h2>Four jobs, one quiet assistant.</h2>
+        <p>Built on 24 months of your real transactions, the full reward grid of every card you own, and your live location. None of it leaves your phone.</p>
+      </div>
+      <div class="feature-row">
+        <article class="feature-card">
+          <div class="feature-card__icon">📍</div>
+          <h3>Track everything</h3>
+          <p>Every swipe across every card, categorised automatically — including in-store taps and recurring charges.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-card__icon feature-card__icon--amber">💳</div>
+          <h3>Pick the right card</h3>
+          <p>The instant you walk into a store, TrueSpend tells you the single best card to use — and how much you'll earn.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-card__icon feature-card__icon--olive">🎯</div>
+          <h3>Catch every reward</h3>
+          <p>Welcome-bonus pace. Quarterly category activation. Credit expiry. Annual-fee ROI. Never miss a deadline.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-card__icon">📈</div>
+          <h3>Build better habits</h3>
+          <p>A monthly scorecard, a yearly Wrapped, and a single number — money left on the table — that gets smaller every month.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE NOTIFICATION EXAMPLE -->
+  <section class="section">
+    <div class="container split">
+      <div class="image-card">
+        <img src="https://images.unsplash.com/photo-1601933470928-c4002a3d8d2f?w=1200&h=900&fit=crop&auto=format&q=80" alt="Person walking into a grocery store while looking at their phone" />
+        <div class="image-card__tag">
+          Best card at Whole Foods<br />
+          <strong>Amex Gold · 4×</strong>
+        </div>
+      </div>
+      <div>
+        <span class="kicker">Geo-aware</span>
+        <h2 style="font-size: clamp(32px, 4vw, 52px); line-height: 1.05; margin-top: 12px;">
+          One nudge as you walk in. <span class="text-accent">$3.40 saved.</span>
+        </h2>
+        <p style="margin-top: 24px; font-size: 18px;">
+          The moment you enter the geofence of a merchant where you regularly spend, TrueSpend
+          checks the reward grid of every card in your wallet, factors in active offers and
+          category caps, and surfaces one answer — the card that earns you the most on your
+          typical basket size at that store.
+        </p>
+        <p style="font-size: 18px;">
+          No menus. No grids. No "let me check my notes." Just the right card, before you reach
+          the register.
+        </p>
+        <a href="features.html" class="btn btn--primary">Explore every notification</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOCIAL PROOF / STATS BAND -->
+  <section class="container">
+    <div class="stats-band">
+      <div class="stats-band__grid">
+        <p class="quote">
+          <span class="quote__mark">"</span>I added TrueSpend in March. By June, my Amex Gold was paying for itself in
+          rewards alone. The geofence nudge at Whole Foods has saved me more than the annual fee.
+        </p>
+        <div class="stat">
+          <div class="stat__value">$564</div>
+          <div class="stat__label">Avg. yearly rewards recovered</div>
+        </div>
+        <div class="stat">
+          <div class="stat__value">79%</div>
+          <div class="stat__label">Of swipes on the optimal card</div>
+        </div>
+        <div class="stat">
+          <div class="stat__value">98%</div>
+          <div class="stat__label">Would recommend to a friend</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APP SCREENS ROW -->
+  <section class="section">
+    <div class="container">
+      <div class="section__head">
+        <span class="kicker">Inside the app</span>
+        <h2>Built for the three seconds at the register.</h2>
+        <p>Every screen answers a single question — and nothing else.</p>
+      </div>
+      <div class="screens-row">
+        <div class="phone-mock">
+          <div class="phone-mock__notch"></div>
+          <span class="phone-mock__pill">Home</span>
+          <h3 class="phone-mock__title" style="margin-top: 14px;">What card at…</h3>
+          <p class="phone-mock__sub">Whole Foods Market</p>
+          <p style="background: var(--surface-soft); padding: 12px; border-radius: 12px; font-size: 13px; color: var(--primary); font-weight: 600; margin: 8px 0 0;">
+            Use <strong style="color: var(--accent);">Amex Gold (4×)</strong>
+          </p>
+          <div class="phone-mock__metric">
+            $3.40
+            <small>vs. your default card</small>
+          </div>
+        </div>
+        <div class="phone-mock">
+          <div class="phone-mock__notch"></div>
+          <span class="phone-mock__pill">Action</span>
+          <h3 class="phone-mock__title" style="margin-top: 14px;">Credit expires tomorrow</h3>
+          <p class="phone-mock__sub">$15 Uber credit unused this month</p>
+          <p style="background: var(--surface-soft); padding: 12px; border-radius: 12px; font-size: 13px; color: var(--primary); font-weight: 600; margin: 8px 0 0;">
+            Order UberEats now →
+          </p>
+          <div class="phone-mock__metric">
+            $15.00
+            <small>About to be lost</small>
+          </div>
+        </div>
+        <div class="phone-mock">
+          <div class="phone-mock__notch"></div>
+          <span class="phone-mock__pill">This month</span>
+          <h3 class="phone-mock__title" style="margin-top: 14px;">Monthly scorecard</h3>
+          <p class="phone-mock__sub">Earned $47 · Missed $12 · Grade B+</p>
+          <p style="background: var(--surface-soft); padding: 12px; border-radius: 12px; font-size: 13px; color: var(--success); font-weight: 600; margin: 8px 0 0;">
+            ↑ 8% vs last month
+          </p>
+          <div class="phone-mock__metric">
+            $47.00
+            <small>Rewards this month</small>
+          </div>
+        </div>
+        <div class="phone-mock">
+          <div class="phone-mock__notch"></div>
+          <span class="phone-mock__pill">Lifetime</span>
+          <h3 class="phone-mock__title" style="margin-top: 14px;">Saved since joining</h3>
+          <p class="phone-mock__sub">Across 6 cards · 14 months</p>
+          <p style="background: var(--surface-soft); padding: 12px; border-radius: 12px; font-size: 13px; color: var(--primary); font-weight: 600; margin: 8px 0 0;">
+            Top recovery: Costco
+          </p>
+          <div class="phone-mock__metric">
+            $1,247
+            <small>Total rewards earned</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BAND -->
+  <section class="cta-band">
+    <div class="container">
+      <span class="kicker">Join the waitlist</span>
+      <h2>The next swipe should pay you the most.</h2>
+      <p>Get an invite, set up your cards in 90 seconds, and watch the "money left on the table" number get smaller every month.</p>
+      <form id="waitlist" action="https://formspree.io/f/meedvnak" method="POST" style="max-width: 480px; margin: 0 auto; display: flex; gap: 12px;">
+        <input type="email" name="email" placeholder="your@email.com" required style="flex: 1; padding: 0 20px; height: 56px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 16px; background: var(--surface);" />
+        <button type="submit" class="btn btn--primary btn--lg">Get invite</button>
+      </form>
+      <p style="margin-top: 16px; font-size: 13px; color: var(--text-muted);">Free during early access. No card required.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="site-footer__grid">
+      <div>
+        <div class="site-footer__brand">
+          <img src="assets/web-logo/truespend-mark.png" alt="" />
+          <span>TrueSpend</span>
+        </div>
+        <p class="site-footer__tagline">Maximise every swipe. The quiet assistant that picks the right credit card, every time.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="features.html">Features</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="#how-it-works">How it works</a></li>
+          <li><a href="#waitlist">Join waitlist</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Press kit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="#">Help centre</a></li>
+          <li><a href="#">Security</a></li>
+          <li><a href="#">API</a></li>
+          <li><a href="#">Status</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">Disclosures</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer__bottom">
+      <span>© 2026 TrueSpend, Inc. All rights reserved.</span>
+      <span>TrueSpend is not a credit card issuer, bank, or financial advisor.</span>
+    </div>
+  </div>
+</footer>
+
 </body>
 </html>

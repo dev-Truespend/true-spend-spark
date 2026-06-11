@@ -4,64 +4,222 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pricing — TrueSpend</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <meta name="description" content="Free during early access. Premium unlocks every feature for less than a single Costco run. Pricing for TrueSpend." />
+  <link rel="icon" type="image/png" sizes="32x32" href="../../public/assets/images_and_logos/favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../../public/assets/images_and_logos/apple-touch-icon-180x180.png" />
+  <meta property="og:title" content="Pricing — TrueSpend" />
+  <meta property="og:description" content="Free during early access. Premium unlocks every feature." />
+  <meta property="og:image" content="../../public/assets/images_and_logos/truespend-og-image-1200x630.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/forest-amber.css" />
 </head>
 <body>
-  <div id="nav-host"></div>
 
-  <main class="page">
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a href="index.html" class="brand" aria-label="TrueSpend home">
+      <img src="assets/web-logo/truespend-mark.png" alt="" />
+      <span><span class="brand__true">True</span><span class="brand__spend">Spend</span></span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="features.html">Features</a>
+      <a href="index.html#how-it-works">How it works</a>
+      <a href="pricing.html" class="is-active">Pricing</a>
+      <a href="about.html">About</a>
+    </nav>
+    <div class="site-header__cta">
+      <a href="#" class="btn btn--ghost">Log in</a>
+      <a href="index.html#waitlist" class="btn btn--primary">Get started</a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section class="page-hero">
     <div class="container">
-      <div class="text-center">
-        <span class="badge badge-blue">Planned pricing</span>
-        <h1 class="h1 mt-2">Choose your <span class="gradient-text">plan</span></h1>
-        <p class="lead mt-2">Two simple tiers. Pro and Platinum unlock the full AI &amp; bank-sync experience.</p>
-        <p class="muted mt-2" style="font-size: .85rem;">Billing goes live with the Phase&nbsp;1 mobile launch.</p>
+      <span class="eyebrow">Pricing</span>
+      <h1>Free during early access. <br /><span class="text-accent">Pays for itself by month two.</span></h1>
+      <p>
+        TrueSpend is free for everyone on the waitlist. When we open Premium, the bar is simple:
+        if a single month of nudges doesn't earn you back the subscription, the next month is on us.
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--xtight">
+    <div class="container">
+      <div class="pricing-grid">
+
+        <article class="price-card">
+          <h3>Free</h3>
+          <p class="text-secondary">Everything you need to start saving on day one.</p>
+          <div class="price">$0 <small>/ forever</small></div>
+          <ul class="price-card__features">
+            <li>Connect up to <strong>2 credit cards</strong></li>
+            <li>The home-screen "what card at ___?" lookup</li>
+            <li>5 location-based nudges per week</li>
+            <li>Monthly scorecard with grade &amp; trend</li>
+            <li>Money-left-on-the-table tracker (60-day history)</li>
+            <li>Quarterly bonus reminders</li>
+            <li>Privacy-first — your data never leaves your phone</li>
+          </ul>
+          <a href="index.html#waitlist" class="btn btn--forest btn--full btn--lg">Join the waitlist</a>
+        </article>
+
+        <article class="price-card price-card--featured">
+          <span class="price-card__badge">Most popular</span>
+          <h3>Premium</h3>
+          <p>For people with three or more cards and the appetite to optimise every category.</p>
+          <div class="price">$5 <small>/ month</small></div>
+          <ul class="price-card__features">
+            <li>Connect <strong>unlimited credit cards</strong></li>
+            <li>All ten location- and event-based notifications</li>
+            <li>All twelve analytics dashboards</li>
+            <li>24-month money-left-on-the-table history</li>
+            <li>Predictive cap &amp; subscription alerts</li>
+            <li>Welcome-bonus pace tracking + Apple Wallet default optimiser</li>
+            <li>Card-recommendation engine — the 3 cards you don't own that would earn you the most</li>
+            <li>Year-end Wrapped &amp; shareable monthly rewards card</li>
+            <li>Priority access to new features</li>
+          </ul>
+          <a href="index.html#waitlist" class="btn btn--primary btn--full btn--lg">Start 30-day free trial</a>
+        </article>
+
       </div>
 
-      <div class="pricing-grid pricing-grid-2">
-        <div class="pricing-card featured">
-          <span class="badge badge-purple">Pro</span>
-          <div class="price">$9.99<span>/mo</span></div>
-          <p class="muted" style="font-size: .875rem;">For people serious about their money.</p>
-          <ul class="feature-list">
-            <li>Unlimited transactions</li>
-            <li>Unlimited receipt scanning</li>
-            <li>Unlimited budgets</li>
-            <li>Unlimited cards via Plaid</li>
-            <li>AI insights (Claude / Gemini / GPT-4)</li>
-            <li>Geofenced budgets &amp; deal alerts</li>
-            <li>Anomaly detection</li>
-            <li>Weekly summary emails</li>
-          </ul>
-          <button class="btn btn-primary" style="width: 100%;" disabled>Coming with Phase 1</button>
-        </div>
+      <p style="text-align: center; margin-top: 32px; color: var(--text-secondary); font-size: 14px;">
+        Cancel anytime. If TrueSpend doesn't earn back your subscription in the first month, the next month is on us.
+      </p>
+    </div>
+  </section>
 
-        <div class="pricing-card">
-          <span class="badge badge-teal">Platinum</span>
-          <div class="price">$18.99<span>/mo</span></div>
-          <p class="muted" style="font-size: .875rem;">For power users &amp; small households.</p>
-          <ul class="feature-list">
-            <li>Everything in Pro</li>
-            <li>Up to 5 household members</li>
-            <li>Shared budgets &amp; combined reports</li>
-            <li>Per-member spending caps</li>
-            <li>Advanced AI forecasting</li>
-            <li>Priority Plaid sync</li>
-            <li>Early access to new features</li>
-            <li>Priority support</li>
-          </ul>
-          <button class="btn btn-outline" style="width: 100%;" disabled>Coming with Phase 1</button>
-        </div>
+  <!-- FAQ -->
+  <section class="section">
+    <div class="container">
+      <div class="section__head">
+        <span class="kicker">Frequently asked</span>
+        <h2>The questions before the questions.</h2>
       </div>
-
-      <div class="text-center mt-6 muted" style="font-size: .85rem;">
-        All plans include strong data protection, full data export, and the ability to delete your data.
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 28px; max-width: 1000px; margin: 0 auto;">
+        <article class="tile">
+          <h3>Is TrueSpend a bank or a credit card?</h3>
+          <p>Neither. We don't issue cards, we don't hold money. TrueSpend is the assistant that helps you use the cards you already have, better.</p>
+        </article>
+        <article class="tile">
+          <h3>How do you make money on the Free tier?</h3>
+          <p>We don't, on the Free tier. Premium subscriptions fund the company. We will never sell your data — see our privacy commitment.</p>
+        </article>
+        <article class="tile">
+          <h3>Will TrueSpend hurt my credit score?</h3>
+          <p>No. We read transactions through a secure Plaid connection — there is no credit pull and no impact on your score.</p>
+        </article>
+        <article class="tile">
+          <h3>What data do you actually see?</h3>
+          <p>Credit card transactions for the cards you connect (24 months of history), the cards' reward grids from our internal database, and your GPS while the app is open. No income, no checking balance, no bank ties.</p>
+        </article>
+        <article class="tile">
+          <h3>Can I cancel anytime?</h3>
+          <p>Yes. Premium is month-to-month with no annual contract. Cancel from settings, no email required.</p>
+        </article>
+        <article class="tile">
+          <h3>Why is the tagline "Maximise every swipe"?</h3>
+          <p>Because every contactless tap is a swipe — and every swipe is a chance to be on the right card. We say it both ways: the British spelling because our founders learned to count pennies before dollars.</p>
+        </article>
       </div>
     </div>
-  </main>
+  </section>
 
-  <div id="footer-host"></div>
-  <script src="js/app.js"></script>
+  <!-- TRUST BAND -->
+  <section class="container">
+    <div class="stats-band">
+      <div class="stats-band__grid">
+        <p class="quote">
+          <span class="quote__mark">"</span>The Free tier alone covered my next month's mortgage payment in recovered rewards. I upgraded to Premium before the trial ended.
+        </p>
+        <div class="stat">
+          <div class="stat__value">$5</div>
+          <div class="stat__label">Premium / month</div>
+        </div>
+        <div class="stat">
+          <div class="stat__value">2 mo</div>
+          <div class="stat__label">Avg. time to break even</div>
+        </div>
+        <div class="stat">
+          <div class="stat__value">100%</div>
+          <div class="stat__label">Refunded if you don't save</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container">
+      <span class="kicker">Join the waitlist</span>
+      <h2>One swipe at a time, your money starts working harder.</h2>
+      <p>Free during early access. Set up takes 90 seconds and you can disconnect any card any time.</p>
+      <div class="hero__actions" style="justify-content: center; margin-top: 24px;">
+        <a href="index.html#waitlist" class="btn btn--primary btn--lg">Get an invite</a>
+        <a href="features.html" class="btn btn--secondary btn--lg">See every feature</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="site-footer__grid">
+      <div>
+        <div class="site-footer__brand">
+          <img src="assets/web-logo/truespend-mark.png" alt="" />
+          <span>TrueSpend</span>
+        </div>
+        <p class="site-footer__tagline">Maximise every swipe. The quiet assistant that picks the right credit card, every time.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="features.html">Features</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="index.html#how-it-works">How it works</a></li>
+          <li><a href="index.html#waitlist">Join waitlist</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Press kit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="#">Help centre</a></li>
+          <li><a href="#">Security</a></li>
+          <li><a href="#">API</a></li>
+          <li><a href="#">Status</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">Disclosures</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer__bottom">
+      <span>© 2026 TrueSpend, Inc. All rights reserved.</span>
+      <span>TrueSpend is not a credit card issuer, bank, or financial advisor.</span>
+    </div>
+  </div>
+</footer>
+
 </body>
 </html>
