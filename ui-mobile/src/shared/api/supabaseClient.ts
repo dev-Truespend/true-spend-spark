@@ -21,7 +21,11 @@ function getClient(): SupabaseClient {
       autoRefreshToken: true,
       detectSessionInUrl: false,
       persistSession: true,
-      storage: supabaseSecureStorageAdapter
+      storage: supabaseSecureStorageAdapter,
+      // Native OAuth uses the PKCE flow: signInWithOAuth stores a code verifier
+      // in `storage`, the provider redirects back to truespend://verify?code=…,
+      // and AuthProvider.handleAuthUrl exchanges that code for a session.
+      flowType: "pkce"
     }
   });
 

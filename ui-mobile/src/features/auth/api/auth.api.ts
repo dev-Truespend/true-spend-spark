@@ -3,6 +3,7 @@ import Constants from "expo-constants";
 import { AuthBootstrapRequest, AuthBootstrapResponse } from "@/features/auth/types/auth.types";
 import { apiPost } from "@/shared/api/client";
 import { supabase } from "@/shared/api/supabaseClient";
+import { openExternalUrl } from "@/shared/native/linking";
 
 export async function bootstrapAuth(): Promise<AuthBootstrapResponse> {
   const locale = Intl.DateTimeFormat().resolvedOptions().locale;
@@ -48,13 +49,20 @@ export async function verifyPhoneOtp(phone: string, token: string): Promise<void
 }
 
 export async function signInWithProvider(provider: "apple" | "google"): Promise<void> {
-  const { error } = await supabase.auth.signInWithOAuth({
+  // On native, signInWithOAuth does NOT open a browser — it returns the provider
+  // URL (and stores the PKCE verifier). We must open it ourselves; the provider
+  // then redirects to truespend://verify, which AuthProvider's deep-link listener
+  // exchanges for a session.
+  const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: "truespend://verify"
+      redirectTo: "truespend://verify",
+      skipBrowserRedirect: true
     }
   });
   if (error) throw error;
+  if (!data?.url) throw new Error("Unable to start sign-in.");
+  await openExternalUrl(data.url);
 }
 
 export async function signOutSupabase(): Promise<void> {

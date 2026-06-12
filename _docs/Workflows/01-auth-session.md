@@ -10,8 +10,8 @@ Phase 1 online auth/session behavior for splash, sign-in, OTP, deep-link return,
 |---|---|---|
 | User can see the TrueSpend splash screen when opening the mobile app | Done |  |
 | User can start sign-in from the welcome screen | Done |  |
-| User can sign in with Apple from the mobile app | Done |  |
-| User can sign in with Google from the mobile app | Done |  |
+| User can sign in with Apple from the mobile app | Done | Fix: `signInWithProvider` now opens the OAuth URL (native `signInWithOAuth` doesn't auto-redirect); client uses PKCE flow. |
+| User can sign in with Google from the mobile app | Done | Fix: same as Apple — open returned OAuth URL via `openExternalUrl`. |
 | User can sign in with phone OTP from the mobile app | Done |  |
 | User can sign in with email OTP from the mobile app | Done |  |
 | User can create a new passwordless account | Done |  |
