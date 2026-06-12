@@ -62,13 +62,34 @@ on conflict (code) do update set
   rewardscc_id = excluded.rewardscc_id,
   updated_at   = now();
 
--- 2. Categories — upsert on code.
+-- 2. Categories. catalog.categories has THREE unique keys: code, provider_category_id, and the
+-- (category_group, subcategory_group) merge key the RewardsCC sync dedups on. Two syncs can land the
+-- same (group, subgroup) under different provider ids/codes, so a code-only upsert collides on the
+-- group/subgroup index. Upsert grouped rows on (group, subgroup) — the app's real identity — aligning
+-- the code to this snapshot (reward_rules reference category by id, so realigning the code is safe);
+-- ungrouped rows (no merge key) upsert on code.
 insert into catalog.categories
   (code, display_name, icon, provider_category_id, category_group, subcategory_group, is_active)
 select code, display_name, nullif(icon, ''), nullif(provider_category_id, ''),
        nullif(category_group, ''), nullif(subcategory_group, ''),
        coalesce(nullif(is_active, '')::boolean, true)
 from _stage_categories
+where nullif(category_group, '') is not null
+on conflict (category_group, subcategory_group) where category_group is not null do update set
+  code              = excluded.code,
+  display_name      = excluded.display_name,
+  icon              = excluded.icon,
+  provider_category_id = excluded.provider_category_id,
+  is_active         = excluded.is_active,
+  updated_at        = now();
+
+insert into catalog.categories
+  (code, display_name, icon, provider_category_id, category_group, subcategory_group, is_active)
+select code, display_name, nullif(icon, ''), nullif(provider_category_id, ''),
+       nullif(category_group, ''), nullif(subcategory_group, ''),
+       coalesce(nullif(is_active, '')::boolean, true)
+from _stage_categories
+where nullif(category_group, '') is null
 on conflict (code) do update set
   display_name      = excluded.display_name,
   icon              = excluded.icon,

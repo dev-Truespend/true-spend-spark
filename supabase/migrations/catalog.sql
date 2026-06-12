@@ -106,6 +106,12 @@ create table if not exists catalog.reward_rules (
   updated_at timestamptz not null default now()
 );
 
+-- Self-heal: is_merchant_locked / merchant_brand were added to reward_rules after its initial
+-- creation. `create table if not exists` cannot backfill columns on a pre-existing DB, so add them
+-- idempotently (no-op on fresh DBs where the create above already includes them).
+alter table catalog.reward_rules add column if not exists is_merchant_locked boolean not null default false;
+alter table catalog.reward_rules add column if not exists merchant_brand text;
+
 create index if not exists catalog_card_products_issuer_id_idx on catalog.card_products(issuer_id);
 create index if not exists catalog_card_product_requests_user_id_idx on catalog.card_product_requests(user_id);
 create index if not exists catalog_category_aliases_category_id_idx on catalog.category_aliases(category_id);

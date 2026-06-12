@@ -197,6 +197,10 @@ create table if not exists finance.foursquare_webhook_events (
   created_at timestamptz not null default now()
 );
 
+-- Self-heal: `provider` was added to this table after its initial creation. Backfill it idempotently
+-- on pre-existing DBs (no-op on fresh DBs) so the unique index below can always be created.
+alter table finance.foursquare_webhook_events add column if not exists provider text not null default 'foursquare';
+
 create unique index if not exists finance_foursquare_webhook_events_provider_event_idx
   on finance.foursquare_webhook_events(provider, foursquare_event_id);
 
