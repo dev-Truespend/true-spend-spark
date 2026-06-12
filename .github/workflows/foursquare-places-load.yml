@@ -21,6 +21,9 @@ on:
       object:
         description: Object path (gzip) within the bucket
         default: foursquare_places.csv.gz
+      max_rows:
+        description: Abort if the CSV exceeds this many data rows (disk-safety guard)
+        default: "6000000"
 jobs:
   load:
     runs-on: ubuntu-latest
@@ -38,7 +41,18 @@ jobs:
             "$SUPABASE_URL/storage/v1/object/${{ inputs.bucket }}/${{ inputs.object }}" \
             -o places.csv.gz
           gunzip -f places.csv.gz   # -> places.csv
-          wc -l places.csv
+          # Data rows = lines minus the header. The staging table + final places table scale
+          # ~linearly with this, so guard the Supabase instance disk before loading. ~4M rows
+          # peaks at ~5GB of an 8GB disk; abort well before that headroom is gone.
+          total_lines=$(wc -l < places.csv)
+          data_rows=$((total_lines - 1))
+          max_rows=${{ inputs.max_rows }}
+          echo "CSV data rows: $data_rows (guard max: $max_rows)"
+          if [ "$data_rows" -gt "$max_rows" ]; then
+            echo "::error::CSV has $data_rows data rows, exceeding the $max_rows disk-safety guard. \
+Bump max_rows only after confirming the Supabase instance disk has headroom (or enable autoscaling)."
+            exit 1
+          fi
       - name: Load into prod (drop indexes -> \copy + upsert -> rebuild)
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}

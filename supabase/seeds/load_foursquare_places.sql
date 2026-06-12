@@ -15,6 +15,12 @@
 
 \set ON_ERROR_STOP on
 
+-- This is a long bulk load; lift the per-statement / idle-transaction timeouts for this session so a
+-- large batch isn't cancelled ("canceling statement due to statement timeout"). Session-level SET
+-- persists across the per-batch COMMITs inside the load procedure below.
+set statement_timeout = 0;
+set idle_in_transaction_session_timeout = 0;
+
 -- 1. Staging (unlogged = no WAL, fast). Columns match the CSV header exactly.
 drop table if exists _stage_fsq_places;
 create unlogged table _stage_fsq_places (
