@@ -4,6 +4,7 @@ export default {
   expo: {
     name: "TrueSpend",
     slug: "truespend",
+    owner: "truespend",
     scheme: "truespend",
     icon: "./assets/icon.png",
     orientation: "portrait",
@@ -110,7 +111,9 @@ export default {
       foursquareMovementKey: process.env.EXPO_PUBLIC_FOURSQUARE_MOVEMENT_KEY ?? "",
       plaidRedirectUri: process.env.EXPO_PUBLIC_PLAID_REDIRECT_URI ?? "",
       eas: {
-        projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? ""
+        projectId:
+          process.env.EXPO_PUBLIC_EAS_PROJECT_ID ??
+          "6ceb2b60-2dec-4de4-9d83-f9b46c032775"
       }
     }
   }
