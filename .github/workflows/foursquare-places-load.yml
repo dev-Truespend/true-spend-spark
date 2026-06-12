@@ -43,6 +43,6 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
-            -v csv="$(pwd)/places.csv" \
-            -f supabase/seeds/load_foursquare_places.sql
+          # psql does not interpolate variables into \copy, so substitute the literal CSV path.
+          sed "s|PLACES_CSV_PATH|$(pwd)/places.csv|" supabase/seeds/load_foursquare_places.sql \
+            | psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f -

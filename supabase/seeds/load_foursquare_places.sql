@@ -1,9 +1,11 @@
 -- Bulk-load the FSQ OS Places CSV into foursquare.places.
 -- Runs as client-side \copy (local psql OR the foursquare-places-load.yml runner).
 --
---   psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
---        -v csv='/abs/path/foursquare_places.csv' \
---        -f supabase/seeds/load_foursquare_places.sql
+-- The \copy filename is the literal placeholder PLACES_CSV_PATH — psql does NOT interpolate a
+-- :'var' into \copy, so the caller substitutes the real absolute path with sed before piping:
+--
+--   sed "s|PLACES_CSV_PATH|/abs/path/foursquare_places.csv|" supabase/seeds/load_foursquare_places.sql \
+--     | psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f -
 --
 -- Idempotent: upsert on (provider, provider_place_id). category_id is resolved via
 -- foursquare.category_bridge (exact id OR descendant path-prefix). If the bridge isn't
@@ -31,7 +33,7 @@ create unlogged table _stage_fsq_places (
   all_fsq_category_labels    text
 );
 
-\copy _stage_fsq_places from :'csv' with (format csv, header true)
+\copy _stage_fsq_places from 'PLACES_CSV_PATH' with (format csv, header true)
 
 -- 2. Drop the heavy indexes (keep foursquare_places_provider_place_idx — ON CONFLICT needs it).
 drop index if exists foursquare.foursquare_places_geog_gist_idx;
