@@ -1,0 +1,65 @@
+category_code,alias,source
+electronics,b&h,seed
+electronics,micro center,seed
+electronics,microcenter,seed
+electronics,apple store,seed
+electronics,best buy,seed
+electronics,electronics,seed
+groceries,sams club,seed
+groceries,costco,seed
+groceries,aldi,seed
+groceries,target,seed
+groceries,walmart,seed
+groceries,kroger,seed
+groceries,safeway,seed
+groceries,trader joe,seed
+groceries,whole foods,seed
+groceries,supermarket,seed
+groceries,market,seed
+groceries,groceries,seed
+groceries,grocery,seed
+clothing,walmart,seed
+clothing,target,seed
+clothing,macy,seed
+clothing,nordstrom,seed
+clothing,old navy,seed
+clothing,zara,seed
+clothing,gap,seed
+clothing,uniqlo,seed
+clothing,h&m,seed
+clothing,apparel,seed
+clothing,clothing,seed
+home_goods,walmart,seed
+home_goods,target,seed
+home_goods,bed bath,seed
+home_goods,lowes,seed
+home_goods,home depot,seed
+home_goods,ikea,seed
+home_goods,homegoods,seed
+home_goods,home goods,seed
+beauty,target,seed
+beauty,cosmetics,seed
+beauty,ulta,seed
+beauty,sephora,seed
+beauty,beauty,seed
+dining,grill,seed
+dining,kitchen,seed
+dining,sushi,seed
+dining,pizza,seed
+dining,mcdonald,seed
+dining,chipotle,seed
+dining,starbucks,seed
+dining,coffee,seed
+dining,cafe,seed
+dining,restaurant,seed
+dining,dining,seed
+travel,american airlines,seed
+travel,united,seed
+travel,delta,seed
+travel,hilton,seed
+travel,marriott,seed
+travel,expedia,seed
+travel,airbnb,seed
+travel,airline,seed
+travel,hotel,seed
+travel,travel,seed

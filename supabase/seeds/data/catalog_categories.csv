@@ -1,0 +1,48 @@
+code,display_name,icon,provider_category_id,category_group,subcategory_group,is_active
+electronics,Electronics,tv,,,,t
+groceries,Groceries,shopping-cart,,,,t
+clothing,Clothing,shirt,,,,t
+home_goods,Home goods,home,,,,t
+beauty,Beauty,sparkles,,,,t
+dining,Dining,utensils,,,,t
+travel,Travel,plane,,,,t
+rcc_160378660,Dining,,160378660,Dining,All Dining,t
+rcc_176638649,Travel,,176638649,Travel,All Travel,t
+rcc_1132334901,Grocery Stores,,1132334901,Shopping,Grocery,t
+rcc_1386466601,Wholesale Clubs,,1386466601,Shopping,Wholesale Club,t
+rcc_1096261883,Drugstores,,1096261883,Shopping,All Drugstores,t
+rcc_1455345350,Gas Stations,,1455345350,Auto,All Gas Stations,t
+rcc_1550080980,Home Improvement,,1550080980,Shopping,All Home Improvement,t
+rcc_158645550,Online Shopping,,158645550,Shopping,All Online Shopping,t
+rcc_248970942,Streaming Services,,248970942,Telecom,Media,t
+rcc_1464813222,Telecom,,1464813222,Telecom,All Telecom,t
+rcc_605657763,All Travel (Ultimate Rewards),,605657763,Travel,Travel Agency,t
+rcc_606097,Uber,,698047,Travel,Rideshare,t
+rcc_2013874334,Airfare,,2013874334,Travel,All Airfare,t
+rcc_164006704,Hotels,,164006704,Travel,Hotel,t
+rcc_1800378277,Nike,,601874,Shopping,Sporting Goods,t
+rcc_141708891,Walmart.com,,659805482,Shopping,Shopping Portal,t
+rcc_494985384,Feeding America,,494985384,Charity,Charity,t
+rcc_1401936047,Walmart,,1401936047,Shopping,Discount Store,t
+rcc_1576799624,Fitness Clubs,,1576799624,Services,Health,t
+rcc_929639080,Live Entertainment,,929639080,Entertainment,Live Entertainment,t
+rcc_1468589631,Transit,,1468589631,Travel,Transportation,t
+rcc_923252904,Attractions (CitiTravel.com),,923252904,Travel,Travel Agency - Attractions,t
+rcc_646993658,Car Rentals (U.S. Bank),,600360476,Travel,Travel Agency - Car Rental,t
+rcc_773320415,Hotels (U.S. Bank),,1481287317,Travel,Travel Agency - Hotel,t
+rcc_436957618,Airfare (U.S. Bank),,1679304869,Travel,Travel Agency - Airfare,t
+rcc_1141863839,American Airlines,,1141863839,Travel,Airfare,t
+rcc_2084067958,Health & Wellness,,2084067958,Shopping,Health,t
+rcc_2054018678,Movie Theatres,,2054018678,Entertainment,Movie Theatres,t
+rcc_1881287255,Department Stores,,1881287255,Shopping,Department Store,t
+rcc_553661236,Apple,,8864770,Shopping,Electronics,t
+rcc_1245291978,Fast Food,,1245291978,Dining,Fast Food,t
+rcc_1848992449,Furniture Stores,,1848992449,Shopping,Household Goods,t
+rcc_113913391,Select Clothing Stores,,113913391,Shopping,Clothing,t
+rcc_1895002328,Utilities,,1895002328,Services,Utilities,t
+rcc_1287070698,Apple Pay,,1140889025,Payment,Digital Wallet,t
+rcc_10026075,Mobil,,9651961,Auto,Gas Station,t
+rcc_156707710,Panera,,156707710,Dining,Restaurant Chain,t
+rcc_875851528,T-Mobile,,875851528,Telecom,Telecom Provider,t
+rcc_1809425434,Uber Eats,,1809425434,Dining,Food Delivery,t
+rcc_1893120956,Walgreens,,1893120956,Shopping,Drugstore,t

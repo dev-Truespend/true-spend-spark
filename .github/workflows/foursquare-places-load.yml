@@ -1,0 +1,48 @@
+# One-time / on-demand load of the FSQ OS Places CSV into prod foursquare.places.
+# Supabase Postgres can't COPY from Storage directly, so this runner downloads the
+# gzipped CSV from Supabase Storage, gunzips it, and runs a client-side \copy + upsert.
+# See supabase/seeds/dataload-README.md. Manual trigger only.
+#
+# Prereqs (one-time):
+#   - Upload the gz to a private Storage bucket (default bucket "data-loads") from your Mac:
+#       gzip -kf ~/Documents/fsqdatasets/foursquare_places.csv      # -> .csv.gz (~200MB)
+#       curl -fSL -X POST "$SUPABASE_URL/storage/v1/object/data-loads/foursquare_places.csv.gz" \
+#         -H "Authorization: Bearer $SERVICE_ROLE" -H "Content-Type: application/gzip" \
+#         --data-binary @~/Documents/fsqdatasets/foursquare_places.csv.gz
+#   - Repo secrets: SUPABASE_URL (https://<ref>.supabase.co), SUPABASE_SERVICE_ROLE_KEY,
+#     SUPABASE_DB_URL (session-pooler URI — already used by supabase-migrate).
+name: foursquare-places-load
+on:
+  workflow_dispatch:
+    inputs:
+      bucket:
+        description: Supabase Storage bucket
+        default: data-loads
+      object:
+        description: Object path (gzip) within the bucket
+        default: foursquare_places.csv.gz
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Download CSV from Supabase Storage
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          curl -fSL -H "Authorization: Bearer $SERVICE_ROLE" \
+            "$SUPABASE_URL/storage/v1/object/${{ inputs.bucket }}/${{ inputs.object }}" \
+            -o places.csv.gz
+          gunzip -f places.csv.gz   # -> places.csv
+          wc -l places.csv
+      - name: Load into prod (drop indexes -> \copy + upsert -> rebuild)
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
+            -v csv="$(pwd)/places.csv" \
+            -f supabase/seeds/load_foursquare_places.sql

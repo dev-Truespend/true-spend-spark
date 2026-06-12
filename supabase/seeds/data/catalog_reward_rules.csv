@@ -1,0 +1,142 @@
+card_product_code,category_code,multiplier,cap_amount,cap_period_code,start_date,end_date,requires_activation,is_merchant_locked,merchant_brand,notes
+chase-chase-sapphire-preferred--credit-card,rcc_605657763,5.0000,,,,,f,t,All Travel (Ultimate Rewards),"Earn 5x total points on travel purchased through Chase Ultimate Rewards®, excluding hotel purchases that qualify for the $50 Annual Ultimate Rewards Hotel Credit"
+chase-chase-sapphire-preferred--credit-card,rcc_160378660,3.0000,,,,,f,f,,"Earn 3x points on dining, including eligible delivery services, takeout and dining out"
+chase-chase-sapphire-preferred--credit-card,rcc_1132334901,3.0000,,,,,f,t,Grocery Delivery,"Earn 3x points on online grocery purchases (excluding Target, Walmart and wholesale clubs)"
+chase-chase-sapphire-preferred--credit-card,rcc_606097,5.0000,,,2022-03-01,2027-09-30,f,t,Lyft,"Earn 5x points on Lyft rides through September 30, 2027"
+chase-chase-sapphire-preferred--credit-card,rcc_248970942,3.0000,,,,,f,f,,Earn 3x points on select streaming services
+chase-chase-sapphire-preferred--credit-card,rcc_176638649,2.0000,,,,,f,f,,Earn 2x on travel purchases
+chase-chase-sapphire-reserve--credit-card,rcc_2013874334,4.0000,,,,,f,f,,4x points on flights purchased direct
+chase-chase-sapphire-reserve--credit-card,rcc_605657763,8.0000,,,,,f,t,All Travel (Ultimate Rewards),8x points on Chase Travel
+chase-chase-sapphire-reserve--credit-card,rcc_160378660,3.0000,,,,,f,f,,3x points on dining worldwide
+chase-chase-sapphire-reserve--credit-card,rcc_164006704,4.0000,,,,,f,f,,"4x points on hotels purchased direct
+"
+chase-chase-sapphire-reserve--credit-card,rcc_606097,5.0000,,,2022-03-01,2027-09-30,f,t,Lyft,5x total points on all eligible Lyft purchases
+chase-chase-sapphire-reserve--credit-card,rcc_1800378277,10.0000,5000.00,,2022-03-01,2027-09-30,f,t,Peloton,10x points on eligible Peloton hardware and accessory purchases
+chase-chase-freedom-unlimited--credit-card,rcc_605657763,5.0000,,,,,f,t,All Travel (Ultimate Rewards),Earn 5% on travel purchased through Chase Ultimate Rewards
+chase-chase-freedom-unlimited--credit-card,rcc_160378660,3.0000,,,,,f,f,,"Earn 3% on dining at restaurants, including takeout and eligible delivery services"
+chase-chase-freedom-unlimited--credit-card,rcc_1096261883,3.0000,,,,,f,f,,Earn 3% on drugstore purchases
+chase-chase-freedom-flex--credit-card,rcc_605657763,5.0000,1500.00,,2026-04-01,2026-06-30,f,t,All Travel (Ultimate Rewards),Get 5% cash back on the Feeding America
+chase-chase-freedom-flex--credit-card,rcc_141708891,5.0000,1500.00,,2026-04-01,2026-06-30,f,t,Amazon,Get 5% cash back on Chase Travel
+chase-chase-freedom-flex--credit-card,rcc_494985384,5.0000,1500.00,,2026-04-01,2026-06-30,f,t,Feeding America,Get 5% cash back on Amazon
+chase-chase-freedom-flex--credit-card,rcc_605657763,5.0000,,,,,f,t,All Travel (Ultimate Rewards),Earn 5% on travel purchased through Chase Ultimate Rewards.
+chase-chase-freedom-flex--credit-card,rcc_160378660,3.0000,,,,,f,f,,"Earn 3% on dining at restaurants, including takeout and eligible delivery services"
+chase-chase-freedom-flex--credit-card,rcc_1096261883,3.0000,,,,,f,f,,Earn 3% on drugstore purchases
+capital-one-capital-one-walmart-rewards--mastercard,rcc_160378660,2.0000,,,,,f,f,,2% cash back at restaurants
+capital-one-capital-one-walmart-rewards--mastercard,rcc_176638649,2.0000,,,,,f,f,,2% cash back on travel
+capital-one-capital-one-walmart-rewards--mastercard,rcc_1401936047,2.0000,,,,,f,t,Walmart,2% cash back in Walmart stores
+capital-one-capital-one-walmart-rewards--mastercard,rcc_141708891,5.0000,,,,,f,t,Walmart.com,"5% cash back at Walmart.com, including pickup and delivery."
+citi-citi-custom-cash,rcc_160378660,5.0000,500.00,,,,f,f,,Earn 5% cash back on your top eligible spend category each billing cycle up to $500 spent.
+citi-citi-custom-cash,rcc_1096261883,5.0000,500.00,,,,f,f,,Earn 5% cash back on your top eligible spend category each billing cycle up to $500 spent.
+citi-citi-custom-cash,rcc_1576799624,5.0000,500.00,,,,f,t,Fitness Clubs,Earn 5% cash back on your top eligible spend category each billing cycle up to $500 spent.
+citi-citi-custom-cash,rcc_1455345350,5.0000,500.00,,,,f,f,,Earn 5% cash back on your top eligible spend category each billing cycle up to $500 spent.
+citi-citi-custom-cash,rcc_1132334901,5.0000,500.00,,,,f,f,,Earn 5% cash back on your top eligible spend category each billing cycle up to $500 spent.
+citi-citi-custom-cash,rcc_1550080980,5.0000,500.00,,,,f,t,Home Improvement,Earn 5% cash back on your top eligible spend category each billing cycle up to $500 spent.
+citi-citi-custom-cash,rcc_929639080,5.0000,500.00,,,,f,t,Live Entertainment,Earn 5% cash back on your top eligible spend category each billing cycle up to $500 spent.
+citi-citi-custom-cash,rcc_248970942,5.0000,500.00,,,,f,f,,Earn 5% cash back on your top eligible spend category each billing cycle up to $500 spent.
+citi-citi-custom-cash,rcc_1468589631,5.0000,500.00,,,,f,f,,Earn 5% cash back on your top eligible spend category each billing cycle up to $500 spent.
+citi-citi-custom-cash,rcc_176638649,5.0000,500.00,,,,f,f,,Earn 5% cash back on your top eligible spend category each billing cycle up to $500 spent.
+citi-citi-strata-premier,rcc_2013874334,3.0000,,,,,f,f,,Earn 3X ThankYou® Points per $1 on Air Travel
+citi-citi-strata-premier,rcc_923252904,10.0000,,,,,f,t,Attractions (CitiTravel.com),"Earn 10 ThankYou® Points per $1 spent on Attractions booked through CitiTravel.com
+"
+citi-citi-strata-premier,rcc_646993658,10.0000,,,,,f,t,Car Rentals (CitiTravel.com),Earn 10 ThankYou® Points per $1 spent on Car Rentals booked through CitiTravel.com
+citi-citi-strata-premier,rcc_160378660,3.0000,,,,,f,f,,Earn 3X ThankYou® Points per $1 at Restaurants
+citi-citi-strata-premier,rcc_1455345350,3.0000,,,,,f,f,,Earn 3X ThankYou® Points per $1 on Gas Stations and EV Charging Stations
+citi-citi-strata-premier,rcc_1132334901,3.0000,,,,,f,f,,Earn 3X ThankYou® Points per $1 at Supermarkets
+citi-citi-strata-premier,rcc_164006704,3.0000,,,,,f,f,,Earn 3X ThankYou® Points per $1 on Hotel Purchases
+citi-citi-strata-premier,rcc_773320415,10.0000,,,,,f,t,Hotels (CitiTravel.com),"Earn 10 ThankYou® Points per $1 spent on Hotels booked through CitiTravel.com
+"
+citi-citi-strata-elite,rcc_436957618,6.0000,,,,,f,t,Air Travel (CitiTravel.com),6 points per dollar spent on Air Travel booked on cititravel.com
+citi-citi-strata-elite,rcc_923252904,12.0000,,,,,f,t,Attractions (CitiTravel.com),"12 points per dollar spent on Attractions booked on cititravel.com
+"
+citi-citi-strata-elite,rcc_646993658,12.0000,,,,,f,t,Car Rentals (CitiTravel.com),12 points per dollar spent on Car Rentals booked on cititravel.com
+citi-citi-strata-elite,rcc_160378660,3.0000,,,,,f,f,,3 points per dollar spent at Restaurants any other time
+citi-citi-strata-elite,rcc_773320415,12.0000,,,,,f,t,Hotels (CitiTravel.com),12 points per dollar spent on Hotels booked on cititravel.com
+citi-citi-rewards,rcc_1455345350,2.0000,6000.00,,,,f,f,,"Earn 2 ThankYou® Points per $1 spent at supermarkets and gas stations for the first $6,000 spent per year."
+citi-citi-rewards,rcc_1132334901,2.0000,6000.00,,,,f,f,,"Earn 2 ThankYou® Points per $1 spent at supermarkets and gas stations for the first $6,000 spent per year."
+citi-citi----aadvantage--platinum-select--world-elite-mastercard,rcc_1141863839,2.0000,,,,,f,t,American Airlines,"Earn 2 AAdvantage® miles for every $1 spent at restaurants, gas stations, and eligible American Airlines purchases."
+citi-citi----aadvantage--platinum-select--world-elite-mastercard,rcc_160378660,2.0000,,,,,f,f,,"Earn 2 AAdvantage® miles for every $1 spent at restaurants, gas stations, and eligible American Airlines purchases."
+citi-citi----aadvantage--platinum-select--world-elite-mastercard,rcc_1455345350,2.0000,,,,,f,f,,"Earn 2 AAdvantage® miles for every $1 spent at restaurants, gas stations, and eligible American Airlines purchases."
+citi-citi----aadvantage--executive-world-elite-mastercard,rcc_1141863839,4.0000,,,,,f,t,American Airlines,"Earn 4 AAdvantage® miles for every $1 spent on eligible American Airlines purchases. After you spend $150,000 in purchases on your card in a calendar year, earn a total of 5X AAdvantage® miles on eligible American Airlines purchases for the remainder of the year."
+bank-of-america-bank-of-america--customized-cash-rewards,rcc_1132334901,2.0000,2500.00,,,,f,f,,"Automatic 2% cash back at grocery stores and wholesale clubs. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards,rcc_1386466601,2.0000,2500.00,,,,f,f,,"Automatic 2% cash back at grocery stores and wholesale clubs. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards,rcc_160378660,3.0000,2500.00,,,,f,f,,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards,rcc_1096261883,3.0000,2500.00,,,,f,f,,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards,rcc_1455345350,3.0000,2500.00,,,,f,f,,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards,rcc_1550080980,3.0000,2500.00,,,,f,t,Home Improvement,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards,rcc_158645550,3.0000,2500.00,,,,f,f,,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards,rcc_248970942,3.0000,2500.00,,,,f,f,,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards,rcc_1464813222,3.0000,2500.00,,,,f,t,Telecom,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards,rcc_176638649,3.0000,2500.00,,,,f,f,,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--premium-rewards,rcc_160378660,2.0000,,,,,f,f,,Earn unlimited 2 points for every $1 spent on dining purchases
+bank-of-america-bank-of-america--premium-rewards,rcc_176638649,2.0000,,,,,f,f,,Earn unlimited 2 points for every $1 spent on travel purchases
+bank-of-america-bank-of-america--premium-rewards--elite,rcc_160378660,2.0000,,,,,f,f,,Earn unlimited 2 points for every $1 spent on dining purchases
+bank-of-america-bank-of-america--premium-rewards--elite,rcc_176638649,2.0000,,,,,f,f,,Earn unlimited 2 points for every $1 spent on travel purchases
+bank-of-america-bank-of-america--customized-cash-rewards-for-students,rcc_1132334901,2.0000,2500.00,,,,f,f,,"Automatic 2% cash back at grocery stores and wholesale clubs. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards-for-students,rcc_1386466601,2.0000,2500.00,,,,f,f,,"Automatic 2% cash back at grocery stores and wholesale clubs. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards-for-students,rcc_160378660,3.0000,2500.00,,,,f,f,,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards-for-students,rcc_1096261883,3.0000,2500.00,,,,f,f,,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards-for-students,rcc_1455345350,3.0000,2500.00,,,,f,f,,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards-for-students,rcc_1550080980,3.0000,2500.00,,,,f,t,Home Improvement,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards-for-students,rcc_158645550,3.0000,2500.00,,,,f,f,,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards-for-students,rcc_248970942,3.0000,2500.00,,,,f,f,,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards-for-students,rcc_1464813222,3.0000,2500.00,,,,f,t,Telecom,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+bank-of-america-bank-of-america--customized-cash-rewards-for-students,rcc_176638649,3.0000,2500.00,,,,f,f,,"Choose which category you want to earn 3% cash back in: gas and EV charging stations; online shopping, including cable, internet, phone plans and streaming; dining; travel; drug stores and pharmacies; or home improvement and furnishings. Earn 3% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at grocery stores and wholesale clubs, then earn unlimited 1% thereafter."
+wells-fargo-wells-fargo-autograph,rcc_160378660,3.0000,,,,,f,f,,"Earn unlimited 3X points - Restaurants: dining in, take-out, catering, delivery and more"
+wells-fargo-wells-fargo-autograph,rcc_1455345350,3.0000,,,,,f,f,,Earn unlimited 3X points - Gas: gas stations and electric vehicle charging stations
+wells-fargo-wells-fargo-autograph,rcc_248970942,3.0000,,,,,f,f,,Earn unlimited 3X points - Popular Streaming Services: content at home or on the go
+wells-fargo-wells-fargo-autograph,rcc_1464813222,3.0000,,,,,f,t,Telecom,Earn unlimited 3X points - Phone Plans: cell phone and landline providers
+wells-fargo-wells-fargo-autograph,rcc_1468589631,3.0000,,,,,f,f,,"Earn unlimited 3X points - Transit: subways, ride shares, parking, tolls and more"
+wells-fargo-wells-fargo-autograph,rcc_1468589631,3.0000,,,,,f,f,,"Earn unlimited 3X points - Transit: subways, ride shares, parking, tolls and more"
+wells-fargo-wells-fargo-autograph,rcc_176638649,3.0000,,,,,f,f,,"Earn unlimited 3X points - Travel: airfare, hotels, car rentals, cruises and more"
+wells-fargo-wells-fargo-autograph-journey,rcc_2013874334,4.0000,,,,,f,f,,4X points on hotels
+wells-fargo-wells-fargo-autograph-journey,rcc_160378660,3.0000,,,,,f,f,,3X points on restaurants
+wells-fargo-wells-fargo-autograph-journey,rcc_164006704,5.0000,,,,,f,f,,5X points on hotels
+wells-fargo-wells-fargo-autograph-journey,rcc_176638649,3.0000,,,,,f,f,,3X points on other travel
+wells-fargo-wells-fargo-attune,rcc_1576799624,4.0000,,,,,f,t,Fitness Clubs,"Earn unlimited 4% cash rewards on self-care: restoring at a spa or lifting at the gym, fitness and wellness purchases are now more rewarding"
+wells-fargo-wells-fargo-attune,rcc_2084067958,4.0000,,,,,f,t,Health & Wellness,"Earn unlimited 4% cash rewards on self-care: restoring at a spa or lifting at the gym, fitness and wellness purchases are now more rewarding"
+wells-fargo-wells-fargo-attune,rcc_929639080,4.0000,,,,,f,t,Live Entertainment,"Earn unlimited 4% cash rewards on select sports, recreation, and entertainment: singing along at a live event or seeing the latest movie"
+wells-fargo-wells-fargo-attune,rcc_2054018678,4.0000,,,,,f,t,Movie Theatres,"Earn unlimited 4% cash rewards on select sports, recreation, and entertainment: singing along at a live event or seeing the latest movie"
+wells-fargo-wells-fargo-attune,rcc_1468589631,4.0000,,,,,f,f,,Earn unlimited 4% cash rewards2 on taking public transportation
+u-s--bank-u-s--bank-cash---visa-signature,rcc_1881287255,5.0000,2000.00,,,,f,f,,"5% cash back on your first $2,000 in combined eligible purchases each quarter on two categories you choose."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_553661236,5.0000,2000.00,,,,f,t,Electronic Stores,"5% cash back on your first $2,000 in combined eligible purchases each quarter on two categories you choose."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_1245291978,5.0000,2000.00,,,,f,t,Fast Food,"5% cash back on your first $2,000 in combined eligible purchases each quarter on two categories you choose."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_1576799624,5.0000,2000.00,,,,f,t,Fitness Clubs,"5% cash back on your first $2,000 in combined eligible purchases each quarter on two categories you choose."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_1848992449,5.0000,2000.00,,,,f,t,Furniture Stores,"5% cash back on your first $2,000 in combined eligible purchases each quarter on two categories you choose."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_2054018678,5.0000,2000.00,,,,f,t,Movie Theatres,"5% cash back on your first $2,000 in combined eligible purchases each quarter on two categories you choose."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_606097,5.0000,2000.00,,,,f,t,Ridesharing,"5% cash back on your first $2,000 in combined eligible purchases each quarter on two categories you choose."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_113913391,5.0000,2000.00,,,,f,t,Select Clothing Stores,"5% cash back on your first $2,000 in combined eligible purchases each quarter on two categories you choose."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_1800378277,5.0000,2000.00,,,,f,t,Sporting Goods Stores,"5% cash back on your first $2,000 in combined eligible purchases each quarter on two categories you choose."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_248970942,5.0000,2000.00,,,,f,f,,"5% cash back on your first $2,000 in combined eligible purchases each quarter on two categories you choose."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_1464813222,5.0000,2000.00,,,,f,t,Telecom,"5% cash back on your first $2,000 in combined eligible purchases each quarter on two categories you choose."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_1468589631,5.0000,2000.00,,,,f,f,,"5% cash back on your first $2,000 in combined eligible purchases each quarter on two categories you choose."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_1895002328,5.0000,2000.00,,,,f,f,,"5% cash back on your first $2,000 in combined eligible purchases each quarter on two categories you choose."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_160378660,2.0000,,,,,f,f,,"2% cash back on one everyday category, like gas stations and EV charging stations, grocery stores or restaurants."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_1455345350,2.0000,,,,,f,f,,"2% cash back on one everyday category, like gas stations and EV charging stations, grocery stores or restaurants."
+u-s--bank-u-s--bank-cash---visa-signature,rcc_1132334901,2.0000,,,,,f,f,,"2% cash back on one everyday category, like gas stations and EV charging stations, grocery stores or restaurants."
+u-s--bank-u-s--bank-altitude--go-visa-signature,rcc_160378660,4.0000,,,,,f,f,,"4X points on dining, takeout and restaurant delivery"
+u-s--bank-u-s--bank-altitude--go-visa-signature,rcc_1455345350,2.0000,,,,,f,f,,2X points at gas stations and EV charging stations
+u-s--bank-u-s--bank-altitude--go-visa-signature,rcc_1132334901,2.0000,,,,,f,f,,2X points at grocery stores and grocery delivery
+u-s--bank-u-s--bank-altitude--go-visa-signature,rcc_248970942,2.0000,,,,,f,f,,2X points on streaming services
+u-s--bank-u-s--bank-altitude--connect-visa-signature,rcc_646993658,5.0000,,,,,f,t,Car Rentals (U.S. Bank),5X points on car rentals booked directly in the Altitude Rewards Center
+u-s--bank-u-s--bank-altitude--connect-visa-signature,rcc_160378660,2.0000,,,,,f,f,,"2X points on, dining"
+u-s--bank-u-s--bank-altitude--connect-visa-signature,rcc_1455345350,4.0000,1000.00,,,,f,f,,4X points at gas stations and EV charging stations
+u-s--bank-u-s--bank-altitude--connect-visa-signature,rcc_1132334901,2.0000,,,,,f,f,,2X points at grocery stores and grocery delivery
+u-s--bank-u-s--bank-altitude--connect-visa-signature,rcc_773320415,5.0000,,,,,f,t,Hotels (U.S. Bank),5X points on prepaid hotels booked directly in the Altitude Rewards Center
+u-s--bank-u-s--bank-altitude--connect-visa-signature,rcc_248970942,2.0000,,,,,f,f,,2X points on streaming services
+u-s--bank-u-s--bank-altitude--connect-visa-signature,rcc_176638649,4.0000,,,,,f,f,,4X points on travel
+u-s--bank-u-s--bank-altitude--reserve-visa-infinite,rcc_436957618,5.0000,,,,,f,t,Airfare (U.S. Bank),5X points using your card to book prepaid flights in the Travel Center
+u-s--bank-u-s--bank-altitude--reserve-visa-infinite,rcc_646993658,10.0000,,,,,f,t,Car Rentals (U.S. Bank),10X points using your card to book prepaid car rentals in the Travel Center
+u-s--bank-u-s--bank-altitude--reserve-visa-infinite,rcc_1287070698,3.0000,5000.00,,,,f,t,Digital Wallet,3X points on mobile wallet spending
+u-s--bank-u-s--bank-altitude--reserve-visa-infinite,rcc_773320415,10.0000,,,,,f,t,Hotels (U.S. Bank),"10X points using your card to book prepaid hotels in the Travel Center
+"
+u-s--bank-u-s--bank-altitude--reserve-visa-infinite,rcc_176638649,3.0000,,,,,f,f,,3X points on eligible travel purchases
+goldman-sachs-apple-card,rcc_553661236,3.0000,,,,,f,t,Apple,"Get 3% back on everything you buy from Apple, whether you buy it at an Apple Store, apple.com, the App Store, or iTunes."
+goldman-sachs-apple-card,rcc_1287070698,2.0000,,,,,f,t,Apple Pay,Get 2% back every time you buy something using Apple Pay.
+goldman-sachs-apple-card,rcc_10026075,3.0000,,,,,f,t,Exxon,Save on everything you buy from Apple and at select merchants when you use Apple Card with Apple Pay
+goldman-sachs-apple-card,rcc_10026075,3.0000,,,,,f,t,Mobil,Save on everything you buy from Apple and at select merchants when you use Apple Card with Apple Pay
+goldman-sachs-apple-card,rcc_1800378277,3.0000,,,,,f,t,Nike,Save on everything you buy from Apple and at select merchants when you use Apple Card with Apple Pay
+goldman-sachs-apple-card,rcc_156707710,3.0000,,,,,f,t,Panera,Save on everything you buy from Apple and at select merchants when you use Apple Card with Apple Pay
+goldman-sachs-apple-card,rcc_875851528,3.0000,,,,,f,t,T-Mobile,Save on everything you buy from Apple and at select merchants when you use Apple Card with Apple Pay
+goldman-sachs-apple-card,rcc_606097,3.0000,,,,,f,t,Uber,Save on everything you buy from Apple and at select merchants when you use Apple Card with Apple Pay
+goldman-sachs-apple-card,rcc_1809425434,3.0000,,,,,f,t,Uber Eats,Save on everything you buy from Apple and at select merchants when you use Apple Card with Apple Pay
+goldman-sachs-apple-card,rcc_1893120956,3.0000,,,,,f,t,Walgreens,Save on everything you buy from Apple and at select merchants when you use Apple Card with Apple Pay

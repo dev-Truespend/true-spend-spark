@@ -105,9 +105,11 @@ end$$;
 \ir seeds/lookup_roles.sql
 \ir seeds/lookup_subscription_statuses.sql
 
-\echo '-- catalog -- (no static seeds: catalog.card_issuers/card_products/categories/category_aliases/reward_rules'
-\echo '--             are loaded at runtime by the RewardsCcCatalogSync worker job from the paid RewardsCC API,'
-\echo '--             upserted via CatalogSyncService — never seeded here, so re-runs never touch that data.)'
+\echo '-- catalog -- (snapshot of catalog.* from a one-off local RewardsCcCatalogSync run; see'
+\echo '--             seeds/dataload-README.md. Idempotent code-resolving upsert. Catalog is normally'
+\echo '--             runtime-loaded by the worker, but prod is in testing so we seed this snapshot;'
+\echo '--             prod adopts the list-all-cards API later. Must run before the FSQ bridge below.)'
+\ir seeds/catalog_snapshot.sql
 
 \echo '-- billing --'
 \ir seeds/billing_countries.sql
