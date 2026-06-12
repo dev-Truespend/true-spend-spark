@@ -28,3 +28,12 @@ variable "image_tag" {
   description = "Container image tag deployed to both Container Apps (the service-deploy pipeline pushes :<git-sha>)."
   default     = "latest"
 }
+
+variable "worker_trigger_allowed_cidrs" {
+  type        = list(string)
+  description = "CIDRs allowed to reach the worker's manual job-trigger ingress (/jobs, /health). These endpoints are UNAUTHENTICATED, so this is a tight allow-list — every other source is denied. Required (no default) to prevent an accidentally public ingress."
+  validation {
+    condition     = length(var.worker_trigger_allowed_cidrs) > 0
+    error_message = "Provide at least one CIDR; an empty list would expose the unauthenticated trigger endpoints to the public internet."
+  }
+}

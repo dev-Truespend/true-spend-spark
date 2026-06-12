@@ -199,7 +199,27 @@ resource "azurerm_container_app" "worker" {
     }
   }
 
-  # No ingress — the worker runs cron jobs only.
+  # Public ingress on :8080 for the manual job-trigger surface (/jobs, /health).
+  # The endpoints are UNAUTHENTICATED, so access is restricted to an explicit
+  # CIDR allow-list (var.worker_trigger_allowed_cidrs); all other sources are denied.
+  ingress {
+    external_enabled = true
+    target_port      = 8080
+    transport        = "auto"
+    traffic_weight {
+      latest_revision = true
+      percentage      = 100
+    }
+    dynamic "ip_security_restriction" {
+      for_each = var.worker_trigger_allowed_cidrs
+      content {
+        name             = "allow-${ip_security_restriction.key}"
+        ip_address_range = ip_security_restriction.value
+        action           = "Allow"
+      }
+    }
+  }
+
   template {
     container {
       name   = "worker"

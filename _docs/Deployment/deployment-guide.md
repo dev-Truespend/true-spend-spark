@@ -24,13 +24,15 @@ IaC pipeline has separate plan/apply checkboxes. Keep those files and these bloc
 |---|---|---|---|
 | Mobile app | iOS (TestFlight), Android later | `ui-mobile/` (Expo + EAS) | bundle id `com.truespend.mobile`, scheme `truespend` |
 | API service | Azure Container App `truespend-api` | `docker/truespend.api.Dockerfile` (target `production`, port 8080) | **public ingress** on the custom domain `api.truespend.<env>` (TLS cert bound to the app) |
-| Worker service | Azure Container App `truespend-worker` | `docker/truespend.workerservice.Dockerfile` (target `production`) | cron jobs, no ingress |
+| Worker service | Azure Container App `truespend-worker` | `docker/truespend.workerservice.Dockerfile` (target `production`) | cron jobs; **IP-restricted** public ingress on :8080 for the unauthenticated manual job-trigger surface (`var.worker_trigger_allowed_cidrs`) |
 | Event consumer | **dormant in MVP** | `docker/truespend.eventconsumer.Dockerfile` | async→inline conversion ([sync-execution-conversion.md](../Refactors/sync-execution-conversion.md)); not deployed |
 | Database + Auth | Supabase (managed Postgres) | `supabase/` | Auth providers (Apple/Google/email OTP), RLS policies, storage |
 | Secrets | Azure Key Vault | this guide | app secrets, consumed via managed identity (the custom-domain TLS cert is bound to the app, not via KV) |
 
 The Container Apps Environment is **public** (external). The API ingress is the single front door; Stripe and
-Plaid webhooks arrive directly at the custom domain over HTTPS. The worker has no ingress.
+Plaid webhooks arrive directly at the custom domain over HTTPS. The worker exposes an IP-restricted public
+ingress on :8080 solely for the unauthenticated manual job-trigger endpoints (`/jobs`, `/health`); access is
+limited to `var.worker_trigger_allowed_cidrs` and everything else is denied.
 
 ```text
   iOS device          ┌──────────────────────────────────────────────────────────────┐
@@ -177,7 +179,7 @@ Resources to provision per environment:
 | Role: Key Vault Secrets User | `azurerm_role_assignment` | identity reads KV secrets |
 | Container Apps Environment | `azurerm_container_app_environment` | **public** (external), wired to Log Analytics |
 | Container App (api) | `azurerm_container_app` | **public** ingress :8080; custom domain + cert bound out of band (§4a) |
-| Container App (worker) | `azurerm_container_app` | no ingress |
+| Container App (worker) | `azurerm_container_app` | IP-restricted public ingress :8080 for the manual job-trigger surface (`var.worker_trigger_allowed_cidrs`) |
 
 KV secret values are **not** Terraform resources — they're seeded out of band (§5). Terraform creates only the
 empty vault + RBAC.
@@ -316,8 +318,10 @@ resource "azurerm_container_app" "api" {
     }
   }
 }
-# worker Container App mirrors the above with no ingress, worker_secrets, and
-# env DOTNET_ENVIRONMENT=Production.
+# worker Container App mirrors the above with worker_secrets and env DOTNET_ENVIRONMENT=Production.
+# Its ingress is IP-restricted (external on :8080) for the unauthenticated manual job-trigger
+# surface only — a `dynamic "ip_security_restriction"` over var.worker_trigger_allowed_cidrs
+# emits an Allow rule per CIDR, which implicitly denies all other sources.
 ```
 
 State backend (`backend.tf`) — never store state locally for shared envs; it contains secret values:
