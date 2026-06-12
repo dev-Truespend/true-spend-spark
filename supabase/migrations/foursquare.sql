@@ -46,23 +46,24 @@ create table if not exists foursquare.places (
 create unique index if not exists foursquare_places_provider_place_idx
   on foursquare.places(provider, provider_place_id);
 
-create index if not exists foursquare_places_geog_gist_idx
-  on foursquare.places using gist (geog);
-
-create index if not exists foursquare_places_normalized_name_trgm_idx
-  on foursquare.places using gin (normalized_name gin_trgm_ops);
-
-create index if not exists foursquare_places_locality_trgm_idx
-  on foursquare.places using gin (locality gin_trgm_ops);
-
-create index if not exists foursquare_places_region_trgm_idx
-  on foursquare.places using gin (region gin_trgm_ops);
+-- DEFERRED: the GiST geog + GIN trigram indexes below are unused by the current read path (which uses
+-- the lat/lng bounding box, not ST_DWithin or trigram search) and are multi-GB / slow to build on the
+-- 4M+ row OS Places dataset — building them blew past the instance disk during bulk load. Re-enable
+-- (here AND in seeds/load_foursquare_places.sql) when spatial (ST_DWithin) or name/locality text
+-- search against foursquare.places is actually implemented.
+-- create index if not exists foursquare_places_geog_gist_idx
+--   on foursquare.places using gist (geog);
+-- create index if not exists foursquare_places_normalized_name_trgm_idx
+--   on foursquare.places using gin (normalized_name gin_trgm_ops);
+-- create index if not exists foursquare_places_locality_trgm_idx
+--   on foursquare.places using gin (locality gin_trgm_ops);
+-- create index if not exists foursquare_places_region_trgm_idx
+--   on foursquare.places using gin (region gin_trgm_ops);
 
 create index if not exists foursquare_places_chain_id_idx
   on foursquare.places(chain_id);
 
--- Supports the bounding-box prefilter the place-match read path uses before in-memory Haversine
--- ranking (the geog GiST index above backs raw ST_DWithin spatial queries).
+-- Supports the bounding-box prefilter the place-match read path uses before in-memory Haversine ranking.
 create index if not exists foursquare_places_lat_lng_idx
   on foursquare.places(lat, lng);
 
