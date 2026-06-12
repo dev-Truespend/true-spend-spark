@@ -12,8 +12,10 @@ deferred to last).
 
 This guide is the source of truth for the IaC and pipeline definitions. The HCL/YAML blocks below are
 extracted into [`terraform/`](../../terraform/) (see its [README](../../terraform/README.md)) and
-[`.github/workflows/`](../../.github/workflows/) — `terraform.yml`, `service-deploy.yml`,
-`supabase-migrate.yml`, `mobile-testflight.yml`. All pipelines are **manual** (`workflow_dispatch`); the
+[`.github/workflows/`](../../.github/workflows/) — per-component CI/CD: `ci-ui` / `ci-service` / `ci-worker`
+(auto on push to master, path-filtered) each gate a matching `cd-ui` / `cd-service` / `cd-worker`, plus
+`terraform.yml` and `supabase-migrate.yml` (both manual `workflow_dispatch`). `cd-service` / `cd-worker`
+auto-run on their CI's success (`workflow_run`); **`cd-ui` is manual** (EAS cloud builds cost credits). The
 IaC pipeline has separate plan/apply checkboxes. Keep those files and these blocks in sync when either changes.
 
 ## 1. Topology
@@ -381,49 +383,64 @@ az keyvault secret set --vault-name $KV --name "ConnectionStrings--TrueSpendDb" 
 
 ## 6. Service deployment pipeline (GitHub Actions)
 
-`.github/workflows/service-deploy.yml` — build/test → build & push both images → roll Container Apps:
+Per-component and path-filtered. `ci-service` / `ci-worker` build + test the solution and push the image to
+ACR on a push to master that touches their paths; each gates a `cd-*` that rolls the matching Container App to
+the exact `:<sha>` CI built. Shared `truespend.domain` is in both path filters, so a domain change triggers
+both. Both CDs also accept manual `workflow_dispatch` (which deploys `:latest`).
+
+`ci-service.yml` (`ci-worker.yml` is identical with worker paths / image / Dockerfile):
 
 ```yaml
-name: service-deploy
+name: ci-service
 on:
-  workflow_dispatch:   # manual trigger only
+  push:
+    branches: [master]
+    paths: ["service/truespend.api/**", "service/truespend.domain/**", "service/TrueSpend.sln", "docker/truespend.api.Dockerfile"]
+  workflow_dispatch:
 jobs:
-  build-test:
+  build:
     runs-on: ubuntu-latest
+    env: { ACR: ${{ secrets.ACR_NAME }}, TAG: ${{ github.sha }} }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: "9.0.x" }
       - run: dotnet test service/TrueSpend.sln -c Release
-  deploy:
-    needs: build-test
-    runs-on: ubuntu-latest
-    env: { ACR: ${{ secrets.ACR_NAME }}, TAG: ${{ github.sha }} }
-    steps:
-      - uses: actions/checkout@v4
       - uses: azure/login@v2
         with: { creds: ${{ secrets.AZURE_CREDENTIALS }} }
       - run: az acr login --name "$ACR"
-      - name: Build & push API
+      - name: Build & push API (tagged :<sha> and :latest)
         run: |
           docker build -f docker/truespend.api.Dockerfile --target production \
-            -t "$ACR.azurecr.io/truespend-api:$TAG" service
+            -t "$ACR.azurecr.io/truespend-api:$TAG" -t "$ACR.azurecr.io/truespend-api:latest" service
           docker push "$ACR.azurecr.io/truespend-api:$TAG"
-      - name: Build & push worker
-        run: |
-          docker build -f docker/truespend.workerservice.Dockerfile --target production \
-            -t "$ACR.azurecr.io/truespend-worker:$TAG" service
-          docker push "$ACR.azurecr.io/truespend-worker:$TAG"
-      - name: Roll Container Apps
-        run: |
-          az containerapp update -n ca-truespend-api-prod    -g rg-truespend-prod \
-            --image "$ACR.azurecr.io/truespend-api:$TAG"
-          az containerapp update -n ca-truespend-worker-prod -g rg-truespend-prod \
-            --image "$ACR.azurecr.io/truespend-worker:$TAG"
+          docker push "$ACR.azurecr.io/truespend-api:latest"
 ```
 
-> The Dockerfiles build context is `service/` (matches `docker-compose.prod.yml`). Both images share the
-> solution; the target stage selects which entrypoint runs.
+`cd-service.yml` (`cd-worker.yml` identical with worker app / image):
+
+```yaml
+name: cd-service
+on:
+  workflow_run: { workflows: ["ci-service"], types: [completed], branches: [master] }
+  workflow_dispatch:
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: prod   # add required reviewers here to gate the prod roll
+    env: { ACR: ${{ secrets.ACR_NAME }}, TAG: ${{ github.event.workflow_run.head_sha || 'latest' }} }
+    steps:
+      - uses: azure/login@v2
+        with: { creds: ${{ secrets.AZURE_CREDENTIALS }} }
+      - run: |
+          az containerapp update -n ca-truespend-api-prod -g rg-truespend-prod \
+            --image "$ACR.azurecr.io/truespend-api:$TAG"
+```
+
+> Build context is `service/` (matches `docker-compose.prod.yml`); both images share the solution and the
+> target stage selects the entrypoint. Because each `ci-*` is path-filtered, the `workflow_run`-triggered
+> `cd-*` inherits path-scoping — `cd-service` only fires when the API (or shared domain) actually changed.
 
 ## 7. Supabase deployment pipeline (migrations + seeds)
 
@@ -456,21 +473,25 @@ jobs:
 - Auth providers (Apple/Google/email OTP) and SMTP are **dashboard/`config.toml` configuration**, not part of
   `run-all.sql` — configure them in the Supabase dashboard per §9.
 
-## 8. Mobile pipeline — EAS build → TestFlight
+## 8. Mobile pipeline — CI (auto) + EAS build → TestFlight (manual)
 
 Prereqs (one-time): `npm i -g eas-cli`, `eas login`, `eas init` (writes `EXPO_PUBLIC_EAS_PROJECT_ID`),
 `eas credentials` (let EAS manage the distribution cert + provisioning profile), and add the App Store Connect
-API key to EAS (`eas credentials` → iOS → App Store Connect API Key) so `eas submit` is non-interactive.
+API key to EAS (`eas credentials` → iOS → App Store Connect API Key) so `eas submit` is non-interactive. Set
+`cli.appVersionSource: remote` in eas.json (with `autoIncrement: true` on the production profile) so the build
+number increments on EAS's servers — required because the dynamic `app.config.ts` can't be auto-written.
 
-`.github/workflows/mobile-testflight.yml`:
+`ci-ui.yml` runs lint + typecheck + tests on every UI commit (auto, path-filtered `ui-mobile/**`).
+`cd-ui.yml` is **manual** (`workflow_dispatch`) — EAS cloud builds consume credits, so it's not auto-triggered:
 
 ```yaml
-name: mobile-testflight
+name: cd-ui
 on:
   workflow_dispatch:   # manual trigger only
 jobs:
   build-submit:
     runs-on: ubuntu-latest
+    environment: prod
     defaults: { run: { working-directory: ui-mobile } }
     env: { EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }} }
     steps:
@@ -572,8 +593,9 @@ Pass: paid plan unlocks the right features end-to-end, trial countdown shows, an
    for `api.truespend.<env>` at the `api_public_fqdn` output and add the asuid TXT; verify HTTPS reaches the API.
 3. Run the **supabase-migrate** pipeline → schema + policies + seeds.
 4. Configure Supabase Auth providers + SMTP + redirect URLs (§9).
-5. Run **service-deploy** → images to ACR, Container Apps roll to the new revision.
-6. Set EAS env vars (`EXPO_PUBLIC_API_BASE_URL=https://api.truespend.<env>`); run **mobile-testflight** →
+5. Push service/worker changes (or manually dispatch **ci-service** / **ci-worker**) → image to ACR; on CI
+   success **cd-service** / **cd-worker** roll the Container Apps to the new revision.
+6. Set EAS env vars (`EXPO_PUBLIC_API_BASE_URL=https://api.truespend.<env>`); run **cd-ui** (manual) →
    build + submit; accept in TestFlight.
 7. Point Stripe + Plaid webhook URLs at `https://api.truespend.<env>/api/v1/webhooks/...`.
 8. Execute the E2E plan (§10) Phases 0→4, defer 5, finish with 6.

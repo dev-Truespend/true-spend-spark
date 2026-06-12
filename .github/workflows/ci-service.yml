@@ -1,0 +1,45 @@
+# CI for the API: build + unit-test the .NET solution, then build & push the API image to ACR.
+# Does NOT deploy — cd-service rolls the Container App on this workflow's success.
+# Runs ONLY when the API project, shared domain, the solution, or the API Dockerfile changes.
+name: ci-service
+on:
+  push:
+    branches: [master]
+    paths:
+      - "service/truespend.api/**"
+      - "service/truespend.domain/**"
+      - "service/TrueSpend.sln"
+      - "docker/truespend.api.Dockerfile"
+      - ".github/workflows/ci-service.yml"
+  workflow_dispatch:
+    inputs:
+      push_image:
+        description: Build & push the API image to ACR (uncheck for test-only)
+        type: boolean
+        default: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ACR: ${{ secrets.ACR_NAME }}
+      TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      - name: Build & unit test
+        run: dotnet test service/TrueSpend.sln -c Release
+      - name: Azure login
+        if: ${{ github.event_name == 'push' || inputs.push_image }}
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Build & push API image (tagged :<sha> and :latest)
+        if: ${{ github.event_name == 'push' || inputs.push_image }}
+        run: |
+          az acr login --name "$ACR"
+          docker build -f docker/truespend.api.Dockerfile --target production \
+            -t "$ACR.azurecr.io/truespend-api:$TAG" -t "$ACR.azurecr.io/truespend-api:latest" service
+          docker push "$ACR.azurecr.io/truespend-api:$TAG"
+          docker push "$ACR.azurecr.io/truespend-api:latest"

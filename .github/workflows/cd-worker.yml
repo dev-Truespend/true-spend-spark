@@ -1,0 +1,30 @@
+# CD for the worker: roll the worker Container App to the image ci-worker already built + pushed.
+# Auto-runs after a successful ci-worker (workflow_run) — and because ci-worker is
+# path-filtered, this only fires when the worker actually changed. Also manually dispatchable.
+# Does NOT rebuild; ci-worker owns build/test/push. Container App secrets/env come from
+# Key Vault via Terraform.
+name: cd-worker
+on:
+  workflow_run:
+    workflows: ["ci-worker"]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+jobs:
+  deploy:
+    # Auto path: only when ci-worker succeeded. Manual path: always allowed.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: prod   # add required reviewers here to gate the prod roll
+    env:
+      ACR: ${{ secrets.ACR_NAME }}
+      # The exact commit ci-worker built (auto), or :latest for a manual roll.
+      TAG: ${{ github.event.workflow_run.head_sha || 'latest' }}
+    steps:
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Roll worker Container App to the CI-built image
+        run: |
+          az containerapp update -n ca-truespend-worker-prod -g rg-truespend-prod \
+            --image "$ACR.azurecr.io/truespend-worker:$TAG"

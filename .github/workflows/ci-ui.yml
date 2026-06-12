@@ -1,0 +1,27 @@
+# CI for the mobile app: lint + typecheck + unit tests. No build/deploy here.
+# Runs ONLY when ui-mobile/** changes on master. Gates cd-ui (which is manual).
+name: ci-ui
+on:
+  push:
+    branches: [master]
+    paths:
+      - "ui-mobile/**"
+      - ".github/workflows/ci-ui.yml"
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui-mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ui-mobile/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
