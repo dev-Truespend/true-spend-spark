@@ -23,8 +23,12 @@
     },
     "production": {
       "channel": "production",
+      "autoIncrement": true,
       "env": {
         "APP_ENV": "production"
+      },
+      "ios": {
+        "image": "latest"
       }
     }
   },
