@@ -13,8 +13,8 @@ Phase 1 online and in-store recommendation flows for screens `3.1` through `3.4`
 | User can connect a bank from the home empty state | Done |  |
 | User can see plan or upgrade guidance from the home empty state | Done |  |
 | User can get a clear single-card recommendation at a single-category merchant | Done |  |
-| User can see the current detected merchant when shopping in person | Done | Foursquare search wired into `useDetectMerchantMutation`; `foursquareClient` returns placeholder Bay-Area places when `EXPO_PUBLIC_FOURSQUARE_API_KEY` is empty |
-| User can see the best card recommendation for the detected merchant | Done | `GetHomeAsync` no longer fabricates a merchant; recommendation flows from `/merchants/resolve` → `/recommendations/in-store` |
+| User can see the current detected merchant when shopping in person | Done | Foreground geo: on Wallet open the app sends device coords to `POST /api/v1/recommendations/nearby`; the server resolves the merchant from `foursquare.places` via the shared `GeoPlaceMatchBusiness` (same coordinate match the geo-arrival path uses) — no on-device places key. Falls back to the home last-visited replay when location is denied or no confident match. |
+| User can see the best card recommendation for the detected merchant | Done | `/recommendations/nearby` composes place-match → shared `MerchantResolveBusiness` → `RecommendationBuilderBusiness` (`in_store` context), returning the same `RecommendationResponse` as in-store. `/merchants/resolve` + `/recommendations/in-store` remain for explicit merchant-id flows (category chips, refresh). |
 | User can see expected rewards value for the recommended card | Done |  |
 | User can see why the recommended card is better than other cards | Done |  |
 | User can see runner-up card options for the current purchase | Done |  |
@@ -83,7 +83,11 @@ Phase 1 online and in-store recommendation flows for screens `3.1` through `3.4`
 Open Home
   GET /api/v1/recommendations/home
 
-Detected merchant
+Detected merchant (foreground geo, automatic on Wallet open)
+  POST /api/v1/recommendations/nearby   { lat, lng, accuracyMeters }
+  (server: place-match -> resolve merchant -> best card; falls back to home replay on no match)
+
+Explicit merchant id (category chips / refresh)
   POST /api/v1/merchants/resolve
   POST /api/v1/recommendations/in-store
 
@@ -100,6 +104,7 @@ Refresh
 | Step | API | Contract | Execution | Events/Consumers | Tables | Cache |
 |---|---|---|---|---|---|---|
 | Load Home | `GET /api/v1/recommendations/home` | `RecommendationResponse`: `recommendation`, `emptyState` | Sync API | None | Read `finance.user_cards`, `catalog.reward_rules`, `finance.recommendations`, `lookup.recommendation_contexts` | Mobile memory cache; short server TTL |
+| Nearby recommendation (foreground geo) | `POST /api/v1/recommendations/nearby` | `NearbyRecommendationRequest` (`lat`, `lng`, `accuracyMeters?`, `estimatedAmount?`) -> `RecommendationResponse` | Sync API | None | Read `foursquare.places`, `foursquare.category_bridge`, `catalog.reward_rules`, `finance.user_cards`; read/write `finance.merchants` (find-or-create), write `finance.recommendations`; provider-on-miss upsert `foursquare.places` | Tables are source of truth; no notification/gating (read-style) |
 | Empty-state CTAs | Navigation; optional `GET /api/v1/entitlements` | `EntitlementsResponse`: `planCode`, `manualCardLimit`, `plaidCardLimit`, `unlimitedCards` | Sync API | None | Read `billing.subscriptions`, `billing.plan_features` | Mobile short cache; server entitlement cache |
 | Resolve detected merchant | `POST /api/v1/merchants/resolve` | `ResolveMerchantRequest` -> `MerchantResponse` | Sync API | None | Read/write `finance.merchants`, read `catalog.categories`, `catalog.category_aliases` | Server merchant-resolution cache; DB first for new merchants |
 | Get in-store recommendation | `POST /api/v1/recommendations/in-store` | `InStoreRecommendationRequest` -> `RecommendationResponse` | Sync API | None | Read `finance.user_cards`, `finance.card_reward_overrides`, `catalog.reward_rules`, `finance.merchants`; write `finance.recommendations` | Mobile memory cache; short server TTL keyed by user, merchant, category |
@@ -119,6 +124,7 @@ Refresh
 | `MerchantVm` | `id`, `name`, `categoryCode`, `isMultiCategory`, `address` |
 | `CardSummaryVm` | `id`, `displayName`, `issuerName`, `lastFour`, `cardArtUrl` |
 | `ResolveMerchantRequest` | `name`, `provider`, `providerPlaceId`, `lat`, `lng`, `address` |
+| `NearbyRecommendationRequest` | `lat`, `lng`, `accuracyMeters`, `estimatedAmount` |
 | `InStoreRecommendationRequest` | `merchantId`, `categoryCode`, `estimatedAmount` |
 | `UpdateRecommendationCategoryRequest` | `recommendationId`, `categoryCode` |
 | `RefreshRecommendationRequest` | `merchantId`, `categoryCode` |

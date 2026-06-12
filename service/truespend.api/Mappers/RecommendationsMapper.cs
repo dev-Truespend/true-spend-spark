@@ -8,6 +8,7 @@ using DomainPortfolioCard = TrueSpend.Domain.Models.Recommendations.PortfolioCar
 using DomainPortfolioCategory = TrueSpend.Domain.Models.Recommendations.PortfolioCategory;
 using DomainInStore = TrueSpend.Domain.Models.Recommendations.InStoreRecommendationRequest;
 using DomainRefresh = TrueSpend.Domain.Models.Recommendations.RefreshRecommendationRequest;
+using DomainNearby = TrueSpend.Domain.Models.Recommendations.NearbyRecommendationRequest;
 using DomainCategory = TrueSpend.Domain.Models.Recommendations.UpdateRecommendationCategoryRequest;
 using DomainMoney = TrueSpend.Domain.Models.Common.Money;
 
@@ -17,6 +18,7 @@ public interface IRecommendationsMapper
 {
     DomainInStore ToDomain(InStoreRecommendationRequestVm request);
     DomainRefresh ToDomain(RefreshRecommendationRequestVm request);
+    DomainNearby ToDomain(NearbyRecommendationRequestVm request);
     DomainCategory ToDomain(UpdateRecommendationCategoryRequestVm request);
     RecommendationResponseVm ToResponse(DomainResp domain, ICardsMapper cardsMapper, IMerchantsMapper merchantsMapper);
 }
@@ -28,6 +30,9 @@ public sealed class RecommendationsMapper : IRecommendationsMapper
 
     public DomainRefresh ToDomain(RefreshRecommendationRequestVm request) =>
         new(request.MerchantId, request.CategoryCode);
+
+    public DomainNearby ToDomain(NearbyRecommendationRequestVm request) =>
+        new(request.Lat, request.Lng, request.AccuracyMeters, request.EstimatedAmount);
 
     public DomainCategory ToDomain(UpdateRecommendationCategoryRequestVm request) =>
         new(request.RecommendationId, request.CategoryCode);

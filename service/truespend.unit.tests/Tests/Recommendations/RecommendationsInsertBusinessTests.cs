@@ -1,5 +1,7 @@
 using Moq;
 using TrueSpend.Domain.Business.Recommendations;
+using TrueSpend.Domain.BusinessInterfaces.Geo;
+using TrueSpend.Domain.BusinessInterfaces.Merchants;
 using TrueSpend.Domain.BusinessInterfaces.Recommendations;
 using TrueSpend.Domain.Models.Onboarding;
 using TrueSpend.Domain.Models.Cards;
@@ -44,7 +46,7 @@ public sealed class RecommendationsInsertBusinessTests
         var builder = new Mock<IRecommendationBuilderBusiness>();
         builder.Setup(b => b.BuildAsync(It.IsAny<OnboardingWorkflowUser>(), merchant, "electronics", 80m, It.IsAny<CancellationToken>()))
             .ReturnsAsync(recommendation);
-        var business = new RecommendationsInsertBusiness(merchants.Object, builder.Object, new RecommendationsValidator());
+        var business = new RecommendationsInsertBusiness(merchants.Object, builder.Object, Mock.Of<IGeoPlaceMatchBusiness>(), Mock.Of<IMerchantResolveBusiness>(), new RecommendationsValidator());
 
         var response = await business.GetInStoreRecommendationAsync(TestUserFactory.AnyUser(),
             new InStoreRecommendationRequest(1, "electronics", 80m), CancellationToken.None);
@@ -63,7 +65,7 @@ public sealed class RecommendationsInsertBusinessTests
         var builder = new Mock<IRecommendationBuilderBusiness>();
         builder.Setup(b => b.BuildAsync(It.IsAny<OnboardingWorkflowUser>(), merchant, "home_goods", 25m, It.IsAny<CancellationToken>()))
             .ReturnsAsync(recommendation);
-        var business = new RecommendationsInsertBusiness(merchants.Object, builder.Object, new RecommendationsValidator());
+        var business = new RecommendationsInsertBusiness(merchants.Object, builder.Object, Mock.Of<IGeoPlaceMatchBusiness>(), Mock.Of<IMerchantResolveBusiness>(), new RecommendationsValidator());
 
         var response = await business.RefreshRecommendationAsync(TestUserFactory.AnyUser(),
             new RefreshRecommendationRequest(1, null), CancellationToken.None);
@@ -78,7 +80,7 @@ public sealed class RecommendationsInsertBusinessTests
         var merchants = new Mock<IMerchantsReadService>();
         merchants.Setup(m => m.GetMerchantAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((Merchant?)null);
         var builder = new Mock<IRecommendationBuilderBusiness>();
-        var business = new RecommendationsInsertBusiness(merchants.Object, builder.Object, new RecommendationsValidator());
+        var business = new RecommendationsInsertBusiness(merchants.Object, builder.Object, Mock.Of<IGeoPlaceMatchBusiness>(), Mock.Of<IMerchantResolveBusiness>(), new RecommendationsValidator());
 
         var response = await business.GetInStoreRecommendationAsync(TestUserFactory.AnyUser(),
             new InStoreRecommendationRequest(1, "electronics", 80m), CancellationToken.None);
@@ -93,7 +95,7 @@ public sealed class RecommendationsInsertBusinessTests
     {
         var merchants = new Mock<IMerchantsReadService>();
         var builder = new Mock<IRecommendationBuilderBusiness>();
-        var business = new RecommendationsInsertBusiness(merchants.Object, builder.Object, new RecommendationsValidator());
+        var business = new RecommendationsInsertBusiness(merchants.Object, builder.Object, Mock.Of<IGeoPlaceMatchBusiness>(), Mock.Of<IMerchantResolveBusiness>(), new RecommendationsValidator());
 
         var response = await business.GetInStoreRecommendationAsync(TestUserFactory.AnyUser(),
             new InStoreRecommendationRequest(0, "electronics", null), CancellationToken.None);

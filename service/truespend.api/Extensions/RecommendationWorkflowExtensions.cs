@@ -27,6 +27,8 @@ public static class RecommendationWorkflowExtensions
         services.AddScoped<IRecommendationsUpdateBusiness, RecommendationsUpdateBusiness>();
         services.AddScoped<IMerchantsReadBusiness, MerchantsReadBusiness>();
         services.AddScoped<IMerchantsInsertBusiness, MerchantsInsertBusiness>();
+        // Shared find-or-create-by-name resolve used by both the nearby recommendation and geo arrival (10a).
+        services.AddScoped<IMerchantResolveBusiness, MerchantResolveBusiness>();
 
         services.AddScoped<MerchantsValidator>();
         services.AddScoped<RecommendationsValidator>();

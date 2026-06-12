@@ -31,6 +31,10 @@ public sealed class RecommendationsController(
     public async Task<IActionResult> Refresh(RefreshRecommendationRequestVm request, CancellationToken cancellationToken) =>
         Respond(await insertBusiness.RefreshRecommendationAsync(CurrentUser(), mapper.ToDomain(request), cancellationToken), domain => mapper.ToResponse(domain, cardsMapper, merchantsMapper));
 
+    [HttpPost("nearby")]
+    public async Task<IActionResult> Nearby(NearbyRecommendationRequestVm request, CancellationToken cancellationToken) =>
+        Respond(await insertBusiness.GetNearbyRecommendationAsync(CurrentUser(), mapper.ToDomain(request), cancellationToken), domain => mapper.ToResponse(domain, cardsMapper, merchantsMapper));
+
     [HttpPost("category")]
     public async Task<IActionResult> Category(UpdateRecommendationCategoryRequestVm request, CancellationToken cancellationToken) =>
         Respond(await updateBusiness.UpdateCategoryAsync(CurrentUser(), mapper.ToDomain(request), cancellationToken), domain => mapper.ToResponse(domain, cardsMapper, merchantsMapper));

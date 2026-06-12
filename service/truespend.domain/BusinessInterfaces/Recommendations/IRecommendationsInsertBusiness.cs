@@ -22,4 +22,9 @@ public interface IRecommendationsInsertBusiness
         OnboardingWorkflowUser user,
         RefreshRecommendationRequest request,
         CancellationToken cancellationToken);
+
+    Task<BusinessResponse<RecommendationResponse>> GetNearbyRecommendationAsync(
+        OnboardingWorkflowUser user,
+        NearbyRecommendationRequest request,
+        CancellationToken cancellationToken);
 }

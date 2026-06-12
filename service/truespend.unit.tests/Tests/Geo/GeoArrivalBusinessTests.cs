@@ -4,6 +4,7 @@ using Moq;
 using TrueSpend.Domain.Business.Geo;
 using TrueSpend.Domain.BusinessInterfaces.Billing;
 using TrueSpend.Domain.BusinessInterfaces.Geo;
+using TrueSpend.Domain.BusinessInterfaces.Merchants;
 using TrueSpend.Domain.BusinessInterfaces.Notifications;
 using TrueSpend.Domain.BusinessInterfaces.Recommendations;
 using TrueSpend.Domain.Constants;
@@ -37,7 +38,7 @@ public sealed class GeoArrivalBusinessTests
     {
         var ctx = TestContext.Default();
         var merchant = new Merchant(7, "Starbucks", "coffee", false, "1 Pike St");
-        ctx.MerchantsRead.Setup(m => m.FindByNameAsync("Starbucks", It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+        ctx.MerchantResolve.Setup(m => m.ResolveByNameAsync("Starbucks", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
         ctx.Builder.Setup(b => b.BuildAsync(It.IsAny<OnboardingWorkflowUser>(), merchant, "coffee", It.IsAny<decimal>(), RecommendationsConstants.GeofenceArrivalContextCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleRecommendation(merchant));
         ctx.InsertService.Setup(i => i.InsertNotificationAsync(It.IsAny<NotificationEntity>(), It.IsAny<CancellationToken>())).ReturnsAsync(42);
@@ -59,7 +60,7 @@ public sealed class GeoArrivalBusinessTests
         var merchant = new Merchant(7, "Chipotle", "dining", false, null);
         ctx.PlaceMatch.Setup(p => p.ResolveAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PlaceMatch(true, "Chipotle", GeoConstants.ProviderFoursquare, "fsq-chipotle-1", ArrivalConfidenceTierEnum.High));
-        ctx.MerchantsRead.Setup(m => m.FindByNameAsync("Chipotle", It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+        ctx.MerchantResolve.Setup(m => m.ResolveByNameAsync("Chipotle", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
         ctx.Builder.Setup(b => b.BuildAsync(It.IsAny<OnboardingWorkflowUser>(), merchant, "dining", It.IsAny<decimal>(), RecommendationsConstants.GeofenceArrivalContextCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleRecommendation(merchant));
         ctx.InsertService.Setup(i => i.InsertNotificationAsync(It.IsAny<NotificationEntity>(), It.IsAny<CancellationToken>())).ReturnsAsync(55);
@@ -79,7 +80,7 @@ public sealed class GeoArrivalBusinessTests
         var merchant = new Merchant(7, "Chipotle", "dining", false, null);
         ctx.PlaceMatch.Setup(p => p.ResolveAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PlaceMatch(true, "Chipotle", GeoConstants.ProviderFoursquare, "fsq-chipotle-1", ArrivalConfidenceTierEnum.Medium));
-        ctx.MerchantsRead.Setup(m => m.FindByNameAsync("Chipotle", It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+        ctx.MerchantResolve.Setup(m => m.ResolveByNameAsync("Chipotle", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
         var business = ctx.Build();
 
         var response = await business.HandleArrivalAsync(CustomArrival(), CancellationToken.None);
@@ -109,7 +110,7 @@ public sealed class GeoArrivalBusinessTests
     {
         var ctx = TestContext.Default();
         var merchant = new Merchant(7, "Starbucks", "coffee", false, null);
-        ctx.MerchantsRead.Setup(m => m.FindByNameAsync("Starbucks", It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+        ctx.MerchantResolve.Setup(m => m.ResolveByNameAsync("Starbucks", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
         ctx.ReadService.Setup(r => r.HasActiveCardsAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         var business = ctx.Build();
 
@@ -180,7 +181,7 @@ public sealed class GeoArrivalBusinessTests
         public Mock<IGeoWebhookReadService> ReadService { get; } = new();
         public Mock<IGeoWebhookInsertService> InsertService { get; } = new();
         public Mock<IMerchantsReadService> MerchantsRead { get; } = new();
-        public Mock<IMerchantsInsertService> MerchantsInsert { get; } = new();
+        public Mock<IMerchantResolveBusiness> MerchantResolve { get; } = new();
         public Mock<IGeoPlaceMatchBusiness> PlaceMatch { get; } = new();
         public Mock<IRecommendationBuilderBusiness> Builder { get; } = new();
         public Mock<IBillingReadBusiness> BillingRead { get; } = new();
@@ -212,7 +213,7 @@ public sealed class GeoArrivalBusinessTests
             ReadService.Object,
             InsertService.Object,
             MerchantsRead.Object,
-            MerchantsInsert.Object,
+            MerchantResolve.Object,
             PlaceMatch.Object,
             Builder.Object,
             BillingRead.Object,

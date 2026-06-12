@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TrueSpend.Domain.BusinessInterfaces.Billing;
 using TrueSpend.Domain.BusinessInterfaces.Geo;
+using TrueSpend.Domain.BusinessInterfaces.Merchants;
 using TrueSpend.Domain.BusinessInterfaces.Notifications;
 using TrueSpend.Domain.BusinessInterfaces.Recommendations;
 using TrueSpend.Domain.Constants;
@@ -30,7 +31,7 @@ public sealed class GeoArrivalBusiness(
     IGeoWebhookReadService readService,
     IGeoWebhookInsertService insertService,
     IMerchantsReadService merchantsReadService,
-    IMerchantsInsertService merchantsInsertService,
+    IMerchantResolveBusiness merchantResolve,
     IGeoPlaceMatchBusiness placeMatchBusiness,
     IRecommendationBuilderBusiness recommendationBuilder,
     IBillingReadBusiness billingReadBusiness,
@@ -286,7 +287,7 @@ public sealed class GeoArrivalBusiness(
             return (null, match.Tier);
         }
 
-        var merchant = await ResolveMerchantByNameAsync(match.Name!, input.Provider, match.ProviderPlaceId, cancellationToken);
+        var merchant = await merchantResolve.ResolveByNameAsync(match.Name!, input.Provider, match.ProviderPlaceId, address: null, cancellationToken);
         return (merchant, match.Tier);
     }
 
@@ -306,24 +307,7 @@ public sealed class GeoArrivalBusiness(
 
         var name = !string.IsNullOrWhiteSpace(input.PlaceChain) ? input.PlaceChain : input.PlaceName;
         if (string.IsNullOrWhiteSpace(name)) return null;
-        return await ResolveMerchantByNameAsync(name, input.Provider, input.ProviderPlaceId, cancellationToken);
-    }
-
-    private async Task<Merchant> ResolveMerchantByNameAsync(string name, string provider, string? providerPlaceId, CancellationToken cancellationToken)
-    {
-        var existing = await merchantsReadService.FindByNameAsync(name, cancellationToken);
-        if (existing is not null) return existing;
-
-        var category = await merchantsReadService.ResolveCategoryAsync(name, cancellationToken);
-        // provider comes from the event, not a constant, so custom-detected merchants are not mislabeled.
-        return await merchantsInsertService.SaveMerchantAsync(
-            name,
-            provider: provider,
-            providerPlaceId: providerPlaceId,
-            categoryCode: category.CategoryCode,
-            isMultiCategory: category.IsMultiCategory,
-            address: null,
-            cancellationToken);
+        return await merchantResolve.ResolveByNameAsync(name, input.Provider, input.ProviderPlaceId, address: null, cancellationToken);
     }
 
     private async Task TryWriteLocationEventAsync(Guid userId, GeoArrivalInput input, int? merchantId, string locationEventCode, CancellationToken cancellationToken)
