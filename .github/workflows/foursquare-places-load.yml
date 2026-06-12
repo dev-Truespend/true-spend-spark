@@ -49,8 +49,7 @@ jobs:
           max_rows=${{ inputs.max_rows }}
           echo "CSV data rows: $data_rows (guard max: $max_rows)"
           if [ "$data_rows" -gt "$max_rows" ]; then
-            echo "::error::CSV has $data_rows data rows, exceeding the $max_rows disk-safety guard. \
-Bump max_rows only after confirming the Supabase instance disk has headroom (or enable autoscaling)."
+            echo "::error::CSV has $data_rows data rows, exceeding the $max_rows disk-safety guard. Bump max_rows only after confirming the Supabase instance disk has headroom (or enable autoscaling)."
             exit 1
           fi
       - name: Load into prod (drop indexes -> \copy + upsert -> rebuild)
