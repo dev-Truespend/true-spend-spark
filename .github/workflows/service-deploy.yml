@@ -1,41 +1,28 @@
-# Extracted from _docs/Deployment/deployment-guide.md §6.
-# Build/test -> build & push API + worker images to ACR -> roll the prod Container Apps.
-# Container App secrets/env are projected from Key Vault by Terraform; this pipeline only swaps images.
+# Rolls the prod Container Apps to the image that CI (ci.yml) already built + pushed to ACR.
+# Does NOT rebuild — CI owns build/test/push. Auto-runs after a successful CI on master;
+# also manually dispatchable. Container App secrets/env are projected from Key Vault by Terraform.
 name: service-deploy
 on:
-  workflow_dispatch:   # manual trigger only — Run workflow button
+  workflow_run:
+    workflows: ["ci"]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
 jobs:
-  build-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "9.0.x"
-      - run: dotnet test service/TrueSpend.sln -c Release
   deploy:
-    needs: build-test
+    # Auto path: only when CI succeeded. Manual path: always allowed.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    environment: prod   # add required reviewers here to gate the prod roll
     env:
       ACR: ${{ secrets.ACR_NAME }}
-      TAG: ${{ github.sha }}
+      # The exact commit CI built (auto), or the dispatched ref (manual). CI tags images :<sha>.
+      TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
-      - uses: actions/checkout@v4
       - uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - run: az acr login --name "$ACR"
-      - name: Build & push API
-        run: |
-          docker build -f docker/truespend.api.Dockerfile --target production \
-            -t "$ACR.azurecr.io/truespend-api:$TAG" service
-          docker push "$ACR.azurecr.io/truespend-api:$TAG"
-      - name: Build & push worker
-        run: |
-          docker build -f docker/truespend.workerservice.Dockerfile --target production \
-            -t "$ACR.azurecr.io/truespend-worker:$TAG" service
-          docker push "$ACR.azurecr.io/truespend-worker:$TAG"
-      - name: Roll Container Apps
+      - name: Roll Container Apps to the CI-built image
         run: |
           az containerapp update -n ca-truespend-api-prod    -g rg-truespend-prod \
             --image "$ACR.azurecr.io/truespend-api:$TAG"

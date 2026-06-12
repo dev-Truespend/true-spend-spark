@@ -4,9 +4,15 @@
 # Set the EXPO_PUBLIC_* prod values as EAS environment variables so the binary embeds prod URLs.
 name: mobile-testflight
 on:
-  workflow_dispatch:   # manual trigger only — Run workflow button
+  workflow_run:
+    workflows: ["ci"]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
 jobs:
   build-submit:
+    # Auto path: only when CI succeeded. Manual path: always allowed.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     defaults:
       run:
