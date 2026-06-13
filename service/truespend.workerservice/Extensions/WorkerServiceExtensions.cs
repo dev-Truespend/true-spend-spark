@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using TrueSpend.Domain.Business.AIInsights;
 using TrueSpend.Domain.Business.Analytics;
 using TrueSpend.Domain.Business.Billing;
@@ -65,7 +66,16 @@ public static class WorkerServiceExtensions
         builder.Services.AddDbContext<TrueSpendDbContext>(options =>
         {
             if (!string.IsNullOrWhiteSpace(connectionString))
-                options.UseNpgsql(connectionString);
+            {
+                // Cap the per-replica Npgsql pool so api(1) + worker(1) stay under the
+                // session-mode Supabase pooler size. See PersistenceExtensions for the math.
+                var dbBuilder = new NpgsqlConnectionStringBuilder(connectionString)
+                {
+                    MaxPoolSize = 6,
+                    MinPoolSize = 0,
+                };
+                options.UseNpgsql(dbBuilder.ConnectionString);
+            }
         });
 
         // Required by AIInsightsGenerationBusiness and PlaidUpdateBusiness for entitlement gating.

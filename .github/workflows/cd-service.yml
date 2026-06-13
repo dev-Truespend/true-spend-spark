@@ -28,3 +28,19 @@ jobs:
         run: |
           az containerapp update -n ca-truespend-api-prod -g rg-truespend-prod \
             --image "$ACR.azurecr.io/truespend-api:$TAG"
+      # Single revision mode auto-deactivates the prior revision, but deactivate any
+      # other still-active revision defensively so only the live one ever runs (keeps
+      # the connection count bounded and the revision list clean). No-op in the normal case.
+      - name: Deactivate non-live API revisions
+        run: |
+          APP=ca-truespend-api-prod; RG=rg-truespend-prod
+          LIVE=$(az containerapp show -n "$APP" -g "$RG" \
+            --query "properties.latestReadyRevisionName" -o tsv)
+          echo "Live revision: $LIVE — keeping it running"
+          az containerapp revision list -n "$APP" -g "$RG" \
+            --query "[?properties.active && name!='$LIVE'].name" -o tsv \
+          | while read -r REV; do
+              [ -n "$REV" ] || continue
+              az containerapp revision deactivate -n "$APP" -g "$RG" --revision "$REV" || true
+              echo "  Deactivated: $REV"
+            done

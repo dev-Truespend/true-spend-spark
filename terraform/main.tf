@@ -128,6 +128,13 @@ resource "azurerm_container_app" "api" {
   }
 
   template {
+    # Pinned to a single replica: the session-mode Supabase pooler caps total
+    # clients at pool_size, and each replica keeps its own Npgsql pool. Pin min=max=1
+    # so connection count is bounded and deterministic (no scale-to-zero, which would
+    # also drop the worker's schedulers). Raise deliberately alongside the pooler size.
+    min_replicas = 1
+    max_replicas = 1
+
     container {
       name   = "api"
       image  = "${azurerm_container_registry.acr.login_server}/truespend-api:${var.image_tag}"
@@ -221,6 +228,11 @@ resource "azurerm_container_app" "worker" {
   }
 
   template {
+    # Pin min=max=1 — the worker runs scheduled hosted services that must stay
+    # resident (scale-to-zero would stop them) and must not multiply DB connections.
+    min_replicas = 1
+    max_replicas = 1
+
     container {
       name   = "worker"
       image  = "${azurerm_container_registry.acr.login_server}/truespend-worker:${var.image_tag}"
