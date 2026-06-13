@@ -64,9 +64,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [session]);
 
   const completeSignedInSession = useCallback(async (nextSession: Session) => {
-    setSession(nextSession);
     const data = await bootstrapAuth();
     await setCachedJson(AUTH_BOOTSTRAP_CACHE_KEY, data);
+    setSession(nextSession);
     setBootstrap(data);
     setBootstrapError(null);
     router.replace(getRouteForBootstrap(data));

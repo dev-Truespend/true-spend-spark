@@ -1,12 +1,14 @@
 import { Redirect, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useAuth } from "@/providers/AuthProvider";
+import { getRouteForBootstrap } from "@/features/auth/mappers/authRoute.mapper";
 
 export default function AuthLayout() {
-  const { session, isRestoring } = useAuth();
+  const { session, bootstrap, isRestoring } = useAuth();
 
   if (!isRestoring && session) {
-    return <Redirect href="/(app)/(tabs)" />;
+    if (!bootstrap) return null;
+    return <Redirect href={getRouteForBootstrap(bootstrap)} />;
   }
 
   return (
