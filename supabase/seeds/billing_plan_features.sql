@@ -9,6 +9,8 @@ from (values
   ('free', 'plaid_linking_enabled', 'false'),
   ('free', 'plaid_transactions_view_enabled', 'false'),
   ('free', 'geofencing_enabled', 'true'),
+  ('free', 'map_pins_enabled', 'false'),
+  ('free', 'place_search_enabled', 'false'),
   ('basic', 'manual_card_limit', '3'),
   ('basic', 'plaid_card_limit', '3'),
   ('basic', 'geo_recommendations_per_day', '3'),
@@ -17,6 +19,8 @@ from (values
   ('basic', 'plaid_linking_enabled', 'true'),
   ('basic', 'plaid_transactions_view_enabled', 'true'),
   ('basic', 'geofencing_enabled', 'true'),
+  ('basic', 'map_pins_enabled', 'true'),
+  ('basic', 'place_search_enabled', 'false'),
   ('pro', 'manual_card_limit', 'unlimited'),
   ('pro', 'plaid_card_limit', 'unlimited'),
   ('pro', 'geo_recommendations_per_day', 'unlimited'),
@@ -24,7 +28,9 @@ from (values
   ('pro', 'unlimited_cards', 'true'),
   ('pro', 'plaid_linking_enabled', 'true'),
   ('pro', 'plaid_transactions_view_enabled', 'true'),
-  ('pro', 'geofencing_enabled', 'true')
+  ('pro', 'geofencing_enabled', 'true'),
+  ('pro', 'map_pins_enabled', 'true'),
+  ('pro', 'place_search_enabled', 'true')
 ) as values_by_plan(plan_code, feature_code, value)
 join billing.plans p on p.code = values_by_plan.plan_code
 join billing.features f on f.code = values_by_plan.feature_code

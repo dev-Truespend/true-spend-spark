@@ -15,6 +15,8 @@ using TrueSpend.Domain.Models.Recommendations;
 using TrueSpend.Domain.ServiceInterfaces.Cards;
 using TrueSpend.Domain.ServiceInterfaces.Merchants;
 using TrueSpend.Domain.ServiceInterfaces.Geo;
+using TrueSpend.Domain.BusinessInterfaces.Billing;
+using TrueSpend.Domain.Exceptions;
 using TrueSpend.Domain.Models.Geo;
 using TrueSpend.Domain.Validators;
 using TrueSpend.UnitTests.Helpers;
@@ -40,47 +42,125 @@ public sealed class RecommendationsReadBusinessTests
         Mock<ICardsReadService>? cards = null,
         Mock<IMerchantsReadService>? merchants = null,
         Mock<IRecommendationBuilderBusiness>? builder = null,
-        Mock<IGeoPlaceMatchReadService>? geo = null)
+        Mock<IGeoPlaceMatchReadService>? geo = null,
+        Mock<IEntitlementGuard>? guard = null)
     {
         cards ??= new Mock<ICardsReadService>();
         merchants ??= new Mock<IMerchantsReadService>();
         builder ??= new Mock<IRecommendationBuilderBusiness>();
         geo ??= new Mock<IGeoPlaceMatchReadService>();
+        // Loose guard mock allows every feature by default (RequireFeatureAsync completes without throwing).
+        guard ??= new Mock<IEntitlementGuard>();
         // Default portfolio mock — returns the sample so tests don't have to wire it each time.
         cards.Setup(c => c.GetPortfolioAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SamplePortfolio);
-        return new RecommendationsReadBusiness(cards.Object, merchants.Object, geo.Object, new RecommendationsValidator(), builder.Object);
+        return new RecommendationsReadBusiness(cards.Object, merchants.Object, geo.Object, new RecommendationsValidator(), builder.Object, guard.Object);
     }
 
     [Fact]
-    public async Task GetNearbyMerchants_clamps_limit_and_returns_service_results()
+    public async Task GetNearbyMerchants_clamps_limit_and_radius_and_returns_service_results()
     {
         var geo = new Mock<IGeoPlaceMatchReadService>();
-        geo.Setup(g => g.FindNearbyMerchantsInBoundsAsync(
-                It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(),
-                It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        geo.Setup(g => g.FindNearbyMerchantsInRadiusAsync(
+                It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { new NearbyMerchant("fsq-1", "Target", 37.5m, -122.4m, "shopping", "Shopping", "Target") });
         var business = CreateBusiness(geo: geo);
 
-        var request = new NearbyMerchantsRequest(37.4m, -122.5m, 37.6m, -122.3m, 37.5m, -122.4m, Limit: 999);
+        var request = new NearbyMerchantsRequest(37.5m, -122.4m, RadiusMeters: 999999, Limit: 999);
         var response = await business.GetNearbyMerchantsAsync(TestUserFactory.AnyUser(), request, CancellationToken.None);
 
         Assert.Equal(200, response.StatusCode);
         Assert.Single(response.Data!.Merchants);
-        // Limit clamped to the max (50), never the requested 999.
-        geo.Verify(g => g.FindNearbyMerchantsInBoundsAsync(
-            It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(),
-            It.IsAny<decimal>(), It.IsAny<decimal>(), 50, It.IsAny<CancellationToken>()), Times.Once);
+        // Radius clamped to max (10000m) and limit clamped to max (100) — never the requested extremes.
+        geo.Verify(g => g.FindNearbyMerchantsInRadiusAsync(
+            It.IsAny<decimal>(), It.IsAny<decimal>(), 10000, 100, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task GetNearbyMerchants_rejects_inverted_bounds()
+    public async Task GetNearbyMerchants_rejects_out_of_range_center()
     {
         var business = CreateBusiness();
-        // NE below SW — inverted box.
-        var request = new NearbyMerchantsRequest(37.6m, -122.3m, 37.4m, -122.5m, 37.5m, -122.4m, Limit: 30);
+        var request = new NearbyMerchantsRequest(CenterLat: 200m, CenterLng: -122.4m, RadiusMeters: 3000, Limit: 30);
         var response = await business.GetNearbyMerchantsAsync(TestUserFactory.AnyUser(), request, CancellationToken.None);
         Assert.Equal(400, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SearchPlaces_lowercases_query_clamps_limit_and_returns_service_results()
+    {
+        var geo = new Mock<IGeoPlaceMatchReadService>();
+        geo.Setup(g => g.SearchPlacesAsync(
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { new NearbyMerchant("fsq-1", "Costco", 37.5m, -122.4m, "shopping", "Shopping", "Costco") });
+        var business = CreateBusiness(geo: geo);
+
+        var request = new SearchPlacesRequest("  CostCo ", 37.5m, -122.4m, Limit: 999);
+        var response = await business.SearchPlacesAsync(TestUserFactory.AnyUser(), request, CancellationToken.None);
+
+        Assert.Equal(200, response.StatusCode);
+        Assert.Single(response.Data!.Merchants);
+        // Query trimmed + lowercased; limit clamped to max (100).
+        geo.Verify(g => g.SearchPlacesAsync("costco", 37.5m, -122.4m, 100, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SearchPlaces_rejects_short_query()
+    {
+        var geo = new Mock<IGeoPlaceMatchReadService>();
+        var business = CreateBusiness(geo: geo);
+
+        var request = new SearchPlacesRequest("a", 37.5m, -122.4m, Limit: null);
+        var response = await business.SearchPlacesAsync(TestUserFactory.AnyUser(), request, CancellationToken.None);
+
+        Assert.Equal(400, response.StatusCode);
+        geo.Verify(g => g.SearchPlacesAsync(
+            It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SearchPlaces_rejects_out_of_range_center()
+    {
+        var business = CreateBusiness();
+        var request = new SearchPlacesRequest("costco", CenterLat: 200m, CenterLng: -122.4m, Limit: null);
+        var response = await business.SearchPlacesAsync(TestUserFactory.AnyUser(), request, CancellationToken.None);
+        Assert.Equal(400, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetNearbyMerchants_requires_map_pins_feature()
+    {
+        var geo = new Mock<IGeoPlaceMatchReadService>();
+        var guard = new Mock<IEntitlementGuard>();
+        guard.Setup(g => g.RequireFeatureAsync(
+                It.IsAny<OnboardingWorkflowUser>(), BillingConstants.MapPinsEnabledFeatureCode, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new EntitlementRequiredAppException(BillingConstants.MapPinsEnabledFeatureCode, BillingConstants.BasicPlanCode, "Basic"));
+        var business = CreateBusiness(geo: geo, guard: guard);
+
+        var request = new NearbyMerchantsRequest(37.5m, -122.4m, RadiusMeters: 2000, Limit: 30);
+        await Assert.ThrowsAsync<EntitlementRequiredAppException>(
+            () => business.GetNearbyMerchantsAsync(TestUserFactory.AnyUser(), request, CancellationToken.None));
+
+        // Gated before hitting the data layer.
+        geo.Verify(g => g.FindNearbyMerchantsInRadiusAsync(
+            It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SearchPlaces_requires_place_search_feature()
+    {
+        var geo = new Mock<IGeoPlaceMatchReadService>();
+        var guard = new Mock<IEntitlementGuard>();
+        guard.Setup(g => g.RequireFeatureAsync(
+                It.IsAny<OnboardingWorkflowUser>(), BillingConstants.PlaceSearchEnabledFeatureCode, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new EntitlementRequiredAppException(BillingConstants.PlaceSearchEnabledFeatureCode, BillingConstants.ProPlanCode, "Pro"));
+        var business = CreateBusiness(geo: geo, guard: guard);
+
+        var request = new SearchPlacesRequest("costco", 37.5m, -122.4m, Limit: null);
+        await Assert.ThrowsAsync<EntitlementRequiredAppException>(
+            () => business.SearchPlacesAsync(TestUserFactory.AnyUser(), request, CancellationToken.None));
+
+        geo.Verify(g => g.SearchPlacesAsync(
+            It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

@@ -22,6 +22,10 @@ public static class BillingConstants
     // Pro-only: user-initiated Plaid re-sync (manual sync / pull-to-refresh). Backed by plan==Pro in
     // EntitlementGuard (no billing.plan_features row required).
     public const string ManualResyncEnabledFeatureCode = "manual_resync_enabled";
+    // Home map tiering: pins are Basic+ (browse nearby rewardable merchants), place search is Pro-only.
+    // Free still gets the satellite map + auto-detected best-card recommendation, just no pins/search.
+    public const string MapPinsEnabledFeatureCode = "map_pins_enabled";
+    public const string PlaceSearchEnabledFeatureCode = "place_search_enabled";
 
     public const string TrialingStatusCode = "trialing";
     public const string ActiveStatusCode = "active";

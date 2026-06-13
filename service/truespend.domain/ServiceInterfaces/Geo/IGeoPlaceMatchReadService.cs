@@ -12,14 +12,22 @@ public interface IGeoPlaceMatchReadService
         int radiusMeters,
         CancellationToken cancellationToken);
 
-    // Active, rewardable (category-resolved) foursquare.places inside a map viewport bbox, ordered by
-    // proximity to the given centre, capped at limit. Powers the home-screen merchant pins. Backed by
-    // the (lat, lng) index.
-    Task<IReadOnlyList<NearbyMerchant>> FindNearbyMerchantsInBoundsAsync(
-        decimal swLat,
-        decimal swLng,
-        decimal neLat,
-        decimal neLng,
+    // Active, rewardable (category-resolved) foursquare.places within radiusMeters of the user's
+    // location, ordered by proximity, capped at limit. Powers the home-screen merchant pins (anchored
+    // to the user, not the viewport). Backed by the (lat, lng) index.
+    Task<IReadOnlyList<NearbyMerchant>> FindNearbyMerchantsInRadiusAsync(
+        decimal centerLat,
+        decimal centerLng,
+        int radiusMeters,
+        int limit,
+        CancellationToken cancellationToken);
+
+    // Active, rewardable foursquare.places whose normalized_name matches the search term (ILIKE
+    // '%term%', backed by the normalized_name trigram GIN index), ranked by proximity to the user and
+    // capped at limit. Powers the home-screen place search; returns the same NearbyMerchant shape as the
+    // map pins so a tapped result reuses the place → best-card path.
+    Task<IReadOnlyList<NearbyMerchant>> SearchPlacesAsync(
+        string normalizedQuery,
         decimal centerLat,
         decimal centerLng,
         int limit,

@@ -4,6 +4,8 @@
 
 Phase 1 online and in-store recommendation flows for screens `3.1` through `3.4`. These views render inside the **Wallet** tab ([04-cards.md](04-cards.md)) — the dedicated "Home" tab was folded into Wallet. The mobile app may use device location/place detection, then sends the detected merchant to the API for resolution and recommendation.
 
+The home surface is map-centric: rewardable merchants within ~2 km of the user render as map pins (client-side clustered), a location-biased **place search** lets the user look up a store/gas station by name, and tapping a pin or a search result resolves the merchant and returns its best card. Pins and search results share the same `NearbyMerchant` shape and the same tap → best-card path; neither records a `merchant_visit` (browsing, not arrival).
+
 ## Progress
 
 | User story | Status | Notes |
@@ -32,6 +34,10 @@ Phase 1 online and in-store recommendation flows for screens `3.1` through `3.4`
 | User can compare dining or cafe recommendations at a store | Done |  |
 | User can see a coverage warning when merchant category coding may be uncertain | Done |  |
 | User can open card details from an in-store recommendation | Done |  |
+| User can browse nearby rewardable merchants as map pins | Done | `POST /recommendations/nearby-merchants` returns up to 60 rewardable (`category_id` resolved) places within a 2 km radius of the user, ranked by proximity. Client clusters overlapping pins (`supercluster`) and hides them when zoomed out past the radius. No fabrication — empty result = no pins. **Tier-gated** `map_pins_enabled` (Basic+), enforced server-side + hidden on Free — see [13-feature-gating.md](13-feature-gating.md). |
+| User can get the best card for a tapped map pin | Done | `POST /recommendations/place` resolves the merchant (`MerchantResolveBusiness`) and builds its best card. Records no `merchant_visit`. |
+| User can search for a nearby store or gas station | Done | `POST /recommendations/search-places` matches `foursquare.places.normalized_name` (trigram GIN index) for rewardable places, ranked by proximity to the user. Tapping a result reuses the `/place` path. Brand/name match only; generic category terms deferred. **Tier-gated** `place_search_enabled` (Pro), enforced server-side + hidden below Pro — see [13-feature-gating.md](13-feature-gating.md). |
+| User can see their recent merchant visits on home | Done | `GET /merchants/recent-visits?limit=3`; tapping one re-computes the best card for that known merchant. |
 
 ## Screens Covered
 
@@ -70,6 +76,10 @@ Phase 1 online and in-store recommendation flows for screens `3.1` through `3.4`
 | Full | User can compare dining or cafe recommendations at a store | `3.3` | Category chips |
 | Full | User can see a coverage warning when merchant category coding may be uncertain | `3.4` | `RecommendationVm.coverageWarning` |
 | Full | User can open card details from an in-store recommendation | `3.2`, `3.3`, `3.4` | Deep link to Cards workflow |
+| Full | User can browse nearby rewardable merchants as map pins | `3.1`, `3.2` | Map pins from `nearby-merchants`, clustered client-side |
+| Full | User can get the best card for a tapped map pin | `3.2` | `nearby-merchants` → tap → `place` |
+| Full | User can search for a nearby store or gas station | `3.1`, `3.2` | `search-places` → tap result → `place` |
+| Full | User can see their recent merchant visits on home | `3.1` | `merchants/recent-visits` |
 
 ## Preconditions
 
@@ -86,6 +96,17 @@ Open Home
 Detected merchant (foreground geo, automatic on Wallet open)
   POST /api/v1/recommendations/nearby   { lat, lng, accuracyMeters }
   (server: place-match -> resolve merchant -> best card; falls back to home replay on no match)
+
+Map pins (anchored to the user, on Wallet open)
+  POST /api/v1/recommendations/nearby-merchants   { centerLat, centerLng, radiusMeters?, limit? }
+  GET  /api/v1/merchants/recent-visits?limit=3
+
+Place search (user types a store/gas station)
+  POST /api/v1/recommendations/search-places   { query, centerLat, centerLng, limit? }
+
+Tap a pin or a search result
+  POST /api/v1/recommendations/place   { providerPlaceId, name, lat, lng, categoryCode? }
+  (resolve merchant -> best card; no merchant_visit recorded)
 
 Explicit merchant id (category chips / refresh)
   POST /api/v1/merchants/resolve
@@ -105,6 +126,10 @@ Refresh
 |---|---|---|---|---|---|---|
 | Load Home | `GET /api/v1/recommendations/home` | `RecommendationResponse`: `recommendation`, `emptyState` | Sync API | None | Read `finance.user_cards`, `catalog.reward_rules`, `finance.recommendations`, `lookup.recommendation_contexts` | Mobile memory cache; short server TTL |
 | Nearby recommendation (foreground geo) | `POST /api/v1/recommendations/nearby` | `NearbyRecommendationRequest` (`lat`, `lng`, `accuracyMeters?`, `estimatedAmount?`) -> `RecommendationResponse` | Sync API | None | Read `foursquare.places`, `foursquare.category_bridge`, `catalog.reward_rules`, `finance.user_cards`; read/write `finance.merchants` (find-or-create), write `finance.recommendations`; provider-on-miss upsert `foursquare.places` | Tables are source of truth; no notification/gating (read-style) |
+| Map pins (nearby merchants) | `POST /api/v1/recommendations/nearby-merchants` | `NearbyMerchantsRequest` (`centerLat`, `centerLng`, `radiusMeters?`, `limit?`) -> `NearbyMerchantsResponse` (`NearbyMerchantVm[]`) | Sync API | None | Read `foursquare.places` (bbox of centre ± radius, `category_id` not null), `foursquare.chains`, `catalog.categories` | Mobile query cache keyed by rounded centre; no merchant/recommendation write |
+| Place search | `POST /api/v1/recommendations/search-places` | `SearchPlacesRequest` (`query`, `centerLat`, `centerLng`, `limit?`) -> `NearbyMerchantsResponse` | Sync API | None | Read `foursquare.places` (`normalized_name` ILIKE, trigram GIN index, `category_id` not null), `foursquare.chains`, `catalog.categories` | Mobile query cache keyed by debounced query + centre |
+| Tap pin / search result | `POST /api/v1/recommendations/place` | `PlaceRecommendationRequest` (`providerPlaceId`, `name`, `lat`, `lng`, `categoryCode?`, `estimatedAmount?`) -> `RecommendationResponse` | Sync API | None | Read/write `finance.merchants` (find-or-create), read reward/category/card tables, write `finance.recommendations`. **No `merchant_visit`.** | Same recommendation cache as in-store |
+| Recent visits | `GET /api/v1/merchants/recent-visits?limit=3` | `RecentVisitsResponse` (`RecentVisit[]`) | Sync API | None | Read `finance.merchant_visits` (≤ window, ordered desc), `finance.merchants` | Mobile short cache |
 | Empty-state CTAs | Navigation; optional `GET /api/v1/entitlements` | `EntitlementsResponse`: `planCode`, `manualCardLimit`, `plaidCardLimit`, `unlimitedCards` | Sync API | None | Read `billing.subscriptions`, `billing.plan_features` | Mobile short cache; server entitlement cache |
 | Resolve detected merchant | `POST /api/v1/merchants/resolve` | `ResolveMerchantRequest` -> `MerchantResponse` | Sync API | None | Read/write `finance.merchants`, read `catalog.categories`, `catalog.category_aliases` | Server merchant-resolution cache; DB first for new merchants |
 | Get in-store recommendation | `POST /api/v1/recommendations/in-store` | `InStoreRecommendationRequest` -> `RecommendationResponse` | Sync API | None | Read `finance.user_cards`, `finance.card_reward_overrides`, `catalog.reward_rules`, `finance.merchants`; write `finance.recommendations` | Mobile memory cache; short server TTL keyed by user, merchant, category |
@@ -125,6 +150,11 @@ Refresh
 | `CardSummaryVm` | `id`, `displayName`, `issuerName`, `lastFour`, `cardArtUrl` |
 | `ResolveMerchantRequest` | `name`, `provider`, `providerPlaceId`, `lat`, `lng`, `address` |
 | `NearbyRecommendationRequest` | `lat`, `lng`, `accuracyMeters`, `estimatedAmount` |
+| `NearbyMerchantsRequest` | `centerLat`, `centerLng`, `radiusMeters`, `limit` |
+| `SearchPlacesRequest` | `query`, `centerLat`, `centerLng`, `limit` |
+| `NearbyMerchantsResponse` / `NearbyMerchantVm` | `merchants`; `providerPlaceId`, `name`, `lat`, `lng`, `categoryCode`, `categoryName`, `chainName` |
+| `PlaceRecommendationRequest` | `providerPlaceId`, `name`, `lat`, `lng`, `categoryCode`, `estimatedAmount` |
+| `RecentVisitsResponse` / `RecentVisit` | `visits`; `merchant`, `categoryCode`, `visitedAt` |
 | `InStoreRecommendationRequest` | `merchantId`, `categoryCode`, `estimatedAmount` |
 | `UpdateRecommendationCategoryRequest` | `recommendationId`, `categoryCode` |
 | `RefreshRecommendationRequest` | `merchantId`, `categoryCode` |
@@ -137,6 +167,7 @@ Refresh
 |---|---|
 | User cards | `finance.user_cards`, `finance.card_reward_overrides` |
 | Merchant resolution/history | `finance.merchants`, `finance.merchant_visits` |
+| Places (pins / search) | `foursquare.places` (search needs the `normalized_name` trigram GIN index — enabled in `supabase/migrations/foursquare.sql`, built post-load), `foursquare.chains`, `foursquare.category_bridge` |
 | Recommendation result | `finance.recommendations`, `lookup.recommendation_contexts` |
 | Catalog/reference | `catalog.categories`, `catalog.category_aliases`, `catalog.reward_rules`, `catalog.card_products`, `lookup.reward_currencies` |
 | Event dispatch | `messaging.event_outbox`, `messaging.event_deliveries`, `messaging.event_subscriptions` |

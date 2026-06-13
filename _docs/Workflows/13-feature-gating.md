@@ -14,6 +14,7 @@
 | User can lose Pro features when their trial ends without upgrading | Done | Resolver state machine: `active` → picked plan, `past_due`/`unpaid` → keep picked plan for `BillingConstants.PastDueGraceWindow` (24h) from `CurrentPeriodEnd`, else drop to Free. **Audit fix (2026-06-04):** resolver extracted to `Models/Billing/EntitlementPlanResolver.Resolve(subscription, now)` with parameterized clock; `EntitlementPlanResolverTests` covers trialing override, active, past_due/unpaid in/out of grace, canceled/none. |
 | User can see a reusable lock + upsell on any gated surface | Done | Shared `<FeatureGate feature="...">` (`shared/components/FeatureGate.tsx`) renders children when entitled, else a catalog-driven `ProUpsell` → paywall. Catalog `shared/navigation/featureCatalog.ts` maps feature code → min plan, lock label, upsell copy, paywall plan; entitlement = server flag OR `planMeets(plan, minPlan)`. Validated on Insights; remaining tabs roll out incrementally. |
 | Pro-only manual Plaid re-sync gated with a daily quota | Done | `manual_resync_enabled` is code-backed (`EntitlementGuard.IsFeatureEnabled` → `plan==Pro`). `ManualResyncQuotaBusiness` enforces `ProResyncDailyLimit` (default 5) via `app.user_daily_usage`; user-initiated `POST /plaid/connections/sync` + `/plaid/transactions/sync` consume quota (nightly sweep bypasses via `SyncSingleConnectionAsync`). Over-limit → 429; `GET /plaid/resync-quota` + mobile `useResyncQuota` show remaining. |
+| Home-map pins (Basic+) and place search (Pro) are tier-gated | Done | New `map_pins_enabled` (Basic+) + `place_search_enabled` (Pro) features seeded in `billing_features.sql` + `billing_plan_features.sql`. Server: `RecommendationsReadBusiness.GetNearbyMerchantsAsync` / `SearchPlacesAsync` call `EntitlementGuard.RequireFeatureAsync`. Mobile: `WalletScreen` reads `useEntitlementGate` — pins (`WalletGlobeBackground showPins` + skips `useNearbyMerchants` fetch) and `PlaceSearchBar` render only when entitled. Free still gets the map + auto-detected recommendation. |
 
 ## Scope
 
@@ -26,6 +27,7 @@ No new screens — gating affects existing surfaces by hiding/showing UI based o
 | Screen | Effect |
 |---|---|
 | 3.1 / 3.2 / 3.3 / 3.4 | In-store recommendation surfaces respect `geofencing_enabled`; geo-arrival pushes are additionally capped per day by `geo_recommendations_per_day` (Free 1, Basic 3, Pro unlimited) |
+| 3.1 / 3.2 (home map) | Nearby merchant pins shown only when `map_pins_enabled` (Basic+); place search shown only when `place_search_enabled` (Pro). Free sees the map + auto-detected recommendation alone. Both endpoints also enforced server-side. |
 | 5.1 / 5.3 | Cards list / empty state shows upgrade CTAs when `manual_card_limit` / `plaid_card_limit` reached or `plaid_linking_enabled = false` |
 | 5.4 | Plaid connections hidden entirely when `plaid_linking_enabled = false` |
 | 6.1 | Transactions list filters out `source = plaid` rows when `plaid_transactions_view_enabled = false` |
@@ -83,11 +85,13 @@ On gated API call (e.g. POST /plaid/link-token)
 
 Three tiers, fully data-driven from `billing.plans` + `billing.plan_features`:
 
-| Tier | Trial | Manual cards | Plaid cards | Geo recs/day | Plaid linking | AI insights |
-|---|---|---|---|---|---|---|
-| Free | — | 1 | 0 | 1 | ❌ | ❌ |
-| Basic | 7 days | 3 | 3 | 3 | ✅ | ❌ |
-| Pro | 14 days | unlimited | unlimited | unlimited | ✅ | ✅ |
+| Tier | Trial | Manual cards | Plaid cards | Geo recs/day | Plaid linking | AI insights | Map pins | Place search |
+|---|---|---|---|---|---|---|---|---|
+| Free | — | 1 | 0 | 1 | ❌ | ❌ | ❌ | ❌ |
+| Basic | 7 days | 3 | 3 | 3 | ✅ | ❌ | ✅ | ❌ |
+| Pro | 14 days | unlimited | unlimited | unlimited | ✅ | ✅ | ✅ | ✅ |
+
+Home map tiering: **Free** sees the satellite map + auto-detected best-card recommendation only; **Basic** adds nearby merchant pins; **Pro** adds place search.
 
 **Trial = the picked plan.** During `status = 'trialing'`, the resolver returns the feature set of the plan the user selected at checkout (a Basic trial grants Basic features, a Pro trial grants Pro). When entitlement falls away the baseline is **Free**, not Basic.
 
@@ -114,6 +118,8 @@ Source of truth: `billing.features.code`. Add a row here to introduce a new gate
 | `plaid_linking_enabled` (boolean) | Plaid Link flow + connection management | `POST /plaid/link-token`, `POST /plaid/exchange-token`, `POST /plaid/connections/*` |
 | `plaid_transactions_view_enabled` (boolean) | Visibility of `source = plaid` rows in transaction list/detail | `GET /transactions`, `GET /transactions/{id}` filter `source` server-side |
 | `geofencing_enabled` (boolean) | Geo-arrival push master switch (on for all tiers; the per-day cap differentiates tiers) | `POST /api/v1/webhooks/foursquare` skips notification insert when disabled |
+| `map_pins_enabled` (boolean) | Home-map nearby merchant pins (Basic+) | `POST /recommendations/nearby-merchants` → `EntitlementGuard.RequireFeatureAsync` |
+| `place_search_enabled` (boolean) | Home-map place search (Pro) | `POST /recommendations/search-places` → `EntitlementGuard.RequireFeatureAsync` |
 
 Card-limit enforcement is per-source: `EntitlementGuard.RequireCardLinkCapacityAsync(user, cardSource, count)` checks `manual_card_limit` or `plaid_card_limit` (bypassed by `unlimited_cards`). Displayed limits come from the same entitlements via `CardLimitsCalculator`.
 

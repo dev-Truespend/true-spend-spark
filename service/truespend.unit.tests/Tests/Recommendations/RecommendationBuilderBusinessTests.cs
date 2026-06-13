@@ -10,6 +10,7 @@ using TrueSpend.Domain.Models.NotificationSettings;
 using TrueSpend.Domain.Models.Permissions;
 using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.Models.Recommendations;
+using TrueSpend.Domain.ServiceInterfaces.Catalog;
 using TrueSpend.Domain.ServiceInterfaces.Recommendations;
 using TrueSpend.UnitTests.Helpers;
 using Xunit;
@@ -38,8 +39,8 @@ public sealed class RecommendationBuilderBusinessTests
                 "points",
                 Array.Empty<MerchantLockedRate>())
         };
-        var (read, insert) = BuildMocks(profile);
-        var builder = new RecommendationBuilderBusiness(read.Object, insert.Object);
+        var (read, catalog, insert) = BuildMocks(profile);
+        var builder = new RecommendationBuilderBusiness(read.Object, catalog.Object, insert.Object);
 
         var result = await builder.BuildAsync(User, SampleMerchant(), "groceries", 50m, CancellationToken.None);
 
@@ -48,6 +49,31 @@ public sealed class RecommendationBuilderBusinessTests
         Assert.Equal(4.0m, result.RecommendedCard.ExpectedRewardRate);
         Assert.True(result.RecommendedCard.ExpectedRewardRate >= result.RunnerUpCards.First().ExpectedRewardRate);
         Assert.Null(result.CoverageWarning);
+    }
+
+    [Fact]
+    public async Task Build_points_reward_uses_multiplier_and_category_display_name()
+    {
+        var profile = new[]
+        {
+            new UserCardReward(
+                new CardSummary(1, "Amex Gold", "American Express", "1111", "manual", true, "active", null),
+                10, 1.0m,
+                new Dictionary<string, decimal> { ["groceries"] = 4.0m },
+                "points",
+                Array.Empty<MerchantLockedRate>())
+        };
+        var (read, catalog, insert) = BuildMocks(profile);
+        var builder = new RecommendationBuilderBusiness(read.Object, catalog.Object, insert.Object);
+
+        var result = await builder.BuildAsync(User, SampleMerchant(), "groceries", 50m, CancellationToken.None);
+
+        // points = spend x multiplier (50 x 4 = 200), NOT spend x rate / 100 (which produced "0 points").
+        Assert.Equal(200m, result!.RecommendedCard.ExpectedReward.Amount);
+        Assert.Equal("200 points", result.RecommendedCard.ExpectedReward.Display);
+        // The opaque category code never leaks into user-facing text.
+        Assert.Contains("Groceries", result.Reason);
+        Assert.DoesNotContain("rcc", result.Reason);
     }
 
     [Fact]
@@ -62,9 +88,9 @@ public sealed class RecommendationBuilderBusinessTests
                 "cash_back",
                 Array.Empty<MerchantLockedRate>())
         };
-        var (read, insert) = BuildMocks(profile);
+        var (read, catalog, insert) = BuildMocks(profile);
         var merchant = SampleMerchant() with { IsMultiCategory = true };
-        var builder = new RecommendationBuilderBusiness(read.Object, insert.Object);
+        var builder = new RecommendationBuilderBusiness(read.Object, catalog.Object, insert.Object);
 
         var result = await builder.BuildAsync(User, merchant, "electronics", 80m, CancellationToken.None);
 
@@ -75,22 +101,30 @@ public sealed class RecommendationBuilderBusinessTests
     [Fact]
     public async Task Build_returns_null_when_user_has_no_cards()
     {
-        var (read, insert) = BuildMocks(Array.Empty<UserCardReward>());
-        var builder = new RecommendationBuilderBusiness(read.Object, insert.Object);
+        var (read, catalog, insert) = BuildMocks(Array.Empty<UserCardReward>());
+        var builder = new RecommendationBuilderBusiness(read.Object, catalog.Object, insert.Object);
 
         var result = await builder.BuildAsync(User, SampleMerchant(), "groceries", 25m, CancellationToken.None);
 
         Assert.Null(result);
     }
 
-    private static (Mock<IRewardRulesReadService> Read, Mock<IRecommendationsInsertService> Insert) BuildMocks(IReadOnlyList<UserCardReward> profile)
+    private static (Mock<IRewardRulesReadService> Read, Mock<ICatalogReadService> Catalog, Mock<IRecommendationsInsertService> Insert) BuildMocks(IReadOnlyList<UserCardReward> profile)
     {
         var read = new Mock<IRewardRulesReadService>();
         read.Setup(r => r.GetUserRewardProfileAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<CancellationToken>())).ReturnsAsync(profile);
+        var catalog = new Mock<ICatalogReadService>();
+        catalog.Setup(c => c.GetCategoriesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new[]
+        {
+            new Category(1, "groceries", "Groceries", null),
+            new Category(2, "dining", "Dining", null),
+            new Category(3, "electronics", "Electronics", null),
+            new Category(4, "travel", "Travel", null)
+        });
         var insert = new Mock<IRecommendationsInsertService>();
         insert.Setup(i => i.SaveRecommendationAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<Recommendation>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((OnboardingWorkflowUser _, Recommendation value, string _, CancellationToken _) => value);
-        return (read, insert);
+        return (read, catalog, insert);
     }
 
     private static Merchant SampleMerchant() => new(1, "Nearby Market", "groceries", false, "123 Main St");

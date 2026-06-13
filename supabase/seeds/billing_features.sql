@@ -7,7 +7,9 @@ values
   ('unlimited_cards', 'Unlimited cards', 'Unlimited card linking', 'boolean'),
   ('plaid_linking_enabled', 'Plaid linking', 'Link bank cards via Plaid', 'boolean'),
   ('plaid_transactions_view_enabled', 'Plaid transactions', 'View transactions imported from linked Plaid cards', 'boolean'),
-  ('geofencing_enabled', 'Geo-arrival alerts', 'Best-card push notifications when arriving at a known merchant', 'boolean')
+  ('geofencing_enabled', 'Geo-arrival alerts', 'Best-card push notifications when arriving at a known merchant', 'boolean'),
+  ('map_pins_enabled', 'Nearby map pins', 'Browse nearby rewardable merchants as pins on the home map', 'boolean'),
+  ('place_search_enabled', 'Place search', 'Search for a store or gas station to get its best card', 'boolean')
 on conflict (code) do update set
   display_name = excluded.display_name,
   description = excluded.description,

@@ -1,12 +1,9 @@
 namespace TrueSpend.Api.ViewModels.Recommendations;
 
-// Map viewport (south-west + north-east corners) plus the centre to rank distance from. Limit is
-// optional; the business clamps it (default 30, max 50).
+// The user's location + a search radius (metres). Pins are anchored to the user, not the viewport.
+// RadiusMeters and Limit are optional; the business clamps them (radius max 10km, limit default 30/max 50).
 public sealed record NearbyMerchantsRequestVm(
-    decimal SwLat,
-    decimal SwLng,
-    decimal NeLat,
-    decimal NeLng,
     decimal CenterLat,
     decimal CenterLng,
+    int? RadiusMeters,
     int? Limit);

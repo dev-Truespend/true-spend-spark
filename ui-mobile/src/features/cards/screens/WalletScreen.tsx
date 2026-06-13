@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -12,6 +12,7 @@ import { CardEmptyState } from "@/features/cards/components/CardEmptyState";
 import { CategoryChips } from "@/features/cards/components/CategoryChips";
 import { Greeting } from "@/features/cards/components/Greeting";
 import { RecentVisits } from "@/features/cards/components/RecentVisits";
+import { PlaceSearchBar } from "@/features/cards/components/PlaceSearchBar";
 import { RecommendationCard } from "@/features/cards/components/RecommendationCard";
 import { RunnerUpList } from "@/features/cards/components/RunnerUpList";
 import { WalletGlobeBackground, type WalletGlobeHandle } from "@/features/cards/components/WalletGlobeBackground";
@@ -22,6 +23,7 @@ import { useRecentVisits } from "@/features/cards/hooks/useRecentVisits";
 import { useEntitlementGate } from "@/shared/navigation/useEntitlementGate";
 import { useAuth } from "@/providers/AuthProvider";
 import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
+import type { NearbyMerchant } from "@/features/cards/types/home.types";
 
 export function WalletScreen() {
   const router = useRouter();
@@ -30,7 +32,12 @@ export function WalletScreen() {
   const gate = useEntitlementGate();
   const { bootstrap } = useAuth();
   const home = useHomeRecommendations();
-  const { merchants, setViewport } = useNearbyMerchants();
+  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null);
+  // Tier gating: pins are Basic+, search is Pro. Free sees the map + auto-detected recommendation only.
+  const showPins = gate.has("map_pins_enabled");
+  const showSearch = gate.has("place_search_enabled");
+  // Skip the nearby fetch entirely when pins are gated off — no point querying merchants we won't draw.
+  const { merchants } = useNearbyMerchants(showPins ? center : null);
   const { visits } = useRecentVisits();
   const globeRef = useRef<WalletGlobeHandle>(null);
   const sheetRef = useRef<BottomSheet>(null);
@@ -44,6 +51,12 @@ export function WalletScreen() {
   const recommendation = home.response?.recommendation;
   const categoryDisplayName =
     home.categories.find((c) => c.code === recommendation?.categoryCode)?.displayName ?? undefined;
+
+  function handleSelectSearchResult(merchant: NearbyMerchant) {
+    void home.selectPlace(merchant);
+    globeRef.current?.focusOn(merchant.lat, merchant.lng);
+    sheetRef.current?.snapToIndex(1);
+  }
 
   function handleAddManual() {
     router.push("/(app)/cards/new");
@@ -67,7 +80,8 @@ export function WalletScreen() {
       <WalletGlobeBackground
         ref={globeRef}
         merchants={merchants}
-        onViewportChange={setViewport}
+        showPins={showPins}
+        onUserLocated={setCenter}
         onSelectMerchant={(merchant) => {
           void home.selectPlace(merchant);
           sheetRef.current?.snapToIndex(1);
@@ -103,6 +117,8 @@ export function WalletScreen() {
       >
         <BottomSheetScrollView contentContainerStyle={styles.sheetContent} showsVerticalScrollIndicator={false}>
           <Greeting name={firstName} />
+
+          {hasCards && showSearch ? <PlaceSearchBar center={center} onSelect={handleSelectSearchResult} /> : null}
 
           {home.error ? <Toast tone="error" message={home.error} /> : null}
 

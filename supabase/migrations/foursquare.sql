@@ -46,15 +46,18 @@ create table if not exists foursquare.places (
 create unique index if not exists foursquare_places_provider_place_idx
   on foursquare.places(provider, provider_place_id);
 
--- DEFERRED: the GiST geog + GIN trigram indexes below are unused by the current read path (which uses
--- the lat/lng bounding box, not ST_DWithin or trigram search) and are multi-GB / slow to build on the
--- 4M+ row OS Places dataset — building them blew past the instance disk during bulk load. Re-enable
--- (here AND in seeds/load_foursquare_places.sql) when spatial (ST_DWithin) or name/locality text
--- search against foursquare.places is actually implemented.
+-- Trigram index on normalized_name powers the home-screen place search (ILIKE '%term%' over the 4M+
+-- rows; without it that's a full scan). Build it from the migration AFTER the bulk load has finished —
+-- NOT inside seeds/load_foursquare_places.sql, where building it mid-load blew past the instance disk.
+-- On an already-loaded table this is a one-time multi-minute GIN build that locks writes; foursquare.places
+-- is batch-loaded (no user writes), so run it in a maintenance window.
+create index if not exists foursquare_places_normalized_name_trgm_idx
+  on foursquare.places using gin (normalized_name gin_trgm_ops);
+
+-- DEFERRED: still unused by any read path and multi-GB to build on the 4M+ row dataset. Re-enable when
+-- spatial (ST_DWithin via geog) or locality/region text search is actually implemented.
 -- create index if not exists foursquare_places_geog_gist_idx
 --   on foursquare.places using gist (geog);
--- create index if not exists foursquare_places_normalized_name_trgm_idx
---   on foursquare.places using gin (normalized_name gin_trgm_ops);
 -- create index if not exists foursquare_places_locality_trgm_idx
 --   on foursquare.places using gin (locality gin_trgm_ops);
 -- create index if not exists foursquare_places_region_trgm_idx

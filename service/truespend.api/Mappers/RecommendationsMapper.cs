@@ -11,6 +11,7 @@ using DomainRefresh = TrueSpend.Domain.Models.Recommendations.RefreshRecommendat
 using DomainNearby = TrueSpend.Domain.Models.Recommendations.NearbyRecommendationRequest;
 using DomainCategory = TrueSpend.Domain.Models.Recommendations.UpdateRecommendationCategoryRequest;
 using DomainPlace = TrueSpend.Domain.Models.Recommendations.PlaceRecommendationRequest;
+using DomainSearchPlaces = TrueSpend.Domain.Models.Recommendations.SearchPlacesRequest;
 using DomainMoney = TrueSpend.Domain.Models.Common.Money;
 using DomainNearbyMerchants = TrueSpend.Domain.Models.Geo.NearbyMerchantsRequest;
 using DomainNearbyMerchantsResult = TrueSpend.Domain.Models.Geo.NearbyMerchantsResult;
@@ -26,6 +27,7 @@ public interface IRecommendationsMapper
     DomainCategory ToDomain(UpdateRecommendationCategoryRequestVm request);
     DomainPlace ToDomain(PlaceRecommendationRequestVm request);
     DomainNearbyMerchants ToDomain(NearbyMerchantsRequestVm request);
+    DomainSearchPlaces ToDomain(SearchPlacesRequestVm request);
     RecommendationResponseVm ToResponse(DomainResp domain, ICardsMapper cardsMapper, IMerchantsMapper merchantsMapper);
     NearbyMerchantsResponseVm ToNearbyMerchants(DomainNearbyMerchantsResult domain);
 }
@@ -48,7 +50,10 @@ public sealed class RecommendationsMapper : IRecommendationsMapper
         new(request.ProviderPlaceId, request.Name, request.Lat, request.Lng, request.CategoryCode, request.EstimatedAmount);
 
     public DomainNearbyMerchants ToDomain(NearbyMerchantsRequestVm request) =>
-        new(request.SwLat, request.SwLng, request.NeLat, request.NeLng, request.CenterLat, request.CenterLng, request.Limit);
+        new(request.CenterLat, request.CenterLng, request.RadiusMeters, request.Limit);
+
+    public DomainSearchPlaces ToDomain(SearchPlacesRequestVm request) =>
+        new(request.Query, request.CenterLat, request.CenterLng, request.Limit);
 
     public NearbyMerchantsResponseVm ToNearbyMerchants(DomainNearbyMerchantsResult domain) =>
         new(domain.Merchants.Select(ToNearbyMerchant).ToArray());

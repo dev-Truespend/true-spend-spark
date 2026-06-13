@@ -5,15 +5,27 @@ namespace TrueSpend.Domain.Validators;
 
 public sealed class RecommendationsValidator
 {
+    public const int MinSearchQueryLength = 2;
+
+    public IReadOnlyList<string> ValidateSearchPlaces(SearchPlacesRequest request)
+    {
+        var errors = new List<string>();
+        if (string.IsNullOrWhiteSpace(request.Query) || request.Query.Trim().Length < MinSearchQueryLength)
+            errors.Add($"Search needs at least {MinSearchQueryLength} characters.");
+        if (request.CenterLat is < -90m or > 90m) errors.Add("Latitude is out of range.");
+        if (request.CenterLng is < -180m or > 180m) errors.Add("Longitude is out of range.");
+        return errors;
+    }
+
     public IReadOnlyList<string> ValidateNearbyMerchants(NearbyMerchantsRequest request)
     {
         var errors = new List<string>();
-        if (request.SwLat is < -90m or > 90m || request.NeLat is < -90m or > 90m || request.CenterLat is < -90m or > 90m)
+        if (request.CenterLat is < -90m or > 90m)
             errors.Add("Latitude is out of range.");
-        if (request.SwLng is < -180m or > 180m || request.NeLng is < -180m or > 180m || request.CenterLng is < -180m or > 180m)
+        if (request.CenterLng is < -180m or > 180m)
             errors.Add("Longitude is out of range.");
-        if (request.NeLat < request.SwLat || request.NeLng < request.SwLng)
-            errors.Add("Bounding box is inverted (north-east must be above/right of south-west).");
+        if (request.RadiusMeters is <= 0)
+            errors.Add("Radius must be positive.");
         return errors;
     }
 

@@ -5,6 +5,7 @@ import { View } from "react-native";
 const MapView = (props: { children?: React.ReactNode }) => <View>{props.children}</View>;
 
 export const Marker = (props: { children?: React.ReactNode }) => <View>{props.children}</View>;
+export const Circle = (_props: Record<string, unknown>) => null;
 export const PROVIDER_DEFAULT = undefined;
 export const PROVIDER_GOOGLE = "google";
 export type Region = {

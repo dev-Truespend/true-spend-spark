@@ -20,12 +20,19 @@ export type NearbyRecommendationInput = {
   estimatedAmount?: number | null;
 };
 
-// Map viewport (bounding box) + the point to rank distance from. Returns up to ~30 pins.
+// The user's location + a search radius (metres). Pins are anchored to the user, not the viewport.
+// Returns up to ~30 rewardable pins within the radius.
 export type NearbyMerchantsInput = {
-  swLat: number;
-  swLng: number;
-  neLat: number;
-  neLng: number;
+  centerLat: number;
+  centerLng: number;
+  radiusMeters?: number;
+  limit?: number;
+};
+
+// Name/brand search for rewardable places, biased toward the user's location. Returns the same
+// NearbyMerchant pins as the map, so a tapped result reuses the place → best-card path.
+export type SearchPlacesInput = {
+  query: string;
   centerLat: number;
   centerLng: number;
   limit?: number;
@@ -47,6 +54,8 @@ export const homeApi = {
     apiPost<RecommendationResponse>("/api/v1/recommendations/nearby", input),
   getNearbyMerchants: (input: NearbyMerchantsInput) =>
     apiPost<NearbyMerchantsResponse>("/api/v1/recommendations/nearby-merchants", input),
+  searchPlaces: (input: SearchPlacesInput) =>
+    apiPost<NearbyMerchantsResponse>("/api/v1/recommendations/search-places", input),
   getPlaceRecommendation: (input: PlaceRecommendationInput) =>
     apiPost<RecommendationResponse>("/api/v1/recommendations/place", input),
   refresh: (input: RefreshRecommendationInput) =>

@@ -45,6 +45,12 @@ public sealed class RecommendationsController(
     public async Task<IActionResult> NearbyMerchants(NearbyMerchantsRequestVm request, CancellationToken cancellationToken) =>
         Respond(await readBusiness.GetNearbyMerchantsAsync(CurrentUser(), mapper.ToDomain(request), cancellationToken), mapper.ToNearbyMerchants);
 
+    // Place search: rewardable places whose name matches the term, biased to the user's location.
+    // Returns the same NearbyMerchant pins as the map — a tapped result reuses POST /place.
+    [HttpPost("search-places")]
+    public async Task<IActionResult> SearchPlaces(SearchPlacesRequestVm request, CancellationToken cancellationToken) =>
+        Respond(await readBusiness.SearchPlacesAsync(CurrentUser(), mapper.ToDomain(request), cancellationToken), mapper.ToNearbyMerchants);
+
     // Tap a map pin → resolve the merchant and return its best card. Records no merchant_visit.
     [HttpPost("place")]
     public async Task<IActionResult> Place(PlaceRecommendationRequestVm request, CancellationToken cancellationToken) =>

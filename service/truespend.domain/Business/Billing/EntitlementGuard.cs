@@ -68,6 +68,7 @@ public sealed class EntitlementGuard(IBillingReadBusiness billingRead) : IEntitl
     {
         BillingConstants.PlaidLinkingEnabledFeatureCode => BillingConstants.BasicPlanCode,
         BillingConstants.PlaidTransactionsViewEnabledFeatureCode => BillingConstants.BasicPlanCode,
+        BillingConstants.MapPinsEnabledFeatureCode => BillingConstants.BasicPlanCode,
         _ => BillingConstants.ProPlanCode
     };
 

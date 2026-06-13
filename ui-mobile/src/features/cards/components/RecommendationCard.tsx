@@ -10,12 +10,22 @@ type RecommendationVm = {
   merchant: { name: string; address?: string | null };
   recommendedCard: {
     card: { displayName: string; issuerName: string; lastFour?: string | null };
-    expectedReward: { display: string };
+    expectedRewardRate: number;
+    expectedReward: { amount: number; currencyCode: string; display: string };
   };
   reason: string;
   coverageWarning?: string | null;
   categoryDisplayName?: string;
 };
+
+// Lead with the rate (always informative): "3% back" for cash-back, "3× points" for points/miles.
+function formatRate(rate: number): string {
+  return Number.isInteger(rate) ? String(rate) : rate.toFixed(1);
+}
+
+function rateLabel(rate: number, currencyCode: string): string {
+  return currencyCode === "cash_back" ? `${formatRate(rate)}% back` : `${formatRate(rate)}× ${currencyCode}`;
+}
 
 type Props = {
   recommendation: RecommendationVm;
@@ -44,8 +54,11 @@ export function RecommendationCard({ recommendation, onOpenCard, onRefresh }: Pr
       }
     })
   );
-  const card = recommendation.recommendedCard.card;
+  const { card, expectedRewardRate, expectedReward } = recommendation.recommendedCard;
   const category = recommendation.categoryDisplayName ?? "this purchase";
+  const rate = rateLabel(expectedRewardRate, expectedReward.currencyCode);
+  // Show the estimated reward only when it's a real figure — never a misleading "0".
+  const estimate = expectedReward.amount > 0 ? `≈ ${expectedReward.display}` : "best rate for you";
   return (
     <View style={{ gap: 12 }}>
       <Pressable onPress={onRefresh}>
@@ -60,8 +73,8 @@ export function RecommendationCard({ recommendation, onOpenCard, onRefresh }: Pr
           tag={`⭐ Best card for ${category}`}
           title={`Use ${card.displayName}`}
           subtitle={recommendation.reason}
-          amount={recommendation.recommendedCard.expectedReward.display}
-          amountLabel="estimated reward"
+          amount={rate}
+          amountLabel={estimate}
           cardName={card.issuerName}
           cardNumber={card.lastFour ? `•• ${card.lastFour}` : ""}
           gradient={heroGradient(recommendation.reason)}

@@ -17,4 +17,6 @@ public interface IRecommendationsReadBusiness
     Task<BusinessResponse<RecommendationResponse>> GetHomeAsync(OnboardingWorkflowUser user, CancellationToken cancellationToken);
 
     Task<BusinessResponse<NearbyMerchantsResult>> GetNearbyMerchantsAsync(OnboardingWorkflowUser user, NearbyMerchantsRequest request, CancellationToken cancellationToken);
+
+    Task<BusinessResponse<NearbyMerchantsResult>> SearchPlacesAsync(OnboardingWorkflowUser user, SearchPlacesRequest request, CancellationToken cancellationToken);
 }
