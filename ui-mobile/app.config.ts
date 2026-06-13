@@ -13,6 +13,13 @@ export default {
       bundleIdentifier: "com.truespend.mobile",
       // Enables the native "Sign in with Apple" sheet (expo-apple-authentication).
       usesAppleSignIn: true,
+      // Export-compliance: sets ITSAppUsesNonExemptEncryption=false in Info.plist so App Store
+      // Connect stops asking the encryption question on every TestFlight build. Valid because the
+      // app only uses standard/exempt encryption (HTTPS/TLS, Supabase, SHA-256 nonces). If we ever
+      // add proprietary/non-standard crypto, flip this and file the export documentation instead.
+      config: {
+        usesNonExemptEncryption: false
+      },
       infoPlist: {
         UIBackgroundModes: ["remote-notification", "location", "fetch"],
         NSLocationWhenInUseUsageDescription:
