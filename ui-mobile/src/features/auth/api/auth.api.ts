@@ -80,7 +80,12 @@ async function signInWithGoogle(): Promise<Session | null> {
       (response as { idToken?: string | null }).idToken ??
       null;
     if (!idToken) throw new Error("Google sign-in did not return a token.");
-    const { data, error } = await supabase.auth.signInWithIdToken({ provider: "google", token: idToken });
+    const nonce = extractJwtNonce(idToken);
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: "google",
+      token: idToken,
+      ...(nonce ? { nonce } : {})
+    });
     if (error) throw error;
     return data.session;
   } catch (err) {
@@ -113,6 +118,48 @@ async function signInWithApple(): Promise<Session | null> {
     if (isCancellation(err)) return null;
     throw err;
   }
+}
+
+function extractJwtNonce(token: string): string | null {
+  const [, payload] = token.split(".");
+  if (!payload) return null;
+
+  try {
+    const claims = JSON.parse(base64UrlDecode(payload)) as { nonce?: unknown };
+    return typeof claims.nonce === "string" && claims.nonce.length > 0 ? claims.nonce : null;
+  } catch {
+    return null;
+  }
+}
+
+function base64UrlDecode(value: string): string {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  if (typeof globalThis.atob === "function") {
+    const binary = globalThis.atob(base64);
+    try {
+      return decodeURIComponent(
+        Array.from(binary, (char) => `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`).join("")
+      );
+    } catch {
+      return binary;
+    }
+  }
+
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  let output = "";
+  let buffer = 0;
+  let bits = 0;
+  for (const char of base64.replace(/=+$/, "")) {
+    const index = alphabet.indexOf(char);
+    if (index < 0) throw new Error("Invalid base64url payload.");
+    buffer = (buffer << 6) | index;
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      output += String.fromCharCode((buffer >> bits) & 0xff);
+    }
+  }
+  return output;
 }
 
 // User dismissed the native sheet — not an error, just no session.

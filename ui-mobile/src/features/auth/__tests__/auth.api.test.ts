@@ -29,6 +29,8 @@ const { GoogleSignin } = jest.requireMock("@react-native-google-signin/google-si
 const apple = jest.requireMock("expo-apple-authentication") as { signInAsync: jest.Mock };
 
 const SESSION = { access_token: "a", refresh_token: "r" };
+const tokenWithClaims = (claims: object) =>
+  `header.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.signature`;
 
 beforeEach(() => {
   supabase.auth.signOut.mockReset().mockResolvedValue({ error: null });
@@ -46,6 +48,20 @@ describe("signInWithProvider (native)", () => {
 
     expect(supabase.auth.signOut).toHaveBeenCalled(); // clears stale account first
     expect(supabase.auth.signInWithIdToken).toHaveBeenCalledWith({ provider: "google", token: "g-token" });
+    expect(session).toBe(SESSION);
+  });
+
+  it("Google: passes nonce to Supabase when the native ID token includes one", async () => {
+    const idToken = tokenWithClaims({ nonce: "google-nonce" });
+    GoogleSignin.signIn.mockResolvedValue({ data: { idToken } });
+
+    const session = await signInWithProvider("google");
+
+    expect(supabase.auth.signInWithIdToken).toHaveBeenCalledWith({
+      provider: "google",
+      token: idToken,
+      nonce: "google-nonce"
+    });
     expect(session).toBe(SESSION);
   });
 
