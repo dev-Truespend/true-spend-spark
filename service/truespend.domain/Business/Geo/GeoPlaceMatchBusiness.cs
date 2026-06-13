@@ -101,8 +101,12 @@ public sealed class GeoPlaceMatchBusiness(
             ? ArrivalConfidenceTierEnum.High
             : ArrivalConfidenceTierEnum.Medium;
 
-        // Driving past with a short stop is a likely drive-by — demote a High to Medium.
+        // Driving past with a short stop is a likely drive-by — demote a High to Medium. Drive-up
+        // categories (gas stations) are exempt: a sub-minute in-vehicle stop there is the normal visit,
+        // not a drive-by, so a clear closest drive-up candidate keeps its High tier (and its push).
+        var isDriveUp = best.CategoryCode is not null && GeoConstants.DriveUpCategoryCodes.Contains(best.CategoryCode);
         if (tier == ArrivalConfidenceTierEnum.High
+            && !isDriveUp
             && string.Equals(movementState, GeoConstants.MovementInVehicle, StringComparison.OrdinalIgnoreCase)
             && (dwellSeconds ?? 0) < GeoConstants.MinDwellSecondsForVehicle)
         {

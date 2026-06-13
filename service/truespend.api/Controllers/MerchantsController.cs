@@ -27,4 +27,10 @@ public sealed class MerchantsController(
     [HttpPost("visits")]
     public async Task<IActionResult> CreateVisit(CreateMerchantVisitRequestVm request, CancellationToken cancellationToken) =>
         Respond(await insertBusiness.CreateVisitAsync(CurrentUser(), mapper.ToDomain(request), cancellationToken), mapper.ToVisits);
+
+    // The user's most recent merchant visits (default 3) for the home screen. Visits originate from
+    // real arrivals — browsing pins/category chips does not create them.
+    [HttpGet("recent-visits")]
+    public async Task<IActionResult> RecentVisits([FromQuery] int? limit, CancellationToken cancellationToken) =>
+        Respond(await readBusiness.GetRecentVisitsAsync(CurrentUser(), limit, cancellationToken), mapper.ToRecentVisits);
 }

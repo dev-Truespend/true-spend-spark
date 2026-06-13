@@ -30,4 +30,14 @@ public static class GeoConstants
     public const double HighConfidenceMarginMeters = 60d;        // top vs 2nd gap that clears "High"
     public const int DenseLotCandidateThreshold = 10;            // >= candidates in range => ambiguous lot
     public const int MinDwellSecondsForVehicle = 60;             // shorter in-vehicle stop => likely drive-by
+
+    // Drive-up categories are built for sub-minute in-vehicle stops (pull up, transact, leave), so the
+    // in-vehicle short-dwell drive-by demotion would wrongly suppress a legitimate arrival. A clear
+    // closest candidate in one of these keeps its High tier (and its push) despite a short car stop.
+    // Codes are catalog.categories.code (rcc_<rewardsCcCategoryId>, stable across local/prod).
+    // Gas Stations only for now: the dining bridge (rcc_160378660) collapses drive-thru fast food with
+    // sit-down restaurants, so dining can't be exempted without false drive-by pushes.
+    public const string GasStationsCategoryCode = "rcc_1455345350";
+    public static readonly IReadOnlySet<string> DriveUpCategoryCodes =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { GasStationsCategoryCode };
 }

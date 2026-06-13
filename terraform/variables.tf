@@ -37,3 +37,9 @@ variable "worker_trigger_allowed_cidrs" {
     error_message = "Provide at least one CIDR; an empty list would expose the unauthenticated trigger endpoints to the public internet."
   }
 }
+
+variable "simulate_checkout" {
+  type        = bool
+  description = "When true, the API simulates checkout (provisions a local trialing subscription, no Stripe call) — for QA/pre-launch testing. MUST be false for real billing."
+  default     = false
+}

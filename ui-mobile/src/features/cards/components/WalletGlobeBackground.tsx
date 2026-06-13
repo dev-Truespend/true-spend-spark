@@ -1,13 +1,13 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { StyleSheet } from "react-native";
-import MapView, { PROVIDER_DEFAULT } from "react-native-maps";
+import MapView, { Marker, PROVIDER_DEFAULT, type Region } from "react-native-maps";
 import * as Location from "expo-location";
+import type { NearbyMerchant } from "@/features/cards/types/home.types";
+import type { NearbyMerchantsInput } from "@/features/cards/api/home.api";
 
-// Purely-visual globe behind the Wallet (Flighty-style). A satellite map renders
-// MapKit's 3D globe on iOS; the exposed area is pannable/spinnable. We open on a
-// world view, then — once we have a location fix — fly the camera to the user so
-// the globe frames where they are ("you are in the US") with the native location
-// dot. No markers, no data beyond the OS location indicator.
+// Map-centric home: a satellite map (MapKit's 3D globe on iOS) framed on the user, with up to ~30
+// rewardable merchant pins. We open on a world view, fly to the user once we have a fix, then emit the
+// visible viewport so the screen can load pins for it; panning/zooming re-emits and re-queries.
 const WORLD_CAMERA = {
   center: { latitude: 20, longitude: 0 },
   pitch: 0,
@@ -16,12 +16,22 @@ const WORLD_CAMERA = {
   zoom: 0.9
 };
 
-// Continental framing once we know where the user is.
-const USER_ALTITUDE = 3_500_000;
+// Framing once we know where the user is — close enough that nearby pins are legible.
+const USER_ALTITUDE = 12_000;
+const NEARBY_PIN_LIMIT = 30;
 
 export type WalletGlobeHandle = { recenter: () => void };
 
-export const WalletGlobeBackground = forwardRef<WalletGlobeHandle>(function WalletGlobeBackground(_props, ref) {
+type Props = {
+  merchants?: NearbyMerchant[];
+  onSelectMerchant?: (merchant: NearbyMerchant) => void;
+  onViewportChange?: (viewport: NearbyMerchantsInput) => void;
+};
+
+export const WalletGlobeBackground = forwardRef<WalletGlobeHandle, Props>(function WalletGlobeBackground(
+  { merchants = [], onSelectMerchant, onViewportChange },
+  ref
+) {
   const mapRef = useRef<MapView>(null);
   const coordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
 
@@ -49,8 +59,6 @@ export const WalletGlobeBackground = forwardRef<WalletGlobeHandle>(function Wall
     }
   }
 
-  // Imperative handle for the floating "locate me" button. Re-uses the known fix
-  // if we have one; otherwise fetches (prompting for permission if needed).
   useImperativeHandle(ref, () => ({
     recenter: () => {
       if (coordsRef.current) flyTo(coordsRef.current);
@@ -62,6 +70,26 @@ export const WalletGlobeBackground = forwardRef<WalletGlobeHandle>(function Wall
     void locateAndFly(true);
   }, []);
 
+  // On pan/zoom end, report the visible bbox + centre so the screen can fetch pins for the viewport.
+  async function handleRegionChangeComplete(region: Region) {
+    if (!onViewportChange) return;
+    try {
+      const bounds = await mapRef.current?.getMapBoundaries();
+      if (!bounds) return;
+      onViewportChange({
+        swLat: bounds.southWest.latitude,
+        swLng: bounds.southWest.longitude,
+        neLat: bounds.northEast.latitude,
+        neLng: bounds.northEast.longitude,
+        centerLat: region.latitude,
+        centerLng: region.longitude,
+        limit: NEARBY_PIN_LIMIT
+      });
+    } catch {
+      // Boundaries unavailable mid-animation — the next settle re-emits.
+    }
+  }
+
   return (
     <MapView
       ref={mapRef}
@@ -72,6 +100,7 @@ export const WalletGlobeBackground = forwardRef<WalletGlobeHandle>(function Wall
       onMapReady={() => {
         if (coordsRef.current) flyTo(coordsRef.current);
       }}
+      onRegionChangeComplete={handleRegionChangeComplete}
       rotateEnabled
       pitchEnabled={false}
       showsUserLocation
@@ -79,6 +108,16 @@ export const WalletGlobeBackground = forwardRef<WalletGlobeHandle>(function Wall
       showsCompass={false}
       showsPointsOfInterest={false}
       toolbarEnabled={false}
-    />
+    >
+      {merchants.map((m) => (
+        <Marker
+          key={m.providerPlaceId}
+          coordinate={{ latitude: m.lat, longitude: m.lng }}
+          title={m.name}
+          description={m.categoryName ?? undefined}
+          onPress={() => onSelectMerchant?.(m)}
+        />
+      ))}
+    </MapView>
   );
 });

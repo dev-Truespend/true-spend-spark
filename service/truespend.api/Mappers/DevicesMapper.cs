@@ -15,7 +15,7 @@ public interface IDevicesMapper
 public sealed class DevicesMapper : IDevicesMapper
 {
     public DomainRegister ToDomain(RegisterDeviceRequestVm request) =>
-        new(request.PlatformCode, request.PushToken, request.DeviceName, request.AppVersion, request.OsVersion, request.Locale, request.Timezone);
+        new(request.PlatformCode, request.PushToken, request.DeviceName, request.AppVersion, request.OsVersion, request.Locale, request.Timezone, request.InstallationId);
 
     public DomainUpdate ToDomain(UpdateDeviceRequestVm request) =>
         new(request.PushToken, request.DeviceName, request.AppVersion, request.OsVersion, request.Locale, request.Timezone);

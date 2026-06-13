@@ -14,6 +14,9 @@ using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.Models.Recommendations;
 using TrueSpend.Domain.ServiceInterfaces.Cards;
 using TrueSpend.Domain.ServiceInterfaces.Merchants;
+using TrueSpend.Domain.ServiceInterfaces.Geo;
+using TrueSpend.Domain.Models.Geo;
+using TrueSpend.Domain.Validators;
 using TrueSpend.UnitTests.Helpers;
 using Xunit;
 
@@ -36,15 +39,48 @@ public sealed class RecommendationsReadBusinessTests
     private static RecommendationsReadBusiness CreateBusiness(
         Mock<ICardsReadService>? cards = null,
         Mock<IMerchantsReadService>? merchants = null,
-        Mock<IRecommendationBuilderBusiness>? builder = null)
+        Mock<IRecommendationBuilderBusiness>? builder = null,
+        Mock<IGeoPlaceMatchReadService>? geo = null)
     {
         cards ??= new Mock<ICardsReadService>();
         merchants ??= new Mock<IMerchantsReadService>();
         builder ??= new Mock<IRecommendationBuilderBusiness>();
+        geo ??= new Mock<IGeoPlaceMatchReadService>();
         // Default portfolio mock — returns the sample so tests don't have to wire it each time.
         cards.Setup(c => c.GetPortfolioAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SamplePortfolio);
-        return new RecommendationsReadBusiness(cards.Object, merchants.Object, builder.Object);
+        return new RecommendationsReadBusiness(cards.Object, merchants.Object, geo.Object, new RecommendationsValidator(), builder.Object);
+    }
+
+    [Fact]
+    public async Task GetNearbyMerchants_clamps_limit_and_returns_service_results()
+    {
+        var geo = new Mock<IGeoPlaceMatchReadService>();
+        geo.Setup(g => g.FindNearbyMerchantsInBoundsAsync(
+                It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(),
+                It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { new NearbyMerchant("fsq-1", "Target", 37.5m, -122.4m, "shopping", "Shopping", "Target") });
+        var business = CreateBusiness(geo: geo);
+
+        var request = new NearbyMerchantsRequest(37.4m, -122.5m, 37.6m, -122.3m, 37.5m, -122.4m, Limit: 999);
+        var response = await business.GetNearbyMerchantsAsync(TestUserFactory.AnyUser(), request, CancellationToken.None);
+
+        Assert.Equal(200, response.StatusCode);
+        Assert.Single(response.Data!.Merchants);
+        // Limit clamped to the max (50), never the requested 999.
+        geo.Verify(g => g.FindNearbyMerchantsInBoundsAsync(
+            It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(),
+            It.IsAny<decimal>(), It.IsAny<decimal>(), 50, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetNearbyMerchants_rejects_inverted_bounds()
+    {
+        var business = CreateBusiness();
+        // NE below SW — inverted box.
+        var request = new NearbyMerchantsRequest(37.6m, -122.3m, 37.4m, -122.5m, 37.5m, -122.4m, Limit: 30);
+        var response = await business.GetNearbyMerchantsAsync(TestUserFactory.AnyUser(), request, CancellationToken.None);
+        Assert.Equal(400, response.StatusCode);
     }
 
     [Fact]

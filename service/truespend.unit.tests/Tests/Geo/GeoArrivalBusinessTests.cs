@@ -71,6 +71,7 @@ public sealed class GeoArrivalBusinessTests
         Assert.True(response.Success);
         Assert.Equal(55, response.Data!.NotificationId);
         ctx.DispatchBusiness.Verify(d => d.DispatchPushAsync(55, It.IsAny<CancellationToken>()), Times.Once);
+        ctx.MerchantsInsert.Verify(m => m.RecordVisitAsync(It.IsAny<OnboardingWorkflowUser>(), 7, "dining", It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -90,6 +91,23 @@ public sealed class GeoArrivalBusinessTests
         Assert.Equal(7, response.Data.MerchantId);
         ctx.Builder.Verify(b => b.BuildAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<Merchant>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         ctx.DispatchBusiness.Verify(d => d.DispatchPushAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        // No push, but the user was physically there — the visit is still recorded.
+        ctx.MerchantsInsert.Verify(m => m.RecordVisitAsync(It.IsAny<OnboardingWorkflowUser>(), 7, "dining", It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Custom_low_confidence_records_no_visit()
+    {
+        var ctx = TestContext.Default();
+        ctx.PlaceMatch.Setup(p => p.ResolveAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PlaceMatch(true, "Chipotle", GeoConstants.ProviderFoursquare, "fsq-chipotle-1", ArrivalConfidenceTierEnum.Low));
+        var business = ctx.Build();
+
+        var response = await business.HandleArrivalAsync(CustomArrival(), CancellationToken.None);
+
+        Assert.True(response.Success);
+        Assert.Null(response.Data!.NotificationId);
+        ctx.MerchantsInsert.Verify(m => m.RecordVisitAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -119,6 +137,8 @@ public sealed class GeoArrivalBusinessTests
         Assert.True(response.Success);
         Assert.Null(response.Data!.NotificationId);
         ctx.DispatchBusiness.Verify(d => d.DispatchPushAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        // The notification was gated (no cards), but the arrival was real — visit still recorded.
+        ctx.MerchantsInsert.Verify(m => m.RecordVisitAsync(It.IsAny<OnboardingWorkflowUser>(), 7, "coffee", It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private static GeoArrivalInput FoursquareArrival() =>
@@ -181,6 +201,7 @@ public sealed class GeoArrivalBusinessTests
         public Mock<IGeoWebhookReadService> ReadService { get; } = new();
         public Mock<IGeoWebhookInsertService> InsertService { get; } = new();
         public Mock<IMerchantsReadService> MerchantsRead { get; } = new();
+        public Mock<IMerchantsInsertService> MerchantsInsert { get; } = new();
         public Mock<IMerchantResolveBusiness> MerchantResolve { get; } = new();
         public Mock<IGeoPlaceMatchBusiness> PlaceMatch { get; } = new();
         public Mock<IRecommendationBuilderBusiness> Builder { get; } = new();
@@ -213,6 +234,7 @@ public sealed class GeoArrivalBusinessTests
             ReadService.Object,
             InsertService.Object,
             MerchantsRead.Object,
+            MerchantsInsert.Object,
             MerchantResolve.Object,
             PlaceMatch.Object,
             Builder.Object,

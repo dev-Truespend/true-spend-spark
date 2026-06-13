@@ -72,3 +72,28 @@ export type Category = {
   displayName: string;
   icon?: string | null;
 };
+
+// A rewardable place rendered as a map pin. Resolves to a merchant + best card only when tapped.
+export type NearbyMerchant = {
+  providerPlaceId: string;
+  name: string;
+  lat: number;
+  lng: number;
+  categoryCode?: string | null;
+  categoryName?: string | null;
+  chainName?: string | null;
+};
+
+export type NearbyMerchantsResponse = {
+  merchants: NearbyMerchant[];
+};
+
+export type RecentVisit = {
+  merchant: Merchant;
+  categoryCode: string;
+  visitedAt: string;
+};
+
+export type RecentVisitsResponse = {
+  visits: RecentVisit[];
+};

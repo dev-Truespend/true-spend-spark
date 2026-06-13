@@ -1,15 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { router } from "expo-router";
-import { Merchant, RecommendationResponse } from "@/features/cards/types/home.types";
+import { Merchant, NearbyMerchant, RecommendationResponse } from "@/features/cards/types/home.types";
 import {
   useChangeRecommendationCategoryMutation,
   useHomeRecommendationQuery,
-  useRecordMerchantVisitMutation,
+  usePlaceRecommendationMutation,
   useRefreshRecommendationMutation
 } from "@/features/cards/hooks/useHomeQueries";
-import { useDebounce } from "@/shared/hooks/useDebounce";
-
-const VISIT_DEBOUNCE_MS = 800;
 
 type ActiveOverride = {
   response: RecommendationResponse;
@@ -20,36 +17,8 @@ export function useHomeRecommendations() {
   const homeQuery = useHomeRecommendationQuery();
   const changeCategoryMutation = useChangeRecommendationCategoryMutation();
   const refreshMutation = useRefreshRecommendationMutation();
-  const recordVisitMutation = useRecordMerchantVisitMutation();
+  const placeMutation = usePlaceRecommendationMutation();
   const [override, setOverride] = useState<ActiveOverride>(null);
-
-  // Debounced visit recorder: when the user lands on a (merchant, category)
-  // pair and stops tapping chips for VISIT_DEBOUNCE_MS, write the visit.
-  // Prevents one chip-change-storm from emitting many outbox events.
-  // Only mark a key as recorded after success — a transient failure should
-  // retry on the next chip change or refetch.
-  const [pendingVisit, setPendingVisit] = useState<{ merchantId: number; categoryCode: string } | null>(null);
-  const debouncedVisit = useDebounce(pendingVisit, VISIT_DEBOUNCE_MS);
-  const lastRecordedRef = useRef<string | null>(null);
-  const inFlightRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!debouncedVisit) return;
-    const key = `${debouncedVisit.merchantId}:${debouncedVisit.categoryCode}`;
-    if (lastRecordedRef.current === key) return;
-    if (inFlightRef.current === key) return;
-    inFlightRef.current = key;
-    recordVisitMutation.mutate(debouncedVisit, {
-      onSuccess: () => {
-        lastRecordedRef.current = key;
-        inFlightRef.current = null;
-      },
-      onError: () => {
-        // Silent: visit recording is a background side-effect. Clearing the
-        // in-flight marker lets the next chip change (or refresh) retry.
-        inFlightRef.current = null;
-      }
-    });
-  }, [debouncedVisit, recordVisitMutation]);
 
   const response = override?.response ?? homeQuery.data?.home ?? null;
   const merchant = override?.merchant ?? response?.recommendation?.merchant ?? null;
@@ -57,13 +26,17 @@ export function useHomeRecommendations() {
   const isLoading =
     homeQuery.isLoading ||
     changeCategoryMutation.isPending ||
-    refreshMutation.isPending;
+    refreshMutation.isPending ||
+    placeMutation.isPending;
   const firstError =
     homeQuery.error ??
     changeCategoryMutation.error ??
-    refreshMutation.error;
+    refreshMutation.error ??
+    placeMutation.error;
   const error = firstError instanceof Error ? firstError.message : firstError ? String(firstError) : null;
 
+  // Picking a category only re-computes and shows the best card for the current merchant.
+  // It deliberately records NO merchant_visit — visits originate from real arrivals, not browsing.
   async function changeCategory(categoryCode: string) {
     const currentRecommendation = response?.recommendation;
     if (!currentRecommendation) return;
@@ -72,10 +45,6 @@ export function useHomeRecommendations() {
       categoryCode
     });
     setOverride({ response: next, merchant: merchant ?? currentRecommendation.merchant });
-    setPendingVisit({
-      merchantId: next.recommendation?.merchant.id ?? currentRecommendation.merchant.id,
-      categoryCode
-    });
   }
 
   async function refresh() {
@@ -90,6 +59,29 @@ export function useHomeRecommendations() {
       categoryCode: response?.recommendation?.categoryCode ?? activeMerchant.categoryCode
     });
     setOverride({ response: next, merchant: activeMerchant });
+  }
+
+  // Tapped a map pin → resolve its merchant + best card and show it (no visit recorded).
+  async function selectPlace(pin: NearbyMerchant) {
+    const next = await placeMutation.mutateAsync({
+      providerPlaceId: pin.providerPlaceId,
+      name: pin.name,
+      lat: pin.lat,
+      lng: pin.lng,
+      categoryCode: pin.categoryCode ?? undefined
+    });
+    setOverride({ response: next, merchant: next.recommendation?.merchant ?? null });
+  }
+
+  // Tapped a recent visit → re-compute the best card for that known merchant.
+  async function selectVisit(merchantId: number, categoryCode: string) {
+    const next = await refreshMutation.mutateAsync({ merchantId, categoryCode });
+    setOverride({ response: next, merchant: next.recommendation?.merchant ?? null });
+  }
+
+  // Drop any pin/visit selection and fall back to the auto (nearby/last-visited) recommendation.
+  function clearSelection() {
+    setOverride(null);
   }
 
   function openAddCard() {
@@ -116,6 +108,7 @@ export function useHomeRecommendations() {
   return {
     categories,
     changeCategory,
+    clearSelection,
     error,
     isLoading,
     openAddCard,
@@ -123,6 +116,8 @@ export function useHomeRecommendations() {
     openCards,
     openUpgrade,
     refresh,
-    response
+    response,
+    selectPlace,
+    selectVisit
   };
 }

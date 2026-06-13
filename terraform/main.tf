@@ -149,6 +149,13 @@ resource "azurerm_container_app" "api" {
         name  = "ASPNETCORE_URLS"
         value = "http://+:8080"
       }
+      # QA/pre-launch toggle: when true, checkout provisions a simulated trialing
+      # subscription locally and skips Stripe entirely (BillingInsertBusiness.SimulateCheckoutAsync).
+      # Must be false for real billing. Keep here so a terraform apply never silently wipes it.
+      env {
+        name  = "Stripe__SimulateCheckout"
+        value = tostring(var.simulate_checkout)
+      }
       dynamic "env" {
         for_each = local.api_secrets
         content {

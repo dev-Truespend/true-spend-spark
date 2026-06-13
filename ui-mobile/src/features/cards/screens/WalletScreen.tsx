@@ -1,84 +1,56 @@
-import { useMemo, useRef, useState } from "react";
-import { Alert, Pressable, StyleSheet, View } from "react-native";
+import { useMemo, useRef } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { Badge } from "@/shared/components/Badge";
-import { Button } from "@/shared/components/Button";
-import { SectionLabel } from "@/shared/components/SectionLabel";
-import { SegmentedControl } from "@/shared/components/SegmentedControl";
 import { Toast } from "@/shared/components/Toast";
 import { NotificationBell } from "@/shared/components/NotificationBell";
 import { TrialBanner } from "@/features/billing/components/TrialBanner";
 import { CardEmptyState } from "@/features/cards/components/CardEmptyState";
-import { CardListItem } from "@/features/cards/components/CardListItem";
-import { CardsSkeleton } from "@/features/cards/components/CardsSkeleton";
 import { CategoryChips } from "@/features/cards/components/CategoryChips";
 import { Greeting } from "@/features/cards/components/Greeting";
-import { PortfolioSummary } from "@/features/cards/components/PortfolioSummary";
+import { RecentVisits } from "@/features/cards/components/RecentVisits";
 import { RecommendationCard } from "@/features/cards/components/RecommendationCard";
 import { RunnerUpList } from "@/features/cards/components/RunnerUpList";
 import { WalletGlobeBackground, type WalletGlobeHandle } from "@/features/cards/components/WalletGlobeBackground";
 import { useCardsList } from "@/features/cards/hooks/useCardsList";
 import { useHomeRecommendations } from "@/features/cards/hooks/useHomeRecommendations";
-import { PlaidLinkCancelledError, useAddPlaidConnection } from "@/features/plaid/hooks/usePlaidConnections";
-import { friendlyMessage } from "@/shared/errors/friendlyMessage";
+import { useNearbyMerchants } from "@/features/cards/hooks/useNearbyMerchants";
+import { useRecentVisits } from "@/features/cards/hooks/useRecentVisits";
 import { useEntitlementGate } from "@/shared/navigation/useEntitlementGate";
 import { useAuth } from "@/providers/AuthProvider";
 import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 
-type SourceFilter = "all" | "plaid" | "manual";
-
 export function WalletScreen() {
   const router = useRouter();
   const styles = useThemedStyles(buildStyles);
-  const { cards, limits, isLoading: cardsLoading, error: cardsError } = useCardsList();
-  const addPlaidMutation = useAddPlaidConnection();
+  const { cards, isLoading: cardsLoading } = useCardsList();
   const gate = useEntitlementGate();
   const { bootstrap } = useAuth();
   const home = useHomeRecommendations();
-  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
+  const { merchants, setViewport } = useNearbyMerchants();
+  const { visits } = useRecentVisits();
   const globeRef = useRef<WalletGlobeHandle>(null);
-  // Three snap points (globe-only / mid / full). The low snap minimizes the
-  // sheet to a sliver so the whole globe shows (Flighty-style); open at mid.
+  const sheetRef = useRef<BottomSheet>(null);
+  // Globe-only / mid / full. The low snap minimizes the sheet so the whole map shows; open at mid.
   const snapPoints = useMemo(() => ["12%", "58%", "92%"], []);
 
   const plaidEnabled = gate.has("plaid_linking_enabled");
-  const atPlaidLimit = !limits?.unlimited && limits?.plaidLimit != null && limits.plaidUsed >= limits.plaidLimit;
-  const atManualLimit = !limits?.unlimited && limits?.manualLimit != null && limits.manualUsed >= limits.manualLimit;
   const hasCards = cards.length > 0;
-  const plaidCount = useMemo(() => cards.filter((c) => c.source === "plaid").length, [cards]);
-  const manualCount = useMemo(() => cards.filter((c) => c.source === "manual").length, [cards]);
-  const visibleCards = useMemo(() => {
-    if (sourceFilter === "all") return cards;
-    return cards.filter((c) => c.source === sourceFilter);
-  }, [cards, sourceFilter]);
-
   const displayName = bootstrap?.profile.displayName ?? null;
   const firstName = displayName?.split(" ")[0] ?? null;
   const recommendation = home.response?.recommendation;
-  const portfolio = home.response?.portfolio ?? [];
   const categoryDisplayName =
     home.categories.find((c) => c.code === recommendation?.categoryCode)?.displayName ?? undefined;
-
-  function handleCardPress(cardId: number) {
-    router.push(`/(app)/cards/${cardId}`);
-  }
 
   function handleAddManual() {
     router.push("/(app)/cards/new");
   }
 
-  async function handleConnectPlaid() {
-    try {
-      await addPlaidMutation.mutateAsync();
-      router.push("/(app)/cards/plaid-connections");
-    } catch (err) {
-      if (err instanceof PlaidLinkCancelledError) return;
-      Alert.alert("Couldn't link bank", friendlyMessage(err, "plaid"));
-    }
+  function handleOpenCardsTab() {
+    router.push("/(app)/(tabs)/cards");
   }
 
   function handleBrowseCatalog() {
@@ -92,7 +64,15 @@ export function WalletScreen() {
   return (
     <View style={styles.fill}>
       <StatusBar style="light" />
-      <WalletGlobeBackground ref={globeRef} />
+      <WalletGlobeBackground
+        ref={globeRef}
+        merchants={merchants}
+        onViewportChange={setViewport}
+        onSelectMerchant={(merchant) => {
+          void home.selectPlace(merchant);
+          sheetRef.current?.snapToIndex(1);
+        }}
+      />
 
       <SafeAreaView edges={["top"]} style={styles.headerSafe} pointerEvents="box-none">
         <View style={styles.headerRow} pointerEvents="box-none">
@@ -105,7 +85,7 @@ export function WalletScreen() {
           <Pressable
             onPress={() => globeRef.current?.recenter()}
             accessibilityRole="button"
-            accessibilityLabel="Center the globe on my location"
+            accessibilityLabel="Center the map on my location"
             hitSlop={10}
             style={({ pressed }) => [styles.locate, pressed && styles.locatePressed]}
           >
@@ -115,25 +95,21 @@ export function WalletScreen() {
       </SafeAreaView>
 
       <BottomSheet
+        ref={sheetRef}
         index={1}
         snapPoints={snapPoints}
         backgroundStyle={styles.sheetBg}
         handleIndicatorStyle={styles.handle}
       >
-        <BottomSheetScrollView
-          contentContainerStyle={styles.sheetContent}
-          showsVerticalScrollIndicator={false}
-        >
+        <BottomSheetScrollView contentContainerStyle={styles.sheetContent} showsVerticalScrollIndicator={false}>
           <Greeting name={firstName} />
 
-          {cardsLoading && !hasCards ? <CardsSkeleton /> : null}
-          {cardsError ? <Toast tone="error" message={cardsError} /> : null}
           {home.error ? <Toast tone="error" message={home.error} /> : null}
 
-          {!cardsLoading && !cardsError && !hasCards ? (
+          {!cardsLoading && !hasCards ? (
             <CardEmptyState
               onAddManual={handleAddManual}
-              onConnectPlaid={handleConnectPlaid}
+              onConnectPlaid={handleOpenCardsTab}
               onBrowseCatalog={handleBrowseCatalog}
               onUpgrade={handleUpgrade}
               plaidEnabled={plaidEnabled}
@@ -148,7 +124,8 @@ export function WalletScreen() {
             />
           ) : null}
 
-          {hasCards && recommendation && recommendation.merchant && home.categories.length > 0 ? (
+          {/* Category selector only for multi-category merchants (Walmart/Target), not single-category (Chipotle). */}
+          {hasCards && recommendation && recommendation.merchant.isMultiCategory && home.categories.length > 0 ? (
             <CategoryChips
               categories={home.categories}
               activeCode={recommendation.categoryCode}
@@ -171,65 +148,13 @@ export function WalletScreen() {
           ) : null}
 
           {hasCards ? (
-            <>
-              <SectionLabel>Your cards</SectionLabel>
-              <SegmentedControl
-                value={sourceFilter}
-                onChange={(next: SourceFilter) => setSourceFilter(next)}
-                options={[
-                  { label: `All · ${cards.length}`, value: "all" },
-                  { label: `Plaid · ${plaidCount}`, value: "plaid" },
-                  { label: `Manual · ${manualCount}`, value: "manual" }
-                ]}
-              />
-
-              <View style={styles.stack}>
-                {visibleCards.map((card, i) => (
-                  <CardListItem key={card.id} card={card} onPress={handleCardPress} index={i} peek />
-                ))}
-              </View>
-
-              {cards.some((c) => c.isPrimary || c.syncStatus === "disconnected") ? (
-                <View style={styles.statusRow}>
-                  {cards.filter((c) => c.isPrimary).map((c) => (
-                    <Badge key={`primary-${c.id}`} tone="blue" label={`Primary · ${c.displayName}`} />
-                  ))}
-                  {cards.filter((c) => c.syncStatus === "disconnected").map((c) => (
-                    <Badge key={`reconnect-${c.id}`} tone="amber" label={`Reconnect · ${c.displayName}`} />
-                  ))}
-                </View>
-              ) : null}
-
-              {(atPlaidLimit || atManualLimit) && !limits?.unlimited ? (
-                <Toast tone="warn" message="You've reached your card limit on the Basic plan. Upgrade to add more." />
-              ) : null}
-
-              {!plaidEnabled ? (
-                <Toast tone="info" message="Bank linking is a Pro feature. Upgrade to connect Plaid accounts." />
-              ) : null}
-
-              {portfolio.length > 0 && !recommendation ? (
-                <PortfolioSummary cards={portfolio} onOpenCard={(id) => home.openCardDetails(id)} />
-              ) : null}
-
-              <View style={styles.actions}>
-                <SectionLabel>Add another</SectionLabel>
-                {!atManualLimit ? (
-                  <Button label="＋ Add card manually" onPress={handleAddManual} variant="outline" />
-                ) : null}
-                {plaidEnabled && !atPlaidLimit ? (
-                  <Button
-                    label="Connect bank account"
-                    onPress={handleConnectPlaid}
-                    disabled={addPlaidMutation.isPending}
-                    variant="outline"
-                  />
-                ) : null}
-                {(atPlaidLimit || atManualLimit || !plaidEnabled) && !limits?.unlimited ? (
-                  <Button label="Upgrade to Pro" onPress={handleUpgrade} />
-                ) : null}
-              </View>
-            </>
+            <RecentVisits
+              visits={visits}
+              onSelect={(visit) => {
+                void home.selectVisit(visit.merchant.id, visit.categoryCode);
+                sheetRef.current?.snapToIndex(1);
+              }}
+            />
           ) : null}
         </BottomSheetScrollView>
       </BottomSheet>
@@ -272,9 +197,6 @@ function buildStyles(t: ReturnType<typeof useTheme>) {
       paddingTop: t.spacing.xs,
       paddingBottom: t.spacing.lg + 80,
       gap: t.spacing.md
-    },
-    stack: { paddingBottom: 8 },
-    statusRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-    actions: { gap: 8 }
+    }
   });
 }

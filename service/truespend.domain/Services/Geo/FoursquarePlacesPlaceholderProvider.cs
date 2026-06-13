@@ -3,34 +3,20 @@ using TrueSpend.Domain.ServiceInterfaces.Geo;
 
 namespace TrueSpend.Domain.Services.Geo;
 
-// Placeholder returning shaped fixture POIs so the catalog sync and on-miss lookup flows run
-// end-to-end without a Foursquare Places API key in development. Two sample chains exercise the
-// chain-upsert and category-bridge paths; both carry the seed "Dining and Drinking" category id.
+// No-op provider used when no Foursquare Places API key is configured. It deliberately returns
+// NO places: the loaded foursquare.places tables (4M+ rows) are the source of truth, and we never
+// fabricate merchants that do not exist in the DB. On a tables miss the geo flow simply finds no
+// candidate (ArrivalConfidenceTierEnum.None) → no recommendation, no map pins. Configure
+// Foursquare:PlacesApiKey to swap in the real FoursquarePlacesProvider for live on-miss lookups.
 public sealed class FoursquarePlacesPlaceholderProvider : IFoursquarePlacesProvider
 {
-    private const string DiningCategoryId = "63be6904847c3692a84b9bb5";
-    private const string DiningCategoryPath = "Dining and Drinking";
-
-    private static IReadOnlyList<ProviderPlace> Sample(decimal lat, decimal lng) => new[]
-    {
-        new ProviderPlace(
-            "foursquare", "fsq-placeholder-chipotle-1", "Chipotle Mexican Grill",
-            "fsq-chain-chipotle", "Chipotle", DiningCategoryId, DiningCategoryPath,
-            lat, lng, "123 Main St", "San Francisco", "CA", "94105", "US"),
-        new ProviderPlace(
-            "foursquare", "fsq-placeholder-starbucks-1", "Starbucks",
-            "fsq-chain-starbucks", "Starbucks", DiningCategoryId, DiningCategoryPath,
-            lat + 0.0004m, lng + 0.0004m, "200 Market St", "San Francisco", "CA", "94105", "US")
-    };
-
     public Task<ProviderPlacesPage> SearchPlacesAsync(
         IReadOnlyCollection<string> foursquareCategoryIds,
         string region,
         string? cursor,
         int batchSize,
         CancellationToken cancellationToken) =>
-        // Single page of fixture data; no pagination in the placeholder.
-        Task.FromResult(new ProviderPlacesPage(Sample(37.7929m, -122.3971m), null));
+        Task.FromResult(new ProviderPlacesPage(Array.Empty<ProviderPlace>(), null));
 
     public Task<IReadOnlyList<ProviderPlace>> NearbySearchAsync(
         decimal lat,
@@ -38,5 +24,5 @@ public sealed class FoursquarePlacesPlaceholderProvider : IFoursquarePlacesProvi
         int radiusMeters,
         IReadOnlyCollection<string> foursquareCategoryIds,
         CancellationToken cancellationToken) =>
-        Task.FromResult(Sample(lat, lng));
+        Task.FromResult<IReadOnlyList<ProviderPlace>>(Array.Empty<ProviderPlace>());
 }

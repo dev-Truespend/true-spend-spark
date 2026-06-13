@@ -15,7 +15,8 @@ import { scaleFont } from "@/shared/theme/typography";
 type IconName = keyof typeof Ionicons.glyphMap;
 
 const ICON_MAP: Record<string, { focused: IconName; outline: IconName }> = {
-  index: { focused: "wallet", outline: "wallet-outline" },
+  index: { focused: "map", outline: "map-outline" },
+  cards: { focused: "card", outline: "card-outline" },
   insights: { focused: "stats-chart", outline: "stats-chart-outline" },
   profile: { focused: "person", outline: "person-outline" }
 };

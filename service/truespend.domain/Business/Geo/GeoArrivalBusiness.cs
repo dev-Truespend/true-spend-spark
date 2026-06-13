@@ -31,6 +31,7 @@ public sealed class GeoArrivalBusiness(
     IGeoWebhookReadService readService,
     IGeoWebhookInsertService insertService,
     IMerchantsReadService merchantsReadService,
+    IMerchantsInsertService merchantsInsertService,
     IMerchantResolveBusiness merchantResolve,
     IGeoPlaceMatchBusiness placeMatchBusiness,
     IRecommendationBuilderBusiness recommendationBuilder,
@@ -133,6 +134,13 @@ public sealed class GeoArrivalBusiness(
                 }
 
                 await TryWriteLocationEventAsync(resolvedUserId, input, merchant.Id, GeoConstants.GeofenceEnteredLocationEventCode, cancellationToken);
+
+                // A confident arrival (High or Medium) is a real, physical visit — record it in merchant
+                // history regardless of whether a push is ultimately produced. The notification gates
+                // below (cards/quiet-hours/entitlement/daily-cap) are a messaging decision, not a record
+                // of where the user actually was. Powers home "recent visits" and repeat-visit confidence.
+                var visitedAt = input.OccurredAt == default ? DateTimeOffset.UtcNow : input.OccurredAt;
+                await merchantsInsertService.RecordVisitAsync(user, merchant.Id, merchant.CategoryCode, visitedAt, cancellationToken);
 
                 // Medium confidence (ambiguous top candidates / shared lot): no lock-screen push — the
                 // foreground "nearby best cards" list (03-recommendations) handles it instead.

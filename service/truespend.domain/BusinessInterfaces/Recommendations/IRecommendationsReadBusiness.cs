@@ -8,10 +8,13 @@ using TrueSpend.Domain.Models.Devices;
 using TrueSpend.Domain.Models.NotificationSettings;
 using TrueSpend.Domain.Models.Permissions;
 using TrueSpend.Domain.Models.Recommendations;
+using TrueSpend.Domain.Models.Geo;
 
 namespace TrueSpend.Domain.BusinessInterfaces.Recommendations;
 
 public interface IRecommendationsReadBusiness
 {
     Task<BusinessResponse<RecommendationResponse>> GetHomeAsync(OnboardingWorkflowUser user, CancellationToken cancellationToken);
+
+    Task<BusinessResponse<NearbyMerchantsResult>> GetNearbyMerchantsAsync(OnboardingWorkflowUser user, NearbyMerchantsRequest request, CancellationToken cancellationToken);
 }

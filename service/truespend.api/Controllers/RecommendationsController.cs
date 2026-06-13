@@ -38,4 +38,15 @@ public sealed class RecommendationsController(
     [HttpPost("category")]
     public async Task<IActionResult> Category(UpdateRecommendationCategoryRequestVm request, CancellationToken cancellationToken) =>
         Respond(await updateBusiness.UpdateCategoryAsync(CurrentUser(), mapper.ToDomain(request), cancellationToken), domain => mapper.ToResponse(domain, cardsMapper, merchantsMapper));
+
+    // Map pins: up to ~30 rewardable places inside the viewport, ranked by proximity to centre.
+    // Returns places only — the merchant + best card are resolved when a pin is tapped (POST /place).
+    [HttpPost("nearby-merchants")]
+    public async Task<IActionResult> NearbyMerchants(NearbyMerchantsRequestVm request, CancellationToken cancellationToken) =>
+        Respond(await readBusiness.GetNearbyMerchantsAsync(CurrentUser(), mapper.ToDomain(request), cancellationToken), mapper.ToNearbyMerchants);
+
+    // Tap a map pin → resolve the merchant and return its best card. Records no merchant_visit.
+    [HttpPost("place")]
+    public async Task<IActionResult> Place(PlaceRecommendationRequestVm request, CancellationToken cancellationToken) =>
+        Respond(await insertBusiness.GetPlaceRecommendationAsync(CurrentUser(), mapper.ToDomain(request), cancellationToken), domain => mapper.ToResponse(domain, cardsMapper, merchantsMapper));
 }

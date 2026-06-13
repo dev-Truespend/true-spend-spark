@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { homeApi } from "@/features/cards/api/home.api";
+import { homeApi, type PlaceRecommendationInput } from "@/features/cards/api/home.api";
 import { getCurrentCoords } from "@/shared/native/location";
 import {
   createMerchantVisitSchema,
@@ -78,6 +78,13 @@ export function useRecordMerchantVisitMutation() {
       });
       return homeApi.recordVisit(visitInput);
     }
+  });
+}
+
+// Tapping a map pin: resolve the place to its best card. Server records no visit.
+export function usePlaceRecommendationMutation() {
+  return useMutation({
+    mutationFn: async (input: PlaceRecommendationInput) => (await homeApi.getPlaceRecommendation(input)).data
   });
 }
 

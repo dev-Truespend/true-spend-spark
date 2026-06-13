@@ -6,6 +6,7 @@ public sealed class DeviceEntity
     public Guid UserId { get; set; }
     public short PlatformId { get; set; }
     public string? PushToken { get; set; }
+    public Guid? InstallationId { get; set; }
     public string? DeviceName { get; set; }
     public string? AppVersion { get; set; }
     public string? OsVersion { get; set; }

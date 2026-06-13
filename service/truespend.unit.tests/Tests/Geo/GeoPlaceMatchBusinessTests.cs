@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TrueSpend.Domain.Business.Geo;
+using TrueSpend.Domain.Constants;
 using TrueSpend.Domain.Entities.Foursquare;
 using TrueSpend.Domain.Enums;
 using TrueSpend.Domain.Models.Geo;
@@ -92,9 +93,37 @@ public sealed class GeoPlaceMatchBusinessTests
         Assert.Equal(ArrivalConfidenceTierEnum.None, match.Tier);
     }
 
+    [Fact]
+    public async Task Short_in_vehicle_stop_demotes_high_to_medium()
+    {
+        var ctx = TestContext.Default();
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Candidate("fsq-1", "Target", 10) });
+        var business = ctx.Build();
+
+        // Clear single candidate would be High, but a sub-minute in-vehicle stop reads as a drive-by.
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 20, "in_vehicle", CancellationToken.None);
+
+        Assert.Equal(ArrivalConfidenceTierEnum.Medium, match.Tier);
+    }
+
+    [Fact]
+    public async Task Drive_up_category_keeps_high_for_short_in_vehicle_stop()
+    {
+        var ctx = TestContext.Default();
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Candidate("fsq-1", "Shell", 10, GeoConstants.GasStationsCategoryCode) });
+        var business = ctx.Build();
+
+        // Same short in-vehicle stop, but a gas station is built for it — stays High so the push fires.
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 20, "in_vehicle", CancellationToken.None);
+
+        Assert.Equal(ArrivalConfidenceTierEnum.High, match.Tier);
+    }
+
     // metersNorth is offset along latitude so Haversine distance ~= metersNorth.
-    private static FoursquarePlaceCandidate Candidate(string id, string name, double metersNorth) =>
-        new(1, "foursquare", id, name, name, null,
+    private static FoursquarePlaceCandidate Candidate(string id, string name, double metersNorth, string? categoryCode = null) =>
+        new(1, "foursquare", id, name, name, null, categoryCode,
             OriginLat + (decimal)(metersNorth / 111_320.0), OriginLng, 0d);
 
     private static ProviderPlace ProviderPlace(string id, string name) =>

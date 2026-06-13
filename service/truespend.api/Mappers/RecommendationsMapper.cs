@@ -10,7 +10,11 @@ using DomainInStore = TrueSpend.Domain.Models.Recommendations.InStoreRecommendat
 using DomainRefresh = TrueSpend.Domain.Models.Recommendations.RefreshRecommendationRequest;
 using DomainNearby = TrueSpend.Domain.Models.Recommendations.NearbyRecommendationRequest;
 using DomainCategory = TrueSpend.Domain.Models.Recommendations.UpdateRecommendationCategoryRequest;
+using DomainPlace = TrueSpend.Domain.Models.Recommendations.PlaceRecommendationRequest;
 using DomainMoney = TrueSpend.Domain.Models.Common.Money;
+using DomainNearbyMerchants = TrueSpend.Domain.Models.Geo.NearbyMerchantsRequest;
+using DomainNearbyMerchantsResult = TrueSpend.Domain.Models.Geo.NearbyMerchantsResult;
+using DomainNearbyMerchant = TrueSpend.Domain.Models.Geo.NearbyMerchant;
 
 namespace TrueSpend.Api.Mappers;
 
@@ -20,7 +24,10 @@ public interface IRecommendationsMapper
     DomainRefresh ToDomain(RefreshRecommendationRequestVm request);
     DomainNearby ToDomain(NearbyRecommendationRequestVm request);
     DomainCategory ToDomain(UpdateRecommendationCategoryRequestVm request);
+    DomainPlace ToDomain(PlaceRecommendationRequestVm request);
+    DomainNearbyMerchants ToDomain(NearbyMerchantsRequestVm request);
     RecommendationResponseVm ToResponse(DomainResp domain, ICardsMapper cardsMapper, IMerchantsMapper merchantsMapper);
+    NearbyMerchantsResponseVm ToNearbyMerchants(DomainNearbyMerchantsResult domain);
 }
 
 public sealed class RecommendationsMapper : IRecommendationsMapper
@@ -36,6 +43,18 @@ public sealed class RecommendationsMapper : IRecommendationsMapper
 
     public DomainCategory ToDomain(UpdateRecommendationCategoryRequestVm request) =>
         new(request.RecommendationId, request.CategoryCode);
+
+    public DomainPlace ToDomain(PlaceRecommendationRequestVm request) =>
+        new(request.ProviderPlaceId, request.Name, request.Lat, request.Lng, request.CategoryCode, request.EstimatedAmount);
+
+    public DomainNearbyMerchants ToDomain(NearbyMerchantsRequestVm request) =>
+        new(request.SwLat, request.SwLng, request.NeLat, request.NeLng, request.CenterLat, request.CenterLng, request.Limit);
+
+    public NearbyMerchantsResponseVm ToNearbyMerchants(DomainNearbyMerchantsResult domain) =>
+        new(domain.Merchants.Select(ToNearbyMerchant).ToArray());
+
+    private static NearbyMerchantVm ToNearbyMerchant(DomainNearbyMerchant m) =>
+        new(m.ProviderPlaceId, m.Name, m.Lat, m.Lng, m.CategoryCode, m.CategoryName, m.ChainName);
 
     public RecommendationResponseVm ToResponse(DomainResp domain, ICardsMapper cardsMapper, IMerchantsMapper merchantsMapper) =>
         new(

@@ -5,6 +5,7 @@ using DomainMerchant = TrueSpend.Domain.Models.Recommendations.Merchant;
 using DomainCreateVisit = TrueSpend.Domain.Models.Recommendations.CreateMerchantVisitRequest;
 using DomainVisits = TrueSpend.Domain.Models.Recommendations.MerchantVisitsResponse;
 using DomainVisit = TrueSpend.Domain.Models.Recommendations.MerchantVisit;
+using DomainRecentVisit = TrueSpend.Domain.Models.Recommendations.RecentMerchantVisit;
 
 namespace TrueSpend.Api.Mappers;
 
@@ -15,6 +16,7 @@ public interface IMerchantsMapper
     MerchantResponseVm ToResponse(DomainMerchantResp domain);
     MerchantVm ToMerchant(DomainMerchant domain);
     MerchantVisitsResponseVm ToVisits(DomainVisits domain);
+    RecentVisitsResponseVm ToRecentVisits(IReadOnlyList<DomainRecentVisit> domain);
 }
 
 public sealed class MerchantsMapper : IMerchantsMapper
@@ -32,4 +34,7 @@ public sealed class MerchantsMapper : IMerchantsMapper
 
     public MerchantVisitsResponseVm ToVisits(DomainVisits domain) =>
         new(domain.Visits.Select(visit => new MerchantVisitVm(visit.MerchantId, visit.SelectedCategoryCode, visit.VisitedAt)).ToArray());
+
+    public RecentVisitsResponseVm ToRecentVisits(IReadOnlyList<DomainRecentVisit> domain) =>
+        new(domain.Select(v => new RecentVisitVm(ToMerchant(v.Merchant), v.CategoryCode, v.VisitedAt)).ToArray());
 }

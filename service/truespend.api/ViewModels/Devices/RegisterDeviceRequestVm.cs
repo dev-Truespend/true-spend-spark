@@ -7,4 +7,5 @@ public sealed record RegisterDeviceRequestVm(
     string? AppVersion,
     string? OsVersion,
     string? Locale,
-    string? Timezone);
+    string? Timezone,
+    string? InstallationId = null);

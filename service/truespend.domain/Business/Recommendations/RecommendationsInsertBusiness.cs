@@ -111,4 +111,28 @@ public sealed class RecommendationsInsertBusiness(
         // Has a nearby merchant but no eligible cards: empty result, client shows the home empty state.
         return BusinessResponse<RecommendationResponse>.Ok(new RecommendationResponse(recommendation, null, null));
     }
+
+    // Tap on a map pin (10/03): resolve the picked place to a merchant and build its best card. Unlike
+    // the arrival pipeline this records NO merchant_visit — tapping a pin is browsing, not a visit.
+    public async Task<BusinessResponse<RecommendationResponse>> GetPlaceRecommendationAsync(
+        OnboardingWorkflowUser user,
+        PlaceRecommendationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var errors = validator.ValidatePlaceRecommendation(request);
+        if (errors.Count > 0)
+        {
+            return BusinessResponse<RecommendationResponse>.Fail(errors, 400);
+        }
+
+        var merchant = await merchantResolve.ResolveByNameAsync(
+            request.Name, GeoConstants.ProviderFoursquare, request.ProviderPlaceId, address: null, cancellationToken);
+
+        var recommendation = await builder.BuildAsync(
+            user, merchant, request.CategoryCode ?? merchant.CategoryCode,
+            request.EstimatedAmount ?? AssumedSpendAmount, RecommendationsConstants.InStoreContextCode, cancellationToken);
+
+        // Resolved a merchant but no eligible cards: empty result, client shows the empty state.
+        return BusinessResponse<RecommendationResponse>.Ok(new RecommendationResponse(recommendation, null, null));
+    }
 }

@@ -14,6 +14,7 @@ public sealed class DeviceEntityConfiguration : IEntityTypeConfiguration<DeviceE
         builder.Property(x => x.UserId).HasColumnName("user_id");
         builder.Property(x => x.PlatformId).HasColumnName("platform_id");
         builder.Property(x => x.PushToken).HasColumnName("push_token");
+        builder.Property(x => x.InstallationId).HasColumnName("installation_id");
         builder.Property(x => x.DeviceName).HasColumnName("device_name");
         builder.Property(x => x.AppVersion).HasColumnName("app_version");
         builder.Property(x => x.OsVersion).HasColumnName("os_version");
@@ -25,6 +26,7 @@ public sealed class DeviceEntityConfiguration : IEntityTypeConfiguration<DeviceE
         builder.Property(x => x.CreatedAt).HasColumnName("created_at");
         builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");
         builder.HasIndex(x => x.PushToken).IsUnique();
+        builder.HasIndex(x => new { x.UserId, x.InstallationId });
         builder.HasIndex(x => x.UserId);
     }
 }

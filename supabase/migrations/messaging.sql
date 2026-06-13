@@ -3,6 +3,8 @@ create table if not exists messaging.devices (
   user_id uuid not null references auth.users(id) on delete cascade,
   platform_id smallint not null references lookup.device_platforms(id),
   push_token text unique,
+  installation_id uuid,
+  -- installation_id: stable per-install identity (see alter/index below the table).
   device_name text,
   app_version text,
   os_version text,
@@ -14,6 +16,13 @@ create table if not exists messaging.devices (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Stable per-install identity so a re-register (even a tokenless one, before push permission is granted)
+-- resolves to the same row instead of leaking a duplicate. Added via alter so already-created tables get
+-- it too; partial unique keeps legacy null-installation rows valid while enforcing one row per (user, install).
+alter table messaging.devices add column if not exists installation_id uuid;
+create unique index if not exists messaging_devices_user_installation_uq
+  on messaging.devices(user_id, installation_id) where installation_id is not null;
 
 create table if not exists messaging.notification_preferences (
   id int generated always as identity primary key,

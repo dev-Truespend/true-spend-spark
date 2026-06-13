@@ -90,4 +90,28 @@ public sealed class MerchantsReadService(TrueSpendDbContext db) : IMerchantsRead
                     visit.VisitedAt))
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<RecentMerchantVisit>> GetRecentVisitsAsync(OnboardingWorkflowUser user, TimeSpan lookback, int limit, CancellationToken cancellationToken)
+    {
+        var since = DateTimeOffset.UtcNow - lookback;
+        return await (from visit in db.MerchantVisits.AsNoTracking()
+                where visit.UserId == user.UserId && visit.VisitedAt >= since
+                orderby visit.VisitedAt descending
+                join merchant in db.Merchants.AsNoTracking() on visit.MerchantId equals merchant.Id
+                join merchantCategory in db.Categories.AsNoTracking() on merchant.CategoryId equals merchantCategory.Id into merchantCategoryJoin
+                from merchantCategory in merchantCategoryJoin.DefaultIfEmpty()
+                join selectedCategory in db.Categories.AsNoTracking() on visit.SelectedCategoryId equals selectedCategory.Id into selectedCategoryJoin
+                from selectedCategory in selectedCategoryJoin.DefaultIfEmpty()
+                select new RecentMerchantVisit(
+                    new Merchant(
+                        merchant.Id,
+                        merchant.CanonicalName,
+                        merchantCategory.Code ?? "general",
+                        merchant.IsMultiCategory,
+                        merchant.Address),
+                    selectedCategory.Code ?? merchantCategory.Code ?? "general",
+                    visit.VisitedAt))
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+    }
 }

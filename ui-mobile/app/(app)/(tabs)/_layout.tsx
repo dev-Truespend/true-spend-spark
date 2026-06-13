@@ -7,7 +7,8 @@ export default function TabsLayout() {
       screenOptions={{ headerShown: false }}
       tabBar={(props) => <LiquidGlassTabBar {...props} />}
     >
-      <Tabs.Screen name="index" options={{ title: "Wallet" }} />
+      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="cards" options={{ title: "Cards" }} />
       <Tabs.Screen name="insights" options={{ title: "Insights" }} />
       <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>

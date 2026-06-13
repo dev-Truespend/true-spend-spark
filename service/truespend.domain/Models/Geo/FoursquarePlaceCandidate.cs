@@ -9,6 +9,7 @@ public sealed record FoursquarePlaceCandidate(
     string Name,
     string? ChainName,
     short? CategoryId,
+    string? CategoryCode,
     decimal Lat,
     decimal Lng,
     double DistanceMeters);
