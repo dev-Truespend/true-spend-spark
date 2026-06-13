@@ -22,14 +22,14 @@ public static class CategoryIconMap
         { "Cash Back",      "dollar-sign" },
         { "Other",          DefaultIcon },
 
-        // Legacy seed codes (still referenced by sample/test fixtures)
+        // Legacy seed codes (still referenced by sample/test fixtures). "dining"/"travel" are
+        // intentionally omitted — the case-insensitive comparer already matches them to the
+        // "Dining"/"Travel" entries above, and re-adding them throws a duplicate-key on init.
         { "electronics",    "tv" },
         { "groceries",      "shopping-cart" },
         { "clothing",       "shirt" },
         { "home_goods",     "home" },
         { "beauty",         "sparkles" },
-        { "dining",         "utensils" },
-        { "travel",         "plane" },
     };
 
     public static string Resolve(string? key) =>

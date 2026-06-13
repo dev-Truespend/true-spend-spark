@@ -14,5 +14,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../truespend.domain/truespend.domain.csproj" />
+    <ProjectReference Include="../truespend.api/truespend.api.csproj" />
   </ItemGroup>
 </Project>
