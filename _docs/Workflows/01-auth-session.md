@@ -10,15 +10,15 @@ Phase 1 online auth/session behavior for splash, sign-in, OTP, deep-link return,
 |---|---|---|
 | User can see the TrueSpend splash screen when opening the mobile app | Done |  |
 | User can start sign-in from the welcome screen | Done |  |
-| User can sign in with Apple from the mobile app | Done | Fix: `signInWithProvider` now opens the OAuth URL (native `signInWithOAuth` doesn't auto-redirect); client uses PKCE flow. |
-| User can sign in with Google from the mobile app | Done | Fix: same as Apple — open returned OAuth URL via `openExternalUrl`. |
+| User can sign in with Apple from the mobile app | Done | **Native** flow (no browser): `expo-apple-authentication` sheet → identity token + nonce → `supabase.auth.signInWithIdToken({ provider: "apple" })`. Requires `ios.usesAppleSignIn` + Apple provider in Supabase. |
+| User can sign in with Google from the mobile app | Done | **Native** flow (no browser): `@react-native-google-signin` → idToken → `supabase.auth.signInWithIdToken({ provider: "google" })`. Configured with `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (Supabase-registered) + `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` / `_IOS_URL_SCHEME`. Replaced the browser OAuth (`signInWithOAuth` + `openExternalUrl`) which reused the system-browser cookie → wrong-account login, no Apple return, "open this app?" prompt. `signInWithProvider` returns the `Session` (or null on cancel); `useSignIn` calls `completeSignedInSession`. |
 | User can sign in with phone OTP from the mobile app | Done |  |
 | User can sign in with email OTP from the mobile app | Done |  |
 | User can create a new passwordless account | Done |  |
-| User can stay signed in across app restarts | Done |  |
+| User can stay signed in across app restarts | Done | Session persists in SecureStore (Keychain/Keystore), which survives uninstall. On a fresh install (no AsyncStorage marker) `purgeSecureStorageIfFreshInstall` clears it with `signOut({ scope: "local" })` (network-free, so a stale/invalid token is dropped even offline) → reinstall lands on sign-in, not the previous account. |
 | User can be redirected to onboarding after first sign-in | Done |  |
 | User can be redirected to the home recommendation screen after onboarding | Done |  |
-| User can recover from expired authentication | Done |  |
+| User can recover from expired authentication | Done | Auto sign-out covers every "session no longer valid" path via one guarded `forceSignOut` (local-scope clear + route to login): (1) API `401` after a failed token refresh (axios interceptor → `unauthorizedHandler`); (2) Supabase `onAuthStateChange` `SIGNED_OUT` — fires when a background refresh fails because the account was **deleted/revoked** server-side; (3) on **foreground**, a server-side `supabase.auth.getUser()` check (cold-start `getSession` is a local read, so a deleted user's cached JWT looks valid until expiry) — auth API error → sign out, network error ignored. |
 | User can complete email OTP deep links from mobile | Done |  |
 | User can complete OAuth callback deep links from mobile | Done |  |
 | User can use app navigation after returning from external auth | Done |  |
@@ -73,9 +73,10 @@ App launch
     POST /api/v1/auth/bootstrap
     Route to onboarding if incomplete, otherwise Home
 
-Sign in / deep-link return
-  Supabase Auth: complete OAuth or OTP
-  POST /api/v1/auth/bootstrap
+Sign in
+  Apple/Google: native sheet -> ID token -> supabase.auth.signInWithIdToken (no browser/deep-link)
+  Email/Phone OTP: native deep-link / code entry -> supabase.auth.verifyOtp
+  -> completeSignedInSession -> POST /api/v1/auth/bootstrap
   Route to onboarding if incomplete, otherwise Home
 
 Expired auth
@@ -90,7 +91,8 @@ Expired auth
 |---|---|---|---|---|---|---|
 | Restore app session | Supabase Auth SDK | Supabase session/token | Sync API | None | `auth.users` | Mobile secure session cache |
 | Auth bootstrap signed-in user | `POST /api/v1/auth/bootstrap` | `AuthBootstrapRequest`: optional `locale`, `timezone`, `countryCode`, `device` -> `AuthBootstrapResponse`: `profile`, `preferences`, `permissions`, `onboarding`, `entitlements`, `roles`, `deviceId` | Sync API | None | Create missing `app.profiles`, `app.user_preferences`, `app.user_permissions`, `app.onboarding_states`, `security.user_roles`; upsert `messaging.devices`; read `lookup.roles`, `lookup.device_platforms`, `billing.*`, `lookup.*` | Hydrate mobile profile, preferences, permissions, onboarding, entitlement, role, and device caches |
-| Complete OAuth/OTP callback | Supabase Auth SDK, then `POST /api/v1/auth/bootstrap` | Supabase callback/deep link, then bootstrap response above | Sync API | None | `auth.users`; app rows created by auth bootstrap | Replace session cache; hydrate all bootstrap caches |
+| Native provider sign-in (Apple/Google) | Native SDK `signInWithIdToken`, then `POST /api/v1/auth/bootstrap` | ID token (+ nonce for Apple), then bootstrap response above | Sync API | None | `auth.users`; app rows created by auth bootstrap | Replace session cache; hydrate all bootstrap caches |
+| Complete OTP callback | Supabase Auth SDK, then `POST /api/v1/auth/bootstrap` | Supabase OTP verify / deep link, then bootstrap response above | Sync API | None | `auth.users`; app rows created by auth bootstrap | Replace session cache; hydrate all bootstrap caches |
 | Recover expired auth | Any authenticated API may return `401` | Standard API error | Sync API | None | None unless refresh succeeds | Clear mobile caches on sign-out; refresh caches after token refresh |
 | Sign out | Supabase Auth SDK | Supabase sign-out | Sync API | None | None | Clear secure session and user-scoped mobile caches |
 

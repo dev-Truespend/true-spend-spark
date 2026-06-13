@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { requestEmailOtp, requestPhoneOtp, signInWithProvider } from "@/features/auth/api/auth.api";
 import { OtpTargetSchema } from "@/features/auth/schemas/auth.schema";
+import { useAuth } from "@/providers/AuthProvider";
 
 export function useSignIn() {
+  const auth = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +30,9 @@ export function useSignIn() {
     setIsLoading(true);
     setError(null);
     try {
-      await signInWithProvider(provider);
+      // Native sheet → ID token → Supabase session. null means the user cancelled (no error toast).
+      const session = await signInWithProvider(provider);
+      if (session) await auth.completeSignedInSession(session);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Unable to start sign-in.");
       throw nextError;

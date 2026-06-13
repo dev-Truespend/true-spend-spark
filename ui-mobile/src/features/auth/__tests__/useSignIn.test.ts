@@ -7,6 +7,11 @@ jest.mock("@/features/auth/api/auth.api", () => ({
   signInWithProvider: jest.fn()
 }));
 
+const mockCompleteSignedInSession = jest.fn();
+jest.mock("@/providers/AuthProvider", () => ({
+  useAuth: () => ({ completeSignedInSession: mockCompleteSignedInSession })
+}));
+
 const { requestEmailOtp, requestPhoneOtp, signInWithProvider } = jest.requireMock("@/features/auth/api/auth.api") as {
   requestEmailOtp: jest.Mock;
   requestPhoneOtp: jest.Mock;
@@ -17,6 +22,7 @@ beforeEach(() => {
   requestEmailOtp.mockReset();
   requestPhoneOtp.mockReset();
   signInWithProvider.mockReset();
+  mockCompleteSignedInSession.mockReset();
 });
 
 describe("useSignIn", () => {
@@ -33,8 +39,9 @@ describe("useSignIn", () => {
     expect(result.current.error).toBeNull();
   });
 
-  it("starts the OAuth provider flow for the selected provider", async () => {
-    signInWithProvider.mockResolvedValue(undefined);
+  it("completes the session after a native provider sign-in", async () => {
+    const session = { access_token: "a" };
+    signInWithProvider.mockResolvedValue(session);
     const { result } = renderHook(() => useSignIn());
 
     await act(async () => {
@@ -42,6 +49,19 @@ describe("useSignIn", () => {
     });
 
     expect(signInWithProvider).toHaveBeenCalledWith("apple");
+    expect(mockCompleteSignedInSession).toHaveBeenCalledWith(session);
+  });
+
+  it("does not complete a session when the provider sign-in is cancelled", async () => {
+    signInWithProvider.mockResolvedValue(null);
+    const { result } = renderHook(() => useSignIn());
+
+    await act(async () => {
+      await result.current.startProvider("google");
+    });
+
+    expect(mockCompleteSignedInSession).not.toHaveBeenCalled();
+    expect(result.current.error).toBeNull();
   });
 
   it("surfaces an error message when the OTP request fails", async () => {

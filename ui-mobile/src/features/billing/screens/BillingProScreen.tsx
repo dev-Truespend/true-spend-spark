@@ -64,6 +64,9 @@ export function BillingProScreen() {
   const styles = useThemedStyles(buildStyles);
   const queryClient = useQueryClient();
   const [period, setPeriod] = useState<Period>("annual");
+  // User's explicit plan pick; null = fall back to the default (Pro). Reset implicitly when the
+  // selected plan stops being a valid upgrade target (see selectedPlanCode below).
+  const [pickedPlanCode, setPickedPlanCode] = useState<string | null>(null);
 
   const plansQuery = useBillingPlans();
   const monthlyPricesQuery = useBillingPrices("monthly");
@@ -98,13 +101,21 @@ export function BillingProScreen() {
   }, [monthlyProPrice, annualProPrice]);
 
   const currentPlanCode = (entitlements?.planCode ?? subscription?.planCode ?? "free").toLowerCase();
-  // Upgrade target = the cheapest higher tier that has a price (free -> basic -> pro).
   const currentRank = TIER_RANK[currentPlanCode] ?? 0;
-  const upgradeTarget = [...plans]
+  // Selectable = any higher tier that has a price row (free -> basic / pro). Cards for these are
+  // tappable; the user picks one and the Upgrade button targets it.
+  const selectablePlans = [...plans]
     .filter((p) => (TIER_RANK[p.code.toLowerCase()] ?? 0) > currentRank && prices.some((pr) => pr.planCode === p.code))
-    .sort((a, b) => (TIER_RANK[a.code.toLowerCase()] ?? 0) - (TIER_RANK[b.code.toLowerCase()] ?? 0))[0];
-  const upgradePrice = prices.find((p) => p.planCode === upgradeTarget?.code);
-  const pricesUnavailable = upgradeTarget != null && !pricesQuery.isLoading && !upgradePrice;
+    .sort((a, b) => (TIER_RANK[a.code.toLowerCase()] ?? 0) - (TIER_RANK[b.code.toLowerCase()] ?? 0));
+  // Default the selection to Pro (the top tier), else the highest available upgrade.
+  const defaultPlanCode =
+    selectablePlans.find((p) => p.code.toLowerCase() === "pro")?.code ??
+    selectablePlans[selectablePlans.length - 1]?.code ??
+    null;
+  const selectedPlanCode =
+    pickedPlanCode && selectablePlans.some((p) => p.code === pickedPlanCode) ? pickedPlanCode : defaultPlanCode;
+  const selectedPrice = prices.find((p) => p.planCode === selectedPlanCode);
+  const pricesUnavailable = selectedPlanCode != null && !pricesQuery.isLoading && !selectedPrice;
 
   useFocusEffect(
     useCallback(() => {
@@ -115,10 +126,10 @@ export function BillingProScreen() {
   );
 
   async function handleUpgrade() {
-    if (!upgradeTarget) return;
+    if (!selectedPlanCode) return;
     try {
       const result = await checkout.mutateAsync({
-        planCode: upgradeTarget.code,
+        planCode: selectedPlanCode,
         periodCode: period,
         returnContextCode: "billing"
       });
@@ -200,6 +211,7 @@ export function BillingProScreen() {
           // Free has no price row — render "$0" with no cadence rather than "—".
           const priceDisplay = price?.amount.display ?? (isFreeTier ? "$0" : "—");
           const planCadence = price ? cadence : isFreeTier ? "" : cadence;
+          const isSelectable = selectablePlans.some((p) => p.code === plan.code);
           return (
             <PlanCard
               key={plan.code}
@@ -209,6 +221,8 @@ export function BillingProScreen() {
               features={buildFeatureList(plan, features)}
               featured={code === "pro" && !onProPlan}
               ribbon="BEST VALUE"
+              selected={isSelectable && plan.code === selectedPlanCode}
+              onPress={isSelectable ? () => setPickedPlanCode(plan.code) : undefined}
               footer={
                 <PlanFooter
                   plan={plan}
@@ -248,14 +262,14 @@ export function BillingProScreen() {
         </View>
       ) : null}
 
-      {!onProPlan && upgradeTarget ? (
+      {!onProPlan && selectedPlanCode ? (
         <Button
-          disabled={checkout.isPending || pricesQuery.isLoading || !upgradePrice}
+          disabled={checkout.isPending || pricesQuery.isLoading || !selectedPrice}
           loading={checkout.isPending}
           label={
             checkout.isPending
               ? "Opening checkout…"
-              : `Upgrade with Stripe${upgradePrice ? ` · ${upgradePrice.amount.display}${cadence}` : ""}`
+              : `Upgrade with Stripe${selectedPrice ? ` · ${selectedPrice.amount.display}${cadence}` : ""}`
           }
           onPress={handleUpgrade}
         />

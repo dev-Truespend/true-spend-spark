@@ -1,6 +1,7 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { AppState } from "react-native";
 import { router } from "expo-router";
-import { Session } from "@supabase/supabase-js";
+import { Session, isAuthApiError } from "@supabase/supabase-js";
 import { bootstrapAuth, signOutSupabase } from "@/features/auth/api/auth.api";
 import { supabase } from "@/shared/api/supabaseClient";
 import { getRouteForBootstrap } from "@/features/auth/mappers/authRoute.mapper";
@@ -24,7 +25,11 @@ async function purgeSecureStorageIfFreshInstall(): Promise<void> {
   const marker = await getCachedJson<boolean>(FRESH_INSTALL_MARKER_KEY);
   if (marker) return;
   try {
-    await supabase.auth.signOut();
+    // scope: "local" removes the persisted Keychain/Keystore session WITHOUT a network revoke call —
+    // so a stale token from a previous install is cleared even offline or when it's already invalid
+    // server-side. A global signOut can otherwise fail the network step and leave the local token in
+    // place, which is exactly how a reinstalled app silently inherits the old account.
+    await supabase.auth.signOut({ scope: "local" });
   } catch {
     // No active session is fine — signOut still clears any persisted keys.
   }
@@ -119,14 +124,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [bootstrap?.deviceId]);
 
-  const handleUnauthorized = useCallback(async () => {
-    // Already signed out — a 401 here is just a request that fired before/around
-    // sign-in (e.g. warmup queries on a signed-out cold start). Routing is owned
-    // by restoreSession in that case; re-redirecting would make the sign-in
-    // screen mount repeatedly.
+  // Single exit for every "the session is no longer valid" signal: a 401 after a failed token refresh,
+  // a Supabase SIGNED_OUT event (the refresh token was revoked — e.g. the account was deleted
+  // server-side), or a foreground getUser() check that fails. Idempotent and guarded so concurrent
+  // triggers fire exactly one redirect. scope: "local" guarantees the on-device session clears even if
+  // the network revoke fails (the token may already be dead server-side).
+  const forceSignOut = useCallback(async () => {
+    // Already signed out — e.g. a warmup query 401 on a signed-out cold start (routing owned by
+    // restoreSession), or a second trigger racing the first. Claim the ref synchronously to dedupe.
     if (sessionRef.current == null) return;
+    sessionRef.current = null;
     try {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: "local" });
     } catch {
       // ignore — local clear must still proceed
     }
@@ -137,8 +146,35 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    setUnauthorizedHandler(handleUnauthorized);
-  }, [handleUnauthorized]);
+    setUnauthorizedHandler(forceSignOut);
+  }, [forceSignOut]);
+
+  // Supabase emits SIGNED_OUT when the session ends outside an explicit sign-out — most importantly when
+  // a background token refresh fails because the account was deleted/revoked server-side. Without this
+  // listener the app would keep showing a signed-in shell until the next failing API call.
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") void forceSignOut();
+    });
+    return () => data.subscription.unsubscribe();
+  }, [forceSignOut]);
+
+  // getSession() (used on cold start) is a LOCAL read — a deleted user's cached JWT still looks valid
+  // until it expires (up to ~1h), so a warm reopen would otherwise stay on Home. On every
+  // background→foreground transition we revalidate against the server with getUser(); if the account is
+  // gone we sign out. Network errors are ignored (offline ≠ deleted) — only auth API errors sign out.
+  useEffect(() => {
+    let previous = AppState.currentState;
+    const sub = AppState.addEventListener("change", (next) => {
+      if (previous.match(/inactive|background/) && next === "active" && sessionRef.current) {
+        void supabase.auth.getUser().then(({ error }) => {
+          if (error && isAuthApiError(error)) void forceSignOut();
+        });
+      }
+      previous = next;
+    });
+    return () => sub.remove();
+  }, [forceSignOut]);
 
   const handleAuthUrl = useCallback(async (url: string) => {
     const parsed = parseUrl(url);

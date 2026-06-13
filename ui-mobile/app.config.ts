@@ -11,6 +11,8 @@ export default {
     userInterfaceStyle: "automatic",
     ios: {
       bundleIdentifier: "com.truespend.mobile",
+      // Enables the native "Sign in with Apple" sheet (expo-apple-authentication).
+      usesAppleSignIn: true,
       infoPlist: {
         UIBackgroundModes: ["remote-notification", "location", "fetch"],
         NSLocationWhenInUseUsageDescription:
@@ -93,6 +95,18 @@ export default {
           isAndroidBackgroundLocationEnabled: true,
           isIosBackgroundLocationEnabled: true
         }
+      ],
+      "expo-apple-authentication",
+      [
+        // Native Google sign-in. iosUrlScheme is the REVERSED iOS client ID
+        // (com.googleusercontent.apps.XXXXXX) from Google Cloud — set EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME
+        // in the build env. Requires a native rebuild after changing.
+        "@react-native-google-signin/google-signin",
+        {
+          iosUrlScheme:
+            process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME ??
+            "com.googleusercontent.apps.596743529668-217kaknr4vmq29497d45ma8a56fl7195"
+        }
       ]
       // "react-native-plaid-link-sdk" — re-add when ready to test Plaid Link.
       // v11.13.3 dist ships ESM-style imports without .js extensions, which break
@@ -110,6 +124,15 @@ export default {
       geoProvider: process.env.EXPO_PUBLIC_GEO_PROVIDER ?? "auto",
       foursquareMovementKey: process.env.EXPO_PUBLIC_FOURSQUARE_MOVEMENT_KEY ?? "",
       plaidRedirectUri: process.env.EXPO_PUBLIC_PLAID_REDIRECT_URI ?? "",
+      // Google OAuth client IDs are public (they ship in the binary) — safe to default here, like the
+      // EAS projectId above. Override via env for other Google projects. Web ID must match Supabase's
+      // Google provider config.
+      googleWebClientId:
+        process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ??
+        "596743529668-51pgs30coqiacumiiemh5flb847e7839.apps.googleusercontent.com",
+      googleIosClientId:
+        process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ??
+        "596743529668-217kaknr4vmq29497d45ma8a56fl7195.apps.googleusercontent.com",
       eas: {
         projectId:
           process.env.EXPO_PUBLIC_EAS_PROJECT_ID ??

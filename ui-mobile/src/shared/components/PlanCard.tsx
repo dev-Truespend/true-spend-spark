@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { fontFamily, scaleFont } from "@/shared/theme/typography";
@@ -12,9 +12,13 @@ type PlanCardProps = {
   featured?: boolean;
   ribbon?: string;
   footer?: ReactNode;
+  // When onPress is provided the card becomes tappable (plan picker). `selected` draws the
+  // accent border + check so the chosen plan is obvious.
+  selected?: boolean;
+  onPress?: () => void;
 };
 
-export function PlanCard({ name, price, cadence = "/mo", features, featured, ribbon = "BEST VALUE", footer }: PlanCardProps) {
+export function PlanCard({ name, price, cadence = "/mo", features, featured, ribbon = "BEST VALUE", footer, selected, onPress }: PlanCardProps) {
   const t = useTheme();
   const styles = useThemedStyles((t) =>
     StyleSheet.create({
@@ -34,6 +38,23 @@ export function PlanCard({ name, price, cadence = "/mo", features, featured, rib
         borderColor: t.colors.accent,
         backgroundColor: t.tints.purple.wash
       },
+      // Selected wins over featured: solid accent border so the picked plan reads clearly.
+      selected: {
+        borderColor: t.colors.primary,
+        backgroundColor: t.tints.purple.wash
+      },
+      selectDot: {
+        position: "absolute",
+        top: 14,
+        right: 14,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        borderWidth: 2,
+        alignItems: "center",
+        justifyContent: "center"
+      },
+      selectDotText: { color: t.palette.white, fontFamily: fontFamily.heavy, fontWeight: "800", fontSize: scaleFont(12) },
       ribbon: {
         position: "absolute",
         top: -10,
@@ -54,8 +75,8 @@ export function PlanCard({ name, price, cadence = "/mo", features, featured, rib
       footerWrap: { marginTop: 12 }
     })
   );
-  return (
-    <View style={[styles.card, featured && styles.featured]}>
+  const content = (
+    <>
       {featured ? (
         <LinearGradient
           colors={[...t.gradients.brand]}
@@ -65,6 +86,11 @@ export function PlanCard({ name, price, cadence = "/mo", features, featured, rib
         >
           <Text style={styles.ribbonText}>{ribbon}</Text>
         </LinearGradient>
+      ) : null}
+      {onPress ? (
+        <View style={[styles.selectDot, { borderColor: selected ? t.colors.primary : t.colors.border, backgroundColor: selected ? t.colors.primary : "transparent" }]}>
+          {selected ? <Text style={styles.selectDotText}>✓</Text> : null}
+        </View>
       ) : null}
       <Text style={styles.name}>{name}</Text>
       <View style={styles.priceRow}>
@@ -80,6 +106,24 @@ export function PlanCard({ name, price, cadence = "/mo", features, featured, rib
         ))}
       </View>
       {footer ? <View style={styles.footerWrap}>{footer}</View> : null}
-    </View>
+    </>
   );
+
+  const cardStyle = [styles.card, featured && styles.featured, selected && styles.selected];
+
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityState={{ selected: !!selected }}
+        accessibilityLabel={`Select ${name} plan`}
+        style={({ pressed }) => [cardStyle, pressed && { opacity: 0.85 }]}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return <View style={cardStyle}>{content}</View>;
 }
