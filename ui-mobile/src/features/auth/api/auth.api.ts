@@ -60,9 +60,8 @@ function ensureGoogleConfigured() {
   googleConfigured = true;
 }
 
-// Native sign-in: the OS presents Apple's / Google's own account sheet (no browser, no shared cookies),
-// we get an ID token, and hand it to Supabase via signInWithIdToken. Returns the new Session, or null
-// if the user cancels. Each call always shows the account chooser, so a different account can sign in.
+// Native sign-in: the OS presents Apple's / Google's own account sheet, we get an ID token,
+// and hand it to Supabase via signInWithIdToken. Both providers use raw nonce -> SHA-256 nonce.
 export async function signInWithProvider(provider: "apple" | "google"): Promise<Session | null> {
   // Clear any stale local session/state so the previous account can't shadow the new sign-in.
   await supabase.auth.signOut();
@@ -71,20 +70,22 @@ export async function signInWithProvider(provider: "apple" | "google"): Promise<
 
 async function signInWithGoogle(): Promise<Session | null> {
   ensureGoogleConfigured();
+  const rawNonce = createRawNonce();
+  const hashedNonce = await hashNonce(rawNonce);
   try {
     await GoogleSignin.hasPlayServices();
-    const response = await GoogleSignin.signIn();
+    const response = await GoogleSignin.signIn({ nonce: hashedNonce });
+    if ((response as { type?: string }).type === "cancelled") return null;
     // v13 returns { type, data: { idToken } }; tolerate the older flat shape too.
     const idToken =
       (response as { data?: { idToken?: string | null } }).data?.idToken ??
       (response as { idToken?: string | null }).idToken ??
       null;
     if (!idToken) throw new Error("Google sign-in did not return a token.");
-    const nonce = extractJwtNonce(idToken);
     const { data, error } = await supabase.auth.signInWithIdToken({
       provider: "google",
       token: idToken,
-      ...(nonce ? { nonce } : {})
+      nonce: rawNonce
     });
     if (error) throw error;
     return data.session;
@@ -96,8 +97,8 @@ async function signInWithGoogle(): Promise<Session | null> {
 
 async function signInWithApple(): Promise<Session | null> {
   // Apple requires a hashed nonce in the request and the raw nonce passed to Supabase to bind the token.
-  const rawNonce = Crypto.randomUUID();
-  const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, rawNonce);
+  const rawNonce = createRawNonce();
+  const hashedNonce = await hashNonce(rawNonce);
   try {
     const credential = await AppleAuthentication.signInAsync({
       requestedScopes: [
@@ -120,46 +121,12 @@ async function signInWithApple(): Promise<Session | null> {
   }
 }
 
-function extractJwtNonce(token: string): string | null {
-  const [, payload] = token.split(".");
-  if (!payload) return null;
-
-  try {
-    const claims = JSON.parse(base64UrlDecode(payload)) as { nonce?: unknown };
-    return typeof claims.nonce === "string" && claims.nonce.length > 0 ? claims.nonce : null;
-  } catch {
-    return null;
-  }
+function createRawNonce(): string {
+  return `${Crypto.randomUUID()}${Crypto.randomUUID()}`;
 }
 
-function base64UrlDecode(value: string): string {
-  const base64 = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
-  if (typeof globalThis.atob === "function") {
-    const binary = globalThis.atob(base64);
-    try {
-      return decodeURIComponent(
-        Array.from(binary, (char) => `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`).join("")
-      );
-    } catch {
-      return binary;
-    }
-  }
-
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  let output = "";
-  let buffer = 0;
-  let bits = 0;
-  for (const char of base64.replace(/=+$/, "")) {
-    const index = alphabet.indexOf(char);
-    if (index < 0) throw new Error("Invalid base64url payload.");
-    buffer = (buffer << 6) | index;
-    bits += 6;
-    if (bits >= 8) {
-      bits -= 8;
-      output += String.fromCharCode((buffer >> bits) & 0xff);
-    }
-  }
-  return output;
+function hashNonce(rawNonce: string): Promise<string> {
+  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, rawNonce);
 }
 
 // User dismissed the native sheet — not an error, just no session.

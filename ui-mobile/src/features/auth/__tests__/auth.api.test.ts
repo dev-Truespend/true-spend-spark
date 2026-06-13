@@ -29,8 +29,7 @@ const { GoogleSignin } = jest.requireMock("@react-native-google-signin/google-si
 const apple = jest.requireMock("expo-apple-authentication") as { signInAsync: jest.Mock };
 
 const SESSION = { access_token: "a", refresh_token: "r" };
-const tokenWithClaims = (claims: object) =>
-  `header.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.signature`;
+const RAW_NONCE = "raw-nonceraw-nonce";
 
 beforeEach(() => {
   supabase.auth.signOut.mockReset().mockResolvedValue({ error: null });
@@ -40,27 +39,18 @@ beforeEach(() => {
   apple.signInAsync.mockReset();
 });
 
-describe("signInWithProvider (native)", () => {
-  it("Google: exchanges the native ID token for a Supabase session", async () => {
+describe("signInWithProvider", () => {
+  it("Google: passes hashed nonce to the native sheet and raw nonce to Supabase", async () => {
     GoogleSignin.signIn.mockResolvedValue({ data: { idToken: "g-token" } });
 
     const session = await signInWithProvider("google");
 
     expect(supabase.auth.signOut).toHaveBeenCalled(); // clears stale account first
-    expect(supabase.auth.signInWithIdToken).toHaveBeenCalledWith({ provider: "google", token: "g-token" });
-    expect(session).toBe(SESSION);
-  });
-
-  it("Google: passes nonce to Supabase when the native ID token includes one", async () => {
-    const idToken = tokenWithClaims({ nonce: "google-nonce" });
-    GoogleSignin.signIn.mockResolvedValue({ data: { idToken } });
-
-    const session = await signInWithProvider("google");
-
+    expect(GoogleSignin.signIn).toHaveBeenCalledWith({ nonce: "hashed-nonce" });
     expect(supabase.auth.signInWithIdToken).toHaveBeenCalledWith({
       provider: "google",
-      token: idToken,
-      nonce: "google-nonce"
+      token: "g-token",
+      nonce: RAW_NONCE
     });
     expect(session).toBe(SESSION);
   });
@@ -73,13 +63,13 @@ describe("signInWithProvider (native)", () => {
     expect(supabase.auth.signInWithIdToken).toHaveBeenCalledWith({
       provider: "apple",
       token: "a-token",
-      nonce: "raw-nonce"
+      nonce: RAW_NONCE
     });
     expect(session).toBe(SESSION);
   });
 
-  it("returns null when the user cancels the native sheet", async () => {
-    GoogleSignin.signIn.mockRejectedValue({ code: "SIGN_IN_CANCELLED" });
+  it("returns null when the user cancels the native Google sheet", async () => {
+    GoogleSignin.signIn.mockResolvedValue({ type: "cancelled", data: null });
 
     const session = await signInWithProvider("google");
 
@@ -87,7 +77,7 @@ describe("signInWithProvider (native)", () => {
     expect(supabase.auth.signInWithIdToken).not.toHaveBeenCalled();
   });
 
-  it("throws when Supabase rejects the token", async () => {
+  it("throws when Supabase rejects the Google token", async () => {
     GoogleSignin.signIn.mockResolvedValue({ data: { idToken: "g-token" } });
     supabase.auth.signInWithIdToken.mockResolvedValue({ data: { session: null }, error: new Error("bad token") });
 
