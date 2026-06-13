@@ -1,5 +1,5 @@
 import { ReactElement } from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
+import { render, screen, fireEvent, act } from "@testing-library/react-native";
 import { LocationPermissionPrompt } from "@/features/permissions/components/LocationPermissionPrompt";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 
@@ -13,6 +13,14 @@ const { requestLocationPermission } = jest.requireMock("@/shared/native/location
 
 const renderThemed = (ui: ReactElement) => render(<ThemeProvider>{ui}</ThemeProvider>);
 
+// The press handler is async (awaits the permission request). act(async) flushes those microtasks and
+// the resulting state updates deterministically — avoiding timer-based waitFor, which is flaky under a
+// loaded jest worker.
+const press = (label: string | RegExp) =>
+  act(async () => {
+    fireEvent.press(screen.getByText(label));
+  });
+
 beforeEach(() => {
   requestLocationPermission.mockReset();
 });
@@ -25,10 +33,10 @@ describe("LocationPermissionPrompt (background scope)", () => {
     const onReport = jest.fn();
     renderThemed(<LocationPermissionPrompt scope="background" onReport={onReport} />);
 
-    fireEvent.press(screen.getByText("Allow while using"));
+    await press("Allow while using");
 
-    await waitFor(() => expect(screen.getByText("Enable Always Allow")).toBeTruthy());
     expect(requestLocationPermission).toHaveBeenCalledWith("foreground");
+    expect(screen.getByText("Enable Always Allow")).toBeTruthy();
     expect(onReport).not.toHaveBeenCalled();
   });
 
@@ -39,12 +47,11 @@ describe("LocationPermissionPrompt (background scope)", () => {
     const onReport = jest.fn();
     renderThemed(<LocationPermissionPrompt scope="background" onReport={onReport} />);
 
-    fireEvent.press(screen.getByText("Allow while using"));
-    await waitFor(() => screen.getByText("Enable Always Allow"));
-    fireEvent.press(screen.getByText("Enable Always Allow"));
+    await press("Allow while using");
+    await press("Enable Always Allow");
 
-    await waitFor(() => expect(onReport).toHaveBeenCalledWith("authorized_always"));
     expect(requestLocationPermission).toHaveBeenLastCalledWith("background");
+    expect(onReport).toHaveBeenCalledWith("authorized_always");
   });
 
   it("keeps While-Using when the user skips the Always step", async () => {
@@ -52,9 +59,8 @@ describe("LocationPermissionPrompt (background scope)", () => {
     const onReport = jest.fn();
     renderThemed(<LocationPermissionPrompt scope="background" onReport={onReport} />);
 
-    fireEvent.press(screen.getByText("Allow while using"));
-    await waitFor(() => screen.getByText(/Keep/));
-    fireEvent.press(screen.getByText(/Keep/));
+    await press("Allow while using");
+    await press(/Keep/);
 
     expect(onReport).toHaveBeenCalledWith("authorized_when_in_use");
   });
