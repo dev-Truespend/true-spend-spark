@@ -31,12 +31,15 @@ export function LocationPermissionPrompt({ disabled, scope = "foreground", onRep
     try {
       if (staged && !foregroundGranted) {
         const fg = await requestLocationPermission("foreground");
-        onReport(fg.state);
         if (isGranted(fg.state)) {
+          // Stay on this step so the user can escalate to "Always". Reporting here would
+          // advance onboarding past the screen before the Always prompt is ever offered.
           setForegroundGranted(true);
           setNeedsSettings(false);
         } else {
+          // Declined "While Using" — report so the flow can move on.
           setNeedsSettings(fg.state === "denied" && !fg.canAskAgain);
+          onReport(fg.state);
         }
         return;
       }
