@@ -72,6 +72,9 @@ export default {
           ios: { deploymentTarget: "15.1" }
         }
       ],
+      // Adds `:modular_headers => true` for GoogleSignIn 9.x's non-modular Obj-C deps so static
+      // linking works. Must run after expo-build-properties so the Podfile already exists.
+      "./plugins/withGoogleSignInModularHeaders",
       "expo-font",
       [
         "expo-splash-screen",
