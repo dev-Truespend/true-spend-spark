@@ -99,6 +99,7 @@ The pipeline does **not** pull app secrets from KV — the Container App resolve
 | `Plaid__Environment` | P | api + worker | — | `sandbox` / `production` |
 | `Resend__ApiKey` | S | api | `Resend--ApiKey` | Resend dashboard |
 | `Resend__FromAddress` | P | api | — | verified sender |
+| `ExpoPush__AccessToken` | S | api + worker | `ExpoPush--AccessToken` | expo.dev → Account Settings → Access Tokens. Blank ⇒ push is stubbed (PushDeliveryPlaceholderService records "sent" but never calls Expo) |
 | `AzureOpenAI__Endpoint` | P | worker | `AzureOpenAI--Endpoint` | Azure OpenAI resource |
 | `AzureOpenAI__ApiKey` | S | worker | `AzureOpenAI--ApiKey` | Azure OpenAI → Keys |
 | `AzureOpenAI__DeploymentName` | P | worker | — | deployment name |

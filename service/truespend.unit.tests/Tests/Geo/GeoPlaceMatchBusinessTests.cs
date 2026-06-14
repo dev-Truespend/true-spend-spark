@@ -164,6 +164,36 @@ public sealed class GeoPlaceMatchBusinessTests
         Assert.Equal(ArrivalConfidenceTierEnum.Medium, match.Tier);
     }
 
+    [Fact]
+    public async Task Far_lone_candidate_is_not_high_confidence()
+    {
+        var ctx = TestContext.Default();
+        // The only (so "clearest") place in range, but ~90m away — closest-within-radius, not AT it.
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Candidate("fsq-1", "Chipotle", 90) });
+        var business = ctx.Build();
+
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 120, "on_foot", CancellationToken.None);
+
+        Assert.True(match.HasCandidate);
+        Assert.NotEqual(ArrivalConfidenceTierEnum.High, match.Tier);
+    }
+
+    [Fact]
+    public async Task Far_match_is_not_promoted_even_after_long_dwell()
+    {
+        var ctx = TestContext.Default();
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Candidate("fsq-1", "Chipotle", 90) });
+        var business = ctx.Build();
+
+        // Long, tight, stationary dwell — but 90m from the place (e.g. sitting at home near a Chipotle).
+        // The proximity gate must still keep it out of High so no lock-screen push fires.
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 600, "on_foot", CancellationToken.None);
+
+        Assert.NotEqual(ArrivalConfidenceTierEnum.High, match.Tier);
+    }
+
     // metersNorth is offset along latitude so Haversine distance ~= metersNorth.
     private static FoursquarePlaceCandidate Candidate(string id, string name, double metersNorth, string? categoryCode = null) =>
         new(1, "foursquare", id, name, name, null, categoryCode,

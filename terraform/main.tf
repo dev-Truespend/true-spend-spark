@@ -5,7 +5,7 @@
 #
 # IMPORTANT — secrets are NOT in Terraform. The Container Apps project Key Vault secrets by id.
 # Single-env MVP: we reuse the EXISTING shared vault (kv-truespend-shared) as the runtime vault
-# instead of creating a per-env one (see data.azurerm_key_vault.kv below). All 10 app secrets must
+# instead of creating a per-env one (see data.azurerm_key_vault.kv below). All 11 app secrets must
 # already exist in that vault before apply (the apps fail to create if a referenced secret is
 # missing), so seed any missing ones first, then a single apply:
 #   az keyvault secret set --vault-name kv-truespend-shared --name "ConnectionStrings--TrueSpendDb" --value ...
@@ -78,6 +78,7 @@ locals {
     "Plaid--ClientId"                 = "Plaid__ClientId"
     "Plaid--Secret"                   = "Plaid__Secret"
     "Resend--ApiKey"                  = "Resend__ApiKey"
+    "ExpoPush--AccessToken"           = "ExpoPush__AccessToken"
   }
   worker_secrets = {
     "ConnectionStrings--TrueSpendDb" = "ConnectionStrings__TrueSpendDb"
@@ -85,6 +86,7 @@ locals {
     "Plaid--Secret"                  = "Plaid__Secret"
     "AzureOpenAI--ApiKey"            = "AzureOpenAI__ApiKey"
     "RewardsCc--ApiKey"              = "RewardsCc__ApiKey"
+    "ExpoPush--AccessToken"          = "ExpoPush__AccessToken"
   }
 }
 

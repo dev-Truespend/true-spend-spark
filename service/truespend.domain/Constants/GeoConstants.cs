@@ -39,6 +39,13 @@ public static class GeoConstants
     public const int HighConfidenceDwellSeconds = 150;           // >= sustained stationary dwell => confident visit
     public const decimal HighConfidenceAccuracyMeters = 40m;     // fix must be at least this tight to promote on dwell
 
+    // Absolute-proximity gate for a High tier (and its push). Being the closest candidate within the
+    // search radius is NOT the same as being AT the place: a lone Chipotle ~90m from where the user is
+    // actually dwelling (e.g. at home) would otherwise score High and push. High requires the matched
+    // place be genuinely close. Generous enough to cover venue size + modest GPS error, tight enough to
+    // reject "a block away". Farther matches fall back to Medium (foreground list, no lock-screen push).
+    public const double HighConfidenceProximityMeters = 40d;
+
     // Drive-up categories are built for sub-minute in-vehicle stops (pull up, transact, leave), so the
     // in-vehicle short-dwell drive-by demotion would wrongly suppress a legitimate arrival. A clear
     // closest candidate in one of these keeps its High tier (and its push) despite a short car stop.

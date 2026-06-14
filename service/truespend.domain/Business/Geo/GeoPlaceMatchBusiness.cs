@@ -128,6 +128,14 @@ public sealed class GeoPlaceMatchBusiness(
             tier = ArrivalConfidenceTierEnum.High;
         }
 
+        // Absolute-proximity gate (applies to every High path above, incl. the dwell promotion): a clear
+        // or sustained match still must be physically AT the place to earn a push. Caps "nearest within
+        // the search radius but actually far" (e.g. dwelling at home next to a lone Chipotle) at Medium.
+        if (tier == ArrivalConfidenceTierEnum.High && best.DistanceMeters > GeoConstants.HighConfidenceProximityMeters)
+        {
+            tier = ArrivalConfidenceTierEnum.Medium;
+        }
+
         return tier;
     }
 
