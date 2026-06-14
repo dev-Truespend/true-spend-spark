@@ -4,7 +4,11 @@
 // dedups on (provider, eventId), so foreground + background never double-notify the same arrival.
 
 export const STOP_RADIUS_METERS = 30; // within this of the anchor counts as "still"
-export const ARRIVAL_DWELL_MS = 60_000; // must dwell this long before we call it an arrival
+// Must dwell this long before we call it an arrival. 150s (not 60s) so a real visit is distinguishable
+// from a red light / brief stop near a store — the server only pushes a best-card alert on a sustained
+// stop (see GeoConstants.HighConfidenceDwellSeconds). Trades a slightly later nudge for far fewer false
+// arrivals; a genuine shopping stop clears it easily.
+export const ARRIVAL_DWELL_MS = 150_000;
 export const STOP_BUCKET_MS = 5 * 60_000; // arrival-time bucket for the stable per-stop event id
 
 export type StopAnchor = { lat: number; lng: number; sinceMs: number; fired: boolean };

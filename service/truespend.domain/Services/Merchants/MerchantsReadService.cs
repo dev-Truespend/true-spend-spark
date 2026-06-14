@@ -40,7 +40,7 @@ public sealed class MerchantsReadService(TrueSpendDbContext db) : IMerchantsRead
         var normalized = merchantName.Trim().ToLowerInvariant();
         if (normalized.Length == 0)
         {
-            return new MerchantCategoryMatch("general", false);
+            return new MerchantCategoryMatch("general", false, ["general"]);
         }
 
         var matches = await (from alias in db.CategoryAliases.AsNoTracking()
@@ -51,17 +51,47 @@ public sealed class MerchantsReadService(TrueSpendDbContext db) : IMerchantsRead
 
         if (matches.Count == 0)
         {
-            return new MerchantCategoryMatch("general", false);
+            return new MerchantCategoryMatch("general", false, ["general"]);
         }
 
-        var distinctCategories = matches.Select(m => m.Code).Distinct().ToList();
-        var primary = matches
+        // Order the spanning codes by best alias strength so the primary (longest, most specific alias)
+        // leads — the picker shows them in this order and defaults to the first.
+        var orderedCodes = matches
             .GroupBy(m => m.Code)
             .OrderByDescending(g => g.Max(x => x.AliasLength))
-            .First()
-            .Key;
+            .Select(g => g.Key)
+            .ToList();
+        var primary = orderedCodes[0];
 
-        return new MerchantCategoryMatch(primary, distinctCategories.Count > 1);
+        return new MerchantCategoryMatch(primary, orderedCodes.Count > 1, orderedCodes);
+    }
+
+    // The full catalog categories a merchant name spans (alias substring matches), primary first — drives
+    // the multi-category "what are you buying?" picker. Mirrors ResolveCategoryAsync's matching so the
+    // option set is consistent with the persisted IsMultiCategory flag, but returns display metadata
+    // (name + icon) the picker needs. Empty when the name matches one category or none.
+    public async Task<IReadOnlyList<Category>> GetSpanningCategoriesAsync(string merchantName, CancellationToken cancellationToken)
+    {
+        var normalized = merchantName.Trim().ToLowerInvariant();
+        if (normalized.Length == 0)
+        {
+            return [];
+        }
+
+        var matches = await (from alias in db.CategoryAliases.AsNoTracking()
+                             join category in db.Categories.AsNoTracking() on alias.CategoryId equals category.Id
+                             where category.IsActive && EF.Functions.ILike(normalized, "%" + alias.Alias + "%")
+                             select new { category.Id, category.Code, category.DisplayName, category.Icon, AliasLength = alias.Alias.Length })
+                            .ToListAsync(cancellationToken);
+
+        var options = matches
+            .GroupBy(m => m.Code)
+            .OrderByDescending(g => g.Max(x => x.AliasLength))
+            .Select(g => g.First())
+            .Select(m => new Category(m.Id, m.Code, m.DisplayName, m.Icon))
+            .ToList();
+
+        return options.Count > 1 ? options : [];
     }
 
     // Powers the home "last-visited replay" surface. We honor the category the

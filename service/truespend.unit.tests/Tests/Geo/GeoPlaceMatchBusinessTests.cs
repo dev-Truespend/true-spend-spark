@@ -121,6 +121,49 @@ public sealed class GeoPlaceMatchBusinessTests
         Assert.Equal(ArrivalConfidenceTierEnum.High, match.Tier);
     }
 
+    [Fact]
+    public async Task Sustained_stationary_tight_stop_promotes_medium_to_high()
+    {
+        var ctx = TestContext.Default();
+        // Two close candidates => margin under the 60m gap, so the fast path is only Medium.
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Candidate("fsq-1", "Walmart", 10), Candidate("fsq-2", "Sam's Club", 40) });
+        var business = ctx.Build();
+
+        // A sustained (>=150s), stationary, tight-fix (<=40m) stop is itself a confident visit => High.
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 200, "on_foot", CancellationToken.None);
+
+        Assert.Equal(ArrivalConfidenceTierEnum.High, match.Tier);
+    }
+
+    [Fact]
+    public async Task Sustained_stop_with_loose_fix_stays_medium()
+    {
+        var ctx = TestContext.Default();
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Candidate("fsq-1", "Walmart", 10), Candidate("fsq-2", "Sam's Club", 40) });
+        var business = ctx.Build();
+
+        // Long dwell but the fix is too loose (>40m, still under the 75m coarse cap) to promote on dwell.
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 55m, 200, "on_foot", CancellationToken.None);
+
+        Assert.Equal(ArrivalConfidenceTierEnum.Medium, match.Tier);
+    }
+
+    [Fact]
+    public async Task Sustained_in_vehicle_stop_is_not_promoted()
+    {
+        var ctx = TestContext.Default();
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Candidate("fsq-1", "Walmart", 10), Candidate("fsq-2", "Sam's Club", 40) });
+        var business = ctx.Build();
+
+        // Long, tight stop but still in-vehicle (e.g. parked at a light) — dwell promotion excludes it.
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 200, "in_vehicle", CancellationToken.None);
+
+        Assert.Equal(ArrivalConfidenceTierEnum.Medium, match.Tier);
+    }
+
     // metersNorth is offset along latitude so Haversine distance ~= metersNorth.
     private static FoursquarePlaceCandidate Candidate(string id, string name, double metersNorth, string? categoryCode = null) =>
         new(1, "foursquare", id, name, name, null, categoryCode,

@@ -11,6 +11,7 @@ using TrueSpend.Domain.Models.Permissions;
 using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.Models.Recommendations;
 using TrueSpend.Domain.ServiceInterfaces.Catalog;
+using TrueSpend.Domain.ServiceInterfaces.Merchants;
 using TrueSpend.Domain.ServiceInterfaces.Recommendations;
 using TrueSpend.UnitTests.Helpers;
 using Xunit;
@@ -39,8 +40,8 @@ public sealed class RecommendationBuilderBusinessTests
                 "points",
                 Array.Empty<MerchantLockedRate>())
         };
-        var (read, catalog, insert) = BuildMocks(profile);
-        var builder = new RecommendationBuilderBusiness(read.Object, catalog.Object, insert.Object);
+        var (read, catalog, merchants, insert) = BuildMocks(profile);
+        var builder = new RecommendationBuilderBusiness(read.Object, catalog.Object, merchants.Object, insert.Object);
 
         var result = await builder.BuildAsync(User, SampleMerchant(), "groceries", 50m, CancellationToken.None);
 
@@ -63,8 +64,8 @@ public sealed class RecommendationBuilderBusinessTests
                 "points",
                 Array.Empty<MerchantLockedRate>())
         };
-        var (read, catalog, insert) = BuildMocks(profile);
-        var builder = new RecommendationBuilderBusiness(read.Object, catalog.Object, insert.Object);
+        var (read, catalog, merchants, insert) = BuildMocks(profile);
+        var builder = new RecommendationBuilderBusiness(read.Object, catalog.Object, merchants.Object, insert.Object);
 
         var result = await builder.BuildAsync(User, SampleMerchant(), "groceries", 50m, CancellationToken.None);
 
@@ -88,28 +89,60 @@ public sealed class RecommendationBuilderBusinessTests
                 "cash_back",
                 Array.Empty<MerchantLockedRate>())
         };
-        var (read, catalog, insert) = BuildMocks(profile);
+        var (read, catalog, merchants, insert) = BuildMocks(profile);
+        merchants
+            .Setup(m => m.GetSpanningCategoriesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new Category(3, "electronics", "Electronics", "tv"),
+                new Category(1, "groceries", "Groceries", "shopping-cart")
+            });
         var merchant = SampleMerchant() with { IsMultiCategory = true };
-        var builder = new RecommendationBuilderBusiness(read.Object, catalog.Object, insert.Object);
+        var builder = new RecommendationBuilderBusiness(read.Object, catalog.Object, merchants.Object, insert.Object);
 
         var result = await builder.BuildAsync(User, merchant, "electronics", 80m, CancellationToken.None);
 
         Assert.NotNull(result);
         Assert.NotNull(result!.CoverageWarning);
+        // The merchant the picker sees carries only the categories it spans, not the whole taxonomy.
+        Assert.Equal(new[] { "electronics", "groceries" }, result.Merchant.CategoryOptions.Select(c => c.Code).ToArray());
+    }
+
+    [Fact]
+    public async Task Build_leaves_category_options_empty_for_single_category_merchant()
+    {
+        var profile = new[]
+        {
+            new UserCardReward(
+                new CardSummary(1, "Amex Gold", "American Express", "1111", "manual", true, "active", null),
+                10, 1.0m,
+                new Dictionary<string, decimal> { ["groceries"] = 4.0m },
+                "points",
+                Array.Empty<MerchantLockedRate>())
+        };
+        var (read, catalog, merchants, insert) = BuildMocks(profile);
+        var builder = new RecommendationBuilderBusiness(read.Object, catalog.Object, merchants.Object, insert.Object);
+
+        var result = await builder.BuildAsync(User, SampleMerchant(), "groceries", 50m, CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Empty(result!.Merchant.CategoryOptions);
+        // Single-category merchants never trigger the spanning-category lookup.
+        merchants.Verify(m => m.GetSpanningCategoriesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task Build_returns_null_when_user_has_no_cards()
     {
-        var (read, catalog, insert) = BuildMocks(Array.Empty<UserCardReward>());
-        var builder = new RecommendationBuilderBusiness(read.Object, catalog.Object, insert.Object);
+        var (read, catalog, merchants, insert) = BuildMocks(Array.Empty<UserCardReward>());
+        var builder = new RecommendationBuilderBusiness(read.Object, catalog.Object, merchants.Object, insert.Object);
 
         var result = await builder.BuildAsync(User, SampleMerchant(), "groceries", 25m, CancellationToken.None);
 
         Assert.Null(result);
     }
 
-    private static (Mock<IRewardRulesReadService> Read, Mock<ICatalogReadService> Catalog, Mock<IRecommendationsInsertService> Insert) BuildMocks(IReadOnlyList<UserCardReward> profile)
+    private static (Mock<IRewardRulesReadService> Read, Mock<ICatalogReadService> Catalog, Mock<IMerchantsReadService> Merchants, Mock<IRecommendationsInsertService> Insert) BuildMocks(IReadOnlyList<UserCardReward> profile)
     {
         var read = new Mock<IRewardRulesReadService>();
         read.Setup(r => r.GetUserRewardProfileAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<CancellationToken>())).ReturnsAsync(profile);
@@ -121,10 +154,11 @@ public sealed class RecommendationBuilderBusinessTests
             new Category(3, "electronics", "Electronics", null),
             new Category(4, "travel", "Travel", null)
         });
+        var merchants = new Mock<IMerchantsReadService>();
         var insert = new Mock<IRecommendationsInsertService>();
         insert.Setup(i => i.SaveRecommendationAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<Recommendation>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((OnboardingWorkflowUser _, Recommendation value, string _, CancellationToken _) => value);
-        return (read, catalog, insert);
+        return (read, catalog, merchants, insert);
     }
 
     private static Merchant SampleMerchant() => new(1, "Nearby Market", "groceries", false, "123 Main St");

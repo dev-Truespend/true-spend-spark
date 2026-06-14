@@ -45,7 +45,7 @@ public sealed class GeoPlaceMatchBusiness(
         }
 
         var best = candidates[0];
-        var tier = ScoreTier(candidates, coarse, dwellSeconds, movementState);
+        var tier = ScoreTier(candidates, coarse, accuracyMeters, dwellSeconds, movementState);
         return new PlaceMatch(true, best.Name, best.Provider, best.ProviderPlaceId, tier);
     }
 
@@ -88,6 +88,7 @@ public sealed class GeoPlaceMatchBusiness(
     private static ArrivalConfidenceTierEnum ScoreTier(
         IReadOnlyList<FoursquarePlaceCandidate> ranked,
         bool coarseFix,
+        decimal? accuracyMeters,
         int? dwellSeconds,
         string? movementState)
     {
@@ -101,16 +102,30 @@ public sealed class GeoPlaceMatchBusiness(
             ? ArrivalConfidenceTierEnum.High
             : ArrivalConfidenceTierEnum.Medium;
 
+        var inVehicle = string.Equals(movementState, GeoConstants.MovementInVehicle, StringComparison.OrdinalIgnoreCase);
+
         // Driving past with a short stop is a likely drive-by — demote a High to Medium. Drive-up
         // categories (gas stations) are exempt: a sub-minute in-vehicle stop there is the normal visit,
         // not a drive-by, so a clear closest drive-up candidate keeps its High tier (and its push).
         var isDriveUp = best.CategoryCode is not null && GeoConstants.DriveUpCategoryCodes.Contains(best.CategoryCode);
         if (tier == ArrivalConfidenceTierEnum.High
             && !isDriveUp
-            && string.Equals(movementState, GeoConstants.MovementInVehicle, StringComparison.OrdinalIgnoreCase)
+            && inVehicle
             && (dwellSeconds ?? 0) < GeoConstants.MinDwellSecondsForVehicle)
         {
             tier = ArrivalConfidenceTierEnum.Medium;
+        }
+
+        // Dwell-based promotion: the 60m runner-up margin is unreachable in real retail (Foursquare puts
+        // several places within tens of meters of each other), so a genuine visit would otherwise cap at
+        // Medium forever. A sustained, stationary, tight-fix stop is a confident visit on its own — promote
+        // it. Excludes in-vehicle (drive-by) and still respects the dense-lot/coarse guards above.
+        if (tier == ArrivalConfidenceTierEnum.Medium
+            && !inVehicle
+            && (dwellSeconds ?? 0) >= GeoConstants.HighConfidenceDwellSeconds
+            && accuracyMeters is { } acc && acc <= GeoConstants.HighConfidenceAccuracyMeters)
+        {
+            tier = ArrivalConfidenceTierEnum.High;
         }
 
         return tier;

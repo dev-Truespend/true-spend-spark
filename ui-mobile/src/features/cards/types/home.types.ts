@@ -21,6 +21,9 @@ export type Merchant = {
   categoryCode: string;
   isMultiCategory: boolean;
   address?: string | null;
+  // Only the categories this merchant spans — drives the "what are you buying?" picker for
+  // multi-category merchants. Empty/absent for single-category merchants.
+  categoryOptions?: Category[];
 };
 
 export type RecommendationCard = {

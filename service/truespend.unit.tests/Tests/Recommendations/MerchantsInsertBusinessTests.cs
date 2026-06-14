@@ -19,7 +19,7 @@ public sealed class MerchantsInsertBusinessTests
         insert.Setup(s => s.SaveMerchantAsync("Whole Foods Market", It.IsAny<string?>(), It.IsAny<string?>(), "groceries", false, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Merchant(1, "Whole Foods Market", "groceries", false, null));
         var read = new Mock<IMerchantsReadService>();
-        read.Setup(r => r.ResolveCategoryAsync("Whole Foods Market", It.IsAny<CancellationToken>())).ReturnsAsync(new MerchantCategoryMatch("groceries", false));
+        read.Setup(r => r.ResolveCategoryAsync("Whole Foods Market", It.IsAny<CancellationToken>())).ReturnsAsync(new MerchantCategoryMatch("groceries", false, ["groceries"]));
         var messaging = new Mock<IMessagingInsertService>(); // archived: kept for future async migration
         var business = new MerchantsInsertBusiness(insert.Object, read.Object, messaging.Object, new FakeUnitOfWork(), new MerchantsValidator());
 
@@ -38,7 +38,7 @@ public sealed class MerchantsInsertBusinessTests
             .ReturnsAsync((string name, string? _, string? _, string category, bool multi, string? address, CancellationToken _) =>
                 new Merchant(1, name, category, multi, address));
         var read = new Mock<IMerchantsReadService>();
-        read.Setup(r => r.ResolveCategoryAsync("Target Store", It.IsAny<CancellationToken>())).ReturnsAsync(new MerchantCategoryMatch("groceries", true));
+        read.Setup(r => r.ResolveCategoryAsync("Target Store", It.IsAny<CancellationToken>())).ReturnsAsync(new MerchantCategoryMatch("groceries", true, ["groceries", "electronics"]));
         var messaging = new Mock<IMessagingInsertService>();
         var business = new MerchantsInsertBusiness(insert.Object, read.Object, messaging.Object, new FakeUnitOfWork(), new MerchantsValidator());
 

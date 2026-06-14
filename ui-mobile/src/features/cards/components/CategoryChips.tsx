@@ -60,12 +60,9 @@ export function CategoryChips({
       <Text style={styles.hint}>{resolvedHint}</Text>
       <ChipRow>
         {categories.map((c) => (
-          <Chip
-            key={c.code}
-            label={c.icon ? `${c.icon} ${c.displayName}` : c.displayName}
-            active={c.code === activeCode}
-            onPress={() => onChange(c.code)}
-          />
+          // `icon` is a raw icon NAME (e.g. "shopping-cart"), not a glyph — concatenating it as text
+          // leaked the name into the label. Show just the human display name.
+          <Chip key={c.code} label={c.displayName} active={c.code === activeCode} onPress={() => onChange(c.code)} />
         ))}
       </ChipRow>
     </View>

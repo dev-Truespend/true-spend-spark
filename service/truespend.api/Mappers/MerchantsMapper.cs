@@ -1,3 +1,4 @@
+using TrueSpend.Api.ViewModels.Catalog;
 using TrueSpend.Api.ViewModels.Merchants;
 using DomainResolve = TrueSpend.Domain.Models.Recommendations.ResolveMerchantRequest;
 using DomainMerchantResp = TrueSpend.Domain.Models.Recommendations.MerchantResponse;
@@ -30,7 +31,12 @@ public sealed class MerchantsMapper : IMerchantsMapper
     public MerchantResponseVm ToResponse(DomainMerchantResp domain) => new(ToMerchant(domain.Merchant));
 
     public MerchantVm ToMerchant(DomainMerchant domain) =>
-        new(domain.Id, domain.Name, domain.CategoryCode, domain.IsMultiCategory, domain.Address);
+        new(domain.Id, domain.Name, domain.CategoryCode, domain.IsMultiCategory, domain.Address)
+        {
+            CategoryOptions = domain.CategoryOptions
+                .Select(c => new CategoryVm(c.Id, c.Code, c.DisplayName, c.Icon))
+                .ToArray()
+        };
 
     public MerchantVisitsResponseVm ToVisits(DomainVisits domain) =>
         new(domain.Visits.Select(visit => new MerchantVisitVm(visit.MerchantId, visit.SelectedCategoryCode, visit.VisitedAt)).ToArray());

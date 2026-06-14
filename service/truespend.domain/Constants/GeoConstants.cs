@@ -27,9 +27,17 @@ public static class GeoConstants
     public const decimal AccuracyCoarseThresholdMeters = 75m;    // > : too coarse, low-confidence only
     public const int NearbyRadiusPreciseMeters = 100;            // search radius for a tight fix
     public const int NearbyRadiusCoarseMeters = 150;             // search radius for a wider fix
-    public const double HighConfidenceMarginMeters = 60d;        // top vs 2nd gap that clears "High"
+    public const double HighConfidenceMarginMeters = 60d;        // top vs 2nd gap that clears "High" (fast-path)
     public const int DenseLotCandidateThreshold = 10;            // >= candidates in range => ambiguous lot
     public const int MinDwellSecondsForVehicle = 60;             // shorter in-vehicle stop => likely drive-by
+
+    // Dwell-based promotion: a sustained, stationary, tight-fix stop is itself a confident visit even in a
+    // clustered lot where no single candidate clears the distance margin — mirrors how stop-detection SDKs
+    // (Foursquare/Radar) key confidence off dwell + GPS accuracy rather than the runner-up gap. Tune these
+    // two to dial push aggressiveness. HighConfidenceDwellSeconds mirrors the client ARRIVAL_DWELL_MS floor
+    // (arrivalStopMath.ts) so any reported arrival can clear it.
+    public const int HighConfidenceDwellSeconds = 150;           // >= sustained stationary dwell => confident visit
+    public const decimal HighConfidenceAccuracyMeters = 40m;     // fix must be at least this tight to promote on dwell
 
     // Drive-up categories are built for sub-minute in-vehicle stops (pull up, transact, leave), so the
     // in-vehicle short-dwell drive-by demotion would wrongly suppress a legitimate arrival. A clear

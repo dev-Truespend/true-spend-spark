@@ -140,16 +140,25 @@ export function WalletScreen() {
             />
           ) : null}
 
-          {/* Category selector only for multi-category merchants (Walmart/Target), not single-category (Chipotle). */}
-          {hasCards && recommendation && recommendation.merchant.isMultiCategory && home.categories.length > 0 ? (
-            <CategoryChips
-              categories={home.categories}
-              activeCode={recommendation.categoryCode}
-              onChange={(code) => void home.changeCategory(code)}
-              ambiguous={recommendation.merchant.isMultiCategory}
-              merchantName={recommendation.merchant.name}
-              categoryDisplayName={categoryDisplayName}
-            />
+          {/* Category selector only for multi-category merchants (Walmart/Target), not single-category
+              (Chipotle). Shows just the categories the merchant spans (server-provided categoryOptions),
+              falling back to the full taxonomy only if the server didn't supply them. */}
+          {hasCards && recommendation && recommendation.merchant.isMultiCategory ? (
+            (() => {
+              const pickerCategories = recommendation.merchant.categoryOptions?.length
+                ? recommendation.merchant.categoryOptions
+                : home.categories;
+              return pickerCategories.length > 0 ? (
+                <CategoryChips
+                  categories={pickerCategories}
+                  activeCode={recommendation.categoryCode}
+                  onChange={(code) => void home.changeCategory(code)}
+                  ambiguous={recommendation.merchant.isMultiCategory}
+                  merchantName={recommendation.merchant.name}
+                  categoryDisplayName={categoryDisplayName}
+                />
+              ) : null;
+            })()
           ) : null}
 
           {hasCards && recommendation && recommendation.runnerUpCards.length > 0 ? (

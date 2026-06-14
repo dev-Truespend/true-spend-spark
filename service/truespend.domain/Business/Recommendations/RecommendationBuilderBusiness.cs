@@ -11,6 +11,7 @@ using TrueSpend.Domain.Models.Permissions;
 using TrueSpend.Domain.Models.Common;
 using TrueSpend.Domain.Models.Recommendations;
 using TrueSpend.Domain.ServiceInterfaces.Catalog;
+using TrueSpend.Domain.ServiceInterfaces.Merchants;
 using TrueSpend.Domain.ServiceInterfaces.Recommendations;
 
 namespace TrueSpend.Domain.Business.Recommendations;
@@ -18,6 +19,7 @@ namespace TrueSpend.Domain.Business.Recommendations;
 public sealed class RecommendationBuilderBusiness(
     IRewardRulesReadService rewardRulesReadService,
     ICatalogReadService catalogReadService,
+    IMerchantsReadService merchantsReadService,
     IRecommendationsInsertService recommendationsInsertService) : IRecommendationBuilderBusiness
 {
     private const string CashBackCurrencyCode = "cash_back";
@@ -67,9 +69,15 @@ public sealed class RecommendationBuilderBusiness(
             .Select((card, index) => card with { Rank = index + 1 })
             .ToArray();
 
+        // For a multi-category merchant, attach the categories it actually spans so the picker offers just
+        // those (e.g. Walmart -> grocery / general merchandise / pharmacy) instead of the whole taxonomy.
+        IReadOnlyList<Category> categoryOptions = merchant.IsMultiCategory
+            ? await merchantsReadService.GetSpanningCategoriesAsync(merchant.Name, cancellationToken) ?? []
+            : [];
+
         var recommendation = new Recommendation(
             0,
-            merchant with { CategoryCode = categoryCode },
+            merchant with { CategoryCode = categoryCode, CategoryOptions = categoryOptions },
             categoryCode,
             ranked[0],
             $"{ranked[0].Card.DisplayName} is the best match for {categoryLabel} right now.",
