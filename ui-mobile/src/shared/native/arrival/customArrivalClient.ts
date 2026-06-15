@@ -2,6 +2,7 @@ import * as Location from "expo-location";
 import { arrivalApi, GeoArrivalRequest } from "@/shared/api/arrival.api";
 import { ArrivalDetectionClient } from "@/shared/native/arrival/arrivalDetectionClient";
 import { ARRIVAL_LOCATION_TASK } from "@/shared/native/arrival/backgroundArrivalTask";
+import { registerArrivalGeofences, stopArrivalGeofences } from "@/shared/native/arrival/geofenceArrivalTask";
 import {
   ARRIVAL_DWELL_MS,
   StopAnchor,
@@ -103,6 +104,23 @@ export function createCustomArrivalClient(): ArrivalDetectionClient {
     }
   }
 
+  // Native geofences around the user's frequent places (item 8): the OS wakes us on enter/exit even when
+  // killed, cheaper than continuous tracking. Best-effort and additive — continuous stop-detection stays
+  // the always-on fallback; enter/exit events dedup server-side by stable per-stop eventId.
+  async function syncGeofences(): Promise<void> {
+    try {
+      const background = await Location.getBackgroundPermissionsAsync();
+      if (background.status !== "granted") return;
+      const response = await arrivalApi.getMonitoredRegions();
+      const regions = response.data?.regions ?? [];
+      await registerArrivalGeofences(
+        regions.map((r) => ({ identifier: r.identifier, lat: r.lat, lng: r.lng, radiusMeters: r.radiusMeters }))
+      );
+    } catch {
+      // Best-effort: geofences are a battery optimization; the continuous path still covers detection.
+    }
+  }
+
   return {
     setUserId(id: string) {
       userId = id;
@@ -119,12 +137,14 @@ export function createCustomArrivalClient(): ArrivalDetectionClient {
         );
       }
       await startBackgroundUpdates();
+      await syncGeofences();
     },
     async stop() {
       subscription?.remove();
       subscription = null;
       anchor = null;
       await stopBackgroundUpdates();
+      await stopArrivalGeofences();
     }
   };
 }

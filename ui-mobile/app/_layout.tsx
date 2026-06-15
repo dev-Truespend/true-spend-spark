@@ -2,9 +2,11 @@ import { Slot } from "expo-router";
 import { Text } from "react-native";
 import { AppProviders } from "@/providers/AppProviders";
 import { useAppFonts } from "@/shared/theme/fonts";
-// Registers the geo-arrival background location task (TaskManager.defineTask) at module load, before
-// the OS can fire it on a background/killed-app relaunch (10a).
+// Registers the geo-arrival background tasks (TaskManager.defineTask) at module load, before the OS can
+// fire them on a background/killed-app relaunch (10a): the continuous stop-detection task and the native
+// geofence enter/exit task (item 8).
 import "@/shared/native/arrival/backgroundArrivalTask";
+import "@/shared/native/arrival/geofenceArrivalTask";
 
 // Cap accessibility Dynamic Type scaling at 1.3× our rendered sizes.
 // iOS Settings → Display & Brightness → Text Size can go up to ~3.1×, which

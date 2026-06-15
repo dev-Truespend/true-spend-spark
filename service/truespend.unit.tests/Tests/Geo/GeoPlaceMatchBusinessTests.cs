@@ -40,10 +40,68 @@ public sealed class GeoPlaceMatchBusinessTests
             .ReturnsAsync(new[] { Candidate("fsq-1", "Chipotle", 10), Candidate("fsq-2", "Starbucks", 40) });
         var business = ctx.Build();
 
+        // Two close plausible candidates (margin under the 60m gap) => Medium regardless of dwell/accuracy.
         var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 120, "on_foot", CancellationToken.None);
 
         Assert.True(match.HasCandidate);
         Assert.Equal(ArrivalConfidenceTierEnum.Medium, match.Tier);
+    }
+
+    [Fact]
+    public async Task Standalone_store_with_scattered_far_pois_is_not_a_dense_lot()
+    {
+        var ctx = TestContext.Default();
+        // The bug: density was counted across the whole search radius, so a lone close store (Wawa) with
+        // a dozen unrelated POIs scattered 55-88m out was capped at Low and never pushed. Density is now
+        // judged within the proximity radius, where there is exactly one plausible merchant => High.
+        var candidates = new List<FoursquarePlaceCandidate> { Candidate("fsq-wawa", "Wawa", 20) };
+        for (var i = 0; i < 12; i++)
+        {
+            candidates.Add(Candidate($"fsq-far-{i}", $"Far {i}", 55 + i * 3));
+        }
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(candidates);
+        var business = ctx.Build();
+
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 120, "on_foot", CancellationToken.None);
+
+        Assert.Equal("Wawa", match.Name);
+        Assert.Equal(ArrivalConfidenceTierEnum.High, match.Tier);
+    }
+
+    [Fact]
+    public async Task Runner_up_beyond_proximity_does_not_block_high()
+    {
+        var ctx = TestContext.Default();
+        // Closest store is clearly AT the stop (20m); the next store is 55m away — beyond the proximity
+        // radius, so it is not a place the user could be standing at and must not hold this at Medium.
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Candidate("fsq-1", "Chipotle", 20), Candidate("fsq-2", "Starbucks", 55) });
+        var business = ctx.Build();
+
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 120, "on_foot", CancellationToken.None);
+
+        Assert.Equal(ArrivalConfidenceTierEnum.High, match.Tier);
+    }
+
+    [Fact]
+    public async Task Dense_cluster_within_proximity_caps_at_low()
+    {
+        var ctx = TestContext.Default();
+        // Genuinely crowded stop: 12 rewardable merchants packed within the proximity radius (mall food
+        // court / dense lot). No single merchant can be singled out, so even a long dwell stays Low.
+        var candidates = new List<FoursquarePlaceCandidate>();
+        for (var i = 0; i < 12; i++)
+        {
+            candidates.Add(Candidate($"fsq-{i}", $"Store {i}", 5 + i * 3));
+        }
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(candidates);
+        var business = ctx.Build();
+
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 200, "on_foot", CancellationToken.None);
+
+        Assert.Equal(ArrivalConfidenceTierEnum.Low, match.Tier);
     }
 
     [Fact]
@@ -122,46 +180,20 @@ public sealed class GeoPlaceMatchBusinessTests
     }
 
     [Fact]
-    public async Task Sustained_stationary_tight_stop_promotes_medium_to_high()
+    public async Task Sustained_tight_stop_in_cluster_stays_medium_for_grouped_push()
     {
         var ctx = TestContext.Default();
-        // Two close candidates => margin under the 60m gap, so the fast path is only Medium.
+        // Two close plausible candidates (margin under the 60m gap) => Medium. A long, stationary, tight-fix
+        // dwell does NOT promote this to a single High guess: the area is ambiguous, so it stays Medium and
+        // the grouped/area push (items 3-4) lists both stores' best cards rather than betting on the closest.
         ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { Candidate("fsq-1", "Walmart", 10), Candidate("fsq-2", "Sam's Club", 40) });
         var business = ctx.Build();
 
-        // A sustained (>=150s), stationary, tight-fix (<=40m) stop is itself a confident visit => High.
         var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 200, "on_foot", CancellationToken.None);
 
-        Assert.Equal(ArrivalConfidenceTierEnum.High, match.Tier);
-    }
-
-    [Fact]
-    public async Task Sustained_stop_with_loose_fix_stays_medium()
-    {
-        var ctx = TestContext.Default();
-        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { Candidate("fsq-1", "Walmart", 10), Candidate("fsq-2", "Sam's Club", 40) });
-        var business = ctx.Build();
-
-        // Long dwell but the fix is too loose (>40m, still under the 75m coarse cap) to promote on dwell.
-        var match = await business.ResolveAsync(OriginLat, OriginLng, 55m, 200, "on_foot", CancellationToken.None);
-
         Assert.Equal(ArrivalConfidenceTierEnum.Medium, match.Tier);
-    }
-
-    [Fact]
-    public async Task Sustained_in_vehicle_stop_is_not_promoted()
-    {
-        var ctx = TestContext.Default();
-        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { Candidate("fsq-1", "Walmart", 10), Candidate("fsq-2", "Sam's Club", 40) });
-        var business = ctx.Build();
-
-        // Long, tight stop but still in-vehicle (e.g. parked at a light) — dwell promotion excludes it.
-        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 200, "in_vehicle", CancellationToken.None);
-
-        Assert.Equal(ArrivalConfidenceTierEnum.Medium, match.Tier);
+        Assert.Equal(ArrivalDecisionModeEnum.AreaCluster, match.Mode);
     }
 
     [Fact]
@@ -192,6 +224,65 @@ public sealed class GeoPlaceMatchBusinessTests
         var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 600, "on_foot", CancellationToken.None);
 
         Assert.NotEqual(ArrivalConfidenceTierEnum.High, match.Tier);
+    }
+
+    [Fact]
+    public async Task Mode_is_single_merchant_for_clear_close_candidate()
+    {
+        var ctx = TestContext.Default();
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Candidate("fsq-1", "Chipotle", 10) });
+        var business = ctx.Build();
+
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 120, "on_foot", CancellationToken.None);
+
+        Assert.Equal(ArrivalDecisionModeEnum.SingleMerchant, match.Mode);
+    }
+
+    [Fact]
+    public async Task Mode_is_area_cluster_for_two_close_candidates()
+    {
+        var ctx = TestContext.Default();
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Candidate("fsq-1", "Chipotle", 10), Candidate("fsq-2", "Starbucks", 40) });
+        var business = ctx.Build();
+
+        // Two close plausible candidates => AreaCluster (grouped push), even on a sustained tight stop.
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 120, "on_foot", CancellationToken.None);
+
+        Assert.Equal(ArrivalConfidenceTierEnum.Medium, match.Tier);
+        Assert.Equal(ArrivalDecisionModeEnum.AreaCluster, match.Mode);
+    }
+
+    [Fact]
+    public async Task Mode_is_near_but_not_at_for_far_lone_candidate()
+    {
+        var ctx = TestContext.Default();
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Candidate("fsq-1", "Chipotle", 90) });
+        var business = ctx.Build();
+
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 120, "on_foot", CancellationToken.None);
+
+        Assert.Equal(ArrivalDecisionModeEnum.NearButNotAt, match.Mode);
+    }
+
+    [Fact]
+    public async Task Mode_is_mall_area_for_dense_proximity_cluster()
+    {
+        var ctx = TestContext.Default();
+        var candidates = new List<FoursquarePlaceCandidate>();
+        for (var i = 0; i < 12; i++)
+        {
+            candidates.Add(Candidate($"fsq-{i}", $"Store {i}", 5 + i * 3));
+        }
+        ctx.ReadService.Setup(r => r.FindActiveCandidatesAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(candidates);
+        var business = ctx.Build();
+
+        var match = await business.ResolveAsync(OriginLat, OriginLng, 12m, 200, "on_foot", CancellationToken.None);
+
+        Assert.Equal(ArrivalDecisionModeEnum.MallArea, match.Mode);
     }
 
     // metersNorth is offset along latitude so Haversine distance ~= metersNorth.

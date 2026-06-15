@@ -3,6 +3,10 @@ namespace TrueSpend.Domain.Constants;
 public static class NotificationsConstants
 {
     public const string BestCardAlertTypeCode = "best_card_alert";
+    // Grouped/area arrival push (items 3-4): a single hedged push listing the best card for several nearby
+    // stores. Routing/rendering discriminator only — the messaging type stays best_card_alert so the user's
+    // existing geo opt-out and quiet-hours gating apply unchanged.
+    public const string GroupedBestCardAlertPayloadType = "grouped_best_card_alert";
     public const string MissedRewardsTypeCode = "missed_rewards";
     public const string WeeklySummaryTypeCode = "weekly_summary";
     public const string UnusualTransactionTypeCode = "unusual_transaction";

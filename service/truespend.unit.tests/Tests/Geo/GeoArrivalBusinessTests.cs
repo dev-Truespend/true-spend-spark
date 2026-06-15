@@ -141,6 +141,197 @@ public sealed class GeoArrivalBusinessTests
         ctx.MerchantsInsert.Verify(m => m.RecordVisitAsync(It.IsAny<OnboardingWorkflowUser>(), 7, "coffee", It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public async Task Records_arrival_decision_telemetry_on_push()
+    {
+        var ctx = TestContext.Default();
+        var merchant = new Merchant(7, "Chipotle", "dining", false, null);
+        GeoArrivalDecisionEntity? captured = null;
+        ctx.InsertService.Setup(i => i.InsertArrivalDecisionAsync(It.IsAny<GeoArrivalDecisionEntity>(), It.IsAny<CancellationToken>()))
+            .Callback<GeoArrivalDecisionEntity, CancellationToken>((e, _) => captured = e)
+            .ReturnsAsync(1);
+        ctx.PlaceMatch.Setup(p => p.ResolveAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PlaceMatch(true, "Chipotle", GeoConstants.ProviderFoursquare, "fsq-chipotle-1", ArrivalConfidenceTierEnum.High, CandidateCount: 4, PlausibleCount: 1, Mode: ArrivalDecisionModeEnum.SingleMerchant));
+        ctx.MerchantResolve.Setup(m => m.ResolveByNameAsync("Chipotle", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+        ctx.Builder.Setup(b => b.BuildAsync(It.IsAny<OnboardingWorkflowUser>(), merchant, "dining", It.IsAny<decimal>(), RecommendationsConstants.GeofenceArrivalContextCode, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(SampleRecommendation(merchant));
+        var business = ctx.Build();
+
+        await business.HandleArrivalAsync(CustomArrival(), CancellationToken.None);
+
+        Assert.NotNull(captured);
+        Assert.Equal("pushed", captured!.DecisionOutcome);
+        Assert.True(captured.NotificationProduced);
+        Assert.Equal((short)ArrivalConfidenceTierEnum.High, captured.ConfidenceTier);
+        Assert.Equal("single_merchant", captured.DecisionMode);
+        Assert.Equal(4, captured.CandidateCount);
+        Assert.Equal(1, captured.PlausibleCount);
+        Assert.Equal(7, captured.ChosenMerchantId);
+        Assert.Equal(GeoConstants.ProviderCustom, captured.Provider);
+    }
+
+    [Fact]
+    public async Task Records_arrival_decision_telemetry_on_medium_suppression()
+    {
+        var ctx = TestContext.Default();
+        var merchant = new Merchant(7, "Chipotle", "dining", false, null);
+        GeoArrivalDecisionEntity? captured = null;
+        ctx.InsertService.Setup(i => i.InsertArrivalDecisionAsync(It.IsAny<GeoArrivalDecisionEntity>(), It.IsAny<CancellationToken>()))
+            .Callback<GeoArrivalDecisionEntity, CancellationToken>((e, _) => captured = e)
+            .ReturnsAsync(1);
+        ctx.PlaceMatch.Setup(p => p.ResolveAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PlaceMatch(true, "Chipotle", GeoConstants.ProviderFoursquare, "fsq-chipotle-1", ArrivalConfidenceTierEnum.Medium, CandidateCount: 3, PlausibleCount: 2));
+        ctx.MerchantResolve.Setup(m => m.ResolveByNameAsync("Chipotle", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+        var business = ctx.Build();
+
+        await business.HandleArrivalAsync(CustomArrival(), CancellationToken.None);
+
+        Assert.NotNull(captured);
+        Assert.Equal("medium_confidence_foreground", captured!.DecisionOutcome);
+        Assert.False(captured.NotificationProduced);
+        Assert.Equal((short)ArrivalConfidenceTierEnum.Medium, captured.ConfidenceTier);
+        Assert.Equal(2, captured.PlausibleCount);
+    }
+
+    [Fact]
+    public async Task Exit_event_closes_covering_area_sessions()
+    {
+        var ctx = TestContext.Default();
+        var business = ctx.Build();
+
+        var exit = CustomArrival() with { EventKind = GeoArrivalEventKindEnum.Exit };
+        var response = await business.HandleArrivalAsync(exit, CancellationToken.None);
+
+        Assert.True(response.Success);
+        ctx.InsertService.Verify(i => i.ExpireCoveringAreaSessionsAsync(UserId, It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
+        ctx.DispatchBusiness.Verify(d => d.DispatchPushAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Personal_place_suppresses_push_and_records_no_visit()
+    {
+        var ctx = TestContext.Default();
+        var merchant = new Merchant(7, "Chipotle", "dining", false, null);
+        ctx.PlaceMatch.Setup(p => p.ResolveAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PlaceMatch(true, "Chipotle", GeoConstants.ProviderFoursquare, "fsq-chipotle-1", ArrivalConfidenceTierEnum.High, Mode: ArrivalDecisionModeEnum.SingleMerchant));
+        ctx.MerchantResolve.Setup(m => m.ResolveByNameAsync("Chipotle", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+        // The user is at a recurring dwell zone (home/work) near this store.
+        ctx.ReadService.Setup(r => r.IsWithinPersonalPlaceAsync(UserId, It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var business = ctx.Build();
+
+        var response = await business.HandleArrivalAsync(CustomArrival(), CancellationToken.None);
+
+        Assert.True(response.Success);
+        Assert.Null(response.Data!.NotificationId);
+        ctx.DispatchBusiness.Verify(d => d.DispatchPushAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        // Not a shopping trip — at home/work, so no visit is recorded.
+        ctx.MerchantsInsert.Verify(m => m.RecordVisitAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Active_area_session_suppresses_individual_push_but_records_visit()
+    {
+        var ctx = TestContext.Default();
+        var merchant = new Merchant(7, "Chipotle", "dining", false, null);
+        ctx.PlaceMatch.Setup(p => p.ResolveAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PlaceMatch(true, "Chipotle", GeoConstants.ProviderFoursquare, "fsq-chipotle-1", ArrivalConfidenceTierEnum.High, Mode: ArrivalDecisionModeEnum.SingleMerchant));
+        ctx.MerchantResolve.Setup(m => m.ResolveByNameAsync("Chipotle", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+        // The user is already inside a tracked mall/plaza — the area push covered them.
+        ctx.ReadService.Setup(r => r.HasCoveringAreaSessionAsync(UserId, It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var business = ctx.Build();
+
+        var response = await business.HandleArrivalAsync(CustomArrival(), CancellationToken.None);
+
+        Assert.True(response.Success);
+        Assert.Null(response.Data!.NotificationId);
+        ctx.DispatchBusiness.Verify(d => d.DispatchPushAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        ctx.Builder.Verify(b => b.BuildAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<Merchant>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        // Suppressed push, but the user was physically there — visit still recorded.
+        ctx.MerchantsInsert.Verify(m => m.RecordVisitAsync(It.IsAny<OnboardingWorkflowUser>(), 7, "dining", It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Grouped_arrival_with_no_eligible_cards_does_not_open_area_session()
+    {
+        // Regression: the area session must open ONLY when a grouped push is actually produced. If no push
+        // goes out (here: a resolvable store but no eligible card), opening the session would wrongly
+        // suppress every later in-area arrival for the whole visit even though the user never got notified.
+        var ctx = TestContext.Default();
+        var foodCourt = new Merchant(9, "Food Court Grill", "dining", false, null);
+        ctx.PlaceMatch.Setup(p => p.ResolveAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PlaceMatch(true, "Food Court Grill", GeoConstants.ProviderCustom, "fsq-m1", ArrivalConfidenceTierEnum.Low,
+                CandidateCount: 12, PlausibleCount: 12, Mode: ArrivalDecisionModeEnum.MallArea,
+                TopCandidates: new[] { new PlaceMatchCandidate("Food Court Grill", GeoConstants.ProviderCustom, "fsq-m1", "dining", 15) }));
+        ctx.MerchantResolve.Setup(m => m.ResolveByNameAsync("Food Court Grill", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(foodCourt);
+        // No eligible card for the resolved candidate => grouped items empty => no push.
+        ctx.Builder.Setup(b => b.BuildAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<Merchant>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync((Recommendation?)null);
+        var business = ctx.Build();
+
+        var response = await business.HandleArrivalAsync(CustomArrival(), CancellationToken.None);
+
+        Assert.True(response.Success);
+        Assert.Null(response.Data!.NotificationId);
+        ctx.InsertService.Verify(i => i.InsertAreaSessionAsync(It.IsAny<GeoAreaSessionEntity>(), It.IsAny<CancellationToken>()), Times.Never);
+        ctx.DispatchBusiness.Verify(d => d.DispatchPushAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Area_cluster_sends_one_grouped_push_and_opens_cluster_session()
+    {
+        var ctx = TestContext.Default();
+        var chipotle = new Merchant(7, "Chipotle", "dining", false, null);
+        var starbucks = new Merchant(8, "Starbucks", "coffee", false, null);
+        NotificationEntity? captured = null;
+        ctx.InsertService.Setup(i => i.InsertNotificationAsync(It.IsAny<NotificationEntity>(), It.IsAny<CancellationToken>()))
+            .Callback<NotificationEntity, CancellationToken>((n, _) => captured = n)
+            .ReturnsAsync(77);
+        ctx.PlaceMatch.Setup(p => p.ResolveAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PlaceMatch(true, "Chipotle", GeoConstants.ProviderCustom, "fsq-1", ArrivalConfidenceTierEnum.Medium,
+                CandidateCount: 2, PlausibleCount: 2, Mode: ArrivalDecisionModeEnum.AreaCluster,
+                TopCandidates: new[]
+                {
+                    new PlaceMatchCandidate("Chipotle", GeoConstants.ProviderCustom, "fsq-1", "dining", 20),
+                    new PlaceMatchCandidate("Starbucks", GeoConstants.ProviderCustom, "fsq-2", "coffee", 45)
+                }));
+        ctx.MerchantResolve.Setup(m => m.ResolveByNameAsync("Chipotle", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(chipotle);
+        ctx.MerchantResolve.Setup(m => m.ResolveByNameAsync("Starbucks", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(starbucks);
+        ctx.Builder.Setup(b => b.BuildAsync(It.IsAny<OnboardingWorkflowUser>(), chipotle, "dining", It.IsAny<decimal>(), RecommendationsConstants.GeofenceArrivalContextCode, It.IsAny<CancellationToken>())).ReturnsAsync(SampleRecommendationWithCard(chipotle, 11, "Amex Gold"));
+        ctx.Builder.Setup(b => b.BuildAsync(It.IsAny<OnboardingWorkflowUser>(), starbucks, "coffee", It.IsAny<decimal>(), RecommendationsConstants.GeofenceArrivalContextCode, It.IsAny<CancellationToken>())).ReturnsAsync(SampleRecommendationWithCard(starbucks, 12, "Citi Custom Cash"));
+        var business = ctx.Build();
+
+        var response = await business.HandleArrivalAsync(CustomArrival(), CancellationToken.None);
+
+        Assert.True(response.Success);
+        Assert.Equal(77, response.Data!.NotificationId);
+        ctx.DispatchBusiness.Verify(d => d.DispatchPushAsync(77, It.IsAny<CancellationToken>()), Times.Once);
+        ctx.InsertService.Verify(i => i.InsertAreaSessionAsync(It.Is<GeoAreaSessionEntity>(s => s.Mode == GeoConstants.AreaSessionModeCluster), It.IsAny<CancellationToken>()), Times.Once);
+        Assert.NotNull(captured);
+        Assert.Contains("Chipotle", captured!.Body);
+        Assert.Contains("Starbucks", captured.Body);
+    }
+
+    [Fact]
+    public async Task Mall_area_sends_grouped_push_and_opens_mall_session()
+    {
+        var ctx = TestContext.Default();
+        var foodCourt = new Merchant(9, "Food Court Grill", "dining", false, null);
+        ctx.InsertService.Setup(i => i.InsertNotificationAsync(It.IsAny<NotificationEntity>(), It.IsAny<CancellationToken>())).ReturnsAsync(88);
+        ctx.PlaceMatch.Setup(p => p.ResolveAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PlaceMatch(true, "Food Court Grill", GeoConstants.ProviderCustom, "fsq-m1", ArrivalConfidenceTierEnum.Low,
+                CandidateCount: 12, PlausibleCount: 12, Mode: ArrivalDecisionModeEnum.MallArea,
+                TopCandidates: new[] { new PlaceMatchCandidate("Food Court Grill", GeoConstants.ProviderCustom, "fsq-m1", "dining", 15) }));
+        ctx.MerchantResolve.Setup(m => m.ResolveByNameAsync("Food Court Grill", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(foodCourt);
+        ctx.Builder.Setup(b => b.BuildAsync(It.IsAny<OnboardingWorkflowUser>(), foodCourt, "dining", It.IsAny<decimal>(), RecommendationsConstants.GeofenceArrivalContextCode, It.IsAny<CancellationToken>())).ReturnsAsync(SampleRecommendationWithCard(foodCourt, 11, "Amex Gold"));
+        var business = ctx.Build();
+
+        var response = await business.HandleArrivalAsync(CustomArrival(), CancellationToken.None);
+
+        Assert.True(response.Success);
+        Assert.Equal(88, response.Data!.NotificationId);
+        ctx.InsertService.Verify(i => i.InsertAreaSessionAsync(It.Is<GeoAreaSessionEntity>(s => s.Mode == GeoConstants.AreaSessionModeMall), It.IsAny<CancellationToken>()), Times.Once);
+        ctx.DispatchBusiness.Verify(d => d.DispatchPushAsync(88, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     private static GeoArrivalInput FoursquareArrival() =>
         new(
             Provider: GeoConstants.ProviderFoursquare,
@@ -180,6 +371,21 @@ public sealed class GeoArrivalBusinessTests
             DwellSeconds: 120,
             MovementState: GeoConstants.MovementOnFoot,
             RawPayload: "{}");
+
+    private static Recommendation SampleRecommendationWithCard(Merchant merchant, int cardId, string cardName) =>
+        new(
+            99,
+            merchant,
+            merchant.CategoryCode,
+            new RecommendationCard(
+                new CardSummary(cardId, cardName, "Amex", "1234", "plaid", true, "active", null),
+                4m,
+                new Money(1m, "USD", "$1.00"),
+                "Best rate",
+                1),
+            "Best card",
+            Array.Empty<RecommendationCard>(),
+            null);
 
     private static Recommendation SampleRecommendation(Merchant merchant) =>
         new(
@@ -221,6 +427,11 @@ public sealed class GeoArrivalBusinessTests
                 .ReturnsAsync(new NotificationGate(true, true, true, false, true));
             ctx.InsertService.Setup(i => i.RecordWebhookEventAsync(It.IsAny<GeoArrivalInput>(), It.IsAny<Guid?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
             ctx.InsertService.Setup(i => i.InsertLocationEventAsync(It.IsAny<LocationEventEntity>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            ctx.InsertService.Setup(i => i.InsertArrivalDecisionAsync(It.IsAny<GeoArrivalDecisionEntity>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            ctx.InsertService.Setup(i => i.InsertAreaSessionAsync(It.IsAny<GeoAreaSessionEntity>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            ctx.InsertService.Setup(i => i.ExpireCoveringAreaSessionsAsync(It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>())).ReturnsAsync(0);
+            ctx.ReadService.Setup(r => r.HasCoveringAreaSessionAsync(It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            ctx.ReadService.Setup(r => r.IsWithinPersonalPlaceAsync(It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
             ctx.InsertService.Setup(i => i.InsertNotificationAsync(It.IsAny<NotificationEntity>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
             ctx.BillingRead.Setup(b => b.GetEntitlementsAsync(It.IsAny<OnboardingWorkflowUser>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(BusinessResponse<EntitlementsResponse>.Ok(new EntitlementsResponse(

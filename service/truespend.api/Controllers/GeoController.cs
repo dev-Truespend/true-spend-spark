@@ -14,6 +14,7 @@ namespace TrueSpend.Api.Controllers;
 [Route("api/v1/geo")]
 public sealed class GeoController(
     IGeoArrivalBusiness arrivalBusiness,
+    IGeoMonitoredRegionsBusiness monitoredRegionsBusiness,
     IGeoMapper geoMapper,
     IClientResponseMapper clientResponseMapper,
     IWorkflowUserMapper workflowUserMapper) : AppControllerBase(clientResponseMapper, workflowUserMapper)
@@ -24,4 +25,9 @@ public sealed class GeoController(
         var input = geoMapper.ToArrivalInput(request, CurrentUser().UserId);
         return Respond(await arrivalBusiness.HandleArrivalAsync(input, cancellationToken), geoMapper.ToAckResponse);
     }
+
+    // Native geofence regions for the device to monitor (item 8) — the user's most-frequented places.
+    [HttpGet("monitored-regions")]
+    public async Task<IActionResult> MonitoredRegions(CancellationToken cancellationToken) =>
+        Respond(await monitoredRegionsBusiness.GetRegionsAsync(CurrentUser().UserId, cancellationToken), geoMapper.ToMonitoredRegionsResponse);
 }

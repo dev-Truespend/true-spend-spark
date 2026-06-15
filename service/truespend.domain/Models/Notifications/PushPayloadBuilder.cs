@@ -27,6 +27,17 @@ public static class PushPayloadBuilder
             merchantId
         });
 
+    // Grouped/area arrival: one push, several nearby stores each with their best card. Carries the item
+    // list for rich rendering; `notificationId` still drives tap-through to the inbox detail like a single
+    // alert, so no new deep-link route is required on the client.
+    public static string GroupedBestCardAlert(int notificationId, IReadOnlyList<(int MerchantId, int RecommendationId)> items) =>
+        JsonSerializer.Serialize(new
+        {
+            type = NotificationsConstants.GroupedBestCardAlertPayloadType,
+            notificationId,
+            items = items.Select(i => new { merchantId = i.MerchantId, recommendationId = i.RecommendationId }).ToArray()
+        });
+
     public static string WeeklySummary(int notificationId) =>
         JsonSerializer.Serialize(new
         {

@@ -304,6 +304,74 @@ public sealed class LocationEventEntityConfiguration : IEntityTypeConfiguration<
     }
 }
 
+public sealed class GeoArrivalDecisionEntityConfiguration : IEntityTypeConfiguration<GeoArrivalDecisionEntity>
+{
+    public void Configure(EntityTypeBuilder<GeoArrivalDecisionEntity> builder)
+    {
+        builder.ToTable("geo_arrival_decisions", "finance");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.WebhookEventId).HasColumnName("webhook_event_id");
+        builder.Property(x => x.UserId).HasColumnName("user_id");
+        builder.Property(x => x.Provider).HasColumnName("provider");
+        builder.Property(x => x.EventId).HasColumnName("event_id");
+        builder.Property(x => x.Lat).HasColumnName("lat");
+        builder.Property(x => x.Lng).HasColumnName("lng");
+        builder.Property(x => x.AccuracyMeters).HasColumnName("accuracy_meters");
+        builder.Property(x => x.DwellSeconds).HasColumnName("dwell_seconds");
+        builder.Property(x => x.MovementState).HasColumnName("movement_state");
+        builder.Property(x => x.ConfidenceTier).HasColumnName("confidence_tier");
+        builder.Property(x => x.CandidateCount).HasColumnName("candidate_count");
+        builder.Property(x => x.PlausibleCount).HasColumnName("plausible_count");
+        builder.Property(x => x.ChosenMerchantId).HasColumnName("chosen_merchant_id");
+        builder.Property(x => x.DecisionMode).HasColumnName("decision_mode");
+        builder.Property(x => x.DecisionOutcome).HasColumnName("decision_outcome");
+        builder.Property(x => x.NotificationProduced).HasColumnName("notification_produced");
+        builder.Property(x => x.CreatedAt).HasColumnName("created_at");
+        builder.HasIndex(x => new { x.UserId, x.CreatedAt });
+        builder.HasIndex(x => x.WebhookEventId);
+    }
+}
+
+public sealed class GeoAreaSessionEntityConfiguration : IEntityTypeConfiguration<GeoAreaSessionEntity>
+{
+    public void Configure(EntityTypeBuilder<GeoAreaSessionEntity> builder)
+    {
+        builder.ToTable("geo_area_sessions", "finance");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.UserId).HasColumnName("user_id");
+        builder.Property(x => x.CenterLat).HasColumnName("center_lat");
+        builder.Property(x => x.CenterLng).HasColumnName("center_lng");
+        builder.Property(x => x.RadiusMeters).HasColumnName("radius_meters");
+        builder.Property(x => x.Mode).HasColumnName("mode");
+        builder.Property(x => x.StartedAt).HasColumnName("started_at");
+        builder.Property(x => x.ExpiresAt).HasColumnName("expires_at");
+        builder.Property(x => x.CreatedAt).HasColumnName("created_at");
+        builder.HasIndex(x => new { x.UserId, x.ExpiresAt });
+    }
+}
+
+public sealed class PersonalPlaceEntityConfiguration : IEntityTypeConfiguration<PersonalPlaceEntity>
+{
+    public void Configure(EntityTypeBuilder<PersonalPlaceEntity> builder)
+    {
+        builder.ToTable("personal_places", "finance");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.UserId).HasColumnName("user_id");
+        builder.Property(x => x.CenterLat).HasColumnName("center_lat");
+        builder.Property(x => x.CenterLng).HasColumnName("center_lng");
+        builder.Property(x => x.RadiusMeters).HasColumnName("radius_meters");
+        builder.Property(x => x.Kind).HasColumnName("kind");
+        builder.Property(x => x.VisitCount).HasColumnName("visit_count");
+        builder.Property(x => x.LastDetectedAt).HasColumnName("last_detected_at");
+        builder.Property(x => x.CreatedAt).HasColumnName("created_at");
+        builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+        builder.HasIndex(x => x.UserId);
+    }
+}
+
 public sealed class MissedRewardEventEntityConfiguration : IEntityTypeConfiguration<MissedRewardEventEntity>
 {
     public void Configure(EntityTypeBuilder<MissedRewardEventEntity> builder)

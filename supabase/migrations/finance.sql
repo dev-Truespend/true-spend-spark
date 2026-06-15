@@ -230,6 +230,64 @@ create table if not exists finance.location_events (
   created_at timestamptz not null default now()
 );
 
+-- Per-arrival decision telemetry: one row per resolved arrival recording WHAT we decided and WHY, so
+-- the confidence thresholds (proximity/margin/dwell/density) can be tuned from data instead of guesses.
+-- decision_mode is nullable until the ArrivalDecision model lands; confidence_tier mirrors
+-- ArrivalConfidenceTierEnum (0 none .. 3 high). notification_produced flags the "we pushed" outcome.
+create table if not exists finance.geo_arrival_decisions (
+  id int generated always as identity primary key,
+  webhook_event_id int not null references finance.foursquare_webhook_events(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  provider text not null,
+  event_id text not null,
+  lat numeric,
+  lng numeric,
+  accuracy_meters numeric,
+  dwell_seconds int,
+  movement_state text,
+  confidence_tier smallint not null,
+  candidate_count int not null default 0,
+  plausible_count int not null default 0,
+  chosen_merchant_id int references finance.merchants(id) on delete set null,
+  decision_mode text,
+  decision_outcome text not null,
+  notification_produced boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+-- Area sessions: while the user is inside a mall/plaza/cluster (or a personal place), one active session
+-- covers the area so we don't fire a separate best-card push for every individual store they pass. A
+-- session has a center, a radius, a mode, and a TTL; an arrival whose point falls inside an active
+-- session is suppressed. Exit-driven close comes later (item 8); for now TTL expiry retires sessions.
+create table if not exists finance.geo_area_sessions (
+  id int generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  center_lat numeric not null,
+  center_lng numeric not null,
+  radius_meters numeric not null,
+  mode text not null,
+  started_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+-- Personal places: recurring dwell zones (home/work) auto-detected from clustered location history. While
+-- an arrival falls inside one, best-card pushes are suppressed — the user is simply at a place they live
+-- in, not on a shopping trip, even if a store happens to sit nearby. Detected offline (no UI/input). Kind
+-- is a coarse label; suppression triggers on any recurring dwell regardless of kind.
+create table if not exists finance.personal_places (
+  id int generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  center_lat numeric not null,
+  center_lng numeric not null,
+  radius_meters numeric not null,
+  kind text not null,
+  visit_count int not null default 0,
+  last_detected_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists finance_plaid_items_user_id_idx on finance.plaid_items(user_id);
 create index if not exists finance_user_cards_user_id_idx on finance.user_cards(user_id);
 create index if not exists finance_card_reward_overrides_user_card_id_idx on finance.card_reward_overrides(user_card_id);
@@ -247,6 +305,11 @@ create index if not exists finance_plaid_webhook_events_user_id_idx on finance.p
 create index if not exists finance_plaid_webhook_events_webhook_code_idx on finance.plaid_webhook_events(webhook_type, webhook_code);
 create index if not exists finance_location_events_user_id_idx on finance.location_events(user_id, occurred_at desc);
 create index if not exists finance_location_events_event_type_id_idx on finance.location_events(event_type_id);
+create index if not exists finance_geo_arrival_decisions_user_id_idx on finance.geo_arrival_decisions(user_id, created_at desc);
+create index if not exists finance_geo_arrival_decisions_outcome_idx on finance.geo_arrival_decisions(decision_outcome);
+create index if not exists finance_geo_arrival_decisions_webhook_event_id_idx on finance.geo_arrival_decisions(webhook_event_id);
+create index if not exists finance_geo_area_sessions_user_id_idx on finance.geo_area_sessions(user_id, expires_at desc);
+create index if not exists finance_personal_places_user_id_idx on finance.personal_places(user_id);
 
 create table if not exists finance.plaid_institutions (
   id int generated always as identity primary key,

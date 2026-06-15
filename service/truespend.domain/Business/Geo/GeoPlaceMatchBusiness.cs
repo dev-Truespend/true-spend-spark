@@ -45,8 +45,19 @@ public sealed class GeoPlaceMatchBusiness(
         }
 
         var best = candidates[0];
-        var tier = ScoreTier(candidates, coarse, accuracyMeters, dwellSeconds, movementState);
-        return new PlaceMatch(true, best.Name, best.Provider, best.ProviderPlaceId, tier);
+        var plausibleCount = candidates.Count(c => c.DistanceMeters <= GeoConstants.DenseLotProximityMeters);
+        var tier = ScoreTier(candidates, coarse, dwellSeconds, movementState);
+        var mode = ClassifyMode(tier, plausibleCount, best.DistanceMeters);
+
+        // Top plausible candidates for the grouped/area push (AreaCluster / MallArea). Ranked closest
+        // first, capped; the handler resolves each to a merchant and builds a per-store best card.
+        var topCandidates = candidates
+            .Where(c => c.DistanceMeters <= GeoConstants.DenseLotProximityMeters)
+            .Take(GeoConstants.GroupedPushMaxCandidates)
+            .Select(c => new PlaceMatchCandidate(c.Name, c.Provider, c.ProviderPlaceId, c.CategoryCode, c.DistanceMeters))
+            .ToList();
+
+        return new PlaceMatch(true, best.Name, best.Provider, best.ProviderPlaceId, tier, candidates.Count, plausibleCount, mode, topCandidates);
     }
 
     private async Task TryProviderLookupAsync(decimal lat, decimal lng, int radius, CancellationToken cancellationToken)
@@ -88,16 +99,25 @@ public sealed class GeoPlaceMatchBusiness(
     private static ArrivalConfidenceTierEnum ScoreTier(
         IReadOnlyList<FoursquarePlaceCandidate> ranked,
         bool coarseFix,
-        decimal? accuracyMeters,
         int? dwellSeconds,
         string? movementState)
     {
         // Coarse fix or a dense/shared lot is never a confident single hit.
         if (coarseFix) return ArrivalConfidenceTierEnum.Low;
-        if (ranked.Count >= GeoConstants.DenseLotCandidateThreshold) return ArrivalConfidenceTierEnum.Low;
+
+        // Plausible candidates are those within the proximity radius — the places the user could actually
+        // be standing at. ranked is sorted ascending, so this is the close prefix. Density and the margin
+        // below are judged over plausible candidates only: a standalone store with unrelated POIs scattered
+        // farther out in the search radius is one merchant, not an ambiguous lot (the Wawa case).
+        var plausible = ranked.Where(c => c.DistanceMeters <= GeoConstants.DenseLotProximityMeters).ToList();
+        if (plausible.Count >= GeoConstants.DenseLotCandidateThreshold) return ArrivalConfidenceTierEnum.Low;
 
         var best = ranked[0];
-        var margin = ranked.Count >= 2 ? ranked[1].DistanceMeters - best.DistanceMeters : double.MaxValue;
+
+        // A runner-up only makes the arrival ambiguous if it too is plausible (within proximity). A nearer
+        // store with its closest rival beyond the proximity radius is an unambiguous single merchant — the
+        // far rival isn't somewhere the user could be — so the margin is effectively clear (=> High path).
+        var margin = plausible.Count >= 2 ? plausible[1].DistanceMeters - best.DistanceMeters : double.MaxValue;
         var tier = margin >= GeoConstants.HighConfidenceMarginMeters
             ? ArrivalConfidenceTierEnum.High
             : ArrivalConfidenceTierEnum.Medium;
@@ -116,21 +136,15 @@ public sealed class GeoPlaceMatchBusiness(
             tier = ArrivalConfidenceTierEnum.Medium;
         }
 
-        // Dwell-based promotion: the 60m runner-up margin is unreachable in real retail (Foursquare puts
-        // several places within tens of meters of each other), so a genuine visit would otherwise cap at
-        // Medium forever. A sustained, stationary, tight-fix stop is a confident visit on its own — promote
-        // it. Excludes in-vehicle (drive-by) and still respects the dense-lot/coarse guards above.
-        if (tier == ArrivalConfidenceTierEnum.Medium
-            && !inVehicle
-            && (dwellSeconds ?? 0) >= GeoConstants.HighConfidenceDwellSeconds
-            && accuracyMeters is { } acc && acc <= GeoConstants.HighConfidenceAccuracyMeters)
-        {
-            tier = ArrivalConfidenceTierEnum.High;
-        }
+        // No dwell-based promotion: once tier is Medium here, there are 2+ plausible candidates within the
+        // proximity radius (a single plausible candidate already scored High via the clear margin above).
+        // An ambiguous cluster like that must NOT be collapsed into a single guessed merchant — it stays
+        // Medium so the grouped/area push (AreaCluster, items 3-4) lists the nearby best cards and the user
+        // picks, rather than betting on the closest. A confident single store is already High.
 
-        // Absolute-proximity gate (applies to every High path above, incl. the dwell promotion): a clear
-        // or sustained match still must be physically AT the place to earn a push. Caps "nearest within
-        // the search radius but actually far" (e.g. dwelling at home next to a lone Chipotle) at Medium.
+        // Absolute-proximity gate (applies to every High path above): a clear match still must be physically
+        // AT the place to earn a push. Caps "nearest within the search radius but actually far" (e.g.
+        // dwelling at home next to a lone Chipotle) at Medium.
         if (tier == ArrivalConfidenceTierEnum.High && best.DistanceMeters > GeoConstants.HighConfidenceProximityMeters)
         {
             tier = ArrivalConfidenceTierEnum.Medium;
@@ -138,6 +152,23 @@ public sealed class GeoPlaceMatchBusiness(
 
         return tier;
     }
+
+    // The SITUATION behind the tier — orthogonal to confidence (tier still gates whether we act). Maps
+    // today's behavior 1:1 so no UX changes yet; later items branch notification shape off the mode.
+    private static ArrivalDecisionModeEnum ClassifyMode(ArrivalConfidenceTierEnum tier, int plausibleCount, double bestDistanceMeters) =>
+        tier switch
+        {
+            ArrivalConfidenceTierEnum.High => ArrivalDecisionModeEnum.SingleMerchant,
+            // A Medium with the closest plausible place beyond the AT-gate is "near but not at"; otherwise
+            // it is an ambiguous close cluster (the future grouped-push case).
+            ArrivalConfidenceTierEnum.Medium when bestDistanceMeters > GeoConstants.HighConfidenceProximityMeters
+                => ArrivalDecisionModeEnum.NearButNotAt,
+            ArrivalConfidenceTierEnum.Medium => ArrivalDecisionModeEnum.AreaCluster,
+            // A Low driven by a packed proximity radius is a mall/dense lot; any other Low (coarse fix) is unknown.
+            ArrivalConfidenceTierEnum.Low when plausibleCount >= GeoConstants.DenseLotCandidateThreshold
+                => ArrivalDecisionModeEnum.MallArea,
+            _ => ArrivalDecisionModeEnum.Unknown
+        };
 
     private static double Haversine(double lat1, double lng1, double lat2, double lng2)
     {

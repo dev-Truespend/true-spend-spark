@@ -17,4 +17,12 @@ public interface IGeoWebhookReadService
     Task<int> CountGeoRecommendationsSinceAsync(Guid userId, DateTimeOffset since, CancellationToken cancellationToken);
 
     Task<short> GetLocationEventTypeIdAsync(string code, CancellationToken cancellationToken);
+
+    // Returns an active (non-expired) area session whose circle covers (lat,lng), else null. Used to
+    // suppress per-store pushes while the user is inside a mall/plaza/cluster or a personal place.
+    Task<bool> HasCoveringAreaSessionAsync(Guid userId, decimal lat, decimal lng, DateTimeOffset now, CancellationToken cancellationToken);
+
+    // True when (lat,lng) falls inside one of the user's recurring dwell zones (home/work) — used to
+    // suppress best-card pushes while the user is simply at a personal place near stores.
+    Task<bool> IsWithinPersonalPlaceAsync(Guid userId, decimal lat, decimal lng, CancellationToken cancellationToken);
 }

@@ -40,6 +40,6 @@ variable "worker_trigger_allowed_cidrs" {
 
 variable "simulate_checkout" {
   type        = bool
-  description = "When true, the API simulates checkout (provisions a local trialing subscription, no Stripe call) — for QA/pre-launch testing. MUST be false for real billing."
-  default     = false
+  description = "When true, the API simulates checkout (provisions a local trialing subscription, no Stripe call) — for QA/pre-launch testing. MUST be false for real billing. NOTE: currently hardcoded to true in main.tf (Stripe__SimulateCheckout) for pre-launch; this variable is unused until real billing goes live."
+  default     = true
 }

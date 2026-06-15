@@ -108,3 +108,26 @@ create policy finance_missed_reward_events_owner_update on finance.missed_reward
       where t.id = transaction_id and t.user_id = auth.uid()
     )
   );
+
+-- Geo arrival pipeline tables (10a). All three are written server-side only (the arrival handler and the
+-- personal-place detection job, via the service role, which bypasses RLS), so — like finance.location_events
+-- above — they get owner select + delete only: deny-by-default to other users, owner read for data export /
+-- debugging, owner delete for GDPR purge symmetry. No insert/update policy (no client ever writes them).
+alter table finance.geo_arrival_decisions enable row level security;
+alter table finance.geo_area_sessions enable row level security;
+alter table finance.personal_places enable row level security;
+
+create policy finance_geo_arrival_decisions_owner_select on finance.geo_arrival_decisions
+  for select using (auth.uid() = user_id);
+create policy finance_geo_arrival_decisions_owner_delete on finance.geo_arrival_decisions
+  for delete using (auth.uid() = user_id);
+
+create policy finance_geo_area_sessions_owner_select on finance.geo_area_sessions
+  for select using (auth.uid() = user_id);
+create policy finance_geo_area_sessions_owner_delete on finance.geo_area_sessions
+  for delete using (auth.uid() = user_id);
+
+create policy finance_personal_places_owner_select on finance.personal_places
+  for select using (auth.uid() = user_id);
+create policy finance_personal_places_owner_delete on finance.personal_places
+  for delete using (auth.uid() = user_id);

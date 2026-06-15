@@ -1340,6 +1340,14 @@ Routes to the in-app recommendation surface for the detected merchant. Producer:
 - `recommendationId` — `finance.recommendations.id`
 - `merchantId` — `finance.merchants.id`
 
+### `GroupedBestCardAlertPushPayload`
+
+Grouped/area arrival push (items 3-4, [10a-arrival-detection-provider.md](../../Workflows/10a-arrival-detection-provider.md)): one hedged push for an ambiguous area (`area_cluster` / `mall_area`) listing the best card for several nearby stores. The messaging type stays `best_card_alert` (so the user's geo opt-out + quiet hours apply); `type` below is the routing/rendering discriminator only. `notificationId` drives tap-through to the same inbox detail as a single alert — no new client route.
+
+- `type = 'grouped_best_card_alert'`
+- `notificationId` — `messaging.notifications.id`
+- `items[]` — each `{ merchantId: finance.merchants.id, recommendationId: finance.recommendations.id }`, deduped by recommended card, capped at `GeoConstants.GroupedPushMaxCandidates`
+
 ### `WeeklySummaryPushPayload`
 
 Routes to the Insights tab (6.3). Producer: `WeeklySummaryProducer`.

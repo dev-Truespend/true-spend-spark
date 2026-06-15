@@ -120,6 +120,35 @@ Producer must skip insert (and not enqueue an event) when any of the following a
 - Reminder firing failure: keep `is_fired = false`; cron retries next sweep.
 - Outbox dead-letter on `messaging.notification.created`: notification row exists but inbox cache may be stale until manual refresh; investigate via `messaging.event_deliveries`.
 
+## Push Delivery Runbook (Expo → APNs)
+
+Push send is inline post-commit (`NotificationsDispatchBusiness.DispatchPushAsync`); provider is Expo Push (`ExpoPushDeliveryService` → `exp.host/--/api/v2/push/send`). Every attempt writes a `messaging.notification_deliveries` row — that table is the source of truth for "why no push".
+
+### Enablement (per env, api **and** worker)
+
+| Step | Detail |
+|---|---|
+| Secret | KV `ExpoPush--AccessToken` = Expo **account access token** (expo.dev → Account Settings → Access Tokens). Shown once at creation — NOT the masked list value (copying that gives a truncated string), NOT a device `ExponentPushToken[...]`. |
+| Wiring | Terraform `api_secrets` + `worker_secrets` map it to env `ExpoPush__AccessToken`. Blank ⇒ `PushDeliveryPlaceholderService` records `status=sent` with a `placeholder-…` id but delivers nothing (logs one warning on first use). |
+| Activate | Token is read once at startup → **restart the revision** after any change, on both `ca-truespend-api-*` and `ca-truespend-worker-*`. KV update alone does nothing. |
+| APNs | iOS delivery needs a valid APNs key in EAS: `cd ui-mobile && eas credentials` → iOS → Push Notifications → generate/assign. Stored server-side at Expo; no app rebuild needed. |
+
+### Failure decode (`notification_deliveries`)
+
+| external_id / error_code | Meaning | Fix |
+|---|---|---|
+| `placeholder-…`, error null | Stub sender active (token unset on that app) | Set `ExpoPush--AccessToken`, restart api **and** worker |
+| null, `401` ("bearer token is invalid") | Access token wrong / truncated / stale-in-revision | Re-set full token (`read -rs` avoids paste truncation), restart revision |
+| null, `InvalidCredentials` | No / revoked APNs key in EAS | `eas credentials` → iOS → Push Notifications → generate |
+| null, `DeviceNotRegistered` | Stale device push token | Device re-registers on next launch; `InvalidDeviceTokenCleanup` job deactivates |
+| real ticket id, error null, `status=sent` | Delivered | — |
+
+Diagnose: `select external_id, error_code, status_id, created_at from messaging.notification_deliveries where channel_id = 1 order by created_at desc limit 5;`
+
+### Manual end-to-end test (geo best-card push)
+
+`POST /api/v1/geo/arrival` with a known active place's coords (`accuracyMeters: 10`, `dwellSeconds: 200`, `movementState: "on_foot"`, a fresh `eventId` each run — the server dedups on `(provider, eventId)`). JWT via GoTrue refresh-token grant (`POST /auth/v1/token?grant_type=refresh_token`); the `apikey` header needs the **legacy** anon JWT key (`eyJ…`), not the `sb_publishable_…` key. Refresh token comes from `auth.refresh_tokens` — access-token JWTs are stateless and not stored anywhere.
+
 ## Design Gaps
 
 | Status | Type | Source Doc | Current Design | Proposed Adjustment | Reason |

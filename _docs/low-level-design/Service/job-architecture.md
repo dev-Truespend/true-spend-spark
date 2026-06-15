@@ -944,6 +944,20 @@ Worker result:
 }
 ```
 
+## PersonalPlaceDetectionJob
+
+Purpose: re-derive each user's recurring dwell zones (home/work) from clustered location history so the geo-arrival handler can suppress best-card pushes while the user is simply at a personal place near stores ([10a-arrival-detection-provider.md](../../Workflows/10a-arrival-detection-provider.md), item 6).
+
+Schedule: cron daily (off-peak). Registered in `JobRegistry` as `PersonalPlaceDetection` for manual trigger; a dedicated cron scheduler is the remaining wiring (mirror `InvalidDeviceTokenCleanupScheduler`).
+
+Responsibilities:
+
+- For each user with `finance.location_events` in the last `PersonalPlaceLookbackDays` (30), cluster fixes on a ~111m grid (`PersonalPlaceGridDecimals`).
+- A cell with ≥ `PersonalPlaceMinVisits` (5) recurring stops is a dwell zone; take the top `PersonalPlaceMaxPerUser` (3) by count.
+- Upsert into `finance.personal_places` (dedupe by proximity; update `visit_count` / `last_detected_at`). Kind is a coarse `recurring_dwell` label — suppression triggers on any zone, not on home-vs-work.
+
+External calls: none. Idempotent. Inferred coordinates are privacy-sensitive — see [10-geo-recommendations.md § Design Gaps](../../Workflows/10-geo-recommendations.md#design-gaps); purged with the user via the `on delete cascade` on `user_id`.
+
 ## AccountDeletionPurgeJob
 
 Purpose: hard-delete user data for accounts past the deletion grace window. The Privacy & Data screen (`POST /api/v1/account-deletion`) only *schedules* deletion; the actual purge runs here, after the grace window (target **14 days**), with no UI session in the loop. The purge cascade must remove all user-owned rows across `finance.*`, `messaging.*`, `insights.*`, `app.*`, `security.*`, `privacy.*` (except the audit trail) **and** the Supabase `auth.users` row so a fresh signup is possible. See [14-privacy-data.md](../../Workflows/14-privacy-data.md).

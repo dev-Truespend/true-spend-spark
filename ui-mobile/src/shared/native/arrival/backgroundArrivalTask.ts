@@ -1,8 +1,7 @@
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
-import { env } from "@/shared/config/env";
-import { supabase } from "@/shared/api/supabaseClient";
 import { getCachedJson, setCachedJson } from "@/shared/storage/cacheStorage";
+import { postGeoEvent, readBackgroundSession } from "@/shared/native/arrival/arrivalReporting";
 import {
   ARRIVAL_DWELL_MS,
   StopAnchor,
@@ -42,7 +41,12 @@ async function handleBackgroundPosition(position: Location.LocationObject): Prom
 
   let anchor = await getCachedJson<StopAnchor>(ANCHOR_STORAGE_KEY);
   if (anchor === null || haversineMeters(anchor.lat, anchor.lng, latitude, longitude) > STOP_RADIUS_METERS) {
-    // Moving (or first fix): reset the anchor; nothing fires.
+    // Moving (or first fix): reset the anchor; nothing new fires. But if we'd already reported an arrival
+    // at this anchor, the user is now LEAVING — emit an exit so the server closes any area session it
+    // opened (item 8), instead of waiting out the TTL.
+    if (anchor?.fired) {
+      await reportExitHeadless(anchor);
+    }
     await setCachedJson<StopAnchor>(ANCHOR_STORAGE_KEY, {
       lat: latitude,
       lng: longitude,
@@ -65,21 +69,11 @@ async function reportArrivalHeadless(
   speed: number | null | undefined,
   nowMs: number
 ): Promise<void> {
-  // No React/auth context in the background — read the persisted Supabase session directly (it
-  // auto-refreshes), then POST with the device JWT. The server derives userId from the token.
-  let accessToken: string | null = null;
-  let userId: string | null = null;
-  try {
-    const { data } = await supabase.auth.getSession();
-    accessToken = data.session?.access_token ?? null;
-    userId = data.session?.user?.id ?? null;
-  } catch {
-    return;
-  }
-  if (!accessToken || !userId) return;
+  const session = await readBackgroundSession();
+  if (session === null) return;
 
-  const body = {
-    eventId: stableStopId(userId, stop.lat, stop.lng, nowMs),
+  await postGeoEvent(session.accessToken, {
+    eventId: stableStopId(session.userId, stop.lat, stop.lng, nowMs),
     eventType: "arrival",
     lat: stop.lat,
     lng: stop.lng,
@@ -87,19 +81,24 @@ async function reportArrivalHeadless(
     occurredAt: new Date(nowMs).toISOString(),
     dwellSeconds: Math.round((nowMs - stop.sinceMs) / 1000),
     movementState: classifyMovement(speed)
-  };
+  });
+}
 
-  try {
-    await fetch(`${env.apiBaseUrl}/api/v1/geo/arrival`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`
-      },
-      body: JSON.stringify(body)
-    });
-  } catch {
-    // Best-effort: a dropped arrival just means no nudge this stop. The eventId is stable per stop, so
-    // a later retry/foreground report at the same stop dedups instead of double-notifying.
-  }
+// Fired when the user leaves a stop we already reported an arrival for. The exit eventId is derived from
+// the SAME stop (anchor.sinceMs) so retries dedup, but with an ":exit" suffix so it never collides with
+// the arrival's id. The server closes any covering area session on this event (item 8).
+async function reportExitHeadless(stop: StopAnchor): Promise<void> {
+  const session = await readBackgroundSession();
+  if (session === null) return;
+
+  await postGeoEvent(session.accessToken, {
+    eventId: `${stableStopId(session.userId, stop.lat, stop.lng, stop.sinceMs)}:exit`,
+    eventType: "exit",
+    lat: stop.lat,
+    lng: stop.lng,
+    accuracyMeters: null,
+    occurredAt: new Date(Date.now()).toISOString(),
+    dwellSeconds: null,
+    movementState: "unknown"
+  });
 }

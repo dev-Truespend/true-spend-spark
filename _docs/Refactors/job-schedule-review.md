@@ -27,6 +27,7 @@ Worker is hosted as a `WebApplication`. Routes (no auth — local/ops only, neve
 |---|---|---|
 | RewardsCcCatalogSyncOrchestrationJob | `0 0 * * *` | On |
 | AIInsightGenerationJob | `0 1 * * *` | On |
+| PersonalPlaceDetectionJob | `0 2 * * *` | On |
 | AccountDeletionPurgeJob | `0 3 * * *` | On |
 | PlaidTransactionSyncJob | `0 4 * * *` | On |
 | InvalidDeviceTokenCleanupJob | `0 4 * * *` | On |
@@ -38,6 +39,7 @@ Worker is hosted as a `WebApplication`. Routes (no auth — local/ops only, neve
 | UnusualTransactionJob | `*/5 * * * *` | Off |
 | PlaidInstitutionCatalogJob | `0 1 * * *` | Off |
 | RewardsCcCatalogReconcileJob | `0 4 * * 0` | Off |
+| FoursquarePlacesCatalogSyncJob | `0 5 * * 0` | Off |
 
 ## Done
 

@@ -19,6 +19,10 @@ public static class GeoWorkflowExtensions
         services.AddScoped<IGeoArrivalBusiness, GeoArrivalBusiness>();
         services.AddScoped<IFoursquareWebhookBusiness, FoursquareWebhookBusiness>();
 
+        // Native-geofence region supply (item 8): clusters the user's location history into monitored regions.
+        services.AddScoped<IGeoMonitoredRegionsBusiness, GeoMonitoredRegionsBusiness>();
+        services.AddScoped<IPersonalPlaceService, PersonalPlaceService>();
+
         // Custom-path place matching (DB-first foursquare.places + provider-on-miss persist).
         services.AddScoped<IGeoPlaceMatchReadService, GeoPlaceMatchReadService>();
         services.AddScoped<IGeoPlaceMatchBusiness, GeoPlaceMatchBusiness>();

@@ -26,5 +26,6 @@ public static class JobRegistry
             ["CardCatalogMappingReview"] = (sp, ct) => sp.GetRequiredService<CardCatalogMappingReviewJob>().RunAsync(ct),
             ["AccountDeletionPurge"] = (sp, ct) => sp.GetRequiredService<AccountDeletionPurgeJob>().RunAsync(ct),
             ["FoursquarePlacesCatalog"] = (sp, ct) => sp.GetRequiredService<FoursquarePlacesCatalogSyncJob>().RunAsync(ct),
+            ["PersonalPlaceDetection"] = (sp, ct) => sp.GetRequiredService<PersonalPlaceDetectionJob>().RunAsync(ct),
         };
 }

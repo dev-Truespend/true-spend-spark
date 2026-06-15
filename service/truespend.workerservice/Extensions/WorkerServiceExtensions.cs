@@ -209,6 +209,9 @@ public static class WorkerServiceExtensions
         builder.Services.AddScoped<CardCatalogMappingReviewJob>();
         builder.Services.AddScoped<AccountDeletionPurgeJob>();
         builder.Services.AddScoped<FoursquarePlacesCatalogSyncJob>();
+        builder.Services.AddScoped<PersonalPlaceDetectionJob>();
+        builder.Services.AddScoped<IPersonalPlaceDetectionBusiness, PersonalPlaceDetectionBusiness>();
+        builder.Services.AddScoped<IPersonalPlaceService, PersonalPlaceService>();
 
         builder.Services.AddHostedService<ReminderScheduler>();
         builder.Services.AddHostedService<AIInsightGenerationScheduler>();
@@ -224,6 +227,7 @@ public static class WorkerServiceExtensions
         builder.Services.AddHostedService<AdminNotificationDispatchScheduler>();
         builder.Services.AddHostedService<AccountDeletionPurgeScheduler>();
         builder.Services.AddHostedService<FoursquarePlacesCatalogSyncScheduler>();
+        builder.Services.AddHostedService<PersonalPlaceDetectionScheduler>();
 
         return builder;
     }

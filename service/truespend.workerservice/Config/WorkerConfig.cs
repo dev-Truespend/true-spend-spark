@@ -17,6 +17,7 @@ public sealed class WorkerConfig
     public JobConfig AdminNotificationDispatch { get; init; } = new();
     public JobConfig AccountDeletionPurge { get; init; } = new();
     public JobConfig FoursquarePlacesCatalogSync { get; init; } = new();
+    public JobConfig PersonalPlaceDetection { get; init; } = new();
 }
 
 public sealed class JobConfig

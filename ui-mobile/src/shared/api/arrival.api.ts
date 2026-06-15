@@ -1,4 +1,4 @@
-import { apiPost } from "@/shared/api/client";
+import { apiGet, apiPost } from "@/shared/api/client";
 
 // Custom-path arrival ingress (10a). Carries NO user identity — the server derives userId from the
 // JWT. eventId is a stable per-stop key so background retries dedup instead of re-notifying.
@@ -21,6 +21,20 @@ export type GeoArrivalAck = {
   deduplicated: boolean;
 };
 
+// Native-geofence regions the device should monitor (item 8). The server caps the count under the iOS
+// 20-region limit.
+export type MonitoredRegion = {
+  identifier: string;
+  lat: number;
+  lng: number;
+  radiusMeters: number;
+};
+
+export type MonitoredRegionsResponse = {
+  regions: MonitoredRegion[];
+};
+
 export const arrivalApi = {
-  reportArrival: (input: GeoArrivalRequest) => apiPost<GeoArrivalAck>("/api/v1/geo/arrival", input)
+  reportArrival: (input: GeoArrivalRequest) => apiPost<GeoArrivalAck>("/api/v1/geo/arrival", input),
+  getMonitoredRegions: () => apiGet<MonitoredRegionsResponse>("/api/v1/geo/monitored-regions")
 };

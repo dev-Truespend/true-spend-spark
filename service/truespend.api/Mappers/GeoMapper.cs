@@ -10,6 +10,7 @@ public interface IGeoMapper
     FoursquareWebhookInput ParseFoursquareEvent(string rawBody);
     GeoArrivalInput ToArrivalInput(GeoArrivalRequestVm request, Guid userId);
     WebhookAckResponseVm ToAckResponse(FoursquareWebhookResult result);
+    MonitoredRegionsResponseVm ToMonitoredRegionsResponse(IReadOnlyList<MonitoredRegion> regions);
 }
 
 public sealed class GeoMapper : IGeoMapper
@@ -96,7 +97,10 @@ public sealed class GeoMapper : IGeoMapper
             Provider: TrueSpend.Domain.Constants.GeoConstants.ProviderCustom,
             EventId: request.EventId,
             EventType: string.IsNullOrWhiteSpace(request.EventType) ? TrueSpend.Domain.Constants.GeoConstants.CustomEventArrival : request.EventType,
-            EventKind: TrueSpend.Domain.Enums.GeoArrivalEventKindEnum.Arrival,
+            // An explicit "exit" event closes the user's area session (item 8); everything else is an arrival.
+            EventKind: string.Equals(request.EventType, TrueSpend.Domain.Constants.GeoConstants.CustomEventExit, StringComparison.OrdinalIgnoreCase)
+                ? TrueSpend.Domain.Enums.GeoArrivalEventKindEnum.Exit
+                : TrueSpend.Domain.Enums.GeoArrivalEventKindEnum.Arrival,
             UserId: userId == Guid.Empty ? null : userId,
             ExternalUserId: null,
             PlaceName: request.PlaceName,
@@ -113,6 +117,9 @@ public sealed class GeoMapper : IGeoMapper
 
     public WebhookAckResponseVm ToAckResponse(FoursquareWebhookResult result) =>
         new(result.Received, result.Deduplicated);
+
+    public MonitoredRegionsResponseVm ToMonitoredRegionsResponse(IReadOnlyList<MonitoredRegion> regions) =>
+        new(regions.Select(r => new MonitoredRegionVm(r.Identifier, r.Lat, r.Lng, r.RadiusMeters)).ToList());
 
     private static string? ReadString(JsonElement parent, string name)
     {

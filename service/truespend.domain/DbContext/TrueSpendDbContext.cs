@@ -55,6 +55,9 @@ public sealed class TrueSpendDbContext(DbContextOptions<TrueSpendDbContext> opti
     public DbSet<FoursquareWebhookEventEntity> FoursquareWebhookEvents => Set<FoursquareWebhookEventEntity>();
     public DbSet<PlaidWebhookEventEntity> PlaidWebhookEvents => Set<PlaidWebhookEventEntity>();
     public DbSet<LocationEventEntity> LocationEvents => Set<LocationEventEntity>();
+    public DbSet<GeoArrivalDecisionEntity> GeoArrivalDecisions => Set<GeoArrivalDecisionEntity>();
+    public DbSet<GeoAreaSessionEntity> GeoAreaSessions => Set<GeoAreaSessionEntity>();
+    public DbSet<PersonalPlaceEntity> PersonalPlaces => Set<PersonalPlaceEntity>();
 
     public DbSet<FoursquareChainEntity> FoursquareChains => Set<FoursquareChainEntity>();
     public DbSet<FoursquarePlaceEntity> FoursquarePlaces => Set<FoursquarePlaceEntity>();

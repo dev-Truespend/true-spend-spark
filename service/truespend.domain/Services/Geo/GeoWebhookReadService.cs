@@ -46,4 +46,41 @@ public sealed class GeoWebhookReadService(TrueSpendDbContext db) : IGeoWebhookRe
             ? (short)LocationEventTypeEnum.GeofenceEntered
             : (short)0;
     }
+
+    public async Task<bool> HasCoveringAreaSessionAsync(Guid userId, decimal lat, decimal lng, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        // A user has at most a handful of active sessions; fetch and test coverage in memory (the circle
+        // test isn't expressible in EF without PostGIS, which the MVP doesn't use).
+        var active = await db.GeoAreaSessions.AsNoTracking()
+            .Where(s => s.UserId == userId && s.ExpiresAt > now)
+            .ToListAsync(cancellationToken);
+
+        var originLat = (double)lat;
+        var originLng = (double)lng;
+        return active.Any(s =>
+            Haversine(originLat, originLng, (double)s.CenterLat, (double)s.CenterLng) <= (double)s.RadiusMeters);
+    }
+
+    public async Task<bool> IsWithinPersonalPlaceAsync(Guid userId, decimal lat, decimal lng, CancellationToken cancellationToken)
+    {
+        var places = await db.PersonalPlaces.AsNoTracking()
+            .Where(p => p.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+        var originLat = (double)lat;
+        var originLng = (double)lng;
+        return places.Any(p =>
+            Haversine(originLat, originLng, (double)p.CenterLat, (double)p.CenterLng) <= (double)p.RadiusMeters);
+    }
+
+    private static double Haversine(double lat1, double lng1, double lat2, double lng2)
+    {
+        const double earthRadiusMeters = 6_371_000d;
+        var dLat = (lat2 - lat1) * Math.PI / 180.0;
+        var dLng = (lng2 - lng1) * Math.PI / 180.0;
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+                + Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0)
+                * Math.Sin(dLng / 2) * Math.Sin(dLng / 2);
+        return earthRadiusMeters * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+    }
 }
