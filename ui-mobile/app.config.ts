@@ -117,6 +117,16 @@ export default {
             process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME ??
             "com.googleusercontent.apps.596743529668-217kaknr4vmq29497d45ma8a56fl7195"
         }
+      ],
+      [
+        // Crash + error reporting (Sentry). Uploads dSYMs + Hermes source maps at EAS build time so JS
+        // and native crashes arrive symbolicated, with the screen + breadcrumbs. Reads SENTRY_AUTH_TOKEN
+        // from the build env (set it as an EAS secret); org/project are passed here.
+        "@sentry/react-native/expo",
+        {
+          organization: "truespend",
+          project: "truespend-mobile"
+        }
       ]
       // "react-native-plaid-link-sdk" — re-add when ready to test Plaid Link.
       // v11.13.3 dist ships ESM-style imports without .js extensions, which break
@@ -128,6 +138,13 @@ export default {
     },
     extra: {
       apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:5000",
+      // Sentry DSN is a public client key (ships in the binary) — safe to default here, like the Google
+      // client IDs below. appEnv is captured at config-eval time so the runtime can tag the Sentry
+      // environment (APP_ENV is not an EXPO_PUBLIC_ var, so it isn't otherwise inlined into the bundle).
+      sentryDsn:
+        process.env.EXPO_PUBLIC_SENTRY_DSN ??
+        "https://2e942b37b09311955fec818a5871317e@o4511570587877376.ingest.us.sentry.io/4511570605834240",
+      appEnv: process.env.APP_ENV ?? "development",
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? "",
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "",
       foursquareApiKey: process.env.EXPO_PUBLIC_FOURSQUARE_API_KEY ?? "",

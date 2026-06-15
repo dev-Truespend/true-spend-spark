@@ -10,6 +10,8 @@ type ExtraConfig = {
   plaidRedirectUri?: string;
   googleWebClientId?: string;
   googleIosClientId?: string;
+  sentryDsn?: string;
+  appEnv?: string;
 };
 
 const extra = (Constants.expoConfig?.extra ?? {}) as ExtraConfig;
@@ -27,5 +29,9 @@ export const env = {
   // Native Google sign-in (signInWithIdToken). The Web client ID is the one Supabase has registered
   // for the Google provider; the iOS client ID is the native app client. Not secrets.
   googleWebClientId: extra.googleWebClientId ?? "",
-  googleIosClientId: extra.googleIosClientId ?? ""
+  googleIosClientId: extra.googleIosClientId ?? "",
+  // Crash/error reporting. DSN is a public client key (ships in the binary). appEnv tags the Sentry
+  // environment (dev/staging/production) — captured in app.config from APP_ENV at build time.
+  sentryDsn: extra.sentryDsn ?? "",
+  appEnv: extra.appEnv ?? "development"
 };
