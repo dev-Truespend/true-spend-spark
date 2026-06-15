@@ -75,11 +75,17 @@ export function createCustomArrivalClient(): ArrivalDetectionClient {
       const alreadyRunning = await Location.hasStartedLocationUpdatesAsync(ARRIVAL_LOCATION_TASK);
       if (alreadyRunning) return;
       await Location.startLocationUpdatesAsync(ARRIVAL_LOCATION_TASK, {
-        accuracy: Location.Accuracy.Balanced,
+        // High (~10m) not Balanced (~100m): the stop anchor uses STOP_RADIUS_METERS = 30m, so a ~100m
+        // fix jitters past the radius and a real stop never confirms (likely why novel-place arrivals
+        // like the barber never fired). Costs battery — this is a hypothesis test, not the final design;
+        // CLVisit is the battery-cheap end state.
+        accuracy: Location.Accuracy.High,
         // Defer/batch updates so we only wake on meaningful movement, not continuously.
         deferredUpdatesInterval: 30_000,
         deferredUpdatesDistance: 25,
-        pausesUpdatesAutomatically: true,
+        // false: iOS pauses updates once it thinks you're stationary — i.e. exactly while you're dwelling
+        // at the store — cutting off the "still here" stream the dwell needs. Keep them flowing.
+        pausesUpdatesAutomatically: false,
         activityType: Location.ActivityType.Other,
         showsBackgroundLocationIndicator: false,
         foregroundService: {
@@ -130,7 +136,7 @@ export function createCustomArrivalClient(): ArrivalDetectionClient {
       if (permission.status !== "granted") return;
       if (!subscription) {
         subscription = await Location.watchPositionAsync(
-          { accuracy: Location.Accuracy.Balanced, distanceInterval: 25, timeInterval: 30_000 },
+          { accuracy: Location.Accuracy.High, distanceInterval: 25, timeInterval: 30_000 },
           (position) => {
             void onPosition(position);
           }
